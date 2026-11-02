@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>yore.tw</title>
+  <meta name="description" content="yore.tw — small pixel games. Meowcaron: a cat macaron bakery idle game, free in your browser." />
+  <meta property="og:title" content="yore.tw" />
+  <meta property="og:image" content="https://yore-tw.com/assets/meowcaron-cover.png" />
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="./style.css" />
+  <script src="./_shared.js"></script>
+  <style>
+    .pet { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 56px 0 18px; user-select: none; -webkit-user-select: none; }
+    .pet-stage { position: relative; width: 192px; height: 192px; display: grid; place-items: end center; cursor: pointer; touch-action: manipulation; }
+    .pet img { width: 168px; height: 168px; image-rendering: pixelated; transition: transform 0.12s ease-out; }
+    .pet-stage.bounce img { transform: scale(1.08, 0.9) translateY(6px); }
+    .pet .heart { position: absolute; left: 50%; bottom: 120px; font-size: 26px; pointer-events: none; animation: heart 0.9s ease-out forwards; }
+    @keyframes heart { from { transform: translate(-50%, 0) scale(0.6); opacity: 1; } to { transform: translate(calc(-50% + var(--dx)), -70px) scale(1.1); opacity: 0; } }
+    .pet-count { font-weight: 900; color: var(--accent-ink); font-size: 16px; min-height: 20px; }
+    .pet-shadow { width: 120px; height: 10px; border-radius: 50%; background: rgba(90,64,56,0.12); margin-top: -8px; }
+    footer.mini { border: 0; margin-top: 8px; padding: 0 0 28px; justify-content: center; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="top">
+      <a class="brand" href="./"><img src="./favicon.svg" alt="" />yore.tw</a>
+      <nav><button id="lang" class="lang-btn" type="button">EN</button></nav>
+    </header>
+
+    <h2 class="section" id="games" style="margin-top:8px"><span lang="zh">遊戲</span><span lang="en">Games</span></h2>
+    <div class="cards">
+      <a class="card" href="./meowcaron/" style="text-decoration:none;color:inherit">
+        <img src="./assets/meowcaron-cover.png" alt="" />
+        <div class="body">
+          <h3>Meowcaron <span lang="zh">喵卡龍</span></h3>
+          <div class="tags"><span class="tag"><span lang="zh">經營</span><span lang="en">Management</span></span><span class="tag pink"><span lang="zh">養成</span><span lang="en">Raising</span></span></div>
+        </div>
+      </a>
+      <div class="card soon">
+        <div class="cover"><span lang="zh">製作中</span><span lang="en">In the oven</span></div>
+        <div class="body"><h3 lang="zh">下一款</h3><h3 lang="en">Next</h3></div>
+      </div>
+    </div>
+
+    <section class="pet" aria-label="pet cat">
+      <div class="pet-stage" id="pet"><img id="pet-img" src="./assets/pet-open.png" alt="a cat" draggable="false" /></div>
+      <div class="pet-shadow"></div>
+      <div class="pet-count" id="pet-count"></div>
+    </section>
+
+    <footer class="mini">
+      <div><a href="./about.html"><span lang="zh">關於</span><span lang="en">About</span></a> · <a href="./privacy.html"><span lang="zh">隱私</span><span lang="en">Privacy</span></a></div>
+    </footer>
+  </div>
+
+  <script>
+  (function () {
+    var stage = document.getElementById('pet'), img = document.getElementById('pet-img'), count = document.getElementById('pet-count');
+    var frames = { open: './assets/pet-open.png', blink: './assets/pet-blink.png', happy: './assets/pet-happy.png', laugh: './assets/pet-laugh.png' };
+    var pats = 0; try { pats = Number(localStorage.getItem('yore.pats') || 0); } catch (e) {}
+    var busy = 0, ac = null;
+    function show(n) { count.textContent = n > 0 ? '♥ ' + n : ''; }
+    show(pats);
+    // idle: a blink now and then
+    function blink() { if (!busy) { img.src = frames.blink; setTimeout(function () { if (!busy) img.src = frames.open; }, 130); } setTimeout(blink, 1800 + Math.random() * 2800); }
+    setTimeout(blink, 1500);
+    function chime(n) {
+      try {
+        ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+        var o = ac.createOscillator(), g = ac.createGain(); var f = 660 + (n % 5) * 60;
+        o.type = 'triangle'; o.frequency.setValueAtTime(f, ac.currentTime); o.frequency.exponentialRampToValueAtTime(f * 1.5, ac.currentTime + 0.08);
+        g.gain.setValueAtTime(0.0001, ac.currentTime); g.gain.exponentialRampToValueAtTime(0.12, ac.currentTime + 0.01); g.gain.exponentialRampToValueAtTime(0.0001, ac.currentTime + 0.25);
+        o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + 0.26);
+      } catch (e) {}
+    }
+    function pat(e) {
+      e.preventDefault();
+      pats++; try { localStorage.setItem('yore.pats', String(pats)); } catch (err) {}
+      show(pats); busy++;
+      img.src = pats % 5 === 0 ? frames.laugh : frames.happy;           // > ∀ < every fifth pat
+      stage.classList.add('bounce'); setTimeout(function () { stage.classList.remove('bounce'); }, 130);
+      var h = document.createElement('span'); h.className = 'heart'; h.textContent = pats % 5 === 0 ? '✨' : '♥'; h.style.color = '#F28CA3';
+      h.style.setProperty('--dx', (Math.random() * 60 - 30) + 'px'); stage.appendChild(h); setTimeout(function () { h.remove(); }, 900);
+      chime(pats);
+      setTimeout(function () { busy--; if (!busy) img.src = frames.open; }, 650);
+    }
+    stage.addEventListener('pointerdown', pat);
+  })();
+  </script>
+</body>
+</html>

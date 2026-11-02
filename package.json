@@ -1,0 +1,23 @@
+{
+  "name": "meowcaron",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite --host --port 5173",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 4173",
+    "site": "npm run build && rm -rf site/meowcaron && cp -r dist site/meowcaron",
+    "sim": "esbuild sim/simulate.ts --bundle --platform=node --target=node16 --outfile=.sim/simulate.cjs --log-level=warning && node .sim/simulate.cjs",
+    "test": "playwright test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "phaser": "3.80.1"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.44.1",
+    "@types/node": "^20.19.43",
+    "typescript": "5.4.5",
+    "vite": "4.5.3"
+  }
+}

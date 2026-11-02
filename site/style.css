@@ -1,0 +1,47 @@
+/* yore-tw.com — small game studio entry site, macaron palette shared with Meowcaron */
+:root {
+  --bg: #FFF7F0; --card: #FFFFFF; --line: #F0DFD3; --ink: #5A4038; --muted: #9C8A82;
+  --pink: #F9CBD6; --mint: #BFE8D4; --lemon: #FBECA6; --sky: #C4DEF5; --lavender: #DCCBF2;
+  --accent: #F28CA3; --accent-ink: #7A3A4A; --shadow: 0 2px 0 #E8D2C4;
+  font-family: "Nunito", "Avenir Next", "Segoe UI", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--ink); }
+body { line-height: 1.6; font-size: 17px; }
+a { color: var(--accent-ink); }
+/* one language at a time: hide the other one's elements, never the <html> element itself */
+html:not([data-lang="en"]) body [lang="en"] { display: none !important; }
+html[data-lang="en"] body [lang="zh"] { display: none !important; }
+.wrap { max-width: 980px; margin: 0 auto; padding: 0 20px; }
+header.top { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
+.brand { display: flex; align-items: center; gap: 10px; font-weight: 900; font-size: 22px; text-decoration: none; color: var(--ink); }
+.brand img { width: 34px; height: 34px; image-rendering: pixelated; }
+nav a { margin-left: 16px; text-decoration: none; font-weight: 800; }
+.lang-btn { border: 2px solid var(--line); background: var(--card); border-radius: 999px; padding: 6px 12px; font-weight: 900; color: var(--accent-ink); box-shadow: var(--shadow); cursor: pointer; }
+.hero { display: grid; grid-template-columns: 1.1fr 1fr; gap: 28px; align-items: center; padding: 24px 0 36px; }
+.hero h1 { font-size: 40px; line-height: 1.15; margin: 0 0 12px; }
+.hero p { font-size: 19px; color: var(--muted); margin: 0 0 18px; }
+.hero img { width: 100%; border-radius: 18px; border: 3px solid var(--line); box-shadow: 0 10px 30px rgba(90,64,56,0.15); image-rendering: pixelated; }
+.btn { display: inline-block; background: var(--accent); color: #fff; font-weight: 900; text-decoration: none; padding: 14px 24px; border-radius: 999px; font-size: 18px; box-shadow: 0 3px 0 #D9708A; }
+.btn.ghost { background: var(--card); color: var(--accent-ink); border: 2px solid var(--line); box-shadow: var(--shadow); }
+h2.section { font-size: 24px; margin: 36px 0 14px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+.card { background: var(--card); border: 2px solid var(--line); border-radius: 18px; overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column; }
+.card img { width: 100%; aspect-ratio: 16 / 10; object-fit: cover; image-rendering: pixelated; }
+.card .body { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.card h3 { margin: 0; font-size: 20px; }
+.card p { margin: 0; color: var(--muted); }
+.card .tags { display: flex; gap: 6px; flex-wrap: wrap; }
+.tag { font-size: 13px; font-weight: 800; padding: 2px 10px; border-radius: 999px; background: var(--mint); color: #2F6B4F; }
+.tag.pink { background: var(--pink); color: var(--accent-ink); } .tag.sky { background: var(--sky); color: #2E5A86; } .tag.lemon { background: var(--lemon); color: #7A5A1A; }
+.card.soon { opacity: 0.75; }
+.card.soon .cover { aspect-ratio: 16 / 10; background: repeating-linear-gradient(45deg, var(--pink) 0 12px, #FBE3EA 12px 24px); display: grid; place-items: center; font-weight: 900; color: var(--accent-ink); font-size: 20px; }
+.features { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+.feature { background: var(--card); border: 2px solid var(--line); border-radius: 14px; padding: 14px 16px; box-shadow: var(--shadow); }
+.feature b { display: block; font-size: 17px; margin-bottom: 4px; }
+article.doc { background: var(--card); border: 2px solid var(--line); border-radius: 18px; padding: 24px 28px; margin: 12px 0 40px; box-shadow: var(--shadow); }
+article.doc h1 { font-size: 30px; margin: 0 0 6px; } article.doc h2 { font-size: 20px; margin: 22px 0 6px; }
+article.doc .muted { color: var(--muted); }
+footer { border-top: 2px solid var(--line); margin-top: 40px; padding: 22px 0 40px; color: var(--muted); font-size: 15px; display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; justify-content: space-between; }
+footer a { color: var(--muted); font-weight: 800; }
+@media (max-width: 760px) { .hero { grid-template-columns: 1fr; } .hero h1 { font-size: 32px; } nav a { margin-left: 10px; } body { font-size: 16px; } }
