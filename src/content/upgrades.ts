@@ -93,14 +93,14 @@ const EQUIPMENT_EFFECT_TEXT: Record<Station, string> = {
 // Each tier is one real step of making macarons, in order: the kitchen teaches the recipe as it grows.
 const EQUIPMENT_NAMES: Record<Station, [string, string, string]> = {
   mixer:  ['Flour sifter', 'Meringue mixer', 'Macaronage station'],
-  piping: ['Round-tip piping bag', 'Silicone template mat', 'Two-tone piping bag'],
-  oven:   ['Resting rack', 'Convection oven', 'Deck oven + cooling rack'],
+  piping: ['Parchment trays', 'Silicone template mat', 'Resting rack with fan'],
+  oven:   ['Baking stone', 'Convection oven', 'Deck oven + cooling rack'],
   box:    ['Ganache filling', 'Gift box inserts', 'Ripening fridge'],
 };
 const EQUIPMENT_FLAVOUR_TIER: Record<Station, [string, string, string]> = {
   mixer: ['Almond flour and icing sugar sifted together: no lumps, smooth shells.', 'Stiff peaks every time, no tired paws.', 'Fold until the batter flows like a ribbon. The cats call it "the slow part".'],
-  piping: ['Same nozzle, same squeeze, same shell.', 'Printed circles to pipe into, so every row lines up.', 'Two batters in one bag: striped shells, no two alike.'],
-  oven: ['Trays rest until a skin forms. That skin is where the feet come from.', 'A fan keeps the heat even, so every shell bakes alike.', 'Two decks baking, baked shells cooling on the wire rack above.'],
+  piping: ['Lined trays: every round the same size, nothing sticks.', 'Printed circles on the mat, so every row lines up.', 'A gentle fan dries the rounds until a skin forms: that skin becomes the feet.'],
+  oven: ['A stone keeps the heat steady from below: no cracked tops.', 'A fan keeps the heat even, so every shell bakes alike.', 'Two decks baking, baked shells cooling on the wire rack above.'],
   box: ['A swirl of ganache, two shells pressed together.', 'A kraft insert keeps each macaron in its own slot.', 'A day in the cold: the shell softens into the filling. Customers can tell.'],
 };
 // Costs climb through the game but not in lockstep: each step is a different jump, so there is always one that is "next".

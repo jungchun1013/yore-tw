@@ -46,7 +46,7 @@ export function initPanel(ctrl: GameController): void {
   const lovedBadge = $('#loved-badge');
   const heatBadge = $('#heat-badge');
   const hudSub = $('.hud-sub'), hudSlack = $('#hud-slack');
-  const slackIcon: Record<string, string> = { nap: emoteCanvas('zzz').toDataURL(), love: emoteCanvas('love').toDataURL(), fight: emoteCanvas('anger', '#E8453C').toDataURL(), window: emoteCanvas('window').toDataURL(), play: emoteCanvas('scratch', '#9C8A82').toDataURL() };
+  const slackIcon: Record<string, string> = { nap: emoteCanvas('zzz').toDataURL(), love: emoteCanvas('love').toDataURL(), fight: emoteCanvas('anger', '#E8453C').toDataURL(), window: emoteCanvas('dream').toDataURL(), play: emoteCanvas('scratch', '#9C8A82').toDataURL() };
   let slackSig = '';
   const gramBadge = $('#gram-badge'), gramCount = $('#gram-count');
   const blessBadge = $('#bless-badge');

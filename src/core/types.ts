@@ -52,7 +52,7 @@ export interface AchievementCtx {
 }
 
 export type DiaryKind = 'cuddle' | 'fight' | 'nap' | 'rest' | 'bless' | 'timeskip' | 'star' | 'post' | 'customer' | 'prestige' | 'rainbow' | 'chat' | 'boxwalk' | 'treasure' | 'play';
-export type DiaryBg = 'kitchen' | 'counter' | 'oven' | 'front' | 'park' | 'roof' | 'alley' | 'night' | 'cushion' | 'bed' | 'cathouse' | 'tent' | 'fish' | 'cattree' | 'window' | 'scratcher' | 'hangball';
+export type DiaryBg = 'kitchen' | 'counter' | 'oven' | 'front' | 'park' | 'roof' | 'alley' | 'night' | 'cushion' | 'bed' | 'cathouse' | 'tent' | 'fish' | 'cattree' | 'window' | 'scratcher' | 'hangball' | 'fishbowl' | 'basket';
 export interface DiaryEntry {
   t: number;
   kind: DiaryKind;
@@ -107,6 +107,8 @@ export interface GameState {
   warpMult: number;
   /** Cosmic Cat stardust: 10 fragments = 1 permanent star */
   starFragments: number;
+  /** Rainbow Cat effect: production ×2 until this time (kept alive by the energy bar; transient) */
+  rainbowUntil: number;
   /** shop diary (newest last) */
   diary: DiaryEntry[];
   lastTick: number;

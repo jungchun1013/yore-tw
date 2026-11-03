@@ -1,0 +1,29 @@
+{
+  "colors": {
+    "#": "#5A4038",
+    "a": "#FBCFD1",
+    "b": "#FBD2D2",
+    "c": "#FADAD5",
+    "d": "#FBCACB",
+    "e": "#523A2E",
+    "f": "#E5B7B4"
+  },
+  "key": "furniture:cushion_round",
+  "rows": [
+    "...................",
+    "...................",
+    ".....#########.....",
+    "...##ccccccccc##...",
+    ".##ccbbbabbbbccd##.",
+    "#dcbbbaabbbbbbbddd#",
+    "#ddbbbbbbbbbbbbddd#",
+    "#ddddbbbbbacccdddf#",
+    "#dddddccccccddddff#",
+    "#ddddddddddddddffe#",
+    ".eedddddddddffffe#.",
+    "..#eeffffffffee##..",
+    "....###########....",
+    "..................."
+  ],
+  "updatedAt": 1793643605269
+}

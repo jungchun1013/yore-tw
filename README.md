@@ -66,3 +66,6 @@ Economy constants live in `src/core/economy.ts` (`PRESTIGE`, `OFFLINE`) and `src
 ## Making the next game
 
 Keep `src/core` and `src/ui`, replace `src/content/*` (names, costs, coats, personas) and the sprite/prop templates in `src/game/sprites/pixel.ts`. The simulator and tests only depend on ids exported from `src/content`.
+
+## Credits
+- The anger mark emote is derived from Twemoji (U+1F4A2), © Twitter, Inc. and other contributors, licensed under CC-BY 4.0.

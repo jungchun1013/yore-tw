@@ -68,9 +68,9 @@ function paintBackground(ctx: CanvasRenderingContext2D, W: number, H: number, bg
 
 const cache: Record<string, string> = {};
 
-function subject(id: string, happy = true): HTMLCanvasElement {
+function subject(id: string, happy = true, asleep = false): HTMLCanvasElement {
   const def = CAT_BY_ID[id];
-  if (def) return catCanvas(def.coat, def.accessory, happy ? 'happy' : 'open');
+  if (def) return catCanvas(def.coat, def.accessory, asleep ? 'sleep' : happy ? 'happy' : 'open');
   const sp = SPECIES_BY_ID[id];
   if (sp) return animalCanvas(sp, sp.coats[0], happy ? 'happy' : 'open');
   return catCanvas('cream', 'none', happy ? 'happy' : 'open');
@@ -93,19 +93,20 @@ export function renderPhoto(e: DiaryEntry): string {
     // the exact piece the cat used, with the cat posed on / in / beside it
     const fimg = furnitureCanvas(furn.sprite);
     const fx = Math.round(W / 2 - fimg.width / 2), fy = H - 4 - fimg.height;
-    const cat = subject(cats[0], e.kind !== 'nap');
+    const cat = subject(cats[0], e.kind !== 'nap', e.kind === 'nap');
     const drawCat = (x: number, y: number, lying: boolean) => { if (lying) { ctx.save(); ctx.translate(x + 12, y + 12); ctx.rotate(Math.PI / 2); ctx.drawImage(cat, -12, -12); ctx.restore(); } else ctx.drawImage(cat, x, y); };
     if (furn.inside) { drawCat(fx + fimg.width / 2 - 12, fy + fimg.height - 22, false); ctx.drawImage(fimg, fx, fy); }
     else if (furn.id === 'cattree') { ctx.drawImage(fimg, fx, fy); drawCat(fx + fimg.width / 2 - 12, fy - 14, false); }
     else if (furn.id === 'scratcher') { ctx.drawImage(fimg, fx, fy); drawCat(fx + fimg.width + 2, fy + fimg.height - 22, false); ctx.drawImage(emoteCanvas('scratch'), fx + 2, fy + 8); }
+    else if (furn.id === 'fishbowl') { ctx.drawImage(fimg, fx, fy); const def = CAT_BY_ID[cats[0]]; ctx.drawImage(def ? catCanvas(def.coat, def.accessory, 'back') : cat, fx + fimg.width / 2 - 12, fy + fimg.height - 14); }
     else if (furn.id === 'hangball') { ctx.drawImage(fimg, fx, fy); ctx.drawImage(furnitureCanvas('hangball_ball'), fx + 7, fy + 2); drawCat(fx + 4, fy + fimg.height - 20, false); }
     else { ctx.drawImage(fimg, fx, fy); drawCat(fx + fimg.width / 2 - 12, fy - 10 + (furn.id === 'fish' ? 4 : 0), e.kind === 'nap' && furn.id !== 'fish'); }
     if (e.kind === 'nap') ctx.drawImage(emoteCanvas('zzz'), fx + fimg.width / 2 + 6, Math.max(2, fy - 18));
     return (cache[key] = c.toDataURL());
   }
-  if (e.bg === 'window' && cats.length) { ctx.drawImage(subject(cats[0], false), 20, 20); ctx.drawImage(emoteCanvas('window'), 36, 12); return (cache[key] = c.toDataURL()); }
+  if (e.bg === 'window' && cats.length) { const def = CAT_BY_ID[cats[0]]; ctx.drawImage(def ? catCanvas(def.coat, def.accessory, 'back') : subject(cats[0], false), 20, 18); return (cache[key] = c.toDataURL()); }
   cats.slice(0, 2).forEach((id, i) => {
-    const img = subject(id, happy);
+    const img = subject(id, happy, e.kind === 'nap');
     const x = cats.length === 1 ? 20 : i === 0 ? 8 : 32;
     const y = e.kind === 'rest' ? 10 : 16;
     if (e.kind === 'nap' && i === 0) { ctx.save(); ctx.translate(x + 12, y + 12); ctx.rotate(Math.PI / 2); ctx.drawImage(img, -12, -12); ctx.restore(); }

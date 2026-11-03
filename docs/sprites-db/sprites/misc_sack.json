@@ -1,0 +1,32 @@
+{
+  "colors": {
+    "#": "#5A4038",
+    "a": "#8E6A48",
+    "b": "#DEBB93",
+    "c": "#A9754F"
+  },
+  "key": "misc:sack",
+  "rows": [
+    ".....................",
+    ".....................",
+    ".....................",
+    ".....................",
+    ".........#########...",
+    "........#aaaaaaaaa#..",
+    "........#baaaaaaaaa#.",
+    ".......#bbbbaaaaaaa#.",
+    "......#bbbbbbbbaaa#..",
+    "....##bbbbbbbbbbbb#..",
+    "...#bbbbbbbbbbbbbbb#.",
+    "..#bbbbbbbbbbbbbbbb#.",
+    ".#bbbbbbbbbbbbbbbbbb#",
+    "#bbbbbbbbbbbbbbbbbbb#",
+    "#bbbbbbbbbbbbbbbbbbb#",
+    "#bbbbbbbbbbbbbbbbbba#",
+    "#bbbbbbbbbbbbbbbbba#.",
+    "#abbbbbbbbbbbbbbaaa#.",
+    ".#aaaabbbbbbbbaaaa#..",
+    "..################..."
+  ],
+  "updatedAt": 1793650072392
+}

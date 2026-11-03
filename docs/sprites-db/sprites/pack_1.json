@@ -1,0 +1,23 @@
+{
+  "colors": {
+    "#": "#5A4038",
+    "a": "#F9CBD6",
+    "b": "#FFFDF7",
+    "c": "#DEBB93",
+    "d": "#CFA97C"
+  },
+  "key": "pack:1",
+  "rows": [
+    "....####....",
+    "...#aaaa#...",
+    "..#aaaaaa#..",
+    "###bbbbbb###",
+    "#d#aaaaaa#d#",
+    "#cc#aaaa#cc#",
+    "#dcd####dcd#",
+    "#cccccccccc#",
+    "#dccdccdccd#",
+    ".##########."
+  ],
+  "updatedAt": 1793642087651
+}

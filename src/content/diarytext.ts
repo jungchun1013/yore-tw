@@ -74,9 +74,13 @@ export const SPOT_TEXT: Record<string, string[]> = {
   cathouse: ['{a} slipped into the red-roof house. The whole house snored.', 'Only {a}\'s tail was visible in the doorway.'],
   tent: ['{a} crawled into the blue tent and the little lamp came on.', 'Purring from inside the tent: {a}.'],
   fish: ['{a} hugged the giant fish and bunny-kicked it for a full minute, then fell asleep.', 'The fish plush went home with {a} today.'],
+  cattree: ['{a} climbed to the top of the post and supervised the whole bakery from there.', 'From the top of the post, {a} judged everyone.'],
+  basket: ['{a} curled up in the wicker basket. Exactly one basketful.', 'The basket today contains: {a}.'],
+  counter: ['{a} sat at the counter and watched the street for a while. "Checking on customers."', '{a} took a break by the display case and stared at the macarons like a customer.'],
   oven: ['{a} fell asleep beside the oven. The oven is warm. This is apparently allowed.', 'Found {a} asleep by the oven.'],
   window: ['{a} stared out of the window for a long time. There was nothing outside.', '{a} says it was watching for customers. It was a pigeon.'],
-  scratcher: ['{a} left a fresh new groove in the scratching post. Very satisfied.', '{a} scratched the post until it forgot about work.'],
+  scratcher: ['{a} left a fresh new groove in the log. Very satisfied.', '{a} clawed the log until it forgot about work.'],
+  fishbowl: ['{a} watched the goldfish for ten minutes. The goldfish watched back.', '{a} says it was checking the bowl for anything unusual. There was nothing.'],
   hangball: ['{a} swatted the hanging ball twenty times. It swung back every time.', '{a} and the hanging ball: a draw.'],
 };
 

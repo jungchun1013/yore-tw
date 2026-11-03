@@ -1,3 +1,4 @@
+import { SPRITE_PX } from '../../content/sprites-override';
 import { PALETTE } from '../../content/palette';
 import { COATS, type Coat } from '../../content/coats';
 
@@ -54,12 +55,27 @@ const CAT_HAPPY = CAT_OPEN.map((row, y) => {
 /** Laughing frame: > ∀ < — squeezed eyes and an open mouth shaped like ∀: a wide top bar narrowing to a point, tongue inside. */
 const CAT_LAUGH = CAT_HAPPY.map((row, y) => {
   const set = (r: string, idxs: number[], ch: string) => { const a = r.split(''); for (const i of idxs) a[i] = ch; return a.join(''); };
-  if (y === 6) return set(row, [6, 7, 8, 9, 10], 'm');
+  if (y === 6) return set(row, [7, 8, 9], 'm');
   if (y === 7) return set(set(row, [7, 9], 'm'), [8], 'p');
   if (y === 8) return set(row, [8], 'm');
   return row;
 });
-export type CatFrame = 'open' | 'blink' | 'happy' | 'laugh';
+/** Seen from behind: the same blob, no face, no cheeks (for a cat staring out of the window). */
+const CAT_BACK = CAT_OPEN.map((row) => row.replace(/[emp]/g, 'b'));
+/** Asleep: -w- — eyes as flat lines, the little w mouth. */
+const CAT_SLEEP = CAT_OPEN.map((row, y) => {
+  const set = (r: string, idxs: number[], ch: string) => { const a = r.split(''); for (const i of idxs) a[i] = ch; return a.join(''); };
+  if (y === 5) return set(row.replace(/e/g, 'b'), [4, 5, 6, 10, 11, 12], 'm');
+  return row;
+});
+/** Fighting: >^< — squeezed eyes and a little ^ mouth. */
+const CAT_FIGHT = CAT_HAPPY.map((row, y) => {
+  const set = (r: string, idxs: number[], ch: string) => { const a = r.split(''); for (const i of idxs) a[i] = ch; return a.join(''); };
+  if (y === 6) return set(set(row, [7, 9], 'b'), [8], 'm');
+  if (y === 7) return set(set(row, [8], 'b'), [7, 9], 'm');
+  return row;
+});
+export type CatFrame = 'open' | 'blink' | 'happy' | 'laugh' | 'back' | 'sleep' | 'fight';
 const SHADE: [number, number][] = [];
 
 /** Patch masks aligned with CAT_OPEN: A = first patch colour, B = second. Applied only over fur pixels. */
@@ -148,6 +164,13 @@ const ACCESSORIES: Record<string, { rows: string[]; dy: number }> = {
     '...........#a##a#.....',
     '............#..#......',
   ], dy: -1 },
+  kerchief: { rows: [ // baker's head scarf: pink triangle tied at the back, knot showing on the right
+    '....##########........',
+    '...#pppPpppPpp#.......',
+    '..#ppPpppPpppPp##.....',
+    '.#pppppppppppppp#p#...',
+    '..##############.##...',
+  ], dy: -1 },
   hat: { rows: [ // chef toque
     '.....########.........',
     '....#wwwwwwww#........',
@@ -155,14 +178,22 @@ const ACCESSORIES: Record<string, { rows: string[]; dy: number }> = {
     '.....#wwwwww#.........',
     '.....########.........',
   ], dy: -2 },
-  tallhat: { rows: [
-    '......######..........',
-    '.....#wwwwww#.........',
-    '.....#wwwwww#.........',
-    '.....#wwwwww#.........',
+  tallhat: { rows: [ // toque blanche: tall pleated chef's hat with a puffed top, the pâtissier's
+    '.....########.........',
+    '....#wwwwwwww#........',
+    '...#wwswwswwsw#.......',
+    '...#wwswwswwsw#.......',
+    '...#wwwwwwwwww#.......',
+    '....#wswwswws#........',
+    '....#wwwwwwww#........',
     '....#wwwwwwww#........',
     '.....########.........',
-  ], dy: -3 },
+  ], dy: -6 },
+  tie: { rows: [ // …and a black bow tie on the chest: two triangles meeting at the knot
+    '......d#.#d...........',
+    '......ddddd...........',
+    '......d#.#d...........',
+  ], dy: 9 },
   cap: { rows: [ // delivery cap with a brim
     '.....########.........',
     '....#aaaaaaaa#........',
@@ -192,6 +223,11 @@ const ACCESSORIES: Record<string, { rows: string[]; dy: number }> = {
 };
 
 const EYEWEAR: Record<string, string[]> = {
+  tie: [ // the manager keeps the lens-less glasses…
+    '...#####.#####........',
+    '...#eee###eee#........',
+    '...#####.#####........',
+  ],
   glasses: [
     '...#####.#####........',
     '...#eee###eee#........',
@@ -230,6 +266,19 @@ export function makeCanvas(w: number, h: number): HTMLCanvasElement {
   return c;
 }
 
+/** Sprites the user drew in the online pixel editor win over everything drawn in code. `recolor` maps a saved hex
+ *  colour to another (used to tint packs / macarons / emotes per palette). Returns null when there is no override. */
+export function overrideCanvas(key: string, recolor: Record<string, string> = {}): HTMLCanvasElement | null {
+  const px = SPRITE_PX[key];
+  if (!px) return null;
+  const c = makeCanvas(px.rows[0].length, px.rows.length);
+  const colors: Record<string, string> = { '#': OUTLINE };
+  for (const [k, hex] of Object.entries(px.colors)) colors[k] = recolor[hex.toUpperCase()] ?? hex;
+  drawTemplate(c.getContext('2d')!, px.rows, 0, 0, colors);
+  return c;
+}
+const PINK_TINT = (fill: string, shade: string): Record<string, string> => ({ '#F9CBD6': fill, '#E7A3B4': shade });
+
 export interface SpeciesArt { head: string[]; extra?: { rows: string[]; dy: number }; body?: string[] }
 
 /** Happy / blink frames for a custom body: eyes become a closed line (> < at this size). */
@@ -242,15 +291,15 @@ export function drawCat(ctx: CanvasRenderingContext2D, coatKey: string, accessor
   if (frame === true) frame = 'blink'; else if (frame === false) frame = 'open';
   if (species?.body) {
     const coat: Coat = COATS[coatKey] ?? COATS.cream;
-    const colors: Record<string, string> = { '#': OUTLINE, b: coat.fill, s: coat.stripe, e: coat.eye ?? EYE, p: PINK, c: CHEEK, w: WHITE, a: PALETTE.pink.accent, d: '#2A1E1B', o: '#F2A65A', m: coat.face ?? OUTLINE, y: '#FFD84D' };
+    const colors: Record<string, string> = { '#': OUTLINE, b: coat.fill, s: coat.stripe, e: coat.eye ?? EYE, p: PINK, c: CHEEK, w: WHITE, a: PALETTE.pink.accent, d: '#2A1E1B', o: '#F2A65A', m: coat.face ?? OUTLINE, y: '#FFD84D', r: '#D9534F', P: '#E7A3B4' };
     const rows = bodyFrame(species.body, frame);
     drawTemplate(ctx, rows, ox, SPRITE_H - rows.length, colors);
     return;
   }
   const coat: Coat = COATS[coatKey] ?? COATS.cream;
   const accent = PALETTE.pink.accent;
-  const colors: Record<string, string> = { '#': OUTLINE, b: coat.fill, s: coat.stripe, e: coat.eye ?? EYE, p: PINK, c: CHEEK, w: WHITE, a: accent, d: '#2A1E1B', o: '#F2A65A', m: coat.face ?? OUTLINE, y: '#FFD84D' };
-  let rows = frame === 'blink' ? CAT_BLINK : frame === 'happy' ? CAT_HAPPY : frame === 'laugh' ? CAT_LAUGH : CAT_OPEN;
+  const colors: Record<string, string> = { '#': OUTLINE, b: coat.fill, s: coat.stripe, e: coat.eye ?? EYE, p: PINK, c: CHEEK, w: WHITE, a: accent, d: '#2A1E1B', o: '#F2A65A', m: coat.face ?? OUTLINE, y: '#FFD84D', r: '#D9534F', P: '#E7A3B4' };
+  let rows = frame === 'blink' ? CAT_BLINK : frame === 'happy' ? CAT_HAPPY : frame === 'laugh' ? CAT_LAUGH : frame === 'back' ? CAT_BACK : frame === 'sleep' ? CAT_SLEEP : frame === 'fight' ? CAT_FIGHT : CAT_OPEN;
   if (species) { const extraRows = species.head.length - 3; rows = [...species.head, ...rows.slice(3)]; oy -= extraRows; }
   drawTemplate(ctx, rows, ox, oy, colors);
   for (const [x, y] of SHADE) if (rows[y][x] === 'b') px(ctx, ox + x, oy + y, coat.stripe);
@@ -269,11 +318,11 @@ export function drawCat(ctx: CanvasRenderingContext2D, coatKey: string, accessor
     });
   }
   if (species?.extra) drawTemplate(ctx, species.extra.rows, ox, oy + species.extra.dy + (species.head.length - 3), colors);
-  const eyew = EYEWEAR[accessory];
+  const eyew = frame === 'back' ? undefined : EYEWEAR[accessory];
   if (eyew) drawTemplate(ctx, eyew, ox, oy + 4, { '#': OUTLINE, e: 'rgba(196,222,245,0.55)', d: '#2A1E1B' });
-  if (accessory === 'sunglasses') drawShades(ctx, ox + 5, ox + 11, oy + 5); // the eyes sit at template columns 5 and 11, row 5
+  if (accessory === 'sunglasses' && frame !== 'back') drawShades(ctx, ox + 5, ox + 11, oy + 5); // the eyes sit at template columns 5 and 11, row 5
   const acc = ACCESSORIES[accessory];
-  if (acc && acc.rows.length) drawTemplate(ctx, acc.rows, ox, oy + acc.dy, colors);
+  if (acc && acc.rows.length && !(frame === 'back' && (accessory === 'tie' || accessory === 'clock'))) drawTemplate(ctx, acc.rows, ox, oy + acc.dy, colors); // chest items are not seen from behind
 }
 
 export function animalCanvas(species: SpeciesArt, coatKey: string, frame: CatFrame = 'open', sunglasses = false): HTMLCanvasElement {
@@ -312,6 +361,7 @@ const MACARON = [
 ];
 export function macaronCanvas(paletteKey: string): HTMLCanvasElement {
   const pal = PALETTE[paletteKey] ?? PALETTE.pink;
+  const ov = overrideCanvas('misc:macaron', PINK_TINT(pal.fill, pal.shade)); if (ov) return ov;
   const c = makeCanvas(8, 8);
   drawTemplate(c.getContext('2d')!, MACARON, 0, 0, { '#': OUTLINE, b: pal.fill, s: pal.shade, w: '#FFF3E6' });
   return c;
@@ -327,6 +377,7 @@ const STAR = [
   '##...##',
 ];
 export function starCanvas(): HTMLCanvasElement {
+  const ov = overrideCanvas('misc:star'); if (ov) return ov;
   const c = makeCanvas(7, 7);
   drawTemplate(c.getContext('2d')!, STAR, 0, 0, { '#': OUTLINE, a: '#F4DC9A' });
   return c;
@@ -428,69 +479,52 @@ const PROP_TIERS: Record<string, string[][]> = {
       '######################',
     ],
   ],
-  piping: [
-    [ // t0: a spoon — blobs of every size land on the parchment
-      '.........####.........',
-      '........#mmmm#........',
-      '.........#mm#.........',
-      '..........#m#.........',
-      '..........#m#.........',
-      '..........#m#.........',
-      '..........a...........',
-      '......................',
-      '....##############....',
-      '....#wwwwwwwwwwwww#...',
-      '....#w#aa#ww#aaa#w#...',
-      '....#wwwwwwwwwwwww#...',
-      '....##############....',
+  piping: [ // the tray station (id kept for saves): batter lands on a tray; no piping bag
+    [ // t0: a bare metal tray, blobs of every size
+      '.####################.',
+      '.#mmmmmmmmmmmmmmmmmm#.',
+      '.#mm#aa#mm#aaa#m#a#m#.',
+      '.#mmmmmmmmmmmmmmmmmm#.',
+      '.####################.',
     ],
-    [ // t1: piping bag with a round tip — every shell the same size
-      '.........###..........',
-      '........#aaa#.........',
-      '.......#aaaaa#........',
-      '.......#aaaaa#........',
-      '........#aaa#.........',
-      '.........#m#..........',
-      '.........#m#..........',
-      '..........a...........',
-      '......................',
+    [ // t1: parchment-lined tray, even rounds
       '.####################.',
       '.#wwwwwwwwwwwwwwwwww#.',
       '.#w#a#w#a#w#a#w#a#ww#.',
       '.#wwwwwwwwwwwwwwwwww#.',
       '.####################.',
+      '...####........####...',
+      '...#mm#........#mm#...',
+      '...####........####...',
     ],
-    [ // t2: silicone template mat — printed circles to pipe into, so rows line up
-      '.........###..........',
-      '........#aaa#.........',
-      '.......#aaaaa#........',
-      '.......#aaaaa#........',
-      '........#aaa#.........',
-      '.........#m#..........',
-      '.........#m#..........',
-      '..........a...........',
-      '......................',
+    [ // t2: silicone template mat with printed circles
       '.####################.',
       '.#llllllllllllllllll#.',
       '.#l#a#l#a#l#e#l#e#ll#.',
       '.#llllllllllllllllll#.',
       '.####################.',
+      '...####........####...',
+      '...#mm#........#mm#...',
+      '...####........####...',
     ],
-    [ // t3: two-tone piping bag — two batters in one bag, striped shells
-      '.........###..........',
-      '........#aal#.........',
-      '.......#aaall#........',
-      '.......#aaall#........',
-      '........#aal#.........',
-      '.........#m#..........',
-      '.........#m#..........',
-      '..........a...........',
-      '......................',
-      '.####################.',
-      '.#llllllllllllllllll#.',
-      '.#l#a#l#l#l#a#l#l#ll#.',
-      '.#llllllllllllllllll#.',
-      '.####################.',
+    [ // t3: resting rack with a fan — the piped rounds dry until a skin forms
+      '..............######..',
+      '.............#mmmmmm#.',
+      '.............#m#ee#m#.',
+      '.............#mee#em#.',
+      '.............#m#ee#m#.',
+      '.............#mmmmmm#.',
+      '..............######..',
+      '................#m#...',
+      '.##############.#m#...',
+      '.#w#a#w#a#w#a#w##m#...',
+      '.##############.#m#...',
+      '.#............#.#m#...',
+      '.##############.#m#...',
+      '.#w#a#w#a#w#a#w#mmm#..',
+      '.##############.###...',
+      '...##......##.........',
+      '...##......##.........',
     ],
   ],
   oven: [
@@ -508,16 +542,10 @@ const PROP_TIERS: Record<string, string[][]> = {
       '#mssssssssssssssssmmm#',
       '######################',
     ],
-    [ // t1: resting rack — piped trays rest on the warm oven until a skin forms (that is where the "feet" come from)
-      '.###############......',
-      '.#w#a#w#a#w#a#w#......',
-      '.###############......',
-      '.#.............#......',
-      '.###############......',
-      '.#w#a#w#a#w#a#w#......',
-      '.###############......',
-      '.#.............#......',
-      '.#.............#......',
+    [ // t1: a small oven with a baking stone inside and a stone slab on top
+      '.####################.',
+      '.#ssssssssssssssssss#.',
+      '.####################.',
       '######################',
       '#mmmmmmmmmmmmmmmmmmmm#',
       '#m################mm##',
@@ -526,7 +554,7 @@ const PROP_TIERS: Record<string, string[][]> = {
       '#m#oooo#aaa#ooooo#mmm#',
       '#m#ooooaaaaaooooo#m##.',
       '#m#oooo#aaa#ooooo#m#d#',
-      '#m#oooooooooooooo#m###',
+      '#m#ssssssssssssss#m###',
       '#m################mmm#',
       '#mssssssssssssssssmmm#',
       '######################',
@@ -671,13 +699,15 @@ const TIER_ACCENT = ['pink', 'mint', 'rose', 'lavender'];
 /** Anchors in canvas pixels (22x24, bottom-aligned): where the moving parts sit for each tier. null = no whisk at that tier. */
 export const PROP_ANCHOR: Record<string, ({ x: number; y: number } | null)[]> = {
   mixer: [{ x: 10.5, y: 14.5 }, null, { x: 9.5, y: 11.5 }, null],                                   // whisk centre (sifter and spatula have none)
-  piping: [{ x: 10.5, y: 17 }, { x: 10.5, y: 17 }, { x: 10.5, y: 17 }, { x: 10.5, y: 17 }],           // nozzle / spoon tip (drop start)
+  piping: [{ x: 11, y: 21.5 }, { x: 11, y: 18.5 }, { x: 11, y: 18.5 }, { x: 8, y: 16.5 }],           // nozzle / spoon tip (drop start)
   oven: [{ x: 10.5, y: 17.5 }, { x: 10.5, y: 17.5 }, { x: 9.5, y: 13.5 }, { x: 10.5, y: 17.5 }],      // window centre (glow)
   box: [{ x: 11, y: 8 }, { x: 11, y: 17 }, { x: 11, y: 14 }, { x: 11, y: 8 }],                         // where a batch lands
 };
 export function propRows(name: string, tier = 0): number { return (PROP_TIERS[name] ?? PROP_TIERS.box)[Math.max(0, Math.min(3, tier))].length; }
 export function propCanvas(name: string, tier = 0): HTMLCanvasElement {
   const t = Math.max(0, Math.min(3, tier));
+  const ov = overrideCanvas(`prop:${name}:${t}`);
+  if (ov) return ov;
   const rows = (PROP_TIERS[name] ?? PROP_TIERS.box)[t];
   const pal = PALETTE[TIER_ACCENT[t]] ?? PALETTE.pink;
   const c = makeCanvas(22, 24);
@@ -690,15 +720,15 @@ export function propCanvas(name: string, tier = 0): HTMLCanvasElement {
 }
 
 /** What travels the belt before it is a macaron: a white batter ball (from the mixer) and a piped, unbaked shell. */
-const DOUGH = [
+const DOUGH = [ // one pixel smaller all round than a macaron
+  '........',
   '..####..',
   '.#wwww#.',
-  '#wWwwww#',
-  '#wwwwww#',
-  '#wwwwww#',
-  '#wwwwww#',
+  '.#wWww#.',
+  '.#wwww#.',
   '.#wwww#.',
   '..####..',
+  '........',
 ];
 const SHELL = [
   '........',
@@ -713,6 +743,8 @@ const SHELL = [
 /** Macaron energy: a ball in the macaron's colour (pats and working cats make these; the mixer turns them into batches). */
 export function doughCanvas(paletteKey?: string): HTMLCanvasElement {
   const pal = paletteKey ? PALETTE[paletteKey] ?? PALETTE.pink : null;
+  const ov = overrideCanvas('misc:ball', pal ? { '#FBDDE4': mix(pal.fill, '#FFFFFF', 0.35), '#F9CBD6': pal.fill, '#E7A3B4': pal.shade } : {});
+  if (ov) return ov;
   const c = makeCanvas(8, 8);
   drawTemplate(c.getContext('2d')!, DOUGH, 0, 0, { '#': OUTLINE, w: pal ? mix(pal.fill, '#FFFFFF', 0.35) : '#FFF8EC', W: '#FFFFFF' });
   return c;
@@ -732,47 +764,92 @@ function mix(hexA: string, hexB: string, t: number): string {
 /** Packed goods, by packaging tier: 1 = three bare macarons banded together, 2 = small white box with a stripe in the
  *  macaron's colour, 3 = deluxe ribbon box in the macaron's colour. Also the stock shown on the display counter. */
 const PACKS: string[][] = [
-  [ // t1: three in a row on a paper band
-    '.#####..###...',
-    '#bbbbb##bbb#..',
-    '#wwwww##www##.',
-    '#sssss##sss##.',
-    '.#####.#bbbb#.',
-    '..#kkkkkwwww#.',
-    '..#kkkkkssss#.',
-    '...##########.',
+  [ // t1: the user's corrugated box with one macaron, sampled from their edited image
+    '....####.....',
+    '...#bbbb#....',
+    '..#bbbbbb##..',
+    '###wwwwww####',
+    '#k#bbbbbb####',
+    '#kK#bbbb#kKK#',
+    '#kKk####kkk##',
+    '#kkk####kkkk#',
+    '#kKkKkKkKkKK#',
+    '#############',
   ],
-  [ // t2: small white box, lid stripe and tag in the macaron's colour
-    '....#b#.......',
-    '.############.',
-    '.#bbbbbbbbbb#.',
-    '.############.',
-    '.#wwww#b#www#.',
-    '.#wwww#b#www#.',
-    '.#wwww#b#www#.',
-    '.############.',
+  [ // t2: the user's white box, sampled from their edited sheet (tag, lid band, thick seam, vertical stripe)
+    '.....#b#.....',
+    '#############',
+    '#bbbbbbbbbbb#',
+    '#############',
+    '#############',
+    '#wwww#b#wwww#',
+    '#wwww#b#wwww#',
+    '#wwww#b#wwww#',
+    '#############',
   ],
-  [ // t3: deluxe ribbon box in the macaron's colour, white ribbon, bow on top
-    '....#w#.#w#...',
-    '...#www#www#..',
-    '....#w#w#w#...',
-    '.#####w#w#####',
-    '#bbbbb#ww#bbbb#',
-    '#wwwwwwwwwwwww#',
-    '#bbbbb#ww#bbbb#',
-    '#bbbbb#ww#bbbb#',
-    '###############',
+  [ // t3: the user's ribbon box, sampled from their edited sheet (two-loop bow with knot, wide lid, cross ribbon)
+    '.....##...##....',
+    '....#ww###ww#...',
+    '...##ww###ww#...',
+    '######ww########',
+    '#bbbbbbwwbbbbbb#',
+    '.######ww######.',
+    '.#bbbbbwwbbbbb#.',
+    '.#wwwwwwwwwwww#.',
+    '.#bbbbbwwbbbbb#.',
+    '.#bbbbbwwbbbbb#.',
+    '.##############.',
   ],
 ];
 export function packCanvas(tier: number, paletteKey: string): HTMLCanvasElement {
   const pal = PALETTE[paletteKey] ?? PALETTE.pink;
+  const ov = overrideCanvas(`pack:${tier}`, PINK_TINT(pal.fill, pal.shade));
+  if (ov) return ov;
   const rows = PACKS[Math.max(0, Math.min(2, tier - 1))];
   const c = makeCanvas(Math.max(...rows.map((r) => r.length)), rows.length);
-  drawTemplate(c.getContext('2d')!, rows, 0, 0, { '#': OUTLINE, b: pal.fill, s: pal.shade, w: '#FFFDF7', k: '#DEBB93' });
+  drawTemplate(c.getContext('2d')!, rows, 0, 0, { '#': OUTLINE, b: pal.fill, s: pal.shade, w: '#FFFDF7', k: '#DEBB93', K: '#CFA97C' });
   return c;
 }
 /** @deprecated kept for the sheet tool */
 export const giftCanvas = packCanvas;
+
+/** A pair of stanchions with a red velvet rope: separates the customer being served from the queue. 22x12. */
+const ROPE = [
+  '.#.................#..',
+  '#y#...............#y#.',
+  '.#.................#..',
+  '.#.................#..',
+  '.#r...............r#..',
+  '.#.rr...........rr.#..',
+  '.#...rrr.....rrr...#..',
+  '.#......rrrrr......#..',
+  '.#.................#..',
+  '.#.................#..',
+  '###...............###.',
+  '###...............###.',
+];
+export function ropeCanvas(): HTMLCanvasElement {
+  const ov = overrideCanvas('misc:rope'); if (ov) return ov;
+  const c = makeCanvas(22, 12);
+  drawTemplate(c.getContext('2d')!, ROPE, 0, 0, { '#': OUTLINE, y: '#F4C65A', r: '#D9534F' });
+  return c;
+}
+
+/** A little round seat cushion behind the counter. 10x6 */
+const SEAT = [
+  '..######..',
+  '.#pppppp#.',
+  '#pppppppp#',
+  '#wwwwwwww#',
+  '.#wwwwww#.',
+  '..######..',
+];
+export function seatCanvas(): HTMLCanvasElement {
+  const ov = overrideCanvas('misc:seat'); if (ov) return ov;
+  const c = makeCanvas(10, 6);
+  drawTemplate(c.getContext('2d')!, SEAT, 0, 0, { '#': OUTLINE, p: '#F9CBD6', w: '#FFF3E6' });
+  return c;
+}
 
 /** A tray of three macarons, as it comes out of the packaging machine. */
 const TRAY = [
@@ -837,6 +914,7 @@ const SACK = [
   '..################..',
 ];
 export function sackCanvas(): HTMLCanvasElement {
+  const ov = overrideCanvas('misc:sack'); if (ov) return ov;
   const c = makeCanvas(20, 17);
   drawTemplate(c.getContext('2d')!, SACK, 0, 0, { '#': OUTLINE, k: '#DEBB93', d: '#8E6A48', c: '#A9754F' });
   return c;
@@ -868,6 +946,8 @@ const PAW_FLAIR: Record<string, { at: [number, number]; rows: string[] }[]> = {
   pct3: [{ at: [14, 0], rows: ['.h.h.', 'hhhhh', 'hhhhh', '.hhh.', '..h..'] }, { at: [1, 11], rows: ['.w.', 'www', '.w.'] }], // nine lives: heart + sparkle
 };
 export function patCanvas(variant: string): HTMLCanvasElement {
+  const ov = overrideCanvas(`pat:${variant}`);
+  if (ov) return ov;
   const c = makeCanvas(20, 18);
   const ctx = c.getContext('2d')!;
   drawTemplate(ctx, PAW, 4, 1, { '#': OUTLINE, c: '#FBEAD2', p: '#F3B6C6' });
@@ -875,15 +955,15 @@ export function patCanvas(variant: string): HTMLCanvasElement {
   return c;
 }
 
-const BELT = [ // chevrons pointing along +x
-  '########',
+const BELT = [ // chevrons pointing along +x; the frame is drawn by the scene so corners and ends close properly
+  'dmdddmdd',
   'dmdddmdd',
   'ddmdddmd',
   'dddmdddm',
   'dddmdddm',
   'ddmdddmd',
   'dmdddmdd',
-  '########',
+  'dmdddmdd',
 ];
 export function beltCanvas(): HTMLCanvasElement {
   const c = makeCanvas(8, 8);
@@ -947,14 +1027,35 @@ const EMOTES: Record<string, string[]> = {
     '..rrr#...pp....#',
     '...r......p.....',
   ],
-  anger: [ // the little cross-vein mark
-    'a......a',
-    '.a....a.',
-    '..a..a..',
-    '........',
-    '..a..a..',
-    '.a....a.',
-    'a......a',
+  anger: [ // the vein mark, sampled from Twemoji U+1F4A2 (CC-BY 4.0) rotated 30°
+    '........AA.....',
+    '........aa.....',
+    '..Aa...aa..AA..',
+    '..AaaaaaA..aa..',
+    '....AaaA..Aa...',
+    'AaA.......aa...',
+    'Aaaa......aa...',
+    '..AaA.....Aaa..',
+    '...aa......AaaA',
+    '...aa........a.',
+    '...aA..Aaaa....',
+    '..aa..aaaaaaA..',
+    '...A..aa...aA..',
+    '.....aa........',
+    '......A........',
+  ],
+  dream: [ // a daydream: a bumpy thought cloud with two trailing bubbles down to the left
+    '....##.##...',
+    '..##wwwww##.',
+    '.#wwwwwwwww#',
+    '#wwwwwwwwww#',
+    '#wwwwwwwwww#',
+    '.#wwwwwwww#.',
+    '..########..',
+    '...##.......',
+    '..#w#.......',
+    '...#........',
+    '..#.........',
   ],
   window: [ // a window with the sky in it
     '###########',
@@ -1031,9 +1132,11 @@ const EMOTES: Record<string, string[]> = {
 };
 export const EMOTE_NAMES = Object.keys(EMOTES);
 export function emoteCanvas(name: string, accent = '#F28CA3'): HTMLCanvasElement {
+  const ov = overrideCanvas(`emote:${name}`, { '#F28CA3': accent });
+  if (ov) return ov;
   const rows = EMOTES[name] ?? EMOTES.heart;
   const c = makeCanvas(rows[0].length, rows.length);
-  drawTemplate(c.getContext('2d')!, rows, 0, 0, { a: accent, w: '#FFFFFF', '#': '#5A4038', y: '#F2C94C', r: '#E8453C', p: '#F3B6C6', b: '#C4DEF5' });
+  drawTemplate(c.getContext('2d')!, rows, 0, 0, { a: accent, A: accent + 'aa', w: '#FFFFFF', '#': '#5A4038', y: '#F2C94C', r: '#E8453C', p: '#F3B6C6', b: '#C4DEF5' });
   return c;
 }
 
@@ -1064,60 +1167,58 @@ export function glowCanvas(): HTMLCanvasElement {
 }
 
 const FURNITURE: Record<string, string[]> = {
-  scratcher: [ // a sisal post on a wooden base
-    '....####....',
-    '...#dddd#...',
-    '...#ssss#...',
-    '...#s##s#...',
-    '...#ssss#...',
-    '...#s##s#...',
-    '...#ssss#...',
-    '...#s##s#...',
-    '...#ssss#...',
-    '...#s##s#...',
-    '...#ssss#...',
-    '...#s##s#...',
-    '...#ssss#...',
-    '...#s##s#...',
-    '...#ssss#...',
-    '...#s##s#...',
-    '...#ssss#...',
-    '...#s##s#...',
-    '...#ssss#...',
-    '...#ssss#...',
-    '.##########.',
-    '#dddddddddd#',
-    '#dddddddddd#',
-    '.##########.',
+  scratcher: [ // scratching log: a cylinder — flat cut face the same width as the trunk, bark lines
+    '...########...',
+    '..#LLLLLLLL#..',
+    '.#LLLLLLLLLL#.',
+    '.#LLLLLLLLLL#.',
+    '.#LLLLLLLLLL#.',
+    '.#B##LLLL##B#.',
+    '.#BBB####BBB#.',
+    '.#BBdBBBBBBB#.',
+    '.#BBdBBBBdBB#.',
+    '.#BBBBBBBdBB#.',
+    '.#BdBBBBBdBB#.',
+    '.#BdBBBdBBBB#.',
+    '.#BBBBBdBBBB#.',
+    '.#BBBBBdBBdB#.',
+    '.#BdBBBBBBdB#.',
+    '.#BdBBBBBBdB#.',
+    '.#BBBBBBBBBB#.',
+    '.#BBBBBBBBBB#.',
+    '.#dBBBBBBBBd#.',
+    '.##BBBBBBBB##.',
+    '...########...',
   ],
-  hangball: [ // the stand: base, pole, arm (the string and ball are a separate swinging sprite)
-    '..##########..',
-    '..#dddddddd#..',
-    '..#dd#######..',
-    '..#dd#........',
-    '..#dd#........',
-    '..#dd#........',
-    '..#dd#........',
-    '..#dd#........',
-    '..#dd#........',
-    '..#dd#........',
-    '..#dd#........',
-    '..#dd#........',
-    '..#dd#........',
-    '..#dd#........',
-    '..#dd#........',
-    '..#dd#........',
-    '..#dd#........',
-    '..#dd#........',
-    '..#dd#........',
-    '..#dd#........',
-    '..#dd#........',
-    '..#dd#........',
-    '..#dd#........',
-    '.########.....',
-    '#dddddddd#....',
-    '#dddddddd#....',
-    '.########.....',
+  hangball: [ // the stand in 3/4 view: round base, pole, arm (the string and ball swing separately)
+    '....##########..',
+    '....#dddddddd#..',
+    '....#dd#######..',
+    '....#dd#........',
+    '....#dd#........',
+    '....#dd#........',
+    '....#dd#........',
+    '....#dd#........',
+    '....#dd#........',
+    '....#dd#........',
+    '....#dd#........',
+    '....#dd#........',
+    '....#dd#........',
+    '....#dd#........',
+    '....#dd#........',
+    '....#dd#........',
+    '....#dd#........',
+    '....#dd#........',
+    '....#dd#........',
+    '....#dd#........',
+    '....#dd#........',
+    '....#dd#........',
+    '....#dd#........',
+    '...######.......',
+    '.#dddddddd#.....',
+    '#dddddddddd#....',
+    '.#dddddddd#.....',
+    '...######.......',
   ],
   hangball_ball: [ // string + ball, origin at the hook
     '..e..',
@@ -1133,43 +1234,102 @@ const FURNITURE: Record<string, string[]> = {
     '#aaa#',
     '.###.',
   ],
-  tent: [ // blue A-frame tent with draped front flaps; cats sleep inside (drawn behind it)
-    '............##............',
-    '...........#aa#...........',
-    '...........#aa#...........',
-    '..........#AAAA#..........',
-    '..........#aaaaa#.........',
-    '.........#aaaaaa#.........',
-    '........#aaaaaaaa#........',
-    '........#AAAAAAAA#........',
-    '.......#aaaa##aaaa#.......',
-    '.......#aA......Aa#.......',
-    '......#aaA......Aaa#......',
-    '.....#AAAA......AAAA#.....',
-    '.....#aaA........Aaa#.....',
-    '....#aaaA........Aaaa#....',
-    '....#aaaA........Aaaaa#...',
-    '...#AAAA..........AAAA#...',
-    '..#aaaaA..........Aaaaa#..',
-    '..#aaaaA..........Aaaaa#..',
-    '.#aaaaA............Aaaaa#.',
-    '#AAAAAA............AAAAA#.',
-    '#aaaaaA............Aaaaaa#',
-    '##########################',
+  tent: [ // pyramid tent (floral): front face with a dark arched door, shaded right face, stitch lines, mat with one cushion
+    '..............#.................',
+    '.............#A#................',
+    '.............#A#................',
+    '............#aaA#...............',
+    '............#aaAA#..............',
+    '...........#aaaAAA#.............',
+    '..........#saasAAA#.............',
+    '..........#aaaaAAAA#............',
+    '.........#aaaaaAASAA#...........',
+    '.........#aaaaaaAAPpA#..........',
+    '........#saasaasAAAAA#..........',
+    '........#aaaaaaaAAAAAA#.........',
+    '.......####aaaaaAASAASA#........',
+    '......##ddd#aaaaAAAAAAA#........',
+    '......#ddddd#saasAAAAAAA#.......',
+    '.....##ddddd#aaaaAAAAAAAA#......',
+    '.....#ddddddd#aaaAASAASAAS#.....',
+    '....##ddddddd#aaaAAAAAAAAA#.....',
+    '...#s#ddddddd#aasAAAAAAAAAA#....',
+    '...#a#ddddddd#aaaAAAAAAAAAAA#...',
+    '..#aa#ddddddd#aaaaAASAASAASAA#..',
+    '..#aa#ddddddd#aaaaAAAAAAAAAAA#..',
+    '.#saa#ddddddd#saasAAAAAAAAAAAA#.',
+    '.#fffmdddddddmfffmfffmfffmfffm#.',
+    '#fpppppdddddmfffmfffmfffmfffmff#',
+    '#pppppppfffmfffmfffmfffmfffmfff#',
+    '#fpppppfffmfffmfffmfffmfffmfffm#',
+    '################################',
   ],
-  fish: [ // big dried-fish plush: cats hug it and bunny-kick it
-    '..............................',
-    '.......##########.............',
-    '.....##mmmmmmmmmm##.....#####.',
-    '...##mmMmmMmmMmmMmm##...#m###.',
-    '..#mmemmmmmmmmmmmmmmm###m#....',
-    '..#mmmmMmmMmmMmmMmmmm#mmm#....',
-    '..#m#mmmmmmmmmmmmmmmm#mmm#....',
-    '..#mm#mMmmMmmMmmMmmmm###m#....',
-    '...##mmmmmmmmmmmmmm##...#m###.',
-    '.....##mmmmmmmmmm##.....#####.',
-    '.......##########.............',
-    '..............................',
+  tent2: [ // pyramid tent (sage canvas): lattice window on the right face, plain mat
+    '..............#.................',
+    '.............#A#................',
+    '.............#g#................',
+    '............#gag#...............',
+    '............#aaAA#..............',
+    '...........#aaaAAA#.............',
+    '..........#saasAAA#.............',
+    '..........#aaaaAAAA#............',
+    '.........#aaaaaAASAA#...........',
+    '.........#aaaaaaAAAAA#..........',
+    '........#saasaasAAAAA#..........',
+    '........#aaaaaaaAAAAAA#.........',
+    '.......####aaaaaAASAASA#........',
+    '......##ddd#aaaaAAAAAAA#........',
+    '......#ddddd#saasAAAA####.......',
+    '.....##ddddd#aaaaAAAA#w#w#......',
+    '.....#ddddddd#aaaAASA######.....',
+    '....##ddddddd#aaaAAAA#w#w##.....',
+    '...#s#ddddddd#aasAAAA#####A#....',
+    '...#a#ddddddd#aaaAAAAAAAAAAA#...',
+    '..#aa#ddddddd#aaaaAASAASAASAA#..',
+    '..#aa#ddddddd#aaaaAAAAAAAAAAA#..',
+    '.#saa#ddddddd#saasAAAAAAAAAAAA#.',
+    '.#ffffdddddddfffffffffffffffff#.',
+    '#ffffffdddddfffffffffffffffffff#',
+    '#ffffffffffffffffffffffffffffff#',
+    '#ffffffffffffffffffffffffffffff#',
+    '################################',
+  ],
+  fishbowl: [ // goldfish bowl on a stand; cats sit and stare
+    '....########....',
+    '...#wwwwwwww#...',
+    '..#wbbbbbbbbw#..',
+    '.#wbbbbbbbbbbw#.',
+    '#wbbbbbbbbbbbbw#',
+    '#wbbgbbbbbbbbbw#',
+    '#wbgbbb#oo##bbw#',
+    '#wbgbb#ooooo#bw#',
+    '#wbgbb#w#ooo##w#',
+    '#wbbgbb#ww###bw#',
+    '#wbbgbbbbbbbbbw#',
+    '.#wbbbbbbbbbbw#.',
+    '..#wwbbbbbbww#..',
+    '...#dddddddd#...',
+    '..#dddddddddd#..',
+    '...##########...',
+  ],
+  fish: [ // fish plush, silhouette sampled from Twemoji U+1F41F (CC-BY 4.0), recoloured
+    '.........####.................',
+    '........#mmmm###..............',
+    '........#wwwwwwm##............',
+    '......##mmmmmmmwwm#.......####',
+    '....##mmmmmmmmmmmmm##...##MMM#',
+    '..##mmmmmmmmmmmmmmmmm#.#MMMM#.',
+    '.#mmmmmmmmmmmmmmmmmmmm#MMMM#..',
+    '.#mmmmw#mmmmmmmmmmmmmmMMMMM#..',
+    '#mmmmmmmmmmmmmmmmmmmmmMMMM#...',
+    '##mmmmmmmmmmmmmmmmmmmmMMMM#...',
+    '..#mmmmmmmmmmmmmmmmmmmMMMM#...',
+    '..#mmmmmmmmmmmmmmmmmmmMMMM#...',
+    '..#mmmmmmmmmmmmmmmmmm#MMMMM#..',
+    '..#mmmmmmmmmmmmmmmm##.#MMMMM#.',
+    '...###mmmmmmmmmmmm#....##MMMM#',
+    '......#########mm#.......#####',
+    '...............###............',
   ],
   bed: [ // donut bed
     '......##########......',
@@ -1202,24 +1362,57 @@ const FURNITURE: Record<string, string[]> = {
     '#awawawawawawawawawaw#',
     '######################',
   ],
-  cattree: [
-    '..##########..',
-    '.#aaaaaaaaaa#.',
-    '..##########..',
-    '......##......',
-    '.....#ss#.....',
-    '.....#ss#.....',
-    '..#########...',
-    '.#aaaaaaa#....',
-    '..#######.....',
-    '.....#ss#.....',
-    '.....#ss#.....',
-    '.....#ss#.....',
-    '.....#ss#.....',
-    '.....#ss#.....',
-    '..###########.',
-    '.#aaaaaaaaaaa#',
-    '.#############',
+  cattree: [ // scratching post: small cap on top, the post standing on a wide round base seen from above
+    '......########......',
+    '.....#LLLLLLLL#.....',
+    '.....#LLLLLLLL#.....',
+    '......########......',
+    '......#ssssss#......',
+    '......#SSSSSS#......',
+    '......#ssssss#......',
+    '......#SSSSSS#......',
+    '......#ssssss#......',
+    '......#SSSSSS#......',
+    '......#ssssss#......',
+    '......#SSSSSS#......',
+    '......#ssssss#......',
+    '......#SSSSSS#......',
+    '......#ssssss#......',
+    '......#SSSSSS#......',
+    '......#ssssss#......',
+    '......#SSSSSS#......',
+    '......#ssssss#......',
+    '......#SSSSSS#......',
+    '......#ssssss#......',
+    '......#SSSSSS#......',
+    '.##LL##ssssss##LL##.',
+    '#LLLLL#ssssss#LLLLL#',
+    '#LLLLLL######LLLLLL#',
+    '#LLLLLLLLLLLLLLLLLL#',
+    '.#LLLLLLLLLLLLLLLL#.',
+    '..################..',
+  ],
+  basket: [ // wicker basket: 3:1 rim ellipse seen from above, handle, woven front
+    '.........######.........',
+    '........#kkkkkk#........',
+    '.......#kk####kk#.......',
+    '......#kk#....#kk#......',
+    '......#k#......#k#......',
+    '......#k#......#k#......',
+    '........########........',
+    '.....###KKKKKKKK###.....',
+    '...##KKKDDDDDDDDKKK##...',
+    '..#KKDDDDDDDDDDDDDDKK#..',
+    '.#KKDDDDDDDDDDDDDDDDKK#.',
+    '#KKDDDDDDDDDDDDDDDDDDKK#',
+    '#KKKDDDDDDDDDDDDDDDDKKK#',
+    '#kKKKKDDDDDDDDDDDDKKKKk#',
+    '#kkXkKKKKKKKKKKKKKKkXkk#',
+    '.#kXkkXkkXkkXkkXkkXkkX#.',
+    '.#kkXkkXkkXkkXkkXkkXkk#.',
+    '..#kXkkXkkXkkXkkXkkXk#..',
+    '...#kkkkkkkkkkkkkkkk#...',
+    '....################....',
   ],
   cushion: [
     '..########..',
@@ -1229,42 +1422,326 @@ const FURNITURE: Record<string, string[]> = {
     '.#ssssssss#.',
     '..########..',
   ],
-  cathouse: [ // 34x28: big corrugated red roof, wide open doorway (cats hide inside, drawn behind the house)
-    '................#r#...............',
-    '..............#RrrR#..............',
-    '.............#rrRrrR#.............',
-    '............#RrrRrrRr#............',
-    '..........#RrrRrrRrrRrr#..........',
-    '.........#rRrrRrrRrrRrrR#.........',
-    '........#RrrRrrRrrRrrRrrR#........',
-    '......#rrRrrRrrRrrRrrRrrRrr#......',
-    '.....#rRrrRrrRrrRrrRrrRrrRrr#.....',
-    '....#rrRrrRrrRrrRrrRrrRrrRrrR#....',
-    '..#rrRrrRrrRrrRrrRrrRrrRrrRrrR#...',
-    '.#RrrRrrRrrRrrRrrRrrRrrRrrRrrRrr#.',
-    '#rrRrrRrrRrrRrrRrrRrrRrrRrrRrrRrr#',
-    '##################################',
-    '...#bbbbbbbbbbbbbbbbbbbbbbbbbb#...',
-    '...#bbbb##################bbbb#...',
-    '...#bbbb##..............##bbbb#...',
-    '...#bbbb#................######...',
-    '...#bbbb#................##ww##...',
-    '...#bbbb#................##ww##...',
-    '...#bbbb#................######...',
-    '...#bbbb#................#bbbb#...',
-    '...#bbbb#................#bbbb#...',
-    '...#bbbb#................#bbbb#...',
-    '...#bbbb#................#bbbb#...',
-    '...#bbbb#................#bbbb#...',
-    '...#bbbb#................#bbbb#...',
-    '...######................######...',
+  cathouse: [ // cabinet projection like a cube: front wall, red gable roof, receding right wall and roof plane
+    '...........##########...............',
+    '..........#r#RRRRRRRR##.............',
+    '.........#rrr#RRRRRRRRR##...........',
+    '........#rrrrr#RRRRRRRRRR##.........',
+    '.......#rrrrrrr#RRRRRRRRRRR##.......',
+    '......#rrrrrrrrr#RRRRRRRRRRRR##.....',
+    '.....#rrrrrrrrrrr#RRRRRRRRRRRRR#....',
+    '....#rrrrrrrrrrrrr#RRRRRRRRRR##.....',
+    '...#rrrrrrrrrrrrrrr#RRRRRRR####.....',
+    '..#rrrrrrrrrrrrrrrrr#RRRR###KK#.....',
+    '.#rrrrrrrrrrrrrrrrrrr#R###KKKK#.....',
+    'WwwWwwWwwWwwWwwWwwWwwWw#KKKKKK#.....',
+    '.#####################KKKKKKKK#.....',
+    '.#kkkkkkkkkkkkkkkkkkk#KKKKKKKK#.....',
+    '.#kkkkkkkkkkkkkddkkkk#KKKKKKKK#.....',
+    '.#kkkkkkkkkkkkddddkkk#KKKKKKKK#.....',
+    '.#kkkkkkkkkkkddddddkk#KKKKKKKK#.....',
+    '.#kkkkkkkkkkkddddddkk#KKKKKKKK#.....',
+    '.#wkwwwwkkkkkddddddkk#KKKKKKKK#.....',
+    '.#kwkkkkwwkkkddddddkk#KKKKKKKK#.....',
+    '.#wkwwwwkkkkkddddddkk#KKKKKKKK#.....',
+    '.#kkkkkkkkkkkddddddkk#KKKKKKKK#.....',
+    '.#kkkkkkkkkkkddddddkk#KKKKKKKK#.....',
+    '.#kkkkkkkkkkkddddddkk#KKKKKK##......',
+    '.#kkWkWkkkkkkddddddkk#KKKK##........',
+    '.#kkkWkkkkkkkddddddkk#KK##..........',
+    '.#kkWWWkkkkkkddddddkk###............',
+    '.#####################..............',
   ],
 };
+/** Furniture sampled from the reference sheet (2026-11-03): rows + per-item palette. Used in preference to the hand-drawn templates. */
+export const FURNITURE_PX: Record<string, { rows: string[]; colors: Record<string, string> }> = {
+  cathouse: { colors: {"a": "#F3D2B4", "b": "#E9BC8C", "c": "#C88C6B", "d": "#D8514B", "e": "#C24641", "f": "#502F1F"}, rows: [
+    '..........#########..............',
+    '.........#fffffffdd########......',
+    '........#ffddddddddddddddff#.....',
+    '.......#ffdddddddddddddddfff#....',
+    '.......#dddddddddddddddddfff#....',
+    '......#dddddddddeeddddddfffef#...',
+    '.....#fdddddddddddddddddffeeef#..',
+    '....#fdddddddddddddddddffeeeeef#.',
+    '...#fddddddddddddddddddfeeeeeff#.',
+    '..#fdddddddddddddddddddeeeeeeff#.',
+    '.#fddddddddddddddddddddeeeeeff#..',
+    '#ffdddddddddddddddddddfeeeffcc#..',
+    '#ffffeffdddeddddddddddffeffccc#..',
+    '.#fffffffffeeddddddddffffccccc#..',
+    '.#fbbbbbbfff#####fddffffcccccc#..',
+    '.#bbbbbbbbb##...##bbfffccccccc#..',
+    '.#bbbbbbbbb#.....#bbbfcccccccc#..',
+    '.#ebbbbbbb##.....##bbccccccccc#..',
+    '.#bbbbbbbb#.......#bbfcccccccc#..',
+    '.#bbbbbbbb#.......#bbfcccccccc#..',
+    '.#bbbbbbbb#.......#bbfcccccccc#..',
+    '.#bbbbbbbb#.......#bbfcccccccc#..',
+    '.#bbbbbbbb#.......#bbfcccccccc#..',
+    '.#bbbbbbbb#.......#bbfccccccc##..',
+    '.#bbbabbbb#.......#bbfcccccc#....',
+    '.#bbbbbbbb#.......#bbfccccc#.....',
+    '.#bbbbbbbb#.......#fffccc##......',
+    '..#########.......#ffffc#........',
+    '.................##fff##.........',
+    '..................####...........',
+  ] },
+  scratcher: { colors: {"a": "#EED0AB", "b": "#BE845D", "c": "#AB714E", "d": "#A06747", "e": "#84573E", "f": "#3E2517"}, rows: [
+    '....######....',
+    '..##aaffaa##..',
+    '.#aaaaaaaaaa#.',
+    '#faaaaaaaaaaf#',
+    '#ffaaaaaaaaff#',
+    '#fffaeeeeafff#',
+    '#ffbeecceedff#',
+    '#fbbbccccdddf#',
+    '#fbbbccccdddf#',
+    '#fbbbccccdddf#',
+    '#fbbccccccddf#',
+    '#fbbccccccddf#',
+    '#fbbccccccddf#',
+    '#fbbccccccedf#',
+    '#fbbbcccccddf#',
+    '#fbbbcccccddf#',
+    '#fbbbcccccddf#',
+    '#fbbccccccddf#',
+    '#ffbcccccdddf#',
+    '.#ffcccccddd#.',
+    '..##########..',
+    '..............',
+  ] },
+  cattree: { colors: {"a": "#FCF5EA", "b": "#F7DEBD", "c": "#E5BF97", "d": "#C39B75", "e": "#966D4E", "f": "#41291A"}, rows: [
+    '......#######.....',
+    '...###fffffbb##...',
+    '..#bbbbffdfbbbb#..',
+    '..#fbbbeeeebbbf#..',
+    '..#ffeeeeeeeeff#..',
+    '..#fffeeeeeeeff#..',
+    '...#ffffffeeef#...',
+    '....#fffddddd#....',
+    '....#ffcddddd#....',
+    '....#ffcccddd#....',
+    '....#ffccccdd#....',
+    '....#ffccccdd#....',
+    '....#ffccccdd#....',
+    '....#ffccccdd#....',
+    '....#ffaaaadd#....',
+    '....#ffcccccc#....',
+    '....#ffaaaacc#....',
+    '....#ffcccaaa#....',
+    '....#ffcaaaad#....',
+    '....#fcccaddd#....',
+    '...#fffcaadddd##..',
+    '.##fffffaaddddcf#.',
+    '#ffffffffffffcccf#',
+    '#ffbbbbbbffffccce#',
+    '#ffebbbbbbbbbceee#',
+    '.#feeeeeeeebbeee#.',
+    '..##############..',
+    '..................',
+  ] },
+  basket: { colors: {"a": "#F2CDA5", "b": "#DAAA7D", "c": "#C49166", "d": "#9D6B4A", "e": "#7D5439", "f": "#3F2617"}, rows: [
+    '.........#####.........',
+    '.......##ccccc#........',
+    '......#cccccffc##......',
+    '......#bcccfffcc#......',
+    '.....#bfffaafffcc#.....',
+    '....#bffffaaffffc#.....',
+    '....#cffffffffffff#....',
+    '...#fffffffffffffff#...',
+    '.##fffdddddddfffffff##.',
+    '#fffffdddddddeeffffff#.',
+    '#ffffffdddddeeeffffccf#',
+    '#ffddcfddddeeeeffccccc#',
+    '#fddddbbbbbbeecfccccc#.',
+    '.#ddddbbbbbddddcccccc#.',
+    '.#aaabbbbbdddddbccccf#.',
+    '.#aaabbbaaaaaaaccccff#.',
+    '..#cbbbbaaaaaaaccccf#..',
+    '..#ccbbccaaaaaccccc#...',
+    '...###fcceeeecccc##....',
+    '......###########......',
+  ] },
+  tent: { colors: {"a": "#FDEBD5", "b": "#F9E5CB", "c": "#F2D1B5", "d": "#D39F84", "e": "#997859", "f": "#3C2517"}, rows: [
+    '............##...##...........',
+    '...........#ff#.#f#...........',
+    '...........#fff#ff#...........',
+    '............#fffff#...........',
+    '.............#eff#............',
+    '.............#eee#............',
+    '............#feeef#...........',
+    '...........#fffebbf#..........',
+    '..........#ffffebbbb#.........',
+    '..........#ccceebbbb#.........',
+    '.........#cccceebbbbb#........',
+    '........#bbccfeeebbbbb#.......',
+    '........#bbbfffeebbbbb#.......',
+    '.......#fbbffffeebbbbbb#......',
+    '......#cccfffffeebbbbbbb#.....',
+    '......#cccffffbeabbbbbbb#.....',
+    '.....#ccccffffbeaabbbbbbb#....',
+    '....#ccccffeefbeaabbbbbcc#....',
+    '....#cccffeeefbeaaabbbbccc#...',
+    '...#ccccfeeeefbeaaaaabccccf#..',
+    '...#cccffeeeefbeaaaaaacccbb#..',
+    '..#ccccfeeeeeffbaaaaaacccbbb#.',
+    '.#ccccffeeeeeffbaaaaaaacbbbb#.',
+    '.#fccffddddddffbaaddaaaabbbbb#',
+    '#fffffdddddddffbaadddaaabbbbd#',
+    '#ffffddddddddffaaadddaaaabfff#',
+    '.#fffddddddddffaaaadddaaafff#.',
+    '..###########fffaaacddfa####..',
+    '.............#ffffff####......',
+    '..............######..........',
+  ] },
+  tent2: { colors: {"a": "#E9E2CA", "b": "#C6C2A5", "c": "#AFAC8D", "d": "#968969", "e": "#5F4E3A", "f": "#382314"}, rows: [
+    '............##................',
+    '...........#ff#####...........',
+    '...........#dddfff#...........',
+    '............#dddff#...........',
+    '.............#ddf#............',
+    '............#fddd#............',
+    '...........#fffdcc#...........',
+    '...........#ffffcc#...........',
+    '..........#bbfffccc#..........',
+    '.........#bbbffdcccc#.........',
+    '........#bbbbffdccccc#........',
+    '........#bbbffbdccccc#........',
+    '.......#bbbfffbdcccccc#.......',
+    '......#bbbbfffbdccccccc#......',
+    '......#bbbffffddccccccc#......',
+    '.....#bbbbffffddcccccccc#.....',
+    '....#bbbbfddfddddccfaaccc#....',
+    '....#bbbffdddddddaaaaaccc#....',
+    '...#bbbbfddddddddaaaafcccc#...',
+    '...#bbbfdddddddddcaaaffccc#...',
+    '..#bbbffddddddddccaaaffcccc#..',
+    '.#bbbbffdddddfddcccaaffcccc#..',
+    '.#bbbbfeedddfebdcccccccccccc#.',
+    '#fbbbfbbaaafffddccccccccccccf#',
+    '#fffffbbaaaaffddcccccccaacccc#',
+    '#fffffbaaaaaffddcccccccaacccc#',
+    '.#fffffaaaaffffabbccccccccc##.',
+    '..#####afaafffffbbbccccc###...',
+    '.......######ffffff#####......',
+    '.............######...........',
+  ] },
+  fishbowl: { colors: {"a": "#D7ECF4", "b": "#D8DACA", "c": "#AFDBE9", "d": "#E7C181", "e": "#78B8BA", "f": "#6F582D"}, rows: [
+    '.......##.........',
+    '...####ee######...',
+    '..#ffeeeeeeeeff#..',
+    '..#aaeeeffeeeff#..',
+    '..#aaaaeacfffcc#..',
+    '..#aaaaacccccaac#.',
+    '.#aaaaaaccccaaac#.',
+    '#caaaaaacccaaaccc#',
+    '#cccccccddddafccc#',
+    '#ccccccdddddffccc#',
+    '#ccccccdddddfcccc#',
+    '.#ccccccdddcccccc#',
+    '.#ccffcdddddcccc#.',
+    '.#cffddddddddccc#.',
+    '..#ffdddddddddc#..',
+    '...#fddddddddd#...',
+    '....##########....',
+    '..................',
+  ] },
+  hangball: { colors: {"a": "#BA8462", "b": "#A67050", "c": "#A16A4D", "d": "#9B6549", "e": "#956247", "f": "#69442F"}, rows: [
+    '....###########...',
+    '...#aaaaaaaaaa#...',
+    '...#cccaaeeeee#...',
+    '...#cccceeeeee#...',
+    '...#ccc########...',
+    '...#cc#.......#...',
+    '...#cc#...........',
+    '...#bc#...........',
+    '...#bc#...........',
+    '...#bc#...........',
+    '...#bc#...........',
+    '...#bc#...........',
+    '...#bc#...........',
+    '...#bc#...........',
+    '...#bc#...........',
+    '...#bc#...........',
+    '...#bc#...........',
+    '...#cc#...........',
+    '...#cc#...........',
+    '..#ffff#####......',
+    '.#ddddddbbf#......',
+    '#ddddddeeef#......',
+    '#dddeeeeeef#......',
+    '.##########.......',
+    '..................',
+  ] },
+  cushion_round: { colors: {"a": "#FADAD5", "b": "#FBD2D2", "c": "#FBCFD1", "d": "#FBCACB", "e": "#E5B7B4", "f": "#523A2E"}, rows: [
+    '...................',
+    '...................',
+    '....##########.....',
+    '...#ccccbaabba##...',
+    '.##bbccccbbbbbbd##.',
+    '#dbbbbccbbbbbbbddd#',
+    '#ddbbbbbbbbbbbbddd#',
+    '#ddddbbbbbbbbbdddd#',
+    '#dddddbbbbbdddddff#',
+    '#fffdddddddddddfff#',
+    '#fffffdddddeeffff#.',
+    '.##ffaaaeeeeeff##..',
+    '...###aeeeeee##....',
+    '......#######......',
+  ] },
+  bed: { colors: {"a": "#FAE4D4", "b": "#F9D6D3", "c": "#F7C6C6", "d": "#E7B8A9", "e": "#C7918E", "f": "#3E2719"}, rows: [
+    '........######........',
+    '.....###ffffff###.....',
+    '...##bbdffffffddd#....',
+    '..#bbbeedddfffddde##..',
+    '.#fbbeeeddddfffdebbb#.',
+    '#fbbbffffdddffffbbbb#.',
+    '#fbbbffffaaaaffffbcc#.',
+    '#fbbbfffcaaaadffcccc#.',
+    '#fbbbfffcccffccccccc#.',
+    '#fbbbddccccccccccccc#.',
+    '.#fbcddcccccccccddcc#.',
+    '..#faaaacccccccfddd#..',
+    '...##aaaaaaaacfff##...',
+    '.....############.....',
+    '......................',
+  ] },
+  fish: { colors: {"a": "#F6FAFB", "b": "#C7E2EF", "c": "#C2E1EE", "d": "#C1E0ED", "e": "#BADBEA", "f": "#544D48"}, rows: [
+    '...........####..............',
+    '..........#ffff#.............',
+    '.........#aaaaff##...........',
+    '.......##aaaaaaaaa##.........',
+    '.....##aaaaaaaaaaaaf#....###.',
+    '....#bbaaaaaaaaaaaddf#..#eff#',
+    '...#fbbaaaaaaaaaaddddd##eeef#',
+    '..#fbbbcccaaaaadddddddeeeeee#',
+    '.#fbbbbcccbbbccdddddddeeeee#.',
+    '#ffbbbbbbbbbccccdddddddeeee#.',
+    '#ffbbbbbbbbccccccddddddeee#..',
+    '#ffbbbbbbbdccccccddddddeeee#.',
+    '.#ffbbbbbdddcccccdddddeeeee#.',
+    '..#fbbbbddddddccdddddeeeeeee#',
+    '...#fbbcddddddddddddde#eeeee#',
+    '....#fdddddddddddddd##.##fff#',
+    '.....##dddddddbbbdf#.....####',
+    '.......#######bbbf#..........',
+    '..............#bff#..........',
+    '...............###...........',
+  ] },
+};
+
 export function furnitureCanvas(name: string): HTMLCanvasElement {
+  const ov = overrideCanvas(`furniture:${name}`);
+  if (ov) return ov;
+  const px = FURNITURE_PX[name];
+  if (px) { const c = makeCanvas(px.rows[0].length, px.rows.length); drawTemplate(c.getContext('2d')!, px.rows, 0, 0, { '#': OUTLINE, ...px.colors }); return c; }
   const rows = FURNITURE[name];
   const c = makeCanvas(rows[0].length, rows.length);
-  if (name === 'tent') { drawTemplate(c.getContext('2d')!, rows, 0, 0, { '#': OUTLINE, a: '#8FB8E8', A: '#6FA0D8' }); return c; }
-  drawTemplate(c.getContext('2d')!, rows, 0, 0, { '#': OUTLINE, a: '#F9CBD6', s: '#D9B48F', r: '#E0605A', R: '#B8423E', b: '#FFF3E6', d: '#6E5247', k: '#DEBB93', w: '#FFFFFF', A: '#6FA0D8', m: '#BFD9EA', M: '#9FC1D8', e: '#3A2622' });
+  if (name === 'tent') { drawTemplate(c.getContext('2d')!, rows, 0, 0, { '#': OUTLINE, a: '#F3DEC4', A: '#E2C9A8', s: '#E7CFAE', S: '#D1B58F', p: '#F3B6C6', P: '#E7A3B4', d: '#6E5247', c: '#C98A5A', f: '#F6E4D4', m: '#F3B6C6', g: '#8FCDB2' }); return c; }
+  if (name === 'tent2') { drawTemplate(c.getContext('2d')!, rows, 0, 0, { '#': OUTLINE, a: '#D6DEC2', A: '#BFCBA2', s: '#CBD6B4', S: '#AEBB94', d: '#6E5247', c: '#C98A5A', C: '#D9A86E', w: '#FFFDF7', g: '#8FCDB2', p: '#F3B6C6', f: '#E8D6B8' }); return c; }
+  if (name === 'fishbowl') { drawTemplate(c.getContext('2d')!, rows, 0, 0, { '#': OUTLINE, w: '#E6F2FA', b: '#A9D4F0', o: '#F2A65A', g: '#8FCDB2', d: '#C9A277' }); return c; }
+  drawTemplate(c.getContext('2d')!, rows, 0, 0, { '#': OUTLINE, a: '#F9CBD6', s: '#D9B48F', S: '#C49A6C', B: '#9C6B4A', L: '#E8CFA8', D: '#8E6A48', K: '#B98451', X: '#C9955E', W: '#F6EDE2', r: '#E0605A', R: '#B8423E', b: '#FFF3E6', d: '#6E5247', k: '#DEBB93', w: '#FFFFFF', A: '#6FA0D8', m: '#BFD9EA', M: '#9FC1D8', e: '#3A2622' });
   return c;
 }
 

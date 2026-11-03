@@ -16,7 +16,7 @@ import { t as tr, lang, nameOf, heroName } from '../../i18n';
 
 const FONT = 'Nunito, "Avenir Next", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif';
 import { CAT_BY_ID } from '../../content/cats';
-import { catCanvas, animalCanvas, macaronCanvas, starCanvas, propCanvas, beltCanvas, bubbleCanvas, emoteCanvas, whiskCanvas, glowCanvas, furnitureCanvas, toyCanvas, packCanvas, doughCanvas, sackCanvas, propRows, PROP_ANCHOR, PROP_NAMES, EMOTE_NAMES } from '../sprites/pixel';
+import { catCanvas, animalCanvas, macaronCanvas, starCanvas, propCanvas, beltCanvas, bubbleCanvas, emoteCanvas, whiskCanvas, glowCanvas, furnitureCanvas, toyCanvas, packCanvas, doughCanvas, sackCanvas, ropeCanvas, seatCanvas, overrideCanvas, propRows, PROP_ANCHOR, PROP_NAMES, EMOTE_NAMES } from '../sprites/pixel';
 import { fmt } from '../../core/format';
 import { sfx } from '../../core/audio';
 
@@ -42,7 +42,7 @@ interface Roamer {
 }
 interface Social { a: Roamer; b: Roamer; kind: 'cuddle' | 'fight'; started: boolean; until: number }
 interface Chat { cat: Roamer; customer: Customer; started: boolean; until: number; acc: number; bubble?: Phaser.GameObjects.Image; turn?: number }
-interface BeltMacaron { sprite: Phaser.GameObjects.Image; seg: number; t: number; color: string; flying?: boolean }
+interface BeltMacaron { sprite: Phaser.GameObjects.Image; seg: number; t: number; color: string; flying?: boolean; wrapped?: boolean }
 interface Customer {
   species: string;
   sprite: Phaser.GameObjects.Image; bubble: Phaser.GameObjects.Image;
@@ -63,14 +63,21 @@ export class CafeScene extends Phaser.Scene {
   private heroY = 0;
   private bgImage: Phaser.GameObjects.Image | null = null;
   private belts: Phaser.GameObjects.TileSprite[] = [];
+  private beltFrames: Phaser.GameObjects.Graphics[] = []; // outline per run, drawn so the two corners and both ends close
   private beltH = 0; private backY = 0; private boxY = 0;
   private propScale = 3; private machineScale = 4;
   private props: Phaser.GameObjects.Image[] = [];
   private whisk!: Phaser.GameObjects.Image;
+  private glow2!: Phaser.GameObjects.Image;
   /** the sack at the end of the line */
   private sack!: Phaser.GameObjects.Image;
+  private seats: Phaser.GameObjects.Image[] = [];
+  /** pixel-style rainbow energy bar, left of the owner */
+  private energyBar!: Phaser.GameObjects.Graphics;
+  /** stanchion rope between the counter spot and the waiting line */
+  private rope!: Phaser.GameObjects.Image;
   /** furniture placed in the four floor slots (rebuilt from state) */
-  private lounge: { key: string; slot: number; img: Phaser.GameObjects.Image; dark?: Phaser.GameObjects.Rectangle; ball?: Phaser.GameObjects.Image; use: 'nap' | 'rest' | 'play'; inside: boolean }[] = [];
+  private lounge: { key: string; slot: number; img: Phaser.GameObjects.Image; dark?: Phaser.GameObjects.Rectangle; ball?: Phaser.GameObjects.Image; front?: Phaser.GameObjects.Image; use: 'nap' | 'rest' | 'play'; inside: boolean }[] = [];
   private pendingFurniture = true;
   private slotPos: Pt[] = [];
   private glow!: Phaser.GameObjects.Image;
@@ -112,11 +119,15 @@ export class CafeScene extends Phaser.Scene {
   create(): void {
     this.buildTextures();
     this.shelfLayer = this.add.container(0, 0).setDepth(1);
-    for (let i = 0; i < 3; i++) this.belts.push(this.add.tileSprite(0, 0, 10, 10, 'belt').setOrigin(0, 0.5));
+    for (let i = 0; i < 3; i++) { this.belts.push(this.add.tileSprite(0, 0, 10, 10, 'belt').setOrigin(0, 0.5)); this.beltFrames.push(this.add.graphics()); }
     for (const name of STATIONS) this.props.push(this.add.image(0, 0, `prop_${name}_t0`).setOrigin(0.5, 1));
     this.sack = this.add.image(0, 0, 'sack').setOrigin(0.5, 1); // stands on the floor under the belt's end
+    this.rope = this.add.image(0, 0, 'rope').setOrigin(0.5, 1);
+    this.seats = [this.add.image(0, 0, 'seat').setOrigin(0.5, 1), this.add.image(0, 0, 'seat').setOrigin(0.5, 1)];
+    this.energyBar = this.add.graphics().setDepth(9401);
     this.whisk = this.add.image(0, 0, 'whisk');
     this.glow = this.add.image(0, 0, 'glow').setAlpha(0);
+    this.glow2 = this.add.image(0, 0, 'glow').setAlpha(0).setVisible(false); // the deck oven's upper window
 
     this.boostOverlay = this.add.rectangle(0, 0, 10, 10, 0xbfe8d4, 0).setOrigin(0).setDepth(9000);
 
@@ -143,27 +154,33 @@ export class CafeScene extends Phaser.Scene {
       social: (kind: string) => this.startSocial(kind as 'cuddle' | 'fight' | 'nap' | 'rest'),
       climber: () => { const r = this.roamers.find((x) => x.spot === 'cattree'); return r ? { y: r.sprite.y, mode: r.mode } : null; },
       furniture: () => this.lounge.map((it) => it.key),
+      play: () => { const r = this.freeRoamers()[0]; return r ? this.sendToPlay(r) : false; },
+      rainbow: () => this.nyanDash(),
+      windower: () => { const r = this.roamers.find((x) => x.spot === 'window'); return r ? { x: Math.round(r.sprite.x), y: Math.round(r.sprite.y), tx: Math.round(r.tx), ty: Math.round(r.ty), mode: r.mode, next: r.next, route: r.route.length, counterY: Math.round(this.counters[0].y), topX: Math.round(this.counters[0].x) } : null; },
       napper: () => { const r = this.roamers.find((x) => x.mode === 'nap'); return r ? { x: r.sprite.x, y: r.sprite.y - 4 * this.roamerScale(), gen: r.gen } : null; },
     };
   }
 
   private buildTextures(): void {
     const add = (key: string, c: HTMLCanvasElement) => { if (!this.textures.exists(key)) this.textures.addCanvas(key, c); };
-    add('hero_open', catCanvas(HERO.color, HERO.accessory, 'open'));
-    add('hero_blink', catCanvas(HERO.color, HERO.accessory, 'blink'));
-    add('hero_happy', catCanvas(HERO.color, HERO.accessory, 'happy'));
+    add('hero_open', overrideCanvas('hero:open') ?? catCanvas(HERO.color, HERO.accessory, 'open'));
+    add('hero_blink', overrideCanvas('hero:blink') ?? catCanvas(HERO.color, HERO.accessory, 'blink'));
+    add('hero_happy', overrideCanvas('hero:happy') ?? catCanvas(HERO.color, HERO.accessory, 'happy'));
     add('hero_laugh', catCanvas(HERO.color, HERO.accessory, 'laugh'));
     for (const c of CATS) {
-      add(`cat_${c.id}_open`, catCanvas(c.coat, c.accessory, 'open'));
-      add(`cat_${c.id}_blink`, catCanvas(c.coat, c.accessory, 'blink'));
-      add(`cat_${c.id}_happy`, catCanvas(c.coat, c.accessory, 'happy'));
+      add(`cat_${c.id}_open`, overrideCanvas(`cat:${c.id}:open`) ?? catCanvas(c.coat, c.accessory, 'open'));
+      add(`cat_${c.id}_blink`, overrideCanvas(`cat:${c.id}:blink`) ?? catCanvas(c.coat, c.accessory, 'blink'));
+      add(`cat_${c.id}_happy`, overrideCanvas(`cat:${c.id}:happy`) ?? catCanvas(c.coat, c.accessory, 'happy'));
+      add(`cat_${c.id}_back`, overrideCanvas(`cat:${c.id}:back`) ?? catCanvas(c.coat, c.accessory, 'back'));
+      add(`cat_${c.id}_sleep`, overrideCanvas(`cat:${c.id}:sleep`) ?? catCanvas(c.coat, c.accessory, 'sleep'));
+      add(`cat_${c.id}_fight`, overrideCanvas(`cat:${c.id}:fight`) ?? catCanvas(c.coat, c.accessory, 'fight'));
     }
     for (const k of Object.keys(PALETTE)) add(`mac_${k}`, macaronCanvas(k));
     this.macaronKeys = ['pink', 'mint', 'lemon', 'sky', 'lavender', 'peach', 'rose', 'pistachio'].map((k) => `mac_${k}`);
     add('star', starCanvas());
     add('belt', beltCanvas());
     for (const name of PROP_NAMES) for (let t = 0; t <= 3; t++) add(`prop_${name}_t${t}`, propCanvas(name, t));
-    add('sack', sackCanvas());
+    add('sack', sackCanvas()); add('rope', ropeCanvas()); add('seat', seatCanvas());
     for (const k of ['pink', 'mint', 'lemon', 'sky', 'lavender', 'peach', 'rose', 'pistachio']) { add(`ball_${k}`, doughCanvas(k)); for (let t = 1; t <= 3; t++) add(`gift_t${t}_${k}`, packCanvas(t, k)); }
     for (const sp of SPECIES) for (const coat of sp.coats) { add(`cust_${sp.id}_${coat}`, animalCanvas(sp, coat)); add(`cust_${sp.id}_${coat}_happy`, animalCanvas(sp, coat, 'happy')); add(`cust_${sp.id}_${coat}_fan`, animalCanvas(sp, coat, 'open', true)); add(`cust_${sp.id}_${coat}_fan_happy`, animalCanvas(sp, coat, 'happy', true)); }
     add('bubble', bubbleCanvas());
@@ -176,6 +193,12 @@ export class CafeScene extends Phaser.Scene {
     add('glow', glowCanvas());
     for (const f of FURNITURE_ITEMS) add(`furn_${f.sprite}`, furnitureCanvas(f.sprite));
     add('furn_hangball_ball', furnitureCanvas('hangball_ball'));
+    { // the basket's front wall as its own layer, so a cat inside sits between the back and the front rim
+      const full = furnitureCanvas('basket'); const split = Math.round(full.height * 0.55);
+      const front = document.createElement('canvas'); front.width = full.width; front.height = full.height;
+      front.getContext('2d')!.drawImage(full, 0, split, full.width, full.height - split, 0, split, full.width, full.height - split);
+      add('furn_basket_front', front);
+    }
     add('toy_yarn', toyCanvas('yarn'));
   }
 
@@ -208,7 +231,7 @@ export class CafeScene extends Phaser.Scene {
     // hero: the owner, drawn at double pixel size, sitting in the bottom-left corner (no frame)
     this.heroScale = this.propScale * 2;
     void narrow;
-    this.cam = { x: 4, y: 0, w: 22 * this.heroScale + 8, h: 16 * this.heroScale + 8 };
+    this.cam = { x: 4 + 4 * this.heroScale, y: 0, w: 22 * this.heroScale + 8, h: 16 * this.heroScale + 8 }; // room on the left for the energy bar
     this.cam.y = h - this.cam.h - 4;
     const heroFeet = h - 6;
     this.heroY = heroFeet - 12 * this.heroScale;
@@ -232,9 +255,12 @@ export class CafeScene extends Phaser.Scene {
     const catH = 16 * this.roamerScale(), catW = 22 * this.roamerScale();
     const topY = Math.max(this.wallH + 6 * this.propScale, this.wallH + h * (narrow ? 0.34 : 0.27) - 2 * catH);
     const frontY = this.display.y;
-    const topCounter = { x: w * 0.22, y: topY, w: rightCx + depth / 2 - w * 0.22, h: depth };
+    const topX0 = w * 0.22 + 2 * catW; // two cat-widths shorter on the left: more floor to roam
+    const topCounter = { x: topX0, y: topY, w: rightCx + depth / 2 - topX0, h: depth };
     const rightCounter = { x: rightCx - depth / 2, y: topY + depth, w: depth, h: frontY - (topY + depth) };
     const frontX0 = this.display.x + this.display.w + sackGap; // the front counter stays where it was; the bay is carved from the display counter
+    const sackCx = frontX0 - 11 * this.propScale; // the sack stands in its bay, clear of the counter so the belt's end cap shows
+    const sackX = frontX0; // the belt stops at the counter's end; gifts drop off it into the sack
     const frontCounter = { x: frontX0, y: frontY, w: rightCx + depth / 2 - frontX0, h: depth };
     this.counters = [topCounter, rightCounter, frontCounter];
     this.drawDisplayCounter();
@@ -245,35 +271,42 @@ export class CafeScene extends Phaser.Scene {
     // The line: energy balls from pats and working cats gather in the mixer, which sends a ball onto the belt;
     // past the piping station, through the oven (→ macaron), round the corner, down the right side, through the
     // packaging machine at the bottom-right corner (→ gift in the macaron's colour) and into the sack at the end.
-    const sackCx = this.display.x + this.display.w + sackGap / 2; // the sack stands alone in its bay
-    const sackX = sackCx + 3 * this.propScale; // the belt overhangs the counter's end and stops above the sack's mouth
-    const ovenX = w * 0.58;
+    // mixer, piping and oven spread evenly from the counter's left end to just before the corner
+    const mx0 = topX0 + 12 * this.propScale, mx1 = rightCx - 30 * this.propScale;
+    const ovenX = mx1;
     this.stations = [
-      { x: w * 0.30, y: this.backY },   // mixer (prep)
-      { x: w * 0.44, y: this.backY },   // piping (prep)
-      { x: ovenX, y: this.backY },      // oven: the belt starts here
-      { x: rightCx, y: frontCy },       // gift machine (the "box" upgrade line) on the bottom-right corner
+      { x: mx0, y: this.backY },                 // mixer: the belt starts here
+      { x: (mx0 + mx1) / 2, y: -1000 },          // tray station: upgrades only, not on the floor (nothing to transform yet)
+      { x: ovenX, y: this.backY },               // oven: balls become macarons
+      { x: rightCx, y: frontCy - 2 * catH },     // packaging machine (the "box" upgrade line): on the right-hand belt, two cats above the corner
     ];
-    this.path = [this.stations[0], this.stations[1], this.stations[2], { x: rightCx, y: this.backY }, { x: rightCx, y: frontCy }, { x: sackX, y: frontCy }];
+    this.path = [this.stations[0], this.stations[2], { x: rightCx, y: this.backY }, { x: rightCx, y: frontCy }, { x: sackX, y: frontCy }];
     const [back, down, front] = this.belts;
+    const hb = this.beltH / 2; // the runs overlap by half a belt width at the two corners: no notches
     back.setPosition(this.stations[0].x, this.backY).setRotation(0)
-      .setSize(rightCx - this.stations[0].x, this.beltH).setTileScale(this.propScale).setDepth(topCounter.y + topCounter.h + this.counterFront + 1);
-    down.setPosition(rightCx, this.backY).setRotation(Math.PI / 2)
-      .setSize(frontCy - this.backY, this.beltH).setTileScale(this.propScale).setDepth(rightCounter.y + rightCounter.h + this.counterFront + 1);
-    front.setPosition(rightCx, frontCy).setRotation(Math.PI)
-      .setSize(rightCx - sackX, this.beltH).setTileScale(this.propScale).setDepth(frontCounter.y + frontCounter.h + this.counterFront + 1);
+      .setSize(rightCx + hb - this.stations[0].x, this.beltH).setTileScale(this.propScale).setDepth(topCounter.y + topCounter.h + this.counterFront + 1);
+    down.setPosition(rightCx, this.backY - hb).setRotation(Math.PI / 2)
+      .setSize(frontCy - this.backY + 2 * hb, this.beltH).setTileScale(this.propScale).setDepth(rightCounter.y + rightCounter.h + this.counterFront + 1);
+    front.setPosition(rightCx + hb, frontCy).setRotation(Math.PI)
+      .setSize(rightCx + hb - sackX, this.beltH).setTileScale(this.propScale).setDepth(frontCounter.y + frontCounter.h + this.counterFront + 1);
+    this.drawBeltFrames(this.stations[0].x, sackX, rightCx, this.backY, frontCy, hb);
     // machines sit on the counter top, drawn above the belt
     const sc = this.machineScale;
-    const topBase = topCounter.y + topCounter.h - 2, frontBase = frontCounter.y + frontCounter.h - 2;
+    const topBase = topCounter.y + topCounter.h - 2;
     this.props.forEach((p, i) => {
       const st = this.stations[i];
-      const baseY = i === 3 ? frontBase : topBase;
       // above the belt (belt depth = counter bottom + front + 1) so items slide underneath, as if into the machine
-      p.setOrigin(0.5, 1).setScale(sc).setPosition(st.x, baseY).setDepth(baseY + 2 + this.counterFront + 4);
+      if (i === 1) { p.setVisible(false); return; } // the tray station stays off the floor for now
+      if (i === 3) p.setOrigin(0.5, 1).setScale(sc).setPosition(st.x, st.y + depth / 2).setDepth(rightCounter.y + rightCounter.h + this.counterFront + 3); // sits across the right-hand belt
+      else p.setOrigin(0.5, 1).setScale(sc).setPosition(st.x, topBase).setDepth(topBase + 2 + this.counterFront + 4);
     });
     // the sack stands on the floor in its own bay, mouth up toward the belt end hanging above it
     const sackFeet = frontCounter.y + frontCounter.h + this.counterFront + 2;
     this.sack.setScale(sc).setPosition(sackCx, sackFeet).setDepth(sackFeet + 1);
+    this.seats.forEach((im, i) => { const p = this.counterSeat(i); im.setScale(this.propScale).setPosition(p.x, p.y + 2).setDepth(p.y - 1); });
+    // stanchion rope on the street side, at the display counter's right end: counter spot on the left, queue on the right
+    const ropeY = Math.min(h - 2, this.display.y + this.display.h + this.counterFront + 16 * this.roamerScale() + 4);
+    this.rope.setScale(sc).setPosition(this.display.x + this.display.w + 12 * sc, ropeY + 3).setDepth(ropeY + 3); // in front of the customers standing at the same line
     this.placeMovingParts();
 
     // four furniture slots down the left side
@@ -281,13 +314,12 @@ export class CafeScene extends Phaser.Scene {
     // all four on the left, zig-zagging down the wall so nothing overlaps
     const base = topY + depth + this.counterFront;
     // all four furniture spots run down the left wall, staggered, below the counter line
-    this.slotPos = [
-      { x: w * 0.08, y: base + 61 * fs },
-      { x: w * 0.17, y: base + 10 * fs },
-      { x: w * 0.07, y: base + 27 * fs },
-      { x: w * 0.17, y: base + 44 * fs },
+    this.slotPos = [ // spread out down the left wall
+      { x: w * 0.08, y: base + 68 * fs },
+      { x: w * 0.17, y: base + 8 * fs },
+      { x: w * 0.07, y: base + 28 * fs },
+      { x: w * 0.17, y: base + 48 * fs },
     ];
-    void catW;
     this.pendingFurniture = true;
 
     this.boostOverlay.setSize(w, h);
@@ -337,6 +369,21 @@ export class CafeScene extends Phaser.Scene {
     g.destroy();
     if (this.bgImage) this.bgImage.destroy();
     this.bgImage = this.add.image(0, 0, key).setOrigin(0).setDepth(0);
+  }
+
+  /** Outline for the three belt runs. Each corner square belongs to the run drawn on top of it (down at the
+   *  top-right, front at the bottom-right), so the frame there is drawn with that run and the lines meet cleanly. */
+  private drawBeltFrames(x0: number, xEnd: number, cx: number, yBack: number, yFront: number, hb: number): void {
+    const t = this.propScale, col = 0x5a4038;
+    const [back, down, front] = this.beltFrames;
+    const hline = (g: Phaser.GameObjects.Graphics, xa: number, xb: number, y: number) => g.fillRect(Math.min(xa, xb), y, Math.abs(xb - xa), t);
+    const vline = (g: Phaser.GameObjects.Graphics, x: number, ya: number, yb: number) => g.fillRect(x, Math.min(ya, yb), t, Math.abs(yb - ya));
+    back.clear().fillStyle(col, 1).setDepth(this.belts[0].depth + 0.5);
+    hline(back, x0, cx - hb, yBack - hb); hline(back, x0, cx - hb, yBack + hb - t); vline(back, x0, yBack - hb, yBack + hb); // top, bottom, start cap
+    down.clear().fillStyle(col, 1).setDepth(this.belts[1].depth + 0.5);
+    hline(down, cx - hb, cx + hb, yBack - hb); vline(down, cx + hb - t, yBack - hb, yFront - hb); vline(down, cx - hb, yBack + hb - t, yFront - hb); // corner top, outer, inner
+    front.clear().fillStyle(col, 1).setDepth(this.belts[2].depth + 0.5);
+    vline(front, cx + hb - t, yFront - hb, yFront + hb); hline(front, xEnd, cx + hb, yFront + hb - t); hline(front, xEnd, cx - hb + t, yFront - hb); vline(front, xEnd, yFront - hb, yFront + hb); // outer corner, bottom, top, end cap
   }
 
   /** The display counter is a live object (depth = its front edge) so sprites sort against it naturally. */
@@ -398,6 +445,8 @@ export class CafeScene extends Phaser.Scene {
     this.whisk.setVisible(!!PROP_ANCHOR.mixer[equipmentTier(this.ctrl.state, 'mixer')]); // the sifter and the spatula have no whisk
     this.whisk.setScale(this.propScale).setPosition(wa.x, wa.y).setDepth(mixer.depth + 1);
     this.glow.setScale(this.machineScale * 2).setPosition(ga.x, ga.y).setDepth(oven.depth + 1);
+    const deck = equipmentTier(this.ctrl.state, 'oven') === 3; // two decks, two fires
+    this.glow2.setVisible(deck).setScale(this.machineScale * 2).setPosition(oven.x + (10.5 - 11) * oven.scaleX, oven.y - (24 - 9.5) * oven.scaleY).setDepth(oven.depth + 1);
   }
 
   private refreshProps(): void {
@@ -421,24 +470,27 @@ export class CafeScene extends Phaser.Scene {
   /** (Re)create the furniture sprites from the four slots in state. */
   private rebuildFurniture(): void {
     this.pendingFurniture = false;
-    for (const it of this.lounge) { it.img.destroy(); it.dark?.destroy(); it.ball?.destroy(); }
+    for (const it of this.lounge) { it.img.destroy(); it.dark?.destroy(); it.ball?.destroy(); it.front?.destroy(); }
     this.lounge = [];
     const fs = this.propScale;
     this.ctrl.state.furnitureSlots.forEach((id, slot) => {
       if (!id) return;
       const def = FURNITURE_BY_ID[id]; const p = this.slotPos[slot];
       if (!def || !p) return;
-      const img = this.add.image(p.x, p.y, `furn_${def.sprite}`).setOrigin(0.5, 1).setScale(fs).setDepth(def.inside ? p.y : p.y - 2);
+      const fd = 5 + p.y / 10000; // furniture lies on the floor: every walking cat passes in front of it; only cats using it sort inside/behind
+      const img = this.add.image(p.x, p.y, `furn_${def.sprite}`).setOrigin(0.5, 1).setScale(fs).setDepth(fd);
       let dark: Phaser.GameObjects.Rectangle | undefined;
       if (def.inside) {
-        dark = this.add.rectangle(p.x + (def.id === 'tent' ? 0.5 * fs : 0), p.y - 1 * fs, (def.id === 'cathouse' ? 16 : 12) * fs, 12 * fs, 0x6e5247).setOrigin(0.5, 1).setDepth(p.y - 2);
+        dark = this.add.rectangle(p.x - 2 * fs, p.y - 1 * fs, 10 * fs, 13 * fs, 0x3a2a22).setOrigin(0.5, 1).setDepth(fd - 2); // the dark inside, seen through the doorway; the sleeping cat sits between it and the house
       }
       let ball: Phaser.GameObjects.Image | undefined;
-      if (def.id === 'hangball') ball = this.add.image(p.x + 2 * fs, p.y - 25 * fs, 'furn_hangball_ball').setOrigin(0.5, 0).setScale(fs).setDepth(p.y - 1); // hangs from the arm's hook and swings about it
-      this.lounge.push({ key: def.id, slot, img, dark, ball, use: def.use, inside: def.inside });
+      if (def.id === 'hangball') ball = this.add.image(p.x + 2 * fs, p.y - 25 * fs, 'furn_hangball_ball').setOrigin(0.5, 0).setScale(fs).setDepth(fd + 0.5); // hangs from the arm's hook and swings about it
+      let front: Phaser.GameObjects.Image | undefined;
+      if (def.id === 'basket') front = this.add.image(p.x, p.y, 'furn_basket_front').setOrigin(0.5, 1).setScale(fs).setDepth(fd + 1.5); // over the cat (at fd + 1); the full basket stays behind it
+      this.lounge.push({ key: def.id, slot, img, dark, ball, front, use: def.use, inside: def.inside });
     });
     // cats heading to / using a piece that is gone: back to the floor
-    for (const r of this.roamers) if (r.spot && r.spot !== 'oven' && r.spot !== 'counter' && !this.lounge.some((it) => it.key === r.spot)) { r.spot = null; r.sprite.setAngle(0); r.mode = 'idle'; r.timer = 0.5; }
+    for (const r of this.roamers) if (r.spot && r.spot !== 'oven' && r.spot !== 'window' && !r.spot.startsWith('counter') && !this.lounge.some((it) => it.key === r.spot)) { r.spot = null; r.sprite.setAngle(0); r.mode = 'idle'; r.timer = 0.5; }
   }
 
   /** Rotate a cat around its body centre (origin moves from the feet to the middle of the body, position compensated). */
@@ -482,8 +534,25 @@ export class CafeScene extends Phaser.Scene {
     const i = Phaser.Math.Between(0, 2);
     const s = this.roamerScale();
     const f = this.floorRect();
-    if (i < 2) return { x: this.stations[i].x + (Math.random() < 0.5 ? -1 : 1) * 10 * s, y: f.y0 };
+    if (i < 2) return { x: this.stations[i === 0 ? 0 : 2].x + (Math.random() < 0.5 ? -1 : 1) * 10 * s, y: f.y0 }; // by the mixer or the oven
     return { x: f.x1 - 2 * s, y: Phaser.Math.Between(f.y0, Math.max(f.y0, this.boxY - 20 * s)) };
+  }
+
+  /** Rainbow energy: a vertical pixel bar left of the owner, bottom aligned with the owner's feet; drains top-down. */
+  private drawEnergyBar(): void {
+    const g = this.energyBar; g.clear();
+    const e = this.ctrl.rainbowEnergy;
+    if (e <= 0) return;
+    const u = this.heroScale; // one "pixel" of the owner
+    const w = 3 * u, h = 14 * u, x = 4, bottom = this.heroY + 12 * u; // the owner's feet
+    g.fillStyle(0x5a4038, 1).fillRect(x, bottom - h, w, h);              // outline
+    g.fillStyle(0xfff7f0, 1).fillRect(x + u, bottom - h + u, w - 2 * u, h - 2 * u); // empty inside
+    const bands = [0xff5f6d, 0xffb347, 0xfff36b, 0x7ee787, 0x6fb3ff, 0xc38cff];
+    const inner = h - 2 * u, filled = Math.round((inner * e) / u) * u;  // snapped to pixels
+    for (let i = 0; i < filled / u; i++) {
+      const row = bottom - u - (i + 1) * u;
+      g.fillStyle(bands[Math.floor((i / (inner / u)) * bands.length) % bands.length], 1).fillRect(x + u, row, w - 2 * u, u);
+    }
   }
 
   /** Who is slacking right now: napping, cuddling, fighting or staring out of the window. Production follows. */
@@ -491,7 +560,7 @@ export class CafeScene extends Phaser.Scene {
     const counts = { nap: 0, love: 0, fight: 0, window: 0, play: 0 };
     for (const r of this.roamers) {
       if (r.mode === 'nap') counts.nap++;
-      else if (r.mode === 'rest' && r.spot === 'window') counts.window++;
+      else if (r.mode === 'rest' && (r.spot === 'window' || r.spot === 'fishbowl')) counts.window++;
       else if (r.mode === 'play') counts.play++;
     }
     if (this.social?.started) { if (this.social.kind === 'cuddle') counts.love = 2; else counts.fight = 2; }
@@ -505,7 +574,8 @@ export class CafeScene extends Phaser.Scene {
     if (!toys.length) return false;
     const it = Phaser.Utils.Array.GetRandom(toys);
     const side = it.key === 'scratcher' ? (it.img.x < this.scale.width * 0.5 ? 1 : -1) : 0;
-    this.setLoungeTarget(r, { x: it.img.x + side * 9 * s + (it.key === 'hangball' ? 2 * this.propScale : 0), y: it.img.y + 2 }, 'play');
+    const tx = it.key === 'hangball' && it.ball ? it.ball.x : it.img.x + side * 10 * s;
+    this.setLoungeTarget(r, { x: tx, y: it.img.y + 2 }, 'play');
     r.spot = it.key;
     return true;
   }
@@ -513,7 +583,16 @@ export class CafeScene extends Phaser.Scene {
     const it = this.lounge.find((x) => x.key === r.spot);
     if (!it) { r.mode = 'idle'; r.timer = 0.5; r.spot = null; return; }
     r.timer = Phaser.Math.FloatBetween(6, 10); r.napAcc = 0.3;
-    r.sprite.setFlipX(it.img.x < r.sprite.x); // face the toy
+    const sp = r.sprite, s = this.roamerScale();
+    if (it.key === 'scratcher') {
+      // Neko Atsume pose: up on the hind legs, body stretched tall, leaning into the post with both paws
+      const d = it.img.x < sp.x ? -1 : 1;
+      sp.setFlipX(d > 0); // face the post (sprites face left by default)
+      this.tweens.add({ targets: sp, scaleY: s * 1.35, scaleX: s * 0.9, angle: d * 16, x: sp.x + d * 2 * s, duration: 260, ease: 'Quad.out' });
+    } else if (it.key === 'hangball') {
+      sp.setFlipX(false);
+      this.lieDown(sp, 180, 320, 'Quad.out'); // flops onto its back, paws up, right under the ball
+    } else sp.setFlipX(it.img.x > sp.x); // face the toy
     this.writeDiary('play', [r.gen], undefined, it.key);
   }
   /** One scratch (post) or one swat (hanging ball). */
@@ -522,15 +601,15 @@ export class CafeScene extends Phaser.Scene {
     const sp = r.sprite, s = this.roamerScale();
     if (!it || !sp.active) return;
     if (it.key === 'scratcher') {
-      // rear up against the post and rake it: a stretch, a tilt toward the post, claw marks appear on the sisal
+      // a rake down the rope: the stretched cat drags a little, claw marks appear where the paws are
       const d = it.img.x < sp.x ? -1 : 1;
-      this.tweens.add({ targets: sp, scaleY: s * 1.12, angle: d * 10, duration: 110, yoyo: true, ease: 'Quad.out', onComplete: () => { if (sp.active) sp.setScale(s, s).setAngle(0); } });
-      const mark = this.add.image(it.img.x + (Math.random() - 0.5) * 3 * this.propScale, it.img.y - (8 + Math.random() * 8) * this.propScale, 'emote_scratch').setScale(this.propScale * 0.6).setDepth(it.img.depth + 1).setAlpha(0.9);
+      this.tweens.add({ targets: sp, y: sp.y + 3 * s, scaleY: sp.scaleY * 0.94, duration: 90, yoyo: true, ease: 'Quad.out' });
+      const mark = this.add.image(it.img.x + d * 1 * this.propScale, it.img.y - (16 + Math.random() * 6) * this.propScale, 'emote_scratch').setScale(this.propScale * 0.6).setFlipX(d < 0).setDepth(it.img.depth + 1).setAlpha(0.9);
       this.tweens.add({ targets: mark, alpha: 0, duration: 700, delay: 200, onComplete: () => mark.destroy() });
       sfx.boing(2.6);
     } else if (it.key === 'hangball' && it.ball) {
-      // a hop and a swat: the ball swings away and back
-      this.tweens.add({ targets: sp, y: sp.y - 4 * s, duration: 110, yoyo: true, ease: 'Quad.out' });
+      // lying on its back, a paw bats the ball: the ball swings away and back
+      this.tweens.add({ targets: sp, angle: 180 + (Math.random() < 0.5 ? -8 : 8), duration: 100, yoyo: true, ease: 'Quad.out' });
       const d = Math.random() < 0.5 ? -1 : 1;
       this.tweens.killTweensOf(it.ball);
       this.tweens.add({ targets: it.ball, angle: d * 32, duration: 220, ease: 'Quad.out', onComplete: () => this.tweens.add({ targets: it.ball, angle: 0, duration: 900, ease: 'Elastic.out', easeParams: [1.1, 0.5] }) });
@@ -539,6 +618,9 @@ export class CafeScene extends Phaser.Scene {
       sfx.boing(3.0);
     }
   }
+
+  /** The two little seats behind the display counter (left and right of the middle). */
+  private counterSeat(i: number): Pt { return { x: this.display.x + this.display.w * (i === 0 ? 0.3 : 0.7), y: this.display.y - 4 }; }
 
   /** Behind the display counter, where a cat stands to wrap boxes. */
   private wrapSpot(): Pt { return { x: this.display.x + this.display.w * (0.45 + Math.random() * 0.4), y: this.display.y - 5 }; }
@@ -604,7 +686,7 @@ export class CafeScene extends Phaser.Scene {
     if (next !== 'nap' && next !== 'rest' && next !== 'climb' && next !== 'play') r.spot = null;
     r.tx = p.x; r.ty = p.y; r.mode = 'walk'; r.next = next;
     r.timer = next === 'work' ? Phaser.Math.FloatBetween(3, 7) : Phaser.Math.FloatBetween(1, 4);
-    r.sprite.setFlipX(p.x < r.sprite.x);
+    r.sprite.setFlipX(p.x > r.sprite.x); // sprites face left by default: flip when heading right
   }
 
   private rebuildRoamers(): void {
@@ -642,18 +724,19 @@ export class CafeScene extends Phaser.Scene {
     const moment: DiaryKind | null = r.mode === 'social' && this.social ? this.social.kind : (this.chat && this.chat.cat === r && this.chat.started) ? 'chat' : r.mode === 'nap' ? 'nap' : r.mode === 'rest' ? 'rest' : r.mode === 'play' ? 'play' : null;
     if (moment && hasInfluencer(this.ctrl.state) && Math.random() < 0.5) {
       const cats = moment === 'chat' && this.chat ? [r.gen, this.chat.customer.species] : moment === 'cuddle' || moment === 'fight' ? [this.social!.a.gen, this.social!.b.gen] : [r.gen];
-      const spot = (moment === 'nap' || moment === 'rest' || moment === 'play') && r.spot ? r.spot : null;
+      const spot = (moment === 'nap' || moment === 'rest' || moment === 'play') && r.spot ? (r.spot.startsWith('counter') ? 'counter' : r.spot) : null;
       const pool = spot ? (lang() === 'zh' ? SPOT_TEXT_ZH : SPOT_TEXT)[spot] : null;
       const text = pick(pool ?? (lang() === 'zh' ? DIARY_ZH : DIARY_TEXT)[moment]).replace(/\{a\}/g, this.catName(cats[0])).replace(/\{b\}/g, this.catName(cats[1] ?? cats[0]));
-      this.ctrl.snapshot(moment, cats, text, spot && spot !== 'counter' ? (spot as DiaryBg) : this.pickBg(moment));
+      this.ctrl.snapshot(moment, cats, text, spot ? (spot as DiaryBg) : this.pickBg(moment));
       this.banner(tr('bannerSnap'), '#7A5AA8');
       this.cameras.main.flash(120, 255, 255, 255);
       return;
     }
 
-    if (r.mode === 'nap') { r.sprite.setAngle(0); if (r.sprite.originY !== 1) { r.sprite.y += r.sprite.displayHeight * 0.33; r.sprite.setOrigin(0.5, 1); } r.mode = 'idle'; r.spot = null; }
+    if (r.mode === 'nap') { r.sprite.setAngle(0); if (r.sprite.originY !== 1) { r.sprite.y += r.sprite.displayHeight * 0.33; r.sprite.setOrigin(0.5, 1); } r.sprite.setTexture(`cat_${r.gen}_open`); r.mode = 'idle'; r.spot = null; }
     if (r.mode === 'social' && this.social) { const o = this.social.a === r ? this.social.b : this.social.a; if (o.mode === 'social') { o.mode = 'idle'; o.timer = 1; } this.social = null; }
-    if (r.mode === 'rest' || r.mode === 'play') { r.mode = 'idle'; r.spot = null; r.sprite.setAngle(0); }
+    if (r.sprite.texture.key.endsWith('_back')) r.sprite.setTexture(`cat_${r.gen}_open`);
+    if (r.mode === 'rest' || r.mode === 'play') { r.mode = 'idle'; r.spot = null; this.tweens.killTweensOf(r.sprite); if (r.sprite.originY !== 1) this.getUp(r.sprite, 200); else r.sprite.setAngle(0).setScale(this.roamerScale()); }
     const reaction: PetReaction = JOURNAL_BY_ID[r.gen]?.pet ?? 'happy';
     const sp = r.sprite;
     const s = this.roamerScale();
@@ -724,18 +807,18 @@ export class CafeScene extends Phaser.Scene {
         const step = r.speed * dt * (warpMultiplier(this.ctrl.state, this.ctrl.now()) > 1 ? 2 : 1);
         if (d <= step) {
           sp.setPosition(r.tx, r.ty);
-          if (r.route.length) { const n = r.route.shift()!; r.tx = n.x; r.ty = n.y; sp.setFlipX(n.x < sp.x); continue; }
+          if (r.route.length) { const n = r.route.shift()!; r.tx = n.x; r.ty = n.y; sp.setFlipX(n.x > sp.x); continue; }
           r.mode = r.next;
           if (r.onArrive) { const f = r.onArrive; r.onArrive = undefined; f(); }
-          if (r.next === 'nap') { r.timer = Phaser.Math.FloatBetween(16, 30); r.napAcc = 1; this.onEnterFurniture(r); const inHouse = !!r.spot && this.lounge.some((it) => it.inside && it.key === r.spot); if (!inHouse) this.lieDown(sp, sp.flipX ? -90 : 90, 360); this.writeDiary('nap', [r.gen], undefined, r.spot ?? 'oven'); }
-          if (r.next === 'rest') { r.timer = Phaser.Math.FloatBetween(12, 20); r.napAcc = 1.5; sp.setFlipX(false); this.writeDiary('rest', [r.gen], undefined, r.spot === 'window' ? 'window' : null); }
+          if (r.next === 'nap') { r.timer = Phaser.Math.FloatBetween(16, 30); r.napAcc = 1; this.onEnterFurniture(r); const inHouse = !!r.spot && this.lounge.some((it) => it.inside && it.key === r.spot); if (r.spot === 'basket' || inHouse) sp.setFlipX(true); else this.lieDown(sp, sp.flipX ? -90 : 90, 360); /* basket & house: curled upright, facing right */ sp.setTexture(`cat_${r.gen}_sleep`); this.writeDiary('nap', [r.gen], undefined, r.spot ?? 'oven'); }
+          if (r.next === 'rest') { r.timer = Phaser.Math.FloatBetween(12, 20); r.napAcc = 1.5; sp.setFlipX(false); if (r.spot === 'window' || r.spot === 'fishbowl') sp.setTexture(`cat_${r.gen}_back`); this.writeDiary('rest', [r.gen], undefined, r.spot?.startsWith('counter') ? 'counter' : r.spot ?? 'counter'); }
           if (r.next === 'climb') this.climbTree(r, true);
           if (r.next === 'play') this.startPlay(r);
           if (r.flat) { r.flat = false; sfx.boing(1.7); this.tweens.add({ targets: sp, scaleX: s, scaleY: s, duration: 420, ease: 'Elastic.out', easeParams: [1.2, 0.4] }); }
         } else {
           sp.setPosition(sp.x + (dx / d) * step, sp.y + (dy / d) * step);
           if (warpMultiplier(this.ctrl.state, this.ctrl.now()) > 1 && Math.floor(time / 160) !== Math.floor((time - dt * 1000) / 160)) { // ))) behind a hurrying cat
-            const back = sp.flipX ? 1 : -1;
+            const back = sp.flipX ? -1 : 1; // behind the cat: left when it faces right
             const e = this.add.image(sp.x + back * 12 * s, sp.y - 7 * s, 'emote_speed').setScale(s * 0.7).setFlipX(!sp.flipX).setAlpha(0.8).setDepth(sp.depth - 1);
             this.tweens.add({ targets: e, x: e.x + back * 8, alpha: 0, duration: 260, onComplete: () => e.destroy() });
           }
@@ -754,18 +837,22 @@ export class CafeScene extends Phaser.Scene {
       } else if (r.mode === 'nap') {
         r.timer -= dt; r.napAcc += dt;
         if (r.napAcc > 1.6) { r.napAcc = 0; const e = this.add.image(sp.x + 6 * s, sp.y - 10 * s, 'emote_zzz').setScale(s * 0.8).setDepth(8000); this.tweens.add({ targets: e, y: e.y - 24, alpha: 0, duration: 1200, onComplete: () => e.destroy() }); }
-        if (r.timer <= 0) { r.mode = 'idle'; r.timer = 1; r.spot = null; this.getUp(sp); }
+        if (r.timer <= 0) { r.mode = 'idle'; r.timer = 1; r.spot = null; sp.setTexture(`cat_${r.gen}_open`); this.getUp(sp); }
       } else if (r.mode === 'play') {
         r.timer -= dt; r.napAcc += dt;
         if (r.napAcc > (r.spot === 'hangball' ? 0.7 : 0.45)) { r.napAcc = 0; this.playOnce(r); }
-        if (r.timer <= 0) { r.mode = 'idle'; r.timer = 0.5; r.spot = null; sp.setScale(s, s).setAngle(0); }
+        if (r.timer <= 0) { r.mode = 'idle'; r.timer = 0.5; r.spot = null; this.tweens.killTweensOf(sp); if (r.spot === null && sp.originY !== 1) this.getUp(sp, 240); else this.tweens.add({ targets: sp, scaleX: s, scaleY: s, angle: 0, duration: 200, ease: 'Quad.out' }); }
       } else if (r.mode === 'climb') {
         // driven by tweens (see climbTree)
       } else if (r.mode === 'rest') {
         r.timer -= dt;
         sp.setScale(s, s * (1 + Math.sin(time / 500 + r.phase) * 0.025));
-        if (r.spot === 'window') { r.napAcc += dt; if (r.napAcc > 2.4) { r.napAcc = 0; const e = this.add.image(sp.x + 7 * s, sp.y - 18 * s, 'emote_window').setScale(s * 0.8).setDepth(8000); this.tweens.add({ targets: e, y: e.y - 18, alpha: 0, duration: 1400, onComplete: () => e.destroy() }); } }
-        if (r.timer <= 0) { if (r.spot === 'cattree' && this.lounge.some((it) => it.key === 'cattree')) this.climbTree(r, false); else { r.mode = 'idle'; r.timer = 0.5; r.spot = null; } }
+        if (r.spot === 'window' || r.spot === 'fishbowl') { r.napAcc += dt; if (r.napAcc > 2.4) { r.napAcc = 0; const e = this.add.image(sp.x + 7 * s, sp.y - 18 * s, 'emote_dream').setScale(s * 0.8).setDepth(8000); this.tweens.add({ targets: e, y: e.y - 18, alpha: 0, duration: 1400, onComplete: () => e.destroy() }); } }
+        if (r.spot === 'cattree') { // happy on top of the tree: a note now and then, with a little head-bob
+          r.napAcc += dt;
+          if (r.napAcc > 1.6) { r.napAcc = 0; const e = this.add.image(sp.x + (Math.random() < 0.5 ? -7 : 7) * s, sp.y - 17 * s, 'emote_note').setScale(s * 0.8).setDepth(sp.depth + 1); this.tweens.add({ targets: e, y: e.y - 20, x: e.x + (Math.random() - 0.5) * 10, alpha: 0, duration: 1100, ease: 'Quad.out', onComplete: () => e.destroy() }); this.tweens.add({ targets: sp, y: sp.y - 2 * s, duration: 120, yoyo: true, ease: 'Quad.out' }); }
+        }
+        if (r.timer <= 0) { if (sp.texture.key.endsWith('_back')) sp.setTexture(`cat_${r.gen}_open`); if (r.spot === 'cattree' && this.lounge.some((it) => it.key === 'cattree')) this.climbTree(r, false); else { r.mode = 'idle'; r.timer = 0.5; r.spot = null; } }
       } else {
         r.timer -= dt;
         sp.setScale(s, s * (1 + Math.sin(time / (r.mode === 'work' ? 160 : 400) + r.phase) * 0.03));
@@ -788,7 +875,7 @@ export class CafeScene extends Phaser.Scene {
       if (loved && !r.heart) r.heart = this.add.image(sp.x, sp.y, 'emote_heart').setScale(s * 0.9).setDepth(sp.y + 1);
       if (!loved && r.heart) { r.heart.destroy(); r.heart = null; }
       if (r.heart) r.heart.setPosition(sp.x + 7 * s, sp.y - 17 * s + Math.sin(time / 250 + r.phase) * 2).setDepth(sp.y + 1).setAlpha(0.9);
-      if (r.mode !== 'react' && Math.random() < 0.0015) { sp.setTexture(`cat_${r.gen}_blink`); this.time.delayedCall(120, () => { if (sp.active && r.mode !== 'react') sp.setTexture(`cat_${r.gen}_open`); }); }
+      if (r.mode !== 'react' && r.mode !== 'nap' && r.mode !== 'rest' && Math.random() < 0.0015) { sp.setTexture(`cat_${r.gen}_blink`); this.time.delayedCall(120, () => { if (sp.active && r.mode !== 'react') sp.setTexture(`cat_${r.gen}_open`); }); }
     }
   }
 
@@ -802,11 +889,8 @@ export class CafeScene extends Phaser.Scene {
     if (i === 0) { // mixer: the whisk spins up for a moment; the sifter sheds a little flour
       this.whiskBoostUntil = this.time.now + 1200;
       if (equipmentTier(this.ctrl.state, 'mixer') === 1) for (let k = 0; k < 5; k++) { const n = this.add.rectangle(p.x + (Math.random() - 0.5) * 10 * p.scaleX, p.y - 18 * p.scaleY, p.scaleX, p.scaleY, 0xf2e2c6).setDepth(p.depth + 1); this.tweens.add({ targets: n, y: n.y + 7 * p.scaleY, alpha: 0, duration: 500 + Math.random() * 300, delay: k * 90, ease: 'Quad.in', onComplete: () => n.destroy() }); }
-    } else if (i === 1) { // piping: the bag squeezes and a drop of batter lands on the tray; the tapper then raps the tray
-      this.tweens.add({ targets: p, scaleY: sy * 0.9, scaleX: sx * 1.05, duration: 110, yoyo: true, ease: 'Quad.out', onComplete: () => p.setScale(sx, sy) });
-      const n = this.anchor(1);
-      const drop = this.add.image(n.x, n.y, 'mac_pink').setScale(this.propScale * 0.35).setDepth(p.depth + 1);
-      this.tweens.add({ targets: drop, y: p.y - 6 * p.scaleY, scaleX: this.propScale * 0.5, scaleY: this.propScale * 0.25, duration: 260, ease: 'Quad.in', onComplete: () => { this.tweens.add({ targets: drop, alpha: 0, duration: 400, delay: 300, onComplete: () => drop.destroy() }); } });
+    } else if (i === 1) { // tray station: the tray dips as a ball lands on it
+      this.tweens.add({ targets: p, scaleY: sy * 0.94, scaleX: sx * 1.03, duration: 110, yoyo: true, ease: 'Quad.out', onComplete: () => p.setScale(sx, sy) });
     } else if (i === 2) { // oven: a bright flare as the batch goes in, plus a bigger puff of smoke
       this.glow.setAlpha(1);
       this.smoke(1.3);
@@ -839,13 +923,14 @@ export class CafeScene extends Phaser.Scene {
       this.tweens.add({ targets: m, scale, duration: 160, ease: 'Back.out', onComplete: () => { item.flying = false; } });
     };
     // macaron energy: a ball in the macaron's colour flies into the mixer from the owner (a pat) or from a working cat
-    const worker = fromHero ? null : Phaser.Utils.Array.GetRandom(this.roamers.filter((r) => r.mode === 'work')) as Roamer | undefined;
+    const worker = fromHero ? null : Phaser.Utils.Array.GetRandom(this.roamers.filter((r) => r.mode !== 'lie' && r.mode !== 'climb' && r.sprite.active)) as Roamer | undefined;
     const from = fromHero ? { x: this.hero.x + this.hero.displayWidth * 0.3, y: this.hero.y - this.hero.displayHeight * 0.3 } : worker ? { x: worker.sprite.x, y: worker.sprite.y - 10 * this.roamerScale() } : null;
     if (from) {
       const ball = this.add.image(from.x, from.y, `ball_${color}`).setScale(scale * 0.8).setDepth(5000);
       const mixer = this.anchor(0);
       this.tweens.add({ targets: ball, x: mixer.x, y: mixer.y, scale, duration: fromHero ? 380 : 520, ease: 'Quad.in', onComplete: () => { ball.destroy(); sendOut(); } });
     } else sendOut();
+    void this.props[1];
   }
 
   /** A fixed machine wobbles as something passes through / lands in it. */
@@ -867,11 +952,13 @@ export class CafeScene extends Phaser.Scene {
 
   private updateBelt(dt: number): void {
     const cps = this.ctrl.cps();
-    const flow = cps <= 0 ? 0 : Math.min(1.8, 0.3 + Math.log10(1 + cps) * 0.5); // items/s: trays are wide, keep them spaced
-    for (const b of this.belts) b.tilePositionX += (flow > 0 ? 24 + flow * 6 : 0) * dt / this.propScale;
+    const flow = cps <= 0 ? 0 : 0.5; // passive energy: one ball every 2 s, from a random cat on the floor
+    const scroll = cps <= 0 ? 0 : Math.min(1.8, 0.3 + Math.log10(1 + cps) * 0.5);
+    const warp = warpMultiplier(this.ctrl.state, this.ctrl.now()) > 1 ? 2 : 1; // Time Cat: the line runs at double speed too
+    for (const b of this.belts) b.tilePositionX -= (scroll > 0 ? 24 + scroll * 6 : 0) * warp * dt / this.propScale; // chevrons travel with the items (+x along each run)
     this.spawnAcc += flow * dt;
     while (this.spawnAcc >= 1) { this.spawnAcc -= 1; this.spawnBeltMacaron(false); }
-    const speed = (this.scale.width * 0.6) / 7; // px per second
+    const speed = ((this.scale.width * 0.6) / 7) * warp; // px per second
     const scale = this.propScale;
     for (let i = this.beltMacarons.length - 1; i >= 0; i--) {
       const m = this.beltMacarons[i];
@@ -883,7 +970,7 @@ export class CafeScene extends Phaser.Scene {
         const len = Math.hypot(b.x - a.x, b.y - a.y);
         const left = (1 - m.t) * len;
         if (remaining < left) { m.t += remaining / len; remaining = 0; }
-        else { remaining -= left; m.seg++; m.t = 0; if (m.seg === 1) this.animateStation(1); if (m.seg === 2) { this.animateStation(2); this.transformItem(m, `mac_${m.color}`); } if (m.seg === 4) { this.animateStation(3); this.transformItem(m, `gift_t${Math.max(1, equipmentTier(this.ctrl.state, 'box'))}_${m.color}`); } }
+        else { remaining -= left; m.seg++; m.t = 0; if (m.seg === 1) { this.animateStation(2); this.transformItem(m, `mac_${m.color}`); } }
       }
       if (m.seg >= this.path.length - 1) {
         this.beltMacarons.splice(i, 1);
@@ -901,7 +988,10 @@ export class CafeScene extends Phaser.Scene {
       const a = this.path[m.seg], b = this.path[m.seg + 1];
       const x = a.x + (b.x - a.x) * m.t, y = a.y + (b.y - a.y) * m.t;
       m.sprite.setPosition(x, y);
-      m.sprite.setDepth(this.belts[m.seg <= 2 ? 0 : m.seg === 3 ? 1 : 2].depth + 1);
+      const hb = this.beltH / 2, cx = this.path[2].x; // corner squares belong to the run drawn on top: down at the top-right, front at the bottom-right
+      const run = m.seg <= 1 ? (x >= cx - hb ? 1 : 0) : m.seg === 2 ? (y >= this.path[3].y - hb ? 2 : 1) : 2;
+      m.sprite.setDepth(this.belts[run].depth + 1);
+      if (m.seg === 2 && !m.wrapped && y >= this.stations[3].y) { m.wrapped = true; this.animateStation(3); this.transformItem(m, `gift_t${Math.max(1, equipmentTier(this.ctrl.state, 'box'))}_${m.color}`); } // through the packaging machine
       void scale;
     }
   }
@@ -911,9 +1001,16 @@ export class CafeScene extends Phaser.Scene {
   private static readonly QUEUE_MAX = 5;
 
   /** Queue spots along the street side of the counter, front of the line on the right. */
+  /** The queue runs left → right: the first customer stands at the left end of the display counter, the next ones
+   *  line up to the right with one animal's width between neighbours (tighter only if the screen is too narrow). */
+  /** The one being served stands in front of the counter's middle (tappable); everyone else waits side by side
+   *  to the right, beyond the stanchion rope. */
   private queueSpot(i: number): Pt {
     const s = this.roamerScale();
-    return { x: this.display.x + this.display.w * 0.82 - i * 16 * s, y: Math.min(this.scale.height - 2, this.display.y + this.display.h + this.counterFront + 16 * s + 4) };
+    const y = Math.min(this.scale.height - 2, this.display.y + this.display.h + this.counterFront + 16 * s + 4);
+    if (i === 0) return { x: this.display.x + this.display.w * 0.5, y };
+    const lineX0 = this.display.x + this.display.w + 24 * this.propScale + 11 * s; // past the rope
+    return { x: lineX0 + (i - 1) * 22 * s, y };
   }
 
   private spawnCustomer(): void {
@@ -926,7 +1023,7 @@ export class CafeScene extends Phaser.Scene {
     const startX = this.scale.width + 16 * s;
     const fan = this.rushLeft > 0; // brought in by a Meowstagram post
     const key = fan && this.textures.exists(`cust_${species.id}_${coat}_fan`) ? `cust_${species.id}_${coat}_fan` : `cust_${species.id}_${coat}`;
-    const sprite = this.add.image(startX, spot.y, key).setOrigin(0.5, 1).setScale(s).setDepth(spot.y).setAlpha(0).setFlipX(true).setInteractive({ useHandCursor: true });
+    const sprite = this.add.image(startX, spot.y, key).setOrigin(0.5, 1).setScale(s).setDepth(spot.y).setAlpha(0).setFlipX(false).setInteractive({ useHandCursor: true }); // walks in from the right, facing left
     const bubble = this.add.image(startX, spot.y - 18 * s, fan ? 'bubble_shades' : 'bubble').setOrigin(0.5, 1).setScale(s).setDepth(spot.y + 1).setVisible(false).setInteractive({ useHandCursor: true });
     const c: Customer = { species: species.id, sprite, bubble, mode: 'enter', tx: spot.x, ty: spot.y, timer: 0, served: false, fan };
     const onTap = () => this.serveCustomer(c);
@@ -975,14 +1072,14 @@ export class CafeScene extends Phaser.Scene {
       if (c.mode === 'leave') {
         const gx = this.scale.width + 16 * s, dx = gx - sp.x, step = speed * dt;
         if (dx <= step) { sp.destroy(); c.bubble.destroy(); c.glow?.destroy(); c.hint?.destroy(); this.customers.splice(idx, 1); continue; }
-        sp.x += step; sp.setFlipX(false); sp.setScale(s, s * (1 + Math.abs(Math.sin(time / 90)) * 0.06));
+        sp.x += step; sp.setFlipX(true); sp.setScale(s, s * (1 + Math.abs(Math.sin(time / 90)) * 0.06)); // leaving to the right
         sp.setDepth(sp.y); continue;
       }
       const dx = c.tx - sp.x, dy = c.ty - sp.y, d = Math.hypot(dx, dy), step = speed * dt;
       const front = line[0] === c;
       if (d > step) {
         sp.setPosition(sp.x + (dx / d) * step, sp.y + (dy / d) * step);
-        sp.setFlipX(dx < 0);
+        sp.setFlipX(dx > 0);
         sp.setScale(s, s * (1 + Math.abs(Math.sin(time / 90)) * 0.06));
         if (c.mode === 'browse') { c.mode = 'queue'; c.bubble.setVisible(false); }
       } else {
@@ -1024,7 +1121,7 @@ export class CafeScene extends Phaser.Scene {
         }
         this.writeDiary('boxwalk', [r.gen]);
       });
-    } else if (item?.key === 'tent') {
+    } else if (item?.key === 'tent' || item?.key === 'tent2') {
       // a little lamp comes on; sometimes the cat finds a ball of yarn in there
       const lamp = this.add.image(item.img.x + 0.5 * s, item.img.y - 5 * s, 'glow').setScale(s * 0.8).setAlpha(0.7).setDepth(item.img.depth - 1);
       this.tweens.add({ targets: lamp, alpha: 0.4, duration: 600, yoyo: true, repeat: 10, onComplete: () => lamp.destroy() });
@@ -1079,8 +1176,7 @@ export class CafeScene extends Phaser.Scene {
 
   /** Rainbow Cat ability: zooms across the shop (right to left) leaving a rainbow; everyone goes RGB for 8 s. */
   private nyanDash(): void {
-    this.rainbowUntil = this.time.now + 8000;
-    const burst = this.ctrl.rainbow(true);
+    const burst = this.ctrl.rainbow(true); // starts the ×2 effect with a full energy bar
     this.banner(tr('bannerNyan'), '#C9668A');
     const w = this.scale.width, h = this.scale.height;
     const s = this.roamerScale() + 1;
@@ -1109,7 +1205,7 @@ export class CafeScene extends Phaser.Scene {
   }
 
   private updateRainbow(time: number, dt: number): void {
-    const active = time < this.rainbowUntil;
+    const active = time < this.rainbowUntil || this.ctrl.rainbowActive();
     // the Rainbow Cat itself never stops cycling (lightly, over its pink coat)
     for (const r of this.roamers) if (r.gen === 'rainbow' && !active) {
       const c = Phaser.Display.Color.HSVToRGB((time / 1200 + r.phase) % 1, 0.3, 1) as Phaser.Types.Display.ColorObject;
@@ -1154,7 +1250,7 @@ export class CafeScene extends Phaser.Scene {
       .replace(/\{a\}/g, kind === 'post' ? String(n ?? '') : this.catName(cats[0] ?? 'shopcat'))
       .replace(/\{b\}/g, this.catName(cats[1] ?? cats[0] ?? 'shopcat'))
       .replace(/\{n\}/g, String(n ?? ''));
-    this.ctrl.diary(kind, cats, text, spot && spot !== 'counter' ? (spot as DiaryBg) : this.pickBg(kind));
+    this.ctrl.diary(kind, cats, text, spot ? (spot as DiaryBg) : this.pickBg(kind));
   }
 
   /** Where the photo for a diary moment is taken: not only inside the shop. */
@@ -1189,7 +1285,7 @@ export class CafeScene extends Phaser.Scene {
     const gen = r.gen;
     if (!this.isReady(gen)) return false;
     if (gen === 'cosmic' && this.shootingStar) return false;
-    if (gen === 'rainbow' && this.time.now < this.rainbowUntil) return false;
+    if (gen === 'rainbow' && (this.time.now < this.rainbowUntil || this.ctrl.rainbowActive())) return false;
     this.ctrl.abilityReadyAt[gen] = this.ctrl.now() + GameController.ABILITY_COOLDOWN_SEC[gen] * 1000;
     if (gen === 'deity') this.doBless();
     else if (gen === 'timecat') this.doTimeWarp();
@@ -1202,7 +1298,7 @@ export class CafeScene extends Phaser.Scene {
   /** Goose-yellow glowing outline on special cats whose ability is ready to be petted. */
   private updateAbilities(): void {
     for (const r of this.roamers) {
-      const ready = this.isReady(r.gen) && !(r.gen === 'cosmic' && this.shootingStar) && !(r.gen === 'rainbow' && this.time.now < this.rainbowUntil);
+      const ready = this.isReady(r.gen) && !(r.gen === 'cosmic' && this.shootingStar) && !(r.gen === 'rainbow' && (this.time.now < this.rainbowUntil || this.ctrl.rainbowActive()));
       let o = this.readyOutlines.get(r);
       if (ready && !o) { o = this.add.image(0, 0, r.sprite.texture.key).setOrigin(0.5, 1).setTintFill(0xffe066); this.readyOutlines.set(r, o); }
       if (!ready && o) { o.destroy(); this.readyOutlines.delete(r); o = undefined; }
@@ -1334,7 +1430,7 @@ export class CafeScene extends Phaser.Scene {
     const s = this.roamerScale();
     const f = this.floorRect();
     const options: { key: string; weight: number; go: () => void }[] = [
-      ...this.lounge.filter((x) => x.use === 'nap').map((it) => ({ key: it.key, weight: it.key === 'cathouse' ? 3 : 2, go: () => this.setLoungeTarget(r, { x: it.img.x, y: it.inside ? it.img.y - (it.key === 'cathouse' ? 2 : 1) * s : it.img.y - it.img.displayHeight / 2 + 8 * s }, 'nap') })),
+      ...this.lounge.filter((x) => x.use === 'nap').map((it) => ({ key: it.key, weight: it.key === 'cathouse' ? 3 : 2, go: () => this.setLoungeTarget(r, { x: it.img.x + (it.key.startsWith('tent') ? 3 * s : it.key === 'cathouse' ? -2 * this.propScale : 0), y: it.inside ? it.img.y - (it.key === 'cathouse' ? 2 : 1) * s : it.key.startsWith('tent') ? it.img.y - 2 * s : it.key === 'basket' ? it.img.y - 3 * s : it.img.y - it.img.displayHeight / 2 + 8 * s }, 'nap') })), // tents: on the mat in the doorway; basket: inside it
       { key: 'oven', weight: 1, go: () => this.setTarget(r, { x: Phaser.Math.Clamp(this.stations[2].x - 16 * s + (Math.random() - 0.5) * 20, f.x0, f.x1), y: f.y0 + 4 }, 'nap') },
     ].filter((o) => !this.spotTaken(o.key, r));
     if (!options.length) { this.leaveLounge(r, this.randomFloorPoint(), 'idle'); return; } // everything is taken: wander instead
@@ -1349,10 +1445,16 @@ export class CafeScene extends Phaser.Scene {
     const s = this.roamerScale();
     const tree = this.lounge.find((x) => x.key === 'cattree');
     // the cat tree is climbed: walk to its foot first, then hop up platform by platform
+    const bowl = this.lounge.find((x) => x.key === 'fishbowl');
     const roll = Math.random();
-    if (tree && roll < 0.4 && !this.spotTaken('cattree', r)) { this.setLoungeTarget(r, { x: tree.img.x + 4 * s, y: tree.img.y + 1 }, 'climb'); r.spot = 'cattree'; }
-    else if (roll < 0.7 && !this.spotTaken('window', r)) { const f = this.floorRect(); this.leaveLounge(r, { x: Phaser.Math.Clamp(this.scale.width / 2 + (Math.random() - 0.5) * 40, f.x0, f.x1), y: f.y0 }, 'rest'); r.spot = 'window'; } // stares out of the window: slacking
-    else { this.setTarget(r, { x: this.display.x + this.display.w * (0.3 + Math.random() * 0.5), y: this.display.y - 4 }, 'rest'); r.spot = 'counter'; }
+    if (bowl && roll < 0.25 && !this.spotTaken('fishbowl', r)) { this.setLoungeTarget(r, { x: bowl.img.x, y: bowl.img.y + 6 * s }, 'rest'); r.spot = 'fishbowl'; } // sits in front of the bowl, back to us, staring
+    else if (tree && roll < 0.4 && !this.spotTaken('cattree', r)) { this.setLoungeTarget(r, { x: tree.img.x + 4 * s, y: tree.img.y + 1 }, 'climb'); r.spot = 'cattree'; }
+    else if (roll < 0.7 && !this.spotTaken('window', r)) { this.setLoungeTarget(r, { x: this.scale.width / 2 + (Math.random() - 0.5) * 40, y: this.wallH + 13 * s }, 'rest'); r.spot = 'window'; } // walks round the counter to the back wall and stares out of the window: slacking
+    else { // two seats at the counter, never more than two cats
+      const seat = ['counter1', 'counter2'].find((k) => !this.spotTaken(k, r));
+      if (!seat) { this.leaveLounge(r, this.randomFloorPoint(), 'idle'); return; }
+      this.setTarget(r, this.counterSeat(seat === 'counter1' ? 0 : 1), 'rest'); r.spot = seat;
+    }
   }
 
   /** Climb the cat tree from its foot to the top platform (up) or back down (down): four hops, paws alternating. */
@@ -1370,7 +1472,8 @@ export class CafeScene extends Phaser.Scene {
       if (!sp.active || r.mode !== 'climb') return;
       if (i >= hops) {
         sp.setPosition(to.x, to.y).setScale(s, s).setFlipX(false);
-        if (up) { r.mode = 'rest'; r.timer = Phaser.Math.FloatBetween(12, 20); this.writeDiary('rest', [r.gen]); }
+        if (!up) sp.setTexture(`cat_${r.gen}_open`);
+        if (up) { r.mode = 'rest'; r.timer = Phaser.Math.FloatBetween(12, 20); r.napAcc = 1.2; sp.setTexture(`cat_${r.gen}_happy`); this.writeDiary('rest', [r.gen]); }
         else { r.mode = 'idle'; r.timer = 0.4; r.spot = null; }
         return;
       }
@@ -1399,8 +1502,8 @@ export class CafeScene extends Phaser.Scene {
       so.started = true;
       so.until = this.sessionSec + (so.kind === 'cuddle' ? 9 : 6);
       const s = this.roamerScale();
-      so.a.sprite.setFlipX(so.b.sprite.x < so.a.sprite.x); so.b.sprite.setFlipX(so.a.sprite.x < so.b.sprite.x);
-      for (const r of [so.a, so.b]) r.sprite.setTexture(`cat_${r.gen}_happy`);
+      so.a.sprite.setFlipX(so.b.sprite.x > so.a.sprite.x); so.b.sprite.setFlipX(so.a.sprite.x > so.b.sprite.x); // face each other
+      for (const r of [so.a, so.b]) r.sprite.setTexture(`cat_${r.gen}_${so.kind === 'fight' ? 'fight' : 'happy'}`); // >^< when squabbling
       if (so.kind === 'cuddle') {
         this.tweens.add({ targets: so.a.sprite, x: so.a.sprite.x + 3 * s, duration: 400, ease: 'Quad.out' });
         this.tweens.add({ targets: so.b.sprite, x: so.b.sprite.x - 3 * s, duration: 400, ease: 'Quad.out' });
@@ -1590,6 +1693,7 @@ export class CafeScene extends Phaser.Scene {
     this.shelfAcc += dt;
     if (this.shelfAcc > 1) { this.shelfAcc = 0; this.refreshShelf(); }
     this.updateBelt(dt);
+    this.drawEnergyBar();
     this.reportSlack();
     // mixer whisk: spins while the bakery produces, faster right after a new batch
     const producing = this.ctrl.cps() > 0;
@@ -1599,9 +1703,10 @@ export class CafeScene extends Phaser.Scene {
     if (producing) {
       const target = 0.45 + Math.random() * 0.35;
       this.glow.setAlpha(Phaser.Math.Linear(this.glow.alpha, target, 0.25));
+      this.glow2.setAlpha(Phaser.Math.Linear(this.glow2.alpha, 0.45 + Math.random() * 0.35, 0.25));
       this.smokeAcc += dt;
       if (this.smokeAcc > 0.9) { this.smokeAcc = 0; this.smoke(1); }
-    } else this.glow.setAlpha(Phaser.Math.Linear(this.glow.alpha, 0, 0.1));
+    } else { this.glow.setAlpha(Phaser.Math.Linear(this.glow.alpha, 0, 0.1)); this.glow2.setAlpha(Phaser.Math.Linear(this.glow2.alpha, 0, 0.1)); }
     this.updateRoamers(dt, time);
     this.updateCustomer(dt, time);
     this.updateChat(dt);

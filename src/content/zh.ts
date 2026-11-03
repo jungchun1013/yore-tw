@@ -7,7 +7,7 @@ export const CAT_ZH: Record<string, { name: string; desc: string }> = {
   baker:      { name: '烘焙貓', desc: '擠出完美的殼，秘訣從不外傳。' },
   courier:    { name: '外送貓', desc: '凌晨三點也在送馬卡龍。' },
   patissier:  { name: '甜點師貓', desc: '巴黎受訓，會評論你的甘納許。' },
-  manager:    { name: '店長貓', desc: '用極高效率排午睡班表。' },
+  manager:    { name: '經理貓', desc: '用極高效率排午睡班表。' },
   influencer: { name: '網紅貓', desc: '一張照片，一萬張訂單。' },
   deity:      { name: '貓貓神', desc: '馬卡龍自己出現了，別問。' },
   timecat:    { name: '時間貓', desc: '把明天的那批今天先烤好。' },
@@ -44,7 +44,7 @@ export const JOURNAL_ZH: Record<string, { title: string; story: string[]; likes:
   deity: { title: '貓貓神（兼職）', story: ['馬卡龍自己出現在架上。別問。幾位問過的員工現在都非常有禮貌。', '光環摸起來是溫的，淡淡焦糖味。神喜歡被叫「欸你」。'], likes: '各種尺寸的紙箱供品', flavour: '海鹽焦糖，天降的' },
   timecat: { title: '時間物流', story: ['把明天的那批今天先烤好。懷錶每到星期二就倒著走，牠說「沒事」。', '偶爾會跟還沒到的客人打招呼。他們總是會出現，一臉困惑，然後買一打。'], likes: '廣義的準時', flavour: '藍莓，下週的收成' },
   cosmic: { title: '宇宙貓，宇宙的鬍鬚', story: ['整個星系，輕輕打發。皇冠是用一顆「隨便撿到」的星星做的。', '呼嚕的頻率會讓烤箱自己預熱。電費單已經變成哲學問題。'], likes: '坐在所有東西的正中央', flavour: '藍莓，「星雲的藍」' },
-  rainbow: { title: '喵喵喵（別問）', story: ['有人把店長拍了太多下之後出現的。從那時起就一直在變色。', '跑過的地方都留下彩虹。小奶貓追著牠跑，店長貓已經放棄寫報告。'], likes: '剛好被拍十二下', flavour: '全部。一次。' },
+  rainbow: { title: '喵喵喵（別問）', story: ['有人把店長拍了太多下之後出現的。從那時起就一直在變色。', '跑過的地方都留下彩虹。小奶貓追著牠跑，經理貓已經放棄寫報告。'], likes: '剛好被拍十二下', flavour: '全部。一次。' },
 };
 
 export const SPECIES_ZH: Record<string, { name: string; blurb: string }> = {
@@ -59,11 +59,14 @@ export const SPECIES_ZH: Record<string, { name: string; blurb: string }> = {
 
 export const FURNITURE_ZH: Record<string, { name: string; desc: string }> = {
   cushion: { name: '圓坐墊', desc: '貓會翻倒在上面打盹。' },
-  scratcher: { name: '柱狀貓抓板', desc: '伸出爪子，抓個過癮。' },
-  cattree: { name: '貓跳台', desc: '有貓會爬上去監督整間店。' },
+  scratcher: { name: '貓抓樹幹', desc: '一截樹幹，站起來用力抓。' },
+  cattree: { name: '圓柱貓抓柱', desc: '有貓會爬到頂上監督整間店。' },
+  basket: { name: '藤籃', desc: '窩進去剛剛好。提把是裝飾。' },
   hangball: { name: '懸吊球球', desc: '揮一下就盪回來。再一下。再一下。' },
   cathouse: { name: '紅頂貓屋', desc: '貓躲進去；整間屋子跟著打呼。' },
-  tent: { name: '藍帳篷', desc: '裡面會亮小燈，偶爾有毛線球。' },
+  tent: { name: '花布尖帳篷', desc: '裡面有一顆坐墊，會亮小燈，偶爾有毛線球。' },
+  tent2: { name: '帆布尖帳篷', desc: '鼠尾草綠帆布、格子小窗、竹簾門。' },
+  fishbowl: { name: '魚缸', desc: '一條金魚，看不膩。' },
   bed: { name: '甜甜圈睡窩', desc: '全店最軟的午睡。' },
   fish: { name: '大魚乾布偶', desc: '被抱著踢踢腿。看過很多事。' },
 };
@@ -93,9 +96,13 @@ export const SPOT_TEXT_ZH: Record<string, string[]> = {
   cathouse: ['{a} 躲進紅頂貓屋，整間屋子跟著打呼。', '貓屋門口只看得到 {a} 的尾巴。'],
   tent: ['{a} 鑽進藍帳篷，裡面的小燈亮了。', '帳篷裡傳出 {a} 的呼嚕聲。'],
   fish: ['{a} 抱著大魚乾踢了整整一分鐘，然後睡著了。', '大魚乾今天被 {a} 抱走了。'],
+  cattree: ['{a} 爬到抓柱頂端，從那裡監督整家店。', '{a} 在柱子頂上看著大家，一臉評審。'],
+  basket: ['{a} 窩進藤籃，剛好一籃。', '藤籃今天裝的是 {a}。'],
+  counter: ['{a} 坐在櫃檯看了一會兒街道，說是在「關心客人」。', '{a} 在展示櫃旁休息，像客人一樣盯著馬卡龍看。'],
   oven: ['{a} 窩在烤箱旁邊睡著了。烤箱很暖。這顯然是被允許的。', '在烤箱邊發現睡著的 {a}。'],
   window: ['{a} 盯著窗外看了很久。外面什麼都沒有。', '{a} 說牠在看客人。窗外是一隻鴿子。'],
-  scratcher: ['{a} 把貓抓板抓出一道新的痕跡，很滿意。', '{a} 抓貓抓板抓到忘記上班。'],
+  scratcher: ['{a} 把樹幹抓出一道新的痕跡，很滿意。', '{a} 抓樹幹抓到忘記上班。'],
+  fishbowl: ['{a} 盯著金魚看了十分鐘。金魚也盯著牠。', '{a} 說牠在看魚缸裡有沒有異狀。沒有。'],
   hangball: ['{a} 對懸吊球球揮了二十下。球球每次都盪回來。', '{a} 和懸吊球球打成平手。'],
 };
 export const CAPTIONS_ZH = [
@@ -110,14 +117,14 @@ export const CLICK_UPGRADE_ZH: Record<string, string> = { click1: '軟軟的肉�
 export const PCT_UPGRADE_ZH: Record<string, string> = { pct1: '鬍鬚感應', pct2: '廚房同步', pct3: '九條命' };
 export const EQUIP_NAME_ZH: Record<string, [string, string, string]> = {
   mixer: ['杏仁粉過篩器', '蛋白霜攪拌機', 'Macaronage 刮刀台'],
-  piping: ['圓花嘴擠花袋', '矽膠定位墊', '雙色擠花袋'],
-  oven: ['晾皮架', '旋風烤箱', '層爐＋冷卻架'],
+  piping: ['烘焙紙烤盤', '矽膠定位墊', '晾皮風扇架'],
+  oven: ['烤箱石板', '旋風烤箱', '層爐＋冷卻架'],
   box: ['甘納許夾餡台', '禮盒分格', '熟成冷藏櫃'],
 };
 export const EQUIP_FLAVOUR_ZH: Record<string, [string, string, string]> = {
   mixer: ['杏仁粉和糖粉一起過篩，沒有結塊，殼才會光滑。', '每次都打到硬性發泡，肉球不會酸。', '把麵糊壓拌到流下來像緞帶。貓咪說這是「最慢的那一步」。'],
-  piping: ['同一個花嘴、同樣的力道，每顆殼一樣大。', '墊子上印好圓圈，照著擠，每一排都對齊。', '一袋裝兩色麵糊，擠出來的殼有條紋，每顆都不一樣。'],
-  oven: ['擠好先晾到表面不黏手，結一層皮，裙邊就是這樣來的。', '風扇讓熱氣均勻，每顆殼烤得一樣。', '上下兩層同時烤，烤好的殼放到上面的網架放涼。'],
+  piping: ['鋪好烘焙紙，每顆一樣大，也不會黏。', '墊子上印好圓圈，每一排都對齊。', '小風扇把麵糊吹到表面結皮，裙邊就是這樣來的。'],
+  oven: ['石板把底火撐穩，殼頂不會裂。', '風扇讓熱氣均勻，每顆殼烤得一樣。', '上下兩層同時烤，烤好的殼放到上面的網架放涼。'],
   box: ['擠一圈甘納許，兩片殼合起來。', '牛皮紙分格，每顆馬卡龍有自己的位置。', '冷藏一天回潮，殼變軟跟餡融在一起。客人吃得出來。'],
 };
 export const EQUIP_EFFECT_ZH: Record<string, string> = { mixer: '拍擊產出 +60%。', piping: '所有貓產量 +25%。', oven: '離線收益 +15% 全速。', box: '客人訂單 +60%。' };

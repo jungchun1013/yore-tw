@@ -116,6 +116,7 @@ export class GameController {
       const dt = Math.min(5, (now - last) / 1000); // tab throttling: cap one tick at 5s, the rest counts as offline
       last = now;
       eco.tick(this.state, dt, now);
+      this.tickRainbow(dt, now);
       if (now - this.lastAchCheck > 1000) {
         this.lastAchCheck = now;
         for (const id of eco.checkAchievements(this.state, now)) {
@@ -146,6 +147,7 @@ export class GameController {
     this.combo = now - this.lastClickAt < 600 ? this.combo + 1 : 0;
     this.lastClickAt = now;
     const v = eco.click(this.state, now);
+    this.rainbowTap(now);
     sfx.click(this.combo);
     if (this.state.clicks % 25 === 1) this.analytics.track('click', { clicks: this.state.clicks, value: v });
     this.emit({ type: 'click', value: v, combo: this.combo });
@@ -269,10 +271,40 @@ export class GameController {
   }
 
   /** Easter egg: the rainbow cat. Cosmetic, plus a hidden achievement. */
+  /** Rainbow energy bar: 1 = full. Drains over the base duration; pats refill it (diminishing with tap speed, capped at one extra duration). */
+  rainbowEnergy = 0;
+  private rainbowBonusLeft = 0;
+  private rainbowTaps: number[] = [];
+  rainbowActive(): boolean { return this.rainbowEnergy > 0; }
+  private startRainbowEffect(now: number): void {
+    const D = eco.ABILITY.rainbow.durationMs;
+    this.rainbowEnergy = 1; this.rainbowBonusLeft = D; this.rainbowTaps = [];
+    this.state.rainbowUntil = now + D;
+  }
+  private tickRainbow(dt: number, now: number): void {
+    if (this.rainbowEnergy <= 0) return;
+    const D = eco.ABILITY.rainbow.durationMs;
+    this.rainbowEnergy = Math.max(0, this.rainbowEnergy - (dt * 1000) / D);
+    this.state.rainbowUntil = this.rainbowEnergy > 0 ? now + this.rainbowEnergy * D : 0;
+    if (this.rainbowEnergy <= 0) this.changed();
+  }
+  private rainbowTap(now: number): void {
+    if (this.rainbowEnergy <= 0 || this.rainbowBonusLeft <= 0) return;
+    const D = eco.ABILITY.rainbow.durationMs, R = eco.ABILITY.rainbow.tapsForDouble;
+    this.rainbowTaps.push(now); this.rainbowTaps = this.rainbowTaps.filter((t) => now - t <= 1000);
+    const rate = Math.max(1, this.rainbowTaps.length);
+    // log curve: R taps/s refill as fast as the bar drains (→ 2× duration); faster tapping gains less per tap; capped by the bonus pool
+    const gainMs = Math.min(this.rainbowBonusLeft, (1000 / R) * Math.log2(1 + R / rate));
+    this.rainbowBonusLeft -= gainMs;
+    this.rainbowEnergy = Math.min(1, this.rainbowEnergy + gainMs / D);
+    this.state.rainbowUntil = now + this.rainbowEnergy * D;
+  }
+
   rainbow(dash = false): number {
     if (!this.state.achievements.includes('rainbow')) { this.state.achievements.push('rainbow'); this.analytics.track('achievement', { id: 'rainbow' }); }
     const burst = dash ? this.cps() * eco.ABILITY.rainbow.burstSec : 0;
     if (burst > 0) eco.earn(this.state, burst);
+    if (dash) this.startRainbowEffect(this.now());
     sfx.nyan();
     this.analytics.track('rainbow', { dash, burst });
     this.emit({ type: 'rainbow', burst });

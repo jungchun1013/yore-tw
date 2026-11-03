@@ -1,0 +1,43 @@
+{
+  "colors": {
+    "#": "#5A4038",
+    "a": "#41291A",
+    "b": "#F7DEBD",
+    "c": "#C39B75",
+    "d": "#966D4E",
+    "e": "#E5BF97",
+    "f": "#FCF5EA"
+  },
+  "key": "furniture:cattree",
+  "rows": [
+    ".....########.....",
+    "...##bbbbbbbb##...",
+    "..##bbbbbbbbbb##..",
+    "..##bbbbbbbbbb##..",
+    "..###bbbbbbbb##a..",
+    "...###########a...",
+    "....######aaaa....",
+    "....#eeeecccca....",
+    "....#eeeeeccca....",
+    "....#eceeeccca....",
+    "....#eecccccca....",
+    "....#eeeeeecca....",
+    "....#ceeeeecca....",
+    "....#eecccccca....",
+    "....#eeeeeecca....",
+    "....#eeeeeccca....",
+    "....#eceeeecca....",
+    "....#eecccecca....",
+    "....#eeeeeecca....",
+    "....#eeeeeccca....",
+    "..##aeeecccccaaa..",
+    ".##baeeeeccccaeaa.",
+    "#bbbaaeeccccaaeeaa",
+    "#bbbbaaaaaaaaeeeda",
+    "#ccbbbbbbbeeeeddda",
+    ".#ccdddddddddddda.",
+    "..aaaaaaaaaaaaaa..",
+    ".................."
+  ],
+  "updatedAt": 1793644042467
+}

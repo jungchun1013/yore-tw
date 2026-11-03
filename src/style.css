@@ -253,3 +253,8 @@ button.pill:active { transform: translateY(1px); box-shadow: none; }
 @keyframes slack-blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
 .hud-slack { color: #B85C3C; font-weight: 900; }
 .slack-icon { height: 14px; width: auto; image-rendering: pixelated; vertical-align: -2px; margin-left: 4px; }
+
+/* rainbow effect: energy bar drains with the effect; pats refill it */
+.pill.rainbow-pill { display: flex; align-items: center; gap: 8px; background: #fff; border-color: #F3B6C6; color: var(--accent-ink); }
+.pill.rainbow-pill .bar { width: 72px; height: 10px; border-radius: 999px; background: #F0DFD3; overflow: hidden; display: inline-block; }
+.pill.rainbow-pill .bar i { display: block; height: 100%; width: 100%; background: linear-gradient(90deg, #ff5f6d, #ffb347, #fff36b, #7ee787, #6fb3ff, #c38cff); transition: width 0.15s linear; }

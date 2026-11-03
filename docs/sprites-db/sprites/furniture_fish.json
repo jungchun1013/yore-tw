@@ -1,0 +1,34 @@
+{
+  "colors": {
+    "#": "#5A4038",
+    "a": "#544D48",
+    "b": "#F6FAFB",
+    "c": "#C7E2EF",
+    "d": "#C1E0ED",
+    "e": "#BADBEA",
+    "f": "#C2E1EE"
+  },
+  "key": "furniture:fish",
+  "rows": [
+    "..........######.............",
+    "........##bbbbb###...........",
+    "......##bbbbbbbbbb##.........",
+    ".....#bbbbbbbbbbbbb##.....##.",
+    "....#ccbbbbbbbbbbbdd##...#ee#",
+    "...#cccccbbbbbbbcddddd###eee#",
+    "..#ccc##ffcccccdddddddeeeeee#",
+    ".#cccc##ffcccffdddddddeeeee#.",
+    "#cccccccccccffffdddddddeeee#.",
+    "#ccccccccccffffffddddddeee#..",
+    "#cccccccccdffffffddddddeeee#.",
+    ".#cccccccdddfffffdddddeeeee#.",
+    "..#cccccddddddffdddddeeeeeee#",
+    "...##ccfddddddddddddde#eeeee#",
+    ".....##ddddddddddddd##.###ee#",
+    ".......######dcccd##......##.",
+    ".............#cccc#..........",
+    "..............#cc#...........",
+    "...............##............"
+  ],
+  "updatedAt": 1793646324075
+}

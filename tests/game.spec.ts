@@ -396,3 +396,21 @@ test('slacking: a napping cat lowers production and lights the ↓ indicator; ta
   await page.waitForFunction(() => window.__mc!.ctrl.state.slack.nap === 0, null, { timeout: 5000 });
   await expect(page.locator('#hud-slack')).toBeHidden();
 });
+
+test('rainbow energy bar: the ×2 effect drains over time and steady tapping refills it (capped at 2×)', async ({ page }) => {
+  await fresh(page, { version: 1, macarons: 1e8, totalEarned: 1e9, allTimeEarned: 1e9, clicks: 400, gens: { kitten: 10, rainbow: 1 }, achievements: ['rainbow'], tutorial: ['pat', 'hire', 'upgrade', 'feed'], lastTick: Date.now() });
+  await page.waitForFunction(() => !!window.__mc?.debug?.rainbow);
+  const base = await page.evaluate(() => window.__mc!.ctrl.cps());
+  await page.evaluate(() => window.__mc!.debug!.rainbow());
+  const e0 = await page.evaluate(() => window.__mc!.ctrl.rainbowEnergy);
+  expect(e0).toBeGreaterThan(0.9);
+  const boosted = await page.evaluate(() => window.__mc!.ctrl.cps());
+  expect(boosted).toBeGreaterThan(base * 1.9);
+  await page.waitForTimeout(2000);
+  const e1 = await page.evaluate(() => window.__mc!.ctrl.rainbowEnergy);
+  expect(e1).toBeLessThan(e0 - 0.1); // drained about 20 %
+  await tapHero(page, 12); // quick pats refill
+  const e2 = await page.evaluate(() => window.__mc!.ctrl.rainbowEnergy);
+  expect(e2).toBeGreaterThan(e1);
+  expect(e2).toBeLessThanOrEqual(1);
+});

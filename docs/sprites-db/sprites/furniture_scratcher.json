@@ -1,0 +1,36 @@
+{
+  "colors": {
+    "#": "#5A4038",
+    "a": "#EED0AB",
+    "b": "#3E2517",
+    "c": "#84573E",
+    "d": "#BE845D",
+    "e": "#AB714E",
+    "f": "#A06747"
+  },
+  "key": "furniture:scratcher",
+  "rows": [
+    "..bbbbbbbb..",
+    ".baaaaaaaab.",
+    "baaaaaadaaab",
+    "baaaddddaaab",
+    "bbaaaaaaaabb",
+    "bdbbbbbbbbfb",
+    "bdddeeeefffb",
+    "bdddeeecfffb",
+    "bdddeeecfffb",
+    "bdddeeecfffb",
+    "bddeceeccffb",
+    "bddecceecffb",
+    "bddeeceecffb",
+    "bddeeceecffb",
+    "bdddeceecffb",
+    "bdddeceeeffb",
+    "bdddeceeeffb",
+    "bddeeceeeffb",
+    "bbdeeeeeffbb",
+    ".bbbeeeebbb.",
+    "...bbbbbb..."
+  ],
+  "updatedAt": 1793643436168
+}

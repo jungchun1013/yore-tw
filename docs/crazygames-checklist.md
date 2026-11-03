@@ -37,3 +37,20 @@ Source: CrazyGames developer docs (requirements, QA, SDK). Items marked ☐ need
 ## Basic Launch metrics to watch (platform dashboard)
 - Average playtime (good: 10+ min), D1 retention (good: 10–15 %), play-conversion (good: 80 %+)
 - If playtime is short: check whether players reach the first automation (<30 s) and first upgrade (<3 min) — the analytics bus already records `buy_gen`, `buy_upgrade`, `session_ping`; wire it to the platform or a lightweight endpoint before Full Launch
+
+## Submission package (docs/crazygames/)
+Generated on 2026-11-02 from v45. Regenerate the screenshots with `CG=1 npx playwright test tests/tools/cg-shots.spec.ts --project=desktop`.
+
+| File | Use |
+|---|---|
+| `icon-512.png`, `icon-256.png` | square game icon (owner cat on pink) |
+| `cover-1920x1080.png`, `cover-800x450.png` | 16:9 cover / thumbnail |
+| `screenshot-1-start-{zh,en}.png` … `screenshot-5-lategame-{zh,en}.png` | five gameplay screenshots at 1920×1080, both languages (upload the English set; zh set is for a localised listing) |
+| `description.md` | title, tagline, short and long description, controls, tags (EN + zh-TW) |
+
+Upload steps
+1. `npm run build`, then zip the **contents** of `dist/` (index.html at the zip root, not inside a folder).
+2. CrazyGames developer portal → Submit game → upload the zip as an HTML5 game; the SDK is loaded automatically on their domain (the build detects `crazygames.com` and loads `crazygames-sdk-v3.js`; nothing to configure).
+3. Fill the listing from `description.md`; upload icon, cover and the five English screenshots.
+4. Before submitting, open the preview URL with the SDK QA tool (developer portal → your game → QA tool) and check: rewarded ad on "Catnip rush" and on the offline "Collect 2×", midgame ad after opening a new shop, `gameplayStart/Stop`, save/load through the SDK data module.
+5. Request Basic Launch; after the metrics period, move to Full Launch.

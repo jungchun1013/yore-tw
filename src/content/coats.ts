@@ -23,13 +23,13 @@ const GRAY = '#B9B1AD', GRAY_STRIPE = '#A39A95';
 export const COATS: Record<string, Coat> = {
   cream:       { fill: '#FFF8F0', stripe: '#F3E6DA' },
   orangewhite: { fill: WHITE, stripe: WHITE_STRIPE, pattern: 'bicolor', patchA: ORANGE, patchAStripe: ORANGE_STRIPE },
-  calico:      { fill: WHITE, stripe: WHITE_STRIPE, pattern: 'calico', patchA: ORANGE, patchAStripe: ORANGE_STRIPE, patchB: BLACK },
+  calico:      { fill: WHITE, stripe: WHITE, pattern: 'calico', patchA: ORANGE, patchAStripe: ORANGE, patchB: BLACK }, // plain patches, no tabby stripes
   white:       { fill: WHITE, stripe: WHITE_STRIPE },
   black:       { fill: BLACK, stripe: BLACK_STRIPE, eye: '#FFE866', face: '#FFFFFF' },
-  cow:         { fill: WHITE, stripe: WHITE_STRIPE, pattern: 'cow', patchB: BLACK },
+  cow:         { fill: WHITE, stripe: WHITE, pattern: 'cow', patchB: BLACK }, // no tabby stripes
   orangetabby: { fill: ORANGE, stripe: ORANGE_STRIPE },
   graywhite:   { fill: WHITE, stripe: WHITE_STRIPE, pattern: 'bicolor', patchA: GRAY, patchAStripe: GRAY_STRIPE },
-  gold:        { fill: PALETTE.gold.fill, stripe: PALETTE.gold.shade },
+  gold:        { fill: '#FFD54A', stripe: '#E8B423', eye: '#5A3A10' }, // the Deity: bright, saturated gold
   blueberry:   { fill: PALETTE.blueberry.fill, stripe: PALETTE.blueberry.shade },
   pistachio:   { fill: PALETTE.pistachio.fill, stripe: PALETTE.pistachio.shade },
   cosmic:      { fill: PALETTE.cosmic.fill, stripe: PALETTE.cosmic.shade, eye: '#FFE866', face: '#FFFFFF' }, // deep space indigo, star-yellow eyes

@@ -1,0 +1,34 @@
+{
+  "colors": {
+    "#": "#5A4038",
+    "a": "#78B8BA",
+    "b": "#6F582D",
+    "c": "#D7ECF4",
+    "d": "#AFDBE9",
+    "e": "#E7C181",
+    "f": "#73AB91",
+    "g": "#FFFFFF",
+    "h": "#FFA8A8"
+  },
+  "key": "furniture:fishbowl",
+  "rows": [
+    "..................",
+    "...############...",
+    "..#cccccccccccc#..",
+    "...#ccccccgggc#...",
+    "..#cccccccccccc#..",
+    ".#dddddddddddddd#.",
+    ".#dddddddddddddd#.",
+    "#dcccddddddddcddd#",
+    "#dcdddddhhhdhdddd#",
+    "#dcdfddhhhhhddddd#",
+    "#ddddfddhhhdhdddd#",
+    ".#addfdfddddddcdd#",
+    ".#aadfdfddfdddcd#.",
+    ".#aaadffdddfccaa#.",
+    "..#aaafdddfccaa#..",
+    "...#aaaafffaaa#...",
+    "....##########...."
+  ],
+  "updatedAt": 1793643358956
+}

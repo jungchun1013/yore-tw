@@ -70,7 +70,7 @@ export const ABILITY = {
   deity: { minGapSec: 180, maxGapSec: 300, durationMs: 45_000, baseMult: 1.5, perCat: 0.1, maxMult: 2, burstSec: 20 },
   timecat: { minGapSec: 240, maxGapSec: 360, durationMs: 20_000, baseMult: 2, perCat: 0.5, maxMult: 3, offlineHoursPerCat: 2, maxOfflineHours: 8 },
   cosmic: { minGapSec: 180, maxGapSec: 300, fragmentsPerStar: 10, starBonusPerCat: 0.1, maxStarBonus: 1, burstSec: 15 },
-  rainbow: { minGapSec: 240, maxGapSec: 360, burstSec: 10 },
+  rainbow: { minGapSec: 240, maxGapSec: 360, burstSec: 0, mult: 2, durationMs: 10_000, tapsForDouble: 5 }, // ×2 for 10 s; tapping refills the bar, at most doubling it
 };
 export function blessMultiplier(s: GameState, now: number): number { return now < s.blessedUntil ? s.blessMult : 1; }
 export function deityBlessMult(s: GameState): number {
@@ -82,6 +82,7 @@ export function timeWarpMult(s: GameState): number {
   return n > 0 ? Math.min(ABILITY.timecat.maxMult, ABILITY.timecat.baseMult + (n - 1) * ABILITY.timecat.perCat) : 1;
 }
 export function warpMultiplier(s: GameState, now: number): number { return now < s.warpUntil ? s.warpMult : 1; }
+export function rainbowMultiplier(s: GameState, now: number): number { return now < (s.rainbowUntil ?? 0) ? ABILITY.rainbow.mult : 1; }
 export function cosmicStarBonus(s: GameState): number {
   return Math.min(ABILITY.cosmic.maxStarBonus, (s.gens.cosmic ?? 0) * ABILITY.cosmic.starBonusPerCat);
 }
@@ -148,6 +149,7 @@ export function newState(now = Date.now()): GameState {
     warpUntil: 0,
     warpMult: 1,
     starFragments: 0,
+    rainbowUntil: 0,
     diary: [],
     lastTick: now,
     createdAt: now,
@@ -224,7 +226,7 @@ export function baseCps(s: GameState, now = Date.now()): number {
 }
 
 export function cps(s: GameState, now: number): number {
-  return baseCps(s, now) * boostMultiplier(s, now) * warpMultiplier(s, now) * heatMultiplier(s) * slackMultiplier(s);
+  return baseCps(s, now) * boostMultiplier(s, now) * warpMultiplier(s, now) * heatMultiplier(s) * slackMultiplier(s) * rainbowMultiplier(s, now);
 }
 
 export function clickValue(s: GameState, now: number): number {

@@ -70,6 +70,7 @@ export function deserialize(raw: string | null, now = Date.now()): GameState {
     warpUntil: Math.min(num(p.warpUntil, 0), now + 30_000),
     warpMult: Math.min(4, Math.max(1, num(p.warpMult, 1))),
     starFragments: Math.floor(num(p.starFragments, 0)),
+    rainbowUntil: 0, // transient: the effect does not survive a reload
     diary: Array.isArray(p.diary) ? (p.diary as unknown[]).filter((d): d is GameState['diary'][number] => !!d && typeof d === 'object' && typeof (d as { text?: unknown }).text === 'string').slice(-40) : [],
     furnitureOwned: Array.from(new Set(['cushion', ...strs(p.furnitureOwned)])),
     furnitureSlots: (() => { const v = Array.isArray(p.furnitureSlots) ? p.furnitureSlots : []; const out: (string | null)[] = []; for (let i = 0; i < 4; i++) out.push(typeof v[i] === 'string' ? (v[i] as string) : null); return out.every((x) => x === null) && !Array.isArray(p.furnitureSlots) ? [null, null, 'cushion', null] : out; })(),

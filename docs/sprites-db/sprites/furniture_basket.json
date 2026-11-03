@@ -1,0 +1,35 @@
+{
+  "colors": {
+    "#": "#5A4038",
+    "a": "#C49166",
+    "b": "#3F2617",
+    "c": "#DAAA7D",
+    "d": "#F2CDA5",
+    "e": "#9D6B4A",
+    "f": "#7D5439"
+  },
+  "key": "furniture:basket",
+  "rows": [
+    "..........#####.........",
+    "........##aaaaa##.......",
+    "........#aaaaaaaa#......",
+    ".......#aa#####aa#......",
+    "......#aa#.....#aa#.....",
+    "......#aa#......#aa#....",
+    ".....##a#.......#aa#....",
+    "...###aa#########ee##...",
+    ".##ee#aa#eeeeeeeeeeee##.",
+    "#eef#aa#ffffffffffffeee#",
+    "#eef#aa#fffffffffffffee#",
+    "#eef#aa#fffffffffffeeeab",
+    "##ae#aa#eeeeeeeeeeeaaaab",
+    "##aaaaaaaaaaaaaaaaaaeebb",
+    ".#addccdcccdccdeeaddeab.",
+    ".#addcddcdddcddeaddeeab.",
+    ".##aacdccdcccdeeddeedbb.",
+    "..##aaacddcdeeeddeedbb..",
+    "...###aadaaeeadaeabbb...",
+    ".....#########bbbbb....."
+  ],
+  "updatedAt": 1793644781977
+}
