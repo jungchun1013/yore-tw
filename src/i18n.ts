@@ -115,7 +115,7 @@ const UI: Record<string, { en: string; zh: string }> = {
   taggedYou: { en: 'tagged meowcaron.official', zh: '標記了 meowcaron.official' },
   warpFloat: { en: '⏳ ×{m} speed · {s}s', zh: '⏳ ×{m} 速 · {s} 秒' },
   owner: { en: 'Owner', zh: '店長' },
-  cpsText: { en: '{n} per second', zh: '每秒 {n}' },
+  cpsText: { en: '{n}/s', zh: '{n}/秒' },
   clickText: { en: ' · {n} per pat', zh: ' · 每拍 {n}' },
   brandSub: { en: 'cat macaron bakery', zh: '貓咪馬卡龍店' },
   starsTip: { en: 'Stars boost all production permanently', zh: '星星永久提升所有產量' },

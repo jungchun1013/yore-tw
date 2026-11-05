@@ -10,7 +10,7 @@ const CATS_EN: GeneratorDef[] = [
   { id: 'kitten',     name: 'Kitten',         desc: 'Bats at the dough. Mostly helps.',            baseCost: 15,       baseProd: 0.2,     costMult: 1.15, color: 'pink', coat: 'orangewhite',      accessory: 'none' },
   { id: 'apprentice', name: 'Apprentice Cat', desc: 'Has read half of one recipe.',               baseCost: 100,      baseProd: 1,       costMult: 1.15, color: 'mint', coat: 'calico',      accessory: 'bow' },
   { id: 'baker',      name: 'Baker Cat',      desc: 'Pipes perfect shells. Never shares the trick.', baseCost: 700,   baseProd: 6,       costMult: 1.15, color: 'lemon', coat: 'white',     accessory: 'kerchief' },
-  { id: 'courier',    name: 'Courier Cat',    desc: 'Delivers macarons across town at 3am.',      baseCost: 5000,    baseProd: 35,      costMult: 1.15, color: 'sky', coat: 'black',       accessory: 'cap' },
+  { id: 'courier',    name: 'Courier Cat',    desc: 'Delivers macarons across town at 3am.',      baseCost: 5000,    baseProd: 35,      costMult: 1.15, color: 'sky', coat: 'black',       accessory: 'kerchief_blue' },
   { id: 'patissier',  name: 'Pâtissier Cat',  desc: 'Trained in Paris. Judges your ganache.',     baseCost: 40000,   baseProd: 200,     costMult: 1.15, color: 'lavender', coat: 'cow',  accessory: 'tallhat' },
   { id: 'manager',    name: 'Manager Cat',    desc: 'Schedules naps with ruthless efficiency.',    baseCost: 420000,    baseProd: 1400,    costMult: 1.15, color: 'peach', coat: 'orangetabby',     accessory: 'tie' },
   { id: 'influencer', name: 'Influencer Cat', desc: 'One photo, ten thousand orders.',            baseCost: 5.2e+06,   baseProd: 9500,    costMult: 1.15, color: 'rose', coat: 'graywhite',      accessory: 'sunglasses' },

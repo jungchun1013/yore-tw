@@ -233,7 +233,7 @@ export function initPanel(ctrl: GameController): void {
     hudCps.textContent = fmt(ctrl.cps());
     hudClick.textContent = fmt(ctrl.clickValue());
     hudCpsText.textContent = t('cpsText', { n: hudCps.textContent! });
-    hudClickText.textContent = t('clickText', { n: hudClick.textContent! });
+    hudClickText.textContent = ''; // the pat value lives in the paw-upgrade tooltips now
     const gain = ctrl.prestigeStars();
     btnPrestige.disabled = gain < PRESTIGE.minStars;
     prestigeGain.textContent = `(+${gain} ★)`;

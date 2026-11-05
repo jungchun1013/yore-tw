@@ -127,6 +127,7 @@ export class CafeScene extends Phaser.Scene {
     for (const name of STATIONS) this.props.push(this.add.image(0, 0, `prop_${name}_t0`).setOrigin(0.5, 1));
     this.sack = this.add.image(0, 0, 'sack').setOrigin(0.5, 1); // stands on the floor under the belt's end
     this.rope = this.add.image(0, 0, 'rope').setOrigin(0.5, 1);
+    this.rope2 = this.add.image(0, 0, 'rope').setOrigin(0.5, 1); // a second span: the queue is long
     this.seats = [this.add.image(0, 0, 'seat').setOrigin(0.5, 1), this.add.image(0, 0, 'seat').setOrigin(0.5, 1)];
     this.energyBar = this.add.graphics().setDepth(9401);
     this.whisk = this.add.image(0, 0, 'whisk');
@@ -161,6 +162,8 @@ export class CafeScene extends Phaser.Scene {
       furniture: () => this.lounge.map((it) => it.key),
       play: () => { const r = this.freeRoamers()[0]; return r ? this.sendToPlay(r) : false; },
       eat: () => { const r = this.freeRoamers()[0]; if (!r) return false; this.sendToEat(r); return r.next === 'eat'; },
+      hits: (x: number, y: number) => { const ptr = this.input.activePointer; ptr.x = x; ptr.y = y; const objs = this.input.hitTestPointer(ptr) as Phaser.GameObjects.Image[]; return objs.map((o) => ({ key: o.texture?.key, depth: o.depth, x: Math.round(o.x), y: Math.round(o.y), flip: o.flipX, angle: Math.round(o.angle), ox: o.originX, oy: o.originY })); },
+      scene: () => this as unknown,
       eater: () => { const r = this.roamers.find((x) => x.mode === 'eat'); return r ? { x: r.sprite.x, y: r.sprite.y - 4 * this.roamerScale(), gen: r.gen } : null; },
       rainbow: () => this.nyanDash(),
       windower: () => { const r = this.roamers.find((x) => x.spot === 'window'); return r ? { x: Math.round(r.sprite.x), y: Math.round(r.sprite.y), tx: Math.round(r.tx), ty: Math.round(r.ty), mode: r.mode, next: r.next, route: r.route.length, counterY: Math.round(this.counters[0].y), topX: Math.round(this.counters[0].x) } : null; },
@@ -218,6 +221,9 @@ export class CafeScene extends Phaser.Scene {
 
   /** Counter rectangles (top face) in stage coordinates. */
   private counters: { x: number; y: number; w: number; h: number }[] = [];
+  /** stainless cells of the counter under each machine: the belt is interrupted there, the machine stands on steel */
+  private cellGfx: Phaser.GameObjects.Graphics[] = [];
+  private rope2!: Phaser.GameObjects.Image;
   private display = { x: 0, y: 0, w: 0, h: 0 };
   /** packaging tier currently shown on the display counter (lags the bought tier until a cat has re-wrapped the stock) */
   private shelfTier = 0;
@@ -298,14 +304,20 @@ export class CafeScene extends Phaser.Scene {
     front.setPosition(rightCx + hb, frontCy).setRotation(Math.PI)
       .setSize(rightCx + hb - sackX, this.beltH).setTileScale(this.propScale).setDepth(frontCounter.y + frontCounter.h + this.counterFront + 1);
     this.drawBeltFrames(this.stations[0].x, sackX, rightCx, this.backY, frontCy, hb);
-    // machines sit on the counter top, drawn above the belt
+    // machines keep their places on the line, but each stands on a stainless cell of the counter: the belt is interrupted there
     const sc = this.machineScale;
     const topBase = topCounter.y + topCounter.h - 2;
+    const cellW = 26 * sc;
+    this.drawSteelCells([
+      { x: this.stations[0].x - cellW / 2, y: topCounter.y, w: cellW, h: depth, front: this.counterFront, depth: back.depth + 0.7 },
+      { x: this.stations[2].x - cellW / 2, y: topCounter.y, w: cellW, h: depth, front: this.counterFront, depth: back.depth + 0.7 },
+      { x: rightCounter.x, y: this.stations[3].y - cellW / 2, w: depth, h: cellW, front: 0, depth: down.depth + 0.7 },
+    ]);
     this.props.forEach((p, i) => {
       const st = this.stations[i];
-      // above the belt (belt depth = counter bottom + front + 1) so items slide underneath, as if into the machine
+      // above the belt and the steel cell (belt depth = counter bottom + front + 1) so items slide through the machine
       if (i === 1) { p.setVisible(false); return; } // the tray station stays off the floor for now
-      if (i === 3) p.setOrigin(0.5, 1).setScale(sc).setPosition(st.x, st.y + depth / 2).setDepth(rightCounter.y + rightCounter.h + this.counterFront + 3); // sits across the right-hand belt
+      if (i === 3) p.setOrigin(0.5, 1).setScale(sc).setPosition(st.x, st.y + depth / 2).setDepth(rightCounter.y + rightCounter.h + this.counterFront + 3); // across the right-hand run
       else p.setOrigin(0.5, 1).setScale(sc).setPosition(st.x, topBase).setDepth(topBase + 2 + this.counterFront + 4);
     });
     // the sack stands on the floor in its own bay, mouth up toward the belt end hanging above it
@@ -315,19 +327,21 @@ export class CafeScene extends Phaser.Scene {
     // stanchion rope on the street side, at the display counter's right end: counter spot on the left, queue on the right
     const ropeY = Math.min(h - 2, this.display.y + this.display.h + this.counterFront + 16 * this.roamerScale() + 4);
     this.rope.setScale(sc).setPosition(this.display.x + this.display.w + 12 * sc, ropeY + 3).setDepth(ropeY + 3); // in front of the customers standing at the same line
+    this.rope2.setScale(sc).setPosition(this.rope.x + 18 * sc, ropeY + 3).setDepth(ropeY + 3); // shares the middle stanchion
     this.placeMovingParts();
-    { const f = this.floorRect(); this.warmth.setPosition(this.stations[2].x - 10 * this.roamerScale(), f.y0 - 2 * this.propScale).setScale(this.propScale * 1.4, this.propScale * 1.1); }
+    { const f = this.floorRect(); this.warmth.setPosition(this.stations[2].x - 12 * this.roamerScale(), f.y0 - 2 * this.propScale).setScale(this.propScale * 0.55, this.propScale * 0.5); } // a pool about two cats wide, right in front of the oven
 
     // four furniture slots down the left side
     const fs = this.propScale;
     // all four on the left, zig-zagging down the wall so nothing overlaps
     const base = topY + depth + this.counterFront;
     // all four furniture spots run down the left wall, staggered, below the counter line
+    const slotMaxY = this.cam.y - 2 * fs; // never down into the owner's corner (phones: the floor is short)
     this.slotPos = [ // spread out down the left wall
-      { x: w * 0.08, y: base + 68 * fs },
+      { x: w * 0.08, y: Math.min(base + 68 * fs, slotMaxY) },
       { x: w * 0.17, y: base + 8 * fs },
-      { x: w * 0.07, y: base + 28 * fs },
-      { x: w * 0.17, y: base + 48 * fs },
+      { x: w * 0.07, y: Math.min(base + 28 * fs, slotMaxY - 40 * fs) },
+      { x: w * 0.17, y: Math.min(base + 48 * fs, slotMaxY - 20 * fs) },
     ];
     this.pendingFurniture = true;
 
@@ -362,13 +376,18 @@ export class CafeScene extends Phaser.Scene {
     g.fillStyle(0x6e5247, 1).fillRect(winX - 3, 6, winW + 6, this.wallH * 0.7);
     g.fillStyle(0xc4def5, 1).fillRect(winX, 9, winW, this.wallH * 0.7 - 6);
     g.fillStyle(0xffffff, 0.5).fillRect(winX + 6, 12, winW * 0.3, this.wallH * 0.25);
-    // counters: top face + front face + outline
-    for (const c of this.counters) {
-      g.fillStyle(0x5a4038, 1).fillRect(c.x - 2, c.y - 2, c.w + 4, c.h + this.counterFront + 4);
-      g.fillStyle(0xf7e8dc, 1).fillRect(c.x, c.y, c.w, c.h);
-      g.fillStyle(0xdcbda3, 1).fillRect(c.x, c.y + c.h, c.w, this.counterFront);
-      g.fillStyle(0xffffff, 0.35).fillRect(c.x + 4, c.y + 3, c.w - 8, 3);
+    // the U-shaped work counter as one seamless piece: every outline first, then every top face, then the front faces
+    const [top, right, front] = this.counters;
+    if (top && right && front) {
+      const cf = this.counterFront;
+      for (const c of [top, right, front]) g.fillStyle(0x5a4038, 1).fillRect(c.x - 2, c.y - 2, c.w + 4, c.h + (c === right ? 0 : cf) + 4);
+      for (const c of [top, right, front]) g.fillStyle(0xf7e8dc, 1).fillRect(c.x, c.y, c.w, c.h);
+      g.fillStyle(0xdcbda3, 1).fillRect(top.x, top.y + top.h, right.x - top.x, cf);      // front face of the back run stops at the inner corner
+      g.fillStyle(0xdcbda3, 1).fillRect(front.x, front.y + front.h, front.w, cf);        // front face of the front run, full width
+      g.fillStyle(0xffffff, 0.35).fillRect(top.x + 4, top.y + 3, top.w - 8, 3);          // one highlight along the back edge
+      g.fillStyle(0xffffff, 0.35).fillRect(front.x + 4, front.y + 3, right.x - front.x - 8, 3); // and along the front run, up to the corner
     }
+
     // street-side mat in front of the display counter
     g.fillStyle(0xf9cbd6, 0.6).fillRect(this.display.x + this.display.w * 0.15, this.display.y + this.display.h + this.counterFront + 4, this.display.w * 0.7, 6);
 
@@ -378,6 +397,19 @@ export class CafeScene extends Phaser.Scene {
     g.destroy();
     if (this.bgImage) this.bgImage.destroy();
     this.bgImage = this.add.image(0, 0, key).setOrigin(0).setDepth(0);
+  }
+
+  /** Steel cells under the machines, drawn over the belt (and its frame) but under the items and the machines. */
+  private drawSteelCells(cells: { x: number; y: number; w: number; h: number; front: number; depth: number }[]): void {
+    while (this.cellGfx.length < cells.length) this.cellGfx.push(this.add.graphics());
+    this.cellGfx.forEach((g, i) => {
+      const c = cells[i]; g.clear(); if (!c) return;
+      g.setDepth(c.depth);
+      g.fillStyle(0x5a4038, 1).fillRect(c.x - 2, c.y - 2, c.w + 4, c.h + c.front + 4);
+      g.fillStyle(0xd6dbe0, 1).fillRect(c.x, c.y, c.w, c.h);
+      if (c.front) g.fillStyle(0x9aa3ab, 1).fillRect(c.x, c.y + c.h, c.w, c.front);
+      g.fillStyle(0xffffff, 0.5).fillRect(c.x + 3, c.y + 2, c.w - 6, 2);
+    });
   }
 
   /** Outline for the three belt runs. Each corner square belongs to the run drawn on top of it (down at the
@@ -755,7 +787,13 @@ export class CafeScene extends Phaser.Scene {
       const sprite = this.add.image(p.x, p.y, `cat_${wc.gen}_open`).setOrigin(0.5, 1).setScale(s).setAlpha(0).setDepth(p.y)
         .setInteractive({ useHandCursor: true });
       const r: Roamer = { sprite, gen: wc.gen, slot: wc.slot, phase: Math.random() * Math.PI * 2, mode: 'idle', next: 'idle', tx: p.x, ty: p.y, timer: Phaser.Math.FloatBetween(0.2, 2), speed: (18 + Math.random() * 14) * s / 2, petReadyAt: 0, heart: null, flat: false, napAcc: 0, route: [], spot: null, alertUntil: 0 };
-      sprite.on('pointerdown', () => this.petCat(r));
+      sprite.setData('roamer', r);
+      // the topmost cat gets the tap; when cats overlap under the finger a slacking one wins over whoever is walking across it
+      // (per-sprite, not the scene-level pointerdown: that one is skipped whenever a HUD element sits over the canvas)
+      sprite.on('pointerdown', (ptr: Phaser.Input.Pointer) => {
+        const under = (this.input.hitTestPointer(ptr) as Phaser.GameObjects.GameObject[]).map((o) => o.getData('roamer') as Roamer | undefined).filter((x): x is Roamer => !!x);
+        this.petCat(under.find((x) => this.isSlacking(x)) ?? r);
+      });
       this.roamers.push(r);
       this.tweens.add({ targets: sprite, alpha: 1, duration: 300 });
     }
@@ -775,11 +813,13 @@ export class CafeScene extends Phaser.Scene {
   }
 
   /** Petting: each cat type has its own reaction (see journal). Cosmetic only. */
+  private isSlacking(r: Roamer): boolean { return r.mode === 'nap' || r.mode === 'rest' || r.mode === 'play' || r.mode === 'eat' || (r.mode === 'social' && !!this.social?.started); }
+
   private petCat(r: Roamer): void {
     if (r.mode === 'react' || r.mode === 'lie' || r.mode === 'climb') return;
     // a moment worth posting: tap a cat mid-interaction while an Influencer is on staff
     const moment: DiaryKind | null = r.mode === 'social' && this.social ? this.social.kind : (this.chat && this.chat.cat === r && this.chat.started) ? 'chat' : r.mode === 'nap' ? 'nap' : r.mode === 'rest' ? 'rest' : r.mode === 'play' ? 'play' : r.mode === 'eat' ? 'eat' : null;
-    const slacking = r.mode === 'nap' || r.mode === 'rest' || r.mode === 'play' || r.mode === 'eat' || (r.mode === 'social' && !!this.social?.started);
+    const slacking = this.isSlacking(r);
     if (moment && hasInfluencer(this.ctrl.state) && Math.random() < 0.5) {
       const cats = moment === 'chat' && this.chat ? [r.gen, this.chat.customer.species] : moment === 'cuddle' || moment === 'fight' ? [this.social!.a.gen, this.social!.b.gen] : [r.gen];
       const spot = (moment === 'nap' || moment === 'rest' || moment === 'play') && r.spot ? (r.spot.startsWith('counter') ? 'counter' : r.spot) : null;
@@ -1084,8 +1124,8 @@ export class CafeScene extends Phaser.Scene {
     const s = this.roamerScale();
     const y = Math.min(this.scale.height - 2, this.display.y + this.display.h + this.counterFront + 16 * s + 4);
     if (i === 0) return { x: this.display.x + this.display.w * 0.5, y };
-    const lineX0 = this.display.x + this.display.w + 24 * this.propScale + 11 * s; // past the rope
-    return { x: lineX0 + (i - 1) * 22 * s, y };
+    const lineX0 = this.display.x + this.display.w + 42 * this.propScale + 11 * s; // past both rope spans
+    return { x: Math.min(this.scale.width - 11 * s, lineX0 + (i - 1) * 22 * s), y };
   }
 
   private spawnCustomer(): void {

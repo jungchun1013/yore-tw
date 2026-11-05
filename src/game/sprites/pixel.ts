@@ -171,6 +171,13 @@ const ACCESSORIES: Record<string, { rows: string[]; dy: number }> = {
     '.#pppppppppppppp#p#...',
     '..##############.##...',
   ], dy: -1 },
+  kerchief_blue: { rows: [ // courier's bandana: the same scarf in delivery blue
+    '....##########........',
+    '...#kkkKkkkKkk#.......',
+    '..#kkKkkkKkkkKk##.....',
+    '.#kkkkkkkkkkkkkk#k#...',
+    '..##############.##...',
+  ], dy: -1 },
   hat: { rows: [ // chef toque
     '.....########.........',
     '....#wwwwwwww#........',
@@ -291,14 +298,14 @@ export function drawCat(ctx: CanvasRenderingContext2D, coatKey: string, accessor
   if (frame === true) frame = 'blink'; else if (frame === false) frame = 'open';
   if (species?.body) {
     const coat: Coat = COATS[coatKey] ?? COATS.cream;
-    const colors: Record<string, string> = { '#': OUTLINE, b: coat.fill, s: coat.stripe, e: coat.eye ?? EYE, p: PINK, c: CHEEK, w: WHITE, a: PALETTE.pink.accent, d: '#2A1E1B', o: '#F2A65A', m: coat.face ?? OUTLINE, y: '#FFD84D', r: '#D9534F', P: '#E7A3B4' };
+    const colors: Record<string, string> = { '#': OUTLINE, b: coat.fill, s: coat.stripe, e: coat.eye ?? EYE, p: PINK, c: CHEEK, w: WHITE, a: PALETTE.pink.accent, d: '#2A1E1B', o: '#F2A65A', m: coat.face ?? OUTLINE, y: '#FFD84D', r: '#D9534F', P: '#E7A3B4', k: '#6FA8DC', K: '#4A86C5' };
     const rows = bodyFrame(species.body, frame);
     drawTemplate(ctx, rows, ox, SPRITE_H - rows.length, colors);
     return;
   }
   const coat: Coat = COATS[coatKey] ?? COATS.cream;
   const accent = PALETTE.pink.accent;
-  const colors: Record<string, string> = { '#': OUTLINE, b: coat.fill, s: coat.stripe, e: coat.eye ?? EYE, p: PINK, c: CHEEK, w: WHITE, a: accent, d: '#2A1E1B', o: '#F2A65A', m: coat.face ?? OUTLINE, y: '#FFD84D', r: '#D9534F', P: '#E7A3B4' };
+  const colors: Record<string, string> = { '#': OUTLINE, b: coat.fill, s: coat.stripe, e: coat.eye ?? EYE, p: PINK, c: CHEEK, w: WHITE, a: accent, d: '#2A1E1B', o: '#F2A65A', m: coat.face ?? OUTLINE, y: '#FFD84D', r: '#D9534F', P: '#E7A3B4', k: '#6FA8DC', K: '#4A86C5' };
   let rows = frame === 'blink' ? CAT_BLINK : frame === 'happy' ? CAT_HAPPY : frame === 'laugh' ? CAT_LAUGH : frame === 'back' ? CAT_BACK : frame === 'sleep' ? CAT_SLEEP : frame === 'fight' ? CAT_FIGHT : CAT_OPEN;
   if (species) { const extraRows = species.head.length - 3; rows = [...species.head, ...rows.slice(3)]; oy -= extraRows; }
   drawTemplate(ctx, rows, ox, oy, colors);
@@ -921,36 +928,38 @@ export function sackCanvas(): HTMLCanvasElement {
 }
 
 /** Patting upgrades: a paw pressing down (🫳), with a different flourish per upgrade. 16x16. */
-const PAW = [
-  '...##.##.##.....',
-  '..#cc#cc#cc#....',
-  '..#pc#pc#pc#....',
-  '..#cc#cc#cc#....',
-  '.###cccccc###...',
-  '#cccccccccccc#..',
-  '#ccc#####cccc#..',
-  '#cc#ppppp#ccc#..',
-  '#cc#ppppp#ccc#..',
-  '.#cc#####ccc#...',
-  '..#cccccccc#....',
-  '...########.....',
+const PAW = [ // a cat's paw pads seen from below: four toe beans over the big pad
+  '.....###.###.....',
+  '....#ppp#ppp#....',
+  '.####ppp#ppp####.',
+  '#ppp#ppp#ppp#ppp#',
+  '#ppp#########ppp#',
+  '#ppp#.......#ppp#',
+  '.###.#######.###.',
+  '....#ppppppp#....',
+  '...#ppppppppp#...',
+  '...#ppppppppp#...',
+  '....#ppppppp#....',
+  '.....#ppppp#.....',
+  '......#ppp#......',
+  '.......###.......',
 ];
 const PAW_FLAIR: Record<string, { at: [number, number]; rows: string[] }[]> = {
-  click1: [{ at: [6, 14], rows: ['e.e.e.e.e'] }],                                                                   // soft paws: one press line
-  click2: [{ at: [6, 14], rows: ['e.e.e.e.e'] }, { at: [15, 2], rows: ['.P.', 'PPP', '.P.'] }, { at: [1, 6], rows: ['.P.', 'PPP', '.P.'] }], // toe beans: pink pops
-  click3: [{ at: [5, 14], rows: ['eeeeeeeeeee'] }, { at: [3, 16], rows: ['e.e.e.e.e.e.e.e'] }],                   // double pat: two ripples
-  click4: [{ at: [15, 3], rows: ['..y', '.y.', 'y..', 'y..', 'y..', '.y.', '..y'] }, { at: [17, 1], rows: ['..y', '.y.', 'y..', 'y..', 'y..', 'y..', 'y..', '.y.', '..y'] }], // purr: sound arcs
-  click5: [{ at: [0, 3], rows: ['eee', '...', 'eeee', '...', 'eee'] }, { at: [0, 13], rows: ['eeeeee'] }, { at: [16, 6], rows: ['ee', '..', 'ee'] }], // zoomies: speed lines
-  pct1: [{ at: [0, 5], rows: ['eeee', '....', 'eeee', '....', 'eeee'] }, { at: [16, 5], rows: ['eeee', '....', 'eeee', '....', 'eeee'] }],  // whisker sense: whiskers
-  pct2: [{ at: [14, 11], rows: ['.y.y.', 'yyyyy', '.y#y.', 'yyyyy', '.y.y.'] }],                                    // kitchen sync: a gear
-  pct3: [{ at: [14, 0], rows: ['.h.h.', 'hhhhh', 'hhhhh', '.hhh.', '..h..'] }, { at: [1, 11], rows: ['.w.', 'www', '.w.'] }], // nine lives: heart + sparkle
+  click1: [],                                                                                                       // soft paws: just the pads
+  click2: [{ at: [19, 1], rows: ['.P.', 'PPP', '.P.'] }, { at: [19, 11], rows: ['.P.', 'PPP', '.P.'] }],              // toe beans: pink pops
+  click3: [{ at: [2, 16], rows: ['eeeeeeeeeeeee'] }, { at: [4, 17], rows: ['e.e.e.e.e'] }],                           // double pat: two ripples
+  click4: [{ at: [18, 3], rows: ['..y', '.y.', 'y..', 'y..', 'y..', '.y.', '..y'] }, { at: [20, 1], rows: ['..y', '.y.', 'y..', 'y..', 'y..', 'y..', 'y..', '.y.', '..y'] }], // purr: sound arcs
+  click5: [{ at: [18, 4], rows: ['eee', '...', 'eeeee', '...', 'eee'] }, { at: [18, 12], rows: ['eeee'] }],            // zoomies: speed lines
+  pct1: [{ at: [18, 5], rows: ['eeee', '....', 'eeee', '....', 'eeee'] }],                                            // whisker sense: whiskers
+  pct2: [{ at: [18, 11], rows: ['.y.y.', 'yyyyy', '.y#y.', 'yyyyy', '.y.y.'] }],                                       // kitchen sync: a gear
+  pct3: [{ at: [18, 0], rows: ['.h.h.', 'hhhhh', 'hhhhh', '.hhh.', '..h..'] }, { at: [19, 12], rows: ['.w.', 'www', '.w.'] }], // nine lives: heart + sparkle
 };
 export function patCanvas(variant: string): HTMLCanvasElement {
   const ov = overrideCanvas(`pat:${variant}`);
   if (ov) return ov;
-  const c = makeCanvas(20, 18);
+  const c = makeCanvas(24, 18);
   const ctx = c.getContext('2d')!;
-  drawTemplate(ctx, PAW, 4, 1, { '#': OUTLINE, c: '#FBEAD2', p: '#F3B6C6' });
+  drawTemplate(ctx, PAW, 0, 1, { '#': OUTLINE, p: '#F3B6C6' });
   for (const f of PAW_FLAIR[variant] ?? PAW_FLAIR.click1) drawTemplate(ctx, f.rows, f.at[0], f.at[1], { e: '#9C8A82', P: '#F28CA3', y: '#F4C65A', h: '#F28CA3', w: '#FFE28A', '#': OUTLINE });
   return c;
 }
