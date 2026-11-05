@@ -327,34 +327,50 @@ test('cat tree: a resting cat climbs from the foot to the top and back down', as
   expect(climbYs[0]).toBeGreaterThan(climbYs[climbYs.length - 1]); // y decreases: bottom → top
 });
 
-test('onboarding: pat → hire → upgrade coach prompts, then the feed prompt with an Influencer Cat', async ({ page }) => {
+test('onboarding: pat → hire → wake the dozing kitten → pet it; nothing repeats; Settings can replay it', async ({ page }) => {
   await fresh(page);
   await expect(page.locator('.coach[data-step="pat"]')).toBeVisible();
+  await expect(page.locator('.coach-ring')).toHaveCount(0); // a bubble only, no frame
   await tapHero(page, 3);
   await expect(page.locator('.coach[data-step="pat"]')).toHaveCount(0);
   await tapHero(page, 15);
   await expect(page.locator('.coach[data-step="hire"]')).toBeVisible();
   await page.locator('[data-buy="kitten"]').click();
   await expect(page.locator('.coach[data-step="hire"]')).toHaveCount(0);
-  await page.evaluate(() => { window.__mc!.ctrl.state.macarons = 500; });
-  await expect(page.locator('.coach[data-step="upgrade"]')).toBeVisible();
-  await page.locator('[data-upgrade]').first().click();
-  await expect(page.locator('.coach[data-step="upgrade"]')).toHaveCount(0);
+  // the new kitten dozes off within a few seconds; tapping it is the third step
+  await expect(page.locator('.coach[data-step="wake"]')).toBeVisible({ timeout: 15000 });
+  const box = (await page.locator('#game canvas').boundingBox())!;
+  for (let i = 0; i < 4; i++) {
+    const n = await page.evaluate(() => window.__mc!.debug!.napper());
+    if (!n) break;
+    await page.mouse.click(box.x + n.x, box.y + n.y);
+    await page.waitForTimeout(500);
+  }
+  await expect(page.locator('.coach[data-step="wake"]')).toHaveCount(0);
+  await expect(page.locator('.coach[data-step="pet"]')).toBeVisible({ timeout: 10000 });
+  for (let i = 0; i < 6; i++) {
+    const r = await page.evaluate(() => window.__mc!.debug!.roamer());
+    if (!r) break;
+    await page.mouse.click(box.x + r.x, box.y + r.y);
+    await page.waitForTimeout(400);
+    if ((await page.locator('.coach[data-step="pet"]').count()) === 0) break;
+  }
+  await expect(page.locator('.coach[data-step="pet"]')).toHaveCount(0);
   const s = await state(page);
-  expect(s.tutorial).toEqual(expect.arrayContaining(['pat', 'hire', 'upgrade']));
+  expect(s.tutorial).toEqual(expect.arrayContaining(['pat', 'hire', 'wake', 'pet']));
   await page.reload();
   await page.waitForFunction(() => !!window.__mc?.hero);
   await page.waitForTimeout(400);
   await expect(page.locator('.coach')).toHaveCount(0); // nothing repeats
+  await page.locator('#btn-settings').click();
+  await page.locator('#btn-tutorial-reset').click();
+  await expect(page.locator('.coach[data-step="pat"]')).toBeVisible();
 });
 
-test('onboarding: feed prompt appears with the Influencer Cat and ends when the feed opens', async ({ page }) => {
-  await fresh(page, { version: 1, macarons: 10, totalEarned: 5e6, allTimeEarned: 5e6, clicks: 50, gens: { kitten: 5, influencer: 1 }, upgrades: ['kitten_t1'], tutorial: ['pat', 'hire', 'upgrade'], lastTick: Date.now() });
-  await expect(page.locator('.coach[data-step="feed"]')).toBeVisible();
-  await page.locator('#btn-feed').click();
+test('onboarding: a save that is past every step shows no coach', async ({ page }) => {
+  await fresh(page, { version: 1, macarons: 10, totalEarned: 5e6, allTimeEarned: 5e6, clicks: 50, gens: { kitten: 5, influencer: 1 }, upgrades: ['kitten_t1'], tutorial: ['pat', 'hire', 'wake', 'pet'], lastTick: Date.now() });
+  await page.waitForTimeout(600);
   await expect(page.locator('.coach')).toHaveCount(0);
-  await page.locator('#feed-close').click();
-  expect((await state(page)).tutorial).toContain('feed');
 });
 
 test('patting heat: after Soft paws, steady tapping lifts passive production and shows the heat pill', async ({ page }) => {

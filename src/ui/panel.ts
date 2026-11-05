@@ -351,9 +351,11 @@ function showSettings(ctrl: GameController): void {
   syncSound();
   body.append(soundRow, langRow);
   const actions = el('div', { class: 'actions' });
+  const replay = el('button', { class: 'btn', id: 'btn-tutorial-reset' }, [t('resetTutorial')]);
   const reset = el('button', { class: 'btn', id: 'btn-hard-reset' }, [t('wipe')]);
   const ok = el('button', { class: 'btn primary' }, [t('close')]);
-  actions.append(reset, ok); body.append(actions);
+  actions.append(replay, reset, ok); body.append(actions);
+  replay.onclick = () => { ctrl.resetTutorial(); close(); };
   langRow.querySelector<HTMLButtonElement>('#btn-lang-switch')!.onclick = () => switchLang(ctrl);
   const close = openModal(body); ok.onclick = close;
   reset.onclick = () => {

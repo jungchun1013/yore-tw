@@ -1,75 +1,80 @@
 import type { GameController } from '../core/controller';
-import { availableUpgrades, hasInfluencer } from '../core/economy';
 import { t } from '../i18n';
 import { el } from './dom';
 
 /**
- * Onboarding coach: four one-time prompts, each anchored to the thing to tap and dismissed by doing it.
- *   pat     → the owner on the stage               (done after 3 pats)
- *   hire    → the first "Hire" button              (shown once a kitten is affordable, done when one is owned)
- *   upgrade → the first upgrade tile                (shown when one is visible, done when any upgrade is bought)
- *   feed    → the 📸 button, when the Influencer Cat is hired (done when the feed is opened)
- * Progress is saved in state.tutorial so nothing repeats.
+ * Onboarding coach: four one-time prompts, each a single bubble next to the thing to tap, dismissed by doing it.
+ *   pat   → the owner on the stage                     (done after 3 more pats)
+ *   hire  → the first "Hire" button                    (shown once a kitten is affordable, done when one more is owned)
+ *   wake  → a kitten that dozed off on the floor       (shown when one is napping, done when it is tapped awake)
+ *   pet   → any cat walking about                      (done when a cat is petted)
+ * Progress is saved in state.tutorial so nothing repeats; Settings can reset it.
  */
+type Pt = { x: number; y: number };
 interface Step {
   id: string;
   text: string;
-  /** DOM target selector, or null for the owner cat on the canvas */
-  target: string | null;
+  /** where the bubble points: a DOM selector, or a point on the canvas */
+  anchor: (c: GameController) => string | Pt | null;
   when: (c: GameController) => boolean;
-  done: (c: GameController) => boolean;
+  /** called when the step is shown; returns the predicate that finishes it */
+  start: (c: GameController) => (c: GameController) => boolean;
 }
 
 export function initTutorial(ctrl: GameController): void {
   const root = document.getElementById('coach-root');
   if (!root) return;
-  let feedOpened = false;
-  document.getElementById('btn-feed')?.addEventListener('click', () => { feedOpened = true; });
+  let woke = 0, petted = 0;
+  ctrl.on((e) => { if (e.type === 'wake') woke++; if (e.type === 'pet') petted++; });
+  const dbg = () => window.__mc?.debug;
   const steps: Step[] = [
-    { id: 'pat', text: t('tutPat'), target: null, when: () => true, done: (c) => c.state.clicks >= 3 },
-    { id: 'hire', text: t('tutHire'), target: '[data-buy="kitten"]', when: (c) => c.state.macarons >= 15, done: (c) => (c.state.gens.kitten ?? 0) > 0 },
-    { id: 'upgrade', text: t('tutUpgrade'), target: '[data-upgrade]', when: (c) => availableUpgrades(c.state).some((u) => u.cost <= c.state.macarons), done: (c) => c.state.upgrades.length > 0 },
-    { id: 'feed', text: t('tutFeed'), target: '#btn-feed', when: (c) => hasInfluencer(c.state), done: (c) => feedOpened || c.state.posts > 0 },
+    { id: 'pat', text: t('tutPat'), anchor: () => window.__mc?.hero?.() ?? null, when: () => true,
+      start: (c) => { const n = c.state.clicks + 3; return (c2) => c2.state.clicks >= n; } },
+    { id: 'hire', text: t('tutHire'), anchor: () => '[data-buy="kitten"]', when: (c) => c.state.macarons >= 15,
+      start: (c) => { const n = (c.state.gens.kitten ?? 0) + 1; return (c2) => (c2.state.gens.kitten ?? 0) >= n; } },
+    { id: 'wake', text: t('tutWake'), anchor: () => dbg()?.napper() ?? null, when: (c) => (c.state.gens.kitten ?? 0) > 0 && !!dbg()?.napper(),
+      start: () => { const n = woke + 1; return () => woke >= n; } },
+    { id: 'pet', text: t('tutPet'), anchor: () => dbg()?.roamer() ?? null, when: (c) => (c.state.gens.kitten ?? 0) > 0 && !!dbg()?.roamer(),
+      start: () => { const n = petted + 1; return () => petted >= n; } },
   ];
   let active: Step | null = null;
+  let isDone: ((c: GameController) => boolean) | null = null;
   let node: HTMLElement | null = null;
   let scrolled = false;
 
   const show = (step: Step) => {
-    active = step; scrolled = false;
+    active = step; scrolled = false; isDone = step.start(ctrl);
     node = el('div', { class: 'coach', 'data-step': step.id }, [
-      el('div', { class: 'coach-ring' }),
       el('div', { class: 'coach-bubble' }, [el('span', {}, [step.text]), el('button', { class: 'coach-ok', 'aria-label': t('gotIt') }, ['✓'])]),
     ]);
     node.querySelector<HTMLButtonElement>('.coach-ok')!.onclick = (e) => { e.stopPropagation(); finish(); };
     root.replaceChildren(node);
   };
-  const finish = () => { if (active) ctrl.completeTutorial(active.id); active = null; node = null; root.replaceChildren(); };
+  const finish = () => { if (active) ctrl.completeTutorial(active.id); active = null; isDone = null; node = null; root.replaceChildren(); };
 
-  /** Where the ring goes: the target element's box, or the owner's spot on the canvas. */
-  const anchor = (step: Step): DOMRect | null => {
-    if (step.target) {
-      const e = document.querySelector<HTMLElement>(step.target);
+  /** The box the bubble points at: a DOM element, or a spot on the canvas. */
+  const anchorRect = (step: Step): DOMRect | null => {
+    const a = step.anchor(ctrl);
+    if (!a) return null;
+    if (typeof a === 'string') {
+      const e = document.querySelector<HTMLElement>(a);
       if (!e) return null;
       if (!scrolled) { scrolled = true; e.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
       return e.getBoundingClientRect();
     }
     const canvas = document.querySelector('#game canvas');
-    const hero = window.__mc?.hero?.();
-    if (!canvas || !hero) return null;
+    if (!canvas) return null;
     const r = canvas.getBoundingClientRect();
-    const size = Math.min(r.width, r.height) * 0.22;
-    return new DOMRect(r.left + hero.x - size / 2, r.top + hero.y - size * 0.75, size, size);
+    const size = Math.min(r.width, r.height) * 0.16;
+    return new DOMRect(r.left + a.x - size / 2, r.top + a.y - size * 0.75, size, size);
   };
 
   const place = () => {
     if (!active || !node) return;
-    const a = anchor(active);
+    const a = anchorRect(active);
     if (!a) { node.style.display = 'none'; return; }
     node.style.display = '';
-    const ring = node.querySelector<HTMLElement>('.coach-ring')!, bubble = node.querySelector<HTMLElement>('.coach-bubble')!;
-    const pad = 8;
-    ring.style.cssText = `left:${a.left - pad}px;top:${a.top - pad}px;width:${a.width + pad * 2}px;height:${a.height + pad * 2}px`;
+    const bubble = node.querySelector<HTMLElement>('.coach-bubble')!;
     const bw = bubble.offsetWidth, bh = bubble.offsetHeight;
     let x = a.left + a.width / 2 - bw / 2;
     x = Math.max(8, Math.min(window.innerWidth - bw - 8, x));
@@ -82,13 +87,11 @@ export function initTutorial(ctrl: GameController): void {
 
   const tick = () => {
     if (active) {
-      if (active.done(ctrl)) finish();
+      if (isDone && isDone(ctrl)) finish();
       else place();
     } else {
-      const next = steps.find((s) => !ctrl.state.tutorial.includes(s.id) && !s.done(ctrl) && s.when(ctrl));
-      // steps already satisfied before they were ever shown are silently completed
-      for (const s of steps) if (!ctrl.state.tutorial.includes(s.id) && s.done(ctrl)) ctrl.completeTutorial(s.id);
-      if (next && document.getElementById('modal-root')?.childElementCount === 0) { show(next); place(); }
+      const next = steps.find((s) => !ctrl.state.tutorial.includes(s.id)); // strictly in order: the next step waits until its moment comes
+      if (next && next.when(ctrl) && document.getElementById('modal-root')?.childElementCount === 0) { show(next); place(); }
     }
     requestAnimationFrame(tick);
   };

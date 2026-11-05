@@ -280,7 +280,7 @@ export class CafeScene extends Phaser.Scene {
     const catH = 16 * this.roamerScale(), catW = 22 * this.roamerScale();
     const topY = Math.max(this.wallH + 6 * this.propScale, this.wallH + h * (narrow ? 0.34 : 0.27) - 2 * catH);
     const frontY = this.display.y;
-    const topX0 = w * 0.22 + 2 * catW; // two cat-widths shorter on the left: more floor to roam
+    const topX0 = w * 0.22 + 2 * catW - 16 * this.propScale; // the counter (and the mixer at its start) begins one cell further left
     const topCounter = { x: topX0, y: topY, w: rightCx + depth / 2 - topX0, h: depth };
     const rightCounter = { x: rightCx - depth / 2, y: topY + depth, w: depth, h: frontY - (topY + depth) };
     const frontX0 = this.display.x + this.display.w + sackGap; // the front counter stays where it was; the bay is carved from the display counter
@@ -872,14 +872,15 @@ export class CafeScene extends Phaser.Scene {
 
   /** After a long absence every floor cat is found asleep where it stands (full slack until tapped); they wake on their own over a few minutes. */
   private dozeEveryone(): void {
-    for (const r of this.roamers) {
-      if (r.mode !== 'idle' && r.mode !== 'walk') continue;
-      const sp = r.sprite;
-      r.mode = 'nap'; r.next = 'idle'; r.spot = null; r.timer = Phaser.Math.FloatBetween(90, 240); r.napAcc = Math.random();
-      this.tweens.killTweensOf(sp);
-      this.lieDown(sp, sp.flipX ? -90 : 90, 360);
-      sp.setTexture(`cat_${r.gen}_sleep`);
-    }
+    for (const r of this.roamers) if (r.mode === 'idle' || r.mode === 'walk') this.dozeOne(r, Phaser.Math.FloatBetween(90, 240));
+  }
+  /** Fall asleep right here, right now (no walking to a spot); wakes on its own after `seconds` unless tapped. */
+  private dozeOne(r: Roamer, seconds: number): void {
+    const sp = r.sprite;
+    r.mode = 'nap'; r.next = 'idle'; r.spot = null; r.timer = seconds; r.napAcc = Math.random();
+    this.tweens.killTweensOf(sp);
+    this.lieDown(sp, sp.flipX ? -90 : 90, 360);
+    sp.setTexture(`cat_${r.gen}_sleep`);
   }
 
   /** Petting: each cat type has its own reaction (see journal). Cosmetic only. */
@@ -915,7 +916,7 @@ export class CafeScene extends Phaser.Scene {
       const q = this.add.image(sp0.x + 7 * s0, sp0.y - 18 * s0, Math.random() < 0.5 ? 'emote_question' : 'emote_exclaim').setScale(s0 * 0.9).setDepth(8000);
       this.tweens.add({ targets: q, y: q.y - 16, alpha: 0, duration: 700, delay: 200, onComplete: () => q.destroy() });
       sfx.boing(1.4);
-      this.ctrl.analytics.track('wake', { gen: r.gen, mode: moment ?? r.mode });
+      this.ctrl.wake(r.gen, moment ?? r.mode);
       return;
     }
     const reaction: PetReaction = JOURNAL_BY_ID[r.gen]?.pet ?? 'happy';
@@ -1824,6 +1825,9 @@ export class CafeScene extends Phaser.Scene {
     if (e.type === 'click') { this.burst(e.value, e.combo); this.spawnBeltMacaron(true); }
     if (e.type === 'buy' || e.type === 'prestige' || e.type === 'offline' || e.type === 'reset') this.pendingRoamerRebuild = true;
     if (e.type === 'buy') abilityPrime(this.ctrl.state, e.gen, this.ctrl.now());
+    if (e.type === 'buy' && e.gen === 'kitten' && !this.ctrl.state.tutorial.includes('wake')) { // onboarding: the new kitten soon dozes off, to be tapped awake
+      this.time.delayedCall(2000, () => { const r = this.roamers.find((x) => x.gen === 'kitten' && (x.mode === 'idle' || x.mode === 'walk')); if (r && !this.ctrl.state.tutorial.includes('wake')) this.dozeOne(r, 120); });
+    }
     if (e.type === 'offline' && e.seconds >= OFFLINE.dozeAfterSeconds) this.dozeAll = true; // back after a long while: the whole floor is asleep, tap them awake
     if (e.type === 'upgrade' || e.type === 'prestige' || e.type === 'reset') this.pendingPropRefresh = true;
     if (e.type === 'upgrade' && e.id.startsWith('equip_box_')) this.rewrapDisplay();

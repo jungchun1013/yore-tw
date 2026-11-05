@@ -20,6 +20,7 @@ export type GameEvent =
   | { type: 'reset' }
   | { type: 'customer'; value: number; species: string }
   | { type: 'pet'; value: number; gen: string }
+  | { type: 'wake'; gen: string; mode: string }
   | { type: 'post'; gain: number; followers: number; caption: string; subject: string }
   | { type: 'bless'; mult: number; burst: number }
   | { type: 'warp'; mult: number; seconds: number }
@@ -436,6 +437,15 @@ export class GameController {
     if (eco.SLACK_KINDS.every((k) => cur[k] === counts[k])) return;
     this.state.slack = { ...counts };
   }
+
+  /** A slacking cat was tapped awake. */
+  wake(gen: string, mode: string): void {
+    this.analytics.track('wake', { gen, mode });
+    this.emit({ type: 'wake', gen, mode });
+  }
+
+  /** Forget the onboarding so the coach runs again from the first step. */
+  resetTutorial(): void { this.state.tutorial = []; this.save(); this.changed(); }
 
   /** Mark an onboarding step as done (idempotent). */
   completeTutorial(step: string): void {
