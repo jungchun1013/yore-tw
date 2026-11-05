@@ -24,10 +24,11 @@ site/
 
 1. `npm run site` builds the game and copies it to `site/meowcaron/`.
 2. Commit and push to GitHub.
-3. Cloudflare → Workers & Pages → Create → Pages → Connect to Git → pick the repo.
-   Framework preset: None · Build command: *(empty)* · Output directory: `site`.
-   (If you prefer Cloudflare to build: command `npm run site`, output `site`, env `NODE_VERSION=16`.)
-4. Custom domains → add `yore-tw.com` and `www.yore-tw.com` (DNS is created automatically since the domain is on Cloudflare).
+3. Cloudflare → Compute (Workers & Pages) → Create → connect the GitHub repo. Either kind of project works:
+   - **Pages**: Framework preset None · Build command *(empty)* · Output directory `site`.
+   - **Workers** (what the dashboard creates by default now): `wrangler.jsonc` in the repo already points the Worker's static assets at `site/`; set Build command *(empty)* and Deploy command `npx wrangler deploy`.
+   (If you prefer Cloudflare to build the game too: Build command `npm run site`, env `NODE_VERSION=18`.)
+4. Custom domains (Pages: Custom domains tab · Workers: Settings → Domains & Routes → Add → Custom domain) → add `yore-tw.com` and `www.yore-tw.com` (DNS is created automatically since the domain is on Cloudflare).
 5. Every later update: `npm run site`, commit, push.
 
 ### Turning on AdSense later
