@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="description" content="Meowcaron — a cozy pixel cat macaron bakery idle game. Pat the cat, hire cats, bake billions of macarons." />
+  <meta name="theme-color" content="#FFF7F0" />
+  <title>Meowcaron</title>
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  <!-- Own-domain ads (Google AdSense H5 Games Ads). Fill in after the AdSense account is approved; leave empty for an ad-free build. -->
+  <meta name="mc-adsense-client" content="" />
+  <meta name="mc-adsense-banner-slot" content="" />
+  
+  <script type="module" crossorigin src="./assets/index-f88eafd3.js"></script>
+  <link rel="modulepreload" crossorigin href="./assets/phaser-35f5989c.js">
+  <link rel="stylesheet" href="./assets/index-94276a34.css">
+</head>
+<body>
+  <div id="app">
+    <section id="stage" aria-label="Bakery">
+      <div id="game"></div>
+      <div id="hud">
+        <div class="hud-top">
+          <div class="hud-count"><span id="hud-macarons">0</span> <span class="hud-unit" data-i18n="macarons">macarons</span></div>
+          <div class="hud-sub"><span id="hud-cps" hidden>0</span><span id="hud-click" hidden>1</span><span id="hud-cps-text">0 per second</span><span class="hide-narrow" id="hud-click-text"> · 1 per pat</span><span id="hud-slack" class="hud-slack" hidden></span></div>
+        </div>
+        <div class="hud-right">
+          <button id="btn-rush" class="pill rush" data-i18n-title="rushTitle" title="Watch a short ad for 2× production for 2 minutes" hidden>🌿 Catnip rush</button>
+        </div>
+        <div class="hud-status">
+          <div id="heat-badge" class="pill heat" hidden></div>
+          <div id="loved-badge" class="pill loved-pill" hidden></div>
+          <div id="gram-badge" class="pill gram" hidden data-i18n-title="gramTip" title="Meowstagram followers">📸 <span id="gram-count">0</span></div>
+        </div>
+        <div id="toast-root"></div>
+      </div>
+    </section>
+    <aside id="panel" aria-label="Shop">
+      <div class="panel-scroll">
+      <header class="panel-head">
+        <div class="brand"><span class="brand-name" data-i18n="brand">Meowcaron</span><span class="brand-sub" data-i18n="brandSub">cat macaron bakery</span></div>
+        <div class="head-actions">
+          <span id="stars-badge" class="pill star" data-i18n-title="starsTip" title="Stars boost all production permanently">★ <span id="stars-count">0</span></span>
+          <button id="btn-journal" class="icon-btn" data-i18n-title="tipJournal" title="Cat journal">📖</button>
+          <button id="btn-codex" class="icon-btn" data-i18n-title="tipCodex" title="Customer codex">🐾</button>
+          <button id="btn-feed" class="icon-btn" data-i18n-title="tipFeed" title="Meowstagram">📸</button>
+          <button id="btn-furniture" class="icon-btn" data-i18n-title="tipFurniture" title="Furniture">🪑</button>
+          <button id="btn-achievements" class="icon-btn" data-i18n-title="tipAchievements" title="Achievements">🏆</button>
+          <button id="btn-settings" class="icon-btn" data-i18n-title="tipSettings" title="Settings">⚙️</button>
+        </div>
+      </header>
+      <section class="block" id="upgrades-block">
+        <div class="block-title"><span data-i18n="equipUpgrades">Kitchen</span> <span id="upgrades-hint" class="muted"></span></div>
+        <div id="upgrades" class="upgrade-strip" role="list"></div>
+      </section>
+      <section class="block" id="pat-block">
+        <div class="block-title"><span data-i18n="patUpgrades">Patting</span> <span id="pat-hint" class="muted"></span></div>
+        <div id="pat-upgrades" class="upgrade-strip" role="list"></div>
+      </section>
+      <section class="block">
+        <div class="block-title row">
+          <span data-i18n="cats">Cats</span>
+          <div class="seg" id="buy-amount" role="radiogroup" aria-label="Buy amount">
+            <button data-n="1" class="on">×1</button><button data-n="10">×10</button><button data-n="max" data-i18n="max">Max</button>
+          </div>
+        </div>
+        <div id="cats" class="cat-list" role="list"></div>
+      </section>
+      <section class="block" id="prestige-block">
+        <div class="block-title" data-i18n="newShop">New shop</div>
+        <div class="prestige-card">
+          <div class="prestige-text" data-i18n-html="prestigeText">Close this bakery and open a new one. Keep your <b>stars</b>: each star gives <b id="star-bonus">+25%</b> production forever.</div>
+          <button id="btn-prestige" class="btn primary" disabled><span data-i18n="openNewShop">Open new shop</span> <span id="prestige-gain">(+0 ★)</span></button>
+          <div id="prestige-hint" class="muted small"></div>
+        </div>
+        <div id="star-shop" class="cat-list" hidden></div>
+      </section>
+      <footer class="panel-foot muted small"><span id="playtime"></span></footer>
+      </div>
+      <div id="ad-banner" class="ad-banner" hidden></div>
+    </aside>
+  </div>
+  <div id="coach-root"></div>
+  <div id="modal-root"></div>
+  <div id="tooltip" hidden></div>
+  
+</body>
+</html>

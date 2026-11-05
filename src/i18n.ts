@@ -134,7 +134,7 @@ const UI: Record<string, { en: string; zh: string }> = {
   platform: { en: 'Platform', zh: '平台' },
   tutPat: { en: 'Pat the owner', zh: '拍拍店長' },
   tutHire: { en: 'Hire a kitten', zh: '雇一隻小奶貓' },
-  tutWake: { en: 'A kitten dozed off. Tap it', zh: '小貓睡著了，點牠' },
+  tutWake: { en: 'A kitten dozed off. Tap it to wake it up', zh: '點他，叫他起床' },
   tutPet: { en: 'Pat a kitten for a bonus', zh: '拍拍小貓有加成' },
   resetTutorial: { en: 'Replay tutorial', zh: '重看新手教學' },
   gotIt: { en: 'Got it', zh: '知道了' },
@@ -147,7 +147,7 @@ const UI: Record<string, { en: string; zh: string }> = {
 let current: Lang = detect();
 function detect(): Lang {
   try { const saved = localStorage.getItem('meowcaron.lang'); if (saved === 'en' || saved === 'zh') return saved; } catch { /* ignore */ }
-  return typeof navigator !== 'undefined' && /^zh/i.test(navigator.language) ? 'zh' : 'en';
+  return 'en'; // English by default everywhere; Traditional Chinese is a choice in Settings
 }
 export function lang(): Lang { return current; }
 export function setLang(l: Lang): void {

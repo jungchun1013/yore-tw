@@ -27,7 +27,7 @@ for (const lang of ['zh', 'en'] as const) {
   test(`cg ${lang} 3 journal`, async ({ page }) => {
     test.skip(!process.env.CG, 'set CG=1');
     await boot(page, { ...mid, lastTick: now() });
-    await page.locator('[data-cat="baker"] .info').click();
+    await page.locator('#btn-journal').click();
     await page.waitForTimeout(500);
     await page.screenshot({ path: `docs/crazygames/screenshot-3-journal-${lang}.png` });
   });
