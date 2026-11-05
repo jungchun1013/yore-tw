@@ -1,4 +1,5 @@
 import { SPRITE_PX } from '../../content/sprites-override';
+import { objectFurniture, objectProp, objectPat } from './objects';
 import { PALETTE } from '../../content/palette';
 import { COATS, type Coat } from '../../content/coats';
 
@@ -731,6 +732,7 @@ export function propCanvas(name: string, tier = 0): HTMLCanvasElement {
   const t = Math.max(0, Math.min(3, tier));
   const ov = overrideCanvas(`prop:${name}:${t}`);
   if (ov) return ov;
+  if (PROP_NAMES.includes(name)) return objectProp(name, t);
   const rows = (PROP_TIERS[name] ?? PROP_TIERS.box)[t];
   const pal = PALETTE[TIER_ACCENT[t]] ?? PALETTE.pink;
   const c = makeCanvas(22, 24);
@@ -973,6 +975,7 @@ const PAW_FLAIR: Record<string, { at: [number, number]; rows: string[] }[]> = {
 export function patCanvas(variant: string): HTMLCanvasElement {
   const ov = overrideCanvas(`pat:${variant}`);
   if (ov) return ov;
+  if (variant in PAW_FLAIR) return objectPat(variant);
   const c = makeCanvas(24, 18);
   const ctx = c.getContext('2d')!;
   drawTemplate(ctx, PAW, 0, 1, { '#': OUTLINE, p: '#F3B6C6' });
@@ -981,18 +984,18 @@ export function patCanvas(variant: string): HTMLCanvasElement {
 }
 
 const BELT = [ // chevrons pointing along +x; the frame is drawn by the scene so corners and ends close properly
-  'dmdddmdd',
-  'dmdddmdd',
-  'ddmdddmd',
-  'dddmdddm',
-  'dddmdddm',
-  'ddmdddmd',
-  'dmdddmdd',
-  'dmdddmdd',
+  'mmmmmmmm',
+  'ddddddmd',
+  'ddddddmd',
+  'ddddddmd',
+  'ddddddmd',
+  'ddddddmd',
+  'ddddddmd',
+  'mmmmmmmm',
 ];
 export function beltCanvas(): HTMLCanvasElement {
   const c = makeCanvas(8, 8);
-  drawTemplate(c.getContext('2d')!, BELT, 0, 0, { '#': OUTLINE, d: '#9C7B6A', m: '#B79A8A' });
+  drawTemplate(c.getContext('2d')!, BELT, 0, 0, { '#': OUTLINE, d: '#B5C8C3', m: '#E1EAE3' });
   return c;
 }
 
@@ -1793,6 +1796,8 @@ export const FURNITURE_PX: Record<string, { rows: string[]; colors: Record<strin
 };
 
 export function furnitureCanvas(name: string): HTMLCanvasElement {
+  const redrawn = objectFurniture(name);
+  if (redrawn) return redrawn;
   const ov = overrideCanvas(`furniture:${name}`);
   if (ov) return ov;
   const px = FURNITURE_PX[name];
