@@ -11,7 +11,7 @@ import { hasInfluencer } from '../core/economy';
 import { RUSH } from '../core/controller';
 import { showJournal } from './journal';
 import { showCodex } from './codex';
-import { showFeed } from './feed';
+import { showFeed, author } from './feed';
 import { showFurniture } from './furniture';
 import { renderPhoto } from './photo';
 import type { DiaryEntry } from '../core/types';
@@ -301,9 +301,10 @@ export function initPanel(ctrl: GameController): void {
 function showPost(entry: DiaryEntry, followers: number): void {
   const stage = document.getElementById('hud');
   if (!stage) return;
+  const by = entry.by ? author(entry.by, entry.t) : null;
   stage.querySelectorAll('.post').forEach((p) => p.remove());
   const card = el('div', { class: 'post', role: 'status' }, [
-    el('div', { class: 'post-head' }, [el('img', { src: iconFor('influencer'), alt: '' }), el('div', { html: `meowcaron.official<small>${t('followersNew', { f: fmt(followers) })}</small>` })]),
+    el('div', { class: 'post-head' }, [el('img', { src: by ? by.avatar : iconFor('influencer'), alt: '' }), el('div', { html: by ? `${by.handle}<small>${t('taggedYou')} · ${t('followersNew', { f: fmt(followers) })}</small>` : `meowcaron.official<small>${t('followersNew', { f: fmt(followers) })}</small>` })]),
     el('div', { class: 'post-photo' }, [el('img', { src: renderPhoto(entry), alt: '' })]),
     el('div', { class: 'post-caption' }, [entry.text]),
     el('div', { class: 'post-likes' }, [t('likesN', { n: fmt(Math.max(3, Math.round(followers * (0.3 + Math.random() * 0.4)))) })]),

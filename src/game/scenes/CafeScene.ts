@@ -7,11 +7,11 @@ import { SPECIES, pickSpecies } from '../../content/customers';
 import { FURNITURE_ITEMS, FURNITURE_BY_ID } from '../../content/furniture';
 import { JOURNAL_BY_ID, type PetReaction } from '../../content/journal';
 import { equipmentTier, PET, isLovedCat, customerGapMultiplier, hasInfluencer, warpMultiplier, ABILITY, abilityReady, abilityUsed, abilityPrime, OFFLINE } from '../../core/economy';
-import { DIARY_TEXT, SPOT_TEXT, pick } from '../../content/diarytext';
+import { DIARY_TEXT, SPOT_TEXT, CUSTOMER_POSTS, pick } from '../../content/diarytext';
 import { SPECIES_BY_ID } from '../../content/customers';
 import type { DiaryKind, DiaryBg } from '../../core/types';
 import { CAPTIONS, SUBJECT_NAMES } from '../../content/captions';
-import { CAPTIONS_ZH, SUBJECT_ZH, DIARY_ZH, SPECIES_ZH, SPOT_TEXT_ZH } from '../../content/zh';
+import { CAPTIONS_ZH, SUBJECT_ZH, DIARY_ZH, SPECIES_ZH, SPOT_TEXT_ZH, CUSTOMER_POSTS_ZH } from '../../content/zh';
 import { t as tr, lang, nameOf, heroName } from '../../i18n';
 
 const FONT = 'Nunito, "Avenir Next", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif';
@@ -31,6 +31,8 @@ interface Roamer {
   heart: Phaser.GameObjects.Image | null;
   /** squished flat (manager cat): stays flat while shuffling away */
   flat: boolean;
+  /** after being snapped out of slacking the cat stays on task until this time (ms) */
+  alertUntil: number;
   /** seconds accumulator for periodic emotes while napping */
   napAcc: number;
   /** remaining waypoints before the final target */
@@ -752,7 +754,7 @@ export class CafeScene extends Phaser.Scene {
       const p = this.randomFloorPoint();
       const sprite = this.add.image(p.x, p.y, `cat_${wc.gen}_open`).setOrigin(0.5, 1).setScale(s).setAlpha(0).setDepth(p.y)
         .setInteractive({ useHandCursor: true });
-      const r: Roamer = { sprite, gen: wc.gen, slot: wc.slot, phase: Math.random() * Math.PI * 2, mode: 'idle', next: 'idle', tx: p.x, ty: p.y, timer: Phaser.Math.FloatBetween(0.2, 2), speed: (18 + Math.random() * 14) * s / 2, petReadyAt: 0, heart: null, flat: false, napAcc: 0, route: [], spot: null };
+      const r: Roamer = { sprite, gen: wc.gen, slot: wc.slot, phase: Math.random() * Math.PI * 2, mode: 'idle', next: 'idle', tx: p.x, ty: p.y, timer: Phaser.Math.FloatBetween(0.2, 2), speed: (18 + Math.random() * 14) * s / 2, petReadyAt: 0, heart: null, flat: false, napAcc: 0, route: [], spot: null, alertUntil: 0 };
       sprite.on('pointerdown', () => this.petCat(r));
       this.roamers.push(r);
       this.tweens.add({ targets: sprite, alpha: 1, duration: 300 });
@@ -777,6 +779,7 @@ export class CafeScene extends Phaser.Scene {
     if (r.mode === 'react' || r.mode === 'lie' || r.mode === 'climb') return;
     // a moment worth posting: tap a cat mid-interaction while an Influencer is on staff
     const moment: DiaryKind | null = r.mode === 'social' && this.social ? this.social.kind : (this.chat && this.chat.cat === r && this.chat.started) ? 'chat' : r.mode === 'nap' ? 'nap' : r.mode === 'rest' ? 'rest' : r.mode === 'play' ? 'play' : r.mode === 'eat' ? 'eat' : null;
+    const slacking = r.mode === 'nap' || r.mode === 'rest' || r.mode === 'play' || r.mode === 'eat' || (r.mode === 'social' && !!this.social?.started);
     if (moment && hasInfluencer(this.ctrl.state) && Math.random() < 0.5) {
       const cats = moment === 'chat' && this.chat ? [r.gen, this.chat.customer.species] : moment === 'cuddle' || moment === 'fight' ? [this.social!.a.gen, this.social!.b.gen] : [r.gen];
       const spot = (moment === 'nap' || moment === 'rest' || moment === 'play') && r.spot ? (r.spot.startsWith('counter') ? 'counter' : r.spot) : null;
@@ -785,7 +788,7 @@ export class CafeScene extends Phaser.Scene {
       this.ctrl.snapshot(moment, cats, text, spot ? (spot as DiaryBg) : this.pickBg(moment));
       this.banner(tr('bannerSnap'), '#7A5AA8');
       this.cameras.main.flash(120, 255, 255, 255);
-      return;
+      if (!slacking) return; // a chat with a customer goes on; a slacker is still snapped out of it below
     }
 
     if (r.mode === 'nap') { r.sprite.setAngle(0); if (r.sprite.originY !== 1) { r.sprite.y += r.sprite.displayHeight * 0.33; r.sprite.setOrigin(0.5, 1); } r.sprite.setTexture(`cat_${r.gen}_open`); r.mode = 'idle'; r.spot = null; }
@@ -793,6 +796,16 @@ export class CafeScene extends Phaser.Scene {
     if (r.sprite.texture.key.endsWith('_back')) r.sprite.setTexture(`cat_${r.gen}_open`);
     if (r.mode === 'eat') { r.mode = 'idle'; r.spot = null; r.timer = 0.5; this.tweens.killTweensOf(r.sprite); r.sprite.setScale(this.roamerScale()); }
     if (r.mode === 'rest' || r.mode === 'play') { r.mode = 'idle'; r.spot = null; this.tweens.killTweensOf(r.sprite); if (r.sprite.originY !== 1) this.getUp(r.sprite, 200); else r.sprite.setAngle(0).setScale(this.roamerScale()); }
+    if (slacking) { // the first tap only ends the slacking: a startled hop and a "?"; the next tap is the pat
+      const sp0 = r.sprite, s0 = this.roamerScale();
+      r.timer = Phaser.Math.FloatBetween(1.5, 3); r.alertUntil = this.time.now + 60_000; // snapped out of it: stays on task for a minute
+      this.tweens.add({ targets: sp0, y: sp0.y - 6 * s0, duration: 110, yoyo: true, ease: 'Quad.out' });
+      const q = this.add.image(sp0.x + 7 * s0, sp0.y - 18 * s0, 'emote_question').setScale(s0 * 0.9).setDepth(8000);
+      this.tweens.add({ targets: q, y: q.y - 16, alpha: 0, duration: 700, delay: 200, onComplete: () => q.destroy() });
+      sfx.boing(1.4);
+      this.ctrl.analytics.track('wake', { gen: r.gen, mode: moment ?? r.mode });
+      return;
+    }
     const reaction: PetReaction = JOURNAL_BY_ID[r.gen]?.pet ?? 'happy';
     const sp = r.sprite;
     const s = this.roamerScale();
@@ -920,7 +933,7 @@ export class CafeScene extends Phaser.Scene {
         if (r.mode === 'work' && this.atWrapSpot(r)) { r.napAcc += dt; if (r.napAcc > 2.2) { r.napAcc = 0; this.wrapOnce(r); } }
         if (r.timer <= 0) {
           const roll = Math.random();
-          const inLoungeNow = r.sprite.y < this.counters[0].y;
+          const inLoungeNow = r.sprite.y < this.counters[0].y || time < r.alertUntil; // a freshly woken cat does not slack off again straight away
           if (roll < 0.28) this.leaveLounge(r, this.stationSpot(), 'work');
           else if (roll < 0.40 && !inLoungeNow) this.sendToNap(r);
           else if (roll < 0.50 && !inLoungeNow) this.sendToRest(r);
@@ -1100,6 +1113,11 @@ export class CafeScene extends Phaser.Scene {
     c.glow?.destroy(); c.hint?.destroy(); c.glow = undefined; c.hint = undefined;
     const value = this.ctrl.serveCustomer(c.species);
     if ((SPECIES_BY_ID[c.species]?.weight ?? 99) < 10) this.writeDiary('customer', [c.species]);
+    // once the shop has a Meowstagram, happy customers post their own photo and tag it (fans always do)
+    if ((hasInfluencer(this.ctrl.state) || this.ctrl.state.followers > 0) && (c.fan || Math.random() < 0.3)) {
+      this.ctrl.customerPost(c.species, pick(lang() === 'zh' ? CUSTOMER_POSTS_ZH : CUSTOMER_POSTS).replace('{shop}', '@meowcaron.official'));
+      this.banner(tr('bannerTagged'), '#7A5AA8');
+    }
     c.bubble.setVisible(false);
     const happyKey = `${c.sprite.texture.key}_happy`;
     if (this.textures.exists(happyKey)) c.sprite.setTexture(happyKey);

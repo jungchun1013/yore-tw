@@ -3,8 +3,9 @@ import { el, openModal } from './dom';
 import { renderPhoto } from './photo';
 import { fmt } from '../core/format';
 import { hasInfluencer } from '../core/economy';
-import { catCanvas } from '../game/sprites/pixel';
+import { catCanvas, animalCanvas } from '../game/sprites/pixel';
 import { CAT_BY_ID } from '../content/cats';
+import { SPECIES_BY_ID } from '../content/customers';
 import { t } from '../i18n';
 
 function ago(at: number, now: number): string {
@@ -16,6 +17,12 @@ function ago(at: number, now: number): string {
 }
 
 let avatar = '';
+const portraits: Record<string, string> = {};
+/** A customer's handle and avatar for a post that tags the shop. */
+export function author(by: string, t: number): { handle: string; avatar: string } {
+  if (!portraits[by]) { const sp = SPECIES_BY_ID[by]; portraits[by] = sp ? animalCanvas(sp, sp.coats[0], 'happy').toDataURL() : ''; }
+  return { handle: `${by}.${100 + (t % 900)}`, avatar: portraits[by] };
+}
 
 /** The shop's Meowstagram: every diary moment as a post (photo, caption, likes). Opens once an Influencer Cat is hired. */
 export function showFeed(ctrl: GameController): void {
@@ -36,10 +43,12 @@ export function showFeed(ctrl: GameController): void {
   const now = ctrl.now();
   const posts = entries.length ? entries.map((e, i) => {
     const likes = Math.max(3, Math.round(s.followers * (0.25 + ((e.t % 97) / 97) * 0.5) / Math.max(1, Math.sqrt(i + 1))));
-    return el('article', { class: 'feed-post', 'data-kind': e.kind }, [
+    const by = e.by ? author(e.by, e.t) : null;
+    return el('article', { class: 'feed-post' + (by ? ' feed-tagged' : ''), 'data-kind': e.kind }, [
+      ...(by ? [el('div', { class: 'feed-author' }, [el('img', { src: by.avatar, alt: '' }), el('span', {}, [by.handle]), el('small', {}, [t('taggedYou')])])] : []),
       el('div', { class: 'feed-photo' }, [el('img', { src: renderPhoto(e), alt: '' })]),
       el('div', { class: 'feed-meta' }, [el('span', { class: 'feed-likes' }, [`♥ ${fmt(likes)}`]), el('span', { class: 'feed-when' }, [ago(e.t, now)])]),
-      el('p', { class: 'feed-caption' }, [el('b', {}, ['meowcaron.official ']), e.text]),
+      el('p', { class: 'feed-caption' }, [el('b', {}, [(by ? by.handle : 'meowcaron.official') + ' ']), e.text]),
     ]);
   }) : [el('p', { class: 'feed-locked' }, [t('noPosts')])];
   body.append(

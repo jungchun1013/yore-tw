@@ -63,6 +63,8 @@ export interface DiaryEntry {
   /** generator ids (or species / 'shopcat') pictured, up to two */
   cats: string[];
   text: string;
+  /** posted by a customer (species id) who tagged the shop, not by the shop itself */
+  by?: string;
 }
 
 /** Ways a floor cat can slack off; each lowers passive production while it lasts. */

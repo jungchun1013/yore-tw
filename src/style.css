@@ -35,6 +35,9 @@ b { font-weight: 800; }
 .feed-post { flex: none; background: var(--card); border: 2px solid var(--line); border-radius: 14px; padding: 12px; }
 .feed-photo { background: var(--wall); border-radius: 10px; overflow: hidden; line-height: 0; }
 .feed-photo img { width: 100%; display: block; image-rendering: pixelated; }
+.feed-author { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; font-weight: 800; font-size: 14px; }
+.feed-author img { width: 26px; height: 26px; image-rendering: pixelated; border-radius: 50%; background: var(--wall); border: 2px solid var(--line); }
+.feed-author small { color: var(--muted); font-weight: 700; }
 .feed-meta { display: flex; justify-content: space-between; padding: 10px 2px 0; font-size: 14px; font-weight: 800; color: var(--accent-ink); }
 .feed-when { color: var(--muted); }
 .feed-caption { margin: 6px 2px 0; font-size: 15px; line-height: 1.45; }

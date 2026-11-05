@@ -91,6 +91,16 @@ export const DIARY_ZH: Record<DiaryKind, string[]> = {
 };
 
 /** Lines tied to the exact piece of furniture / spot a cat used, so the post matches the photo. */
+/** 客人標記店家時寫的文字（{shop} 是店家帳號）。 */
+export const CUSTOMER_POSTS_ZH: string[] = [
+  '全鎮最好吃的馬卡龍，沒有意見 {shop}',
+  '是真的貓在結帳 {shop}',
+  '粉紅色的。只要粉紅色的。{shop}',
+  '排很久，值得 {shop}',
+  '店長給摸 {shop}',
+  '本來只想買一顆，結果提了一盒走 {shop}',
+];
+
 export const SPOT_TEXT_ZH: Record<string, string[]> = {
   cushion: ['{a} 倒在圓坐墊上，肚子朝天，睡到打呼。', '圓坐墊今天是 {a} 的。其他人請排隊。'],
   bed: ['{a} 窩進甜甜圈睡窩，只剩耳朵露出來。', '甜甜圈睡窩被 {a} 佔據了一整個下午。'],

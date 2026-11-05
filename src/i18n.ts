@@ -111,6 +111,8 @@ const UI: Record<string, { en: string; zh: string }> = {
   bannerNyan: { en: '🌈 Nyan dash!', zh: '🌈 Nyan dash！' },
   bannerPost: { en: '📸 Posted to Meowstagram', zh: '📸 發到店家 IG 了' },
   bannerSnap: { en: '📸 Snap!', zh: '📸 拍到了！' },
+  bannerTagged: { en: '📸 A customer tagged the shop', zh: '📸 客人標記了店家' },
+  taggedYou: { en: 'tagged meowcaron.official', zh: '標記了 meowcaron.official' },
   warpFloat: { en: '⏳ ×{m} speed · {s}s', zh: '⏳ ×{m} 速 · {s} 秒' },
   owner: { en: 'Owner', zh: '店長' },
   cpsText: { en: '{n} per second', zh: '每秒 {n}' },
@@ -136,7 +138,7 @@ const UI: Record<string, { en: string; zh: string }> = {
   tutFeed: { en: 'The Influencer Cat is here! Pet it when it glows to post a photo. Followers bring customers. Tap 📸 to see the shop account.', zh: '網紅貓來了！牠發光的時候摸牠會發一篇文，粉絲越多客人越常來。點 📸 看店家粉專。' },
   gotIt: { en: 'Got it', zh: '知道了' },
   heatPill: { en: '🔥 Heat +{n}%', zh: '🔥 熱度 +{n}%' },
-  slackTip: { en: 'Slacking: −{n}% production. Tap the cat to snap it out of it.', zh: '有貓在偷懶：產量 −{n}%。點那隻貓可以打斷。' },
+  slackTip: { en: 'Slacking: −{n}% production. One tap snaps the cat out of it; the next tap is a pat.', zh: '有貓在偷懶：產量 −{n}%。點一下打斷，再點一下才是拍拍。' },
   sound: { en: 'Sound', zh: '音效' }, on: { en: 'On', zh: '開' }, off: { en: 'Off', zh: '關' },
   buyAmount: { en: 'Buy amount', zh: '購買數量' },
 };

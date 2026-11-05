@@ -381,6 +381,20 @@ export class GameController {
     return gain;
   }
 
+  /** A served customer posts its own photo and tags the shop: a few followers, and the post shows up in the feed. */
+  customerPost(species: string, text: string): number {
+    const gain = Math.max(1, Math.round(eco.postGain(this.state) / 3));
+    this.state.followers += gain;
+    this.state.posts += 1;
+    const entry: DiaryEntry = { t: this.now(), kind: 'customer', cats: [species], text, bg: 'counter', by: species, snap: true };
+    eco.addDiary(this.state, entry);
+    sfx.upgrade();
+    this.analytics.track('customer_post', { species, gain });
+    this.emit({ type: 'diary', entry });
+    this.changed();
+    return gain;
+  }
+
   /** A customer arrived at the counter: record the species for the codex. */
   recordCustomerVisit(species: string): void {
     this.state.customersSeen[species] = (this.state.customersSeen[species] ?? 0) + 1;

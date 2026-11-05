@@ -73,6 +73,16 @@ export const DIARY_TEXT: Record<DiaryKind, string[]> = {
 };
 
 /** Lines tied to the exact piece of furniture / spot a cat used, so the post matches the photo. */
+/** What a customer writes under its own photo when it tags the shop ({shop} = the shop's handle). */
+export const CUSTOMER_POSTS: string[] = [
+  'best macarons in town, no notes {shop}',
+  'got served by an actual cat {shop}',
+  'the pink ones. just the pink ones. {shop}',
+  'queue was long, worth it {shop}',
+  'they let me pat the owner {shop}',
+  'came for one, left with a box {shop}',
+];
+
 export const SPOT_TEXT: Record<string, string[]> = {
   cushion: ['{a} flopped onto the round cushion, belly up, and snored.', 'The round cushion is {a}\'s today. Everyone else may queue.'],
   bed: ['{a} curled into the donut bed; only the ears showed.', 'The donut bed was occupied by {a} all afternoon.'],

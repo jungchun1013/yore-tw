@@ -389,10 +389,14 @@ test('slacking: a napping cat lowers production and lights the ↓ indicator; ta
   expect(s.slack.nap).toBeGreaterThanOrEqual(1);
   const cpsSlack = await page.evaluate(() => window.__mc!.ctrl.cps());
   expect(cpsSlack).toBeLessThan(cpsBefore);
-  // tap the sleeper
+  // tap the sleeper (another cat may be walking across it and take the tap, as it would for a player: tap again)
   const box = (await page.locator('#game canvas').boundingBox())!;
-  const n = await page.evaluate(() => window.__mc!.debug!.napper()!);
-  await page.mouse.click(box.x + n.x, box.y + n.y);
+  for (let attempt = 0; attempt < 4; attempt++) {
+    const n = await page.evaluate(() => window.__mc!.debug!.napper());
+    if (!n) break;
+    await page.mouse.click(box.x + n.x, box.y + n.y);
+    await page.waitForTimeout(700);
+  }
   await page.waitForFunction(() => window.__mc!.ctrl.state.slack.nap === 0, null, { timeout: 5000 });
   await expect(page.locator('#hud-slack')).toBeHidden();
 });
