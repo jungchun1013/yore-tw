@@ -51,7 +51,7 @@ export interface AchievementCtx {
   cps: number;
 }
 
-export type DiaryKind = 'cuddle' | 'fight' | 'nap' | 'rest' | 'bless' | 'timeskip' | 'star' | 'post' | 'customer' | 'prestige' | 'rainbow' | 'chat' | 'boxwalk' | 'treasure' | 'play';
+export type DiaryKind = 'cuddle' | 'fight' | 'nap' | 'rest' | 'bless' | 'timeskip' | 'star' | 'post' | 'customer' | 'prestige' | 'rainbow' | 'chat' | 'boxwalk' | 'treasure' | 'play' | 'eat';
 export type DiaryBg = 'kitchen' | 'counter' | 'oven' | 'front' | 'park' | 'roof' | 'alley' | 'night' | 'cushion' | 'bed' | 'cathouse' | 'tent' | 'fish' | 'cattree' | 'window' | 'scratcher' | 'hangball' | 'fishbowl' | 'basket';
 export interface DiaryEntry {
   t: number;
@@ -66,7 +66,7 @@ export interface DiaryEntry {
 }
 
 /** Ways a floor cat can slack off; each lowers passive production while it lasts. */
-export type SlackKind = 'nap' | 'love' | 'fight' | 'window' | 'play';
+export type SlackKind = 'nap' | 'love' | 'fight' | 'window' | 'play' | 'eat';
 
 export interface GameState {
   version: number;
@@ -95,6 +95,8 @@ export interface GameState {
   customersServed: Record<string, number>;
   /** Meowstagram followers (influencer cat posts); more followers → customers come more often */
   followers: number;
+  /** when each special cat's ability is charged again (ms timestamps; cooldowns run for hours, so they persist) */
+  abilityReadyAt: Record<string, number>;
   posts: number;
   /** furniture bought (ids) and which piece sits in each of the four floor slots */
   furnitureOwned: string[];

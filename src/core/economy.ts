@@ -7,19 +7,28 @@ import { FURNITURE_BY_ID, FURNITURE_SLOTS, FURNITURE_BONUS } from '../content/fu
 export const SAVE_VERSION = 1;
 
 /** Prestige tuning. stars = floor((totalEarnedThisRun / base) ^ exp) */
+/** Cookie-Clicker style: stars follow ALL-TIME earnings (cube root), minus the stars already held, so every
+ *  star costs more than the last and short repeated runs never pay. base is tuned so a routine player
+ *  (a few sessions a day, harvesting every ~6 h) reaches the first star after about two days. */
 export const PRESTIGE = {
-  base: 2e7,
-  exp: 0.5,
-  bonusPerStar: 0.1,
+  base: 1e15,
+  exp: 1 / 3,
+  bonusPerStar: 0.25,
   /** minimum stars gained for prestige button to be enabled */
   minStars: 1,
 };
 
 export const OFFLINE = {
   rate: 0.5,
-  baseHours: 8,
-  /** ignore absences shorter than this (seconds) */
-  minSeconds: 30,
+  /** hours at the full offline rate; after that the shop winds down to tailRate (the cats doze off) */
+  baseHours: 6,
+  tailRate: 0.1,
+  /** nothing is credited past this many hours away */
+  maxHours: 48,
+  /** absences shorter than this (seconds) are just a tab switch: credited at full speed, no welcome-back screen */
+  graceSeconds: 300,
+  /** away at least this long: the whole floor is found asleep and has to be tapped awake */
+  dozeAfterSeconds: 1800,
 };
 
 export const ACHIEVEMENT_BONUS = 0.01;
@@ -30,7 +39,7 @@ export const RUSH = { mult: 2, durationMs: 120_000, cooldownMs: 600_000 };
 /** Slacking: every cat that is napping, cuddling, fighting or staring out of the window takes SLACK.perCat off
  *  passive production (capped). Tap the cat to snap it out of it. */
 export const SLACK = { perCat: 0.04, max: 0.4 };
-export const SLACK_KINDS: SlackKind[] = ['nap', 'love', 'fight', 'window', 'play'];
+export const SLACK_KINDS: SlackKind[] = ['nap', 'love', 'fight', 'window', 'play', 'eat'];
 export function slackCount(s: GameState): number { return SLACK_KINDS.reduce((a, k) => a + (s.slack?.[k] ?? 0), 0); }
 export function slackMultiplier(s: GameState): number { return 1 - Math.min(SLACK.max, slackCount(s) * SLACK.perCat); }
 
@@ -66,12 +75,19 @@ export function customerGapMultiplier(s: GameState): number {
 export function hasInfluencer(s: GameState): boolean { return (s.gens.influencer ?? 0) > 0; }
 
 /** Special abilities of the late cats. Each scales gently with how many of that cat you own. */
+/** Special-cat abilities recharge on an hours scale (a reason to come back), so each use is a real harvest. */
 export const ABILITY = {
-  deity: { minGapSec: 180, maxGapSec: 300, durationMs: 45_000, baseMult: 1.5, perCat: 0.1, maxMult: 2, burstSec: 20 },
-  timecat: { minGapSec: 240, maxGapSec: 360, durationMs: 20_000, baseMult: 2, perCat: 0.5, maxMult: 3, offlineHoursPerCat: 2, maxOfflineHours: 8 },
-  cosmic: { minGapSec: 180, maxGapSec: 300, fragmentsPerStar: 10, starBonusPerCat: 0.1, maxStarBonus: 1, burstSec: 15 },
-  rainbow: { minGapSec: 240, maxGapSec: 360, burstSec: 0, mult: 2, durationMs: 10_000, tapsForDouble: 5 }, // ×2 for 10 s; tapping refills the bar, at most doubling it
+  deity: { cooldownSec: 3600, firstSec: 60, durationMs: 600_000, baseMult: 1.5, perCat: 0.1, maxMult: 2, burstSec: 300 },        // ×1.5 for 10 min + 5 min of production
+  timecat: { cooldownSec: 7200, firstSec: 60, durationMs: 300_000, baseMult: 2, perCat: 0.5, maxMult: 3, offlineHoursPerCat: 2, maxOfflineHours: 8 }, // ×2 for 5 min; +2 h full-rate offline each
+  cosmic: { cooldownSec: 10800, firstSec: 60, fragmentsPerStar: 10, starBonusPerCat: 0.1, maxStarBonus: 1, burstSec: 600 },      // a stardust + 10 min of production
+  rainbow: { cooldownSec: 3600, firstSec: 60, burstSec: 120, mult: 2, durationMs: 10_000, tapsForDouble: 5 },                     // 2 min of production + ×2 for 10 s, tapping refills the bar
+  influencer: { cooldownSec: 14_400, firstSec: 60 },                                                                              // one post every 4 h
 };
+export const ABILITY_IDS = Object.keys(ABILITY);
+export function abilityReady(s: GameState, gen: string, now: number): boolean { return gen in ABILITY && now >= (s.abilityReadyAt[gen] ?? 0); }
+export function abilityUsed(s: GameState, gen: string, now: number): void { const a = ABILITY[gen as keyof typeof ABILITY]; if (a) s.abilityReadyAt[gen] = now + a.cooldownSec * 1000; }
+/** A newly hired special cat charges up quickly the first time, so the player meets the ability right away. */
+export function abilityPrime(s: GameState, gen: string, now: number): void { const a = ABILITY[gen as keyof typeof ABILITY]; if (a && !(gen in s.abilityReadyAt)) s.abilityReadyAt[gen] = now + a.firstSec * 1000; }
 export function blessMultiplier(s: GameState, now: number): number { return now < s.blessedUntil ? s.blessMult : 1; }
 export function deityBlessMult(s: GameState): number {
   const n = s.gens.deity ?? 0;
@@ -131,7 +147,7 @@ export function newState(now = Date.now()): GameState {
     prestigeCount: 0,
     heat: 0,
     heatAt: 0,
-    slack: { nap: 0, love: 0, fight: 0, window: 0, play: 0 },
+    slack: { nap: 0, love: 0, fight: 0, window: 0, play: 0, eat: 0 },
     boostUntil: 0,
     boostMult: 1,
     rushReadyAt: 0,
@@ -150,6 +166,7 @@ export function newState(now = Date.now()): GameState {
     warpMult: 1,
     starFragments: 0,
     rainbowUntil: 0,
+    abilityReadyAt: {},
     diary: [],
     lastTick: now,
     createdAt: now,
@@ -351,7 +368,12 @@ export { STAR_UPGRADES };
 
 /** Stars the player would receive by prestiging now. */
 export function prestigeStars(s: GameState): number {
-  return Math.floor(Math.pow(s.totalEarned / PRESTIGE.base, PRESTIGE.exp) * (1 + cosmicStarBonus(s)));
+  return Math.max(0, Math.floor(Math.pow(s.allTimeEarned / PRESTIGE.base, PRESTIGE.exp) * (1 + cosmicStarBonus(s))) - s.stars);
+}
+/** All-time earnings needed for the next star (what the shop panel shows). */
+export function nextStarAt(s: GameState): number {
+  const have = s.stars + prestigeStars(s);
+  return PRESTIGE.base * Math.pow((have + 1) / (1 + cosmicStarBonus(s)), 1 / PRESTIGE.exp);
 }
 
 export function canPrestige(s: GameState): boolean {
@@ -406,10 +428,12 @@ export function checkAchievements(s: GameState, now: number): string[] {
 
 /** Offline earnings for an absence of `awaySec` seconds. */
 export function offlineEarnings(s: GameState, awaySec: number): { seconds: number; amount: number; capped: boolean } {
-  if (awaySec < OFFLINE.minSeconds) return { seconds: 0, amount: 0, capped: false };
-  const cap = offlineHours(s) * 3600;
+  const full = offlineHours(s) * 3600, cap = OFFLINE.maxHours * 3600;
   const seconds = Math.min(awaySec, cap);
-  return { seconds, amount: baseCps(s, Number.MAX_SAFE_INTEGER) * seconds * offlineRate(s), capped: awaySec > cap };
+  const rate = offlineRate(s), c = baseCps(s, Number.MAX_SAFE_INTEGER);
+  // full offline rate for the first offlineHours(), then the shop winds down to tailRate: coming back every ~6 h harvests the most
+  const amount = c * (Math.min(seconds, full) * rate + Math.max(0, seconds - full) * OFFLINE.tailRate);
+  return { seconds, amount, capped: awaySec > full };
 }
 
 /** Seconds until `cost` is affordable at current income (Infinity if no income). */

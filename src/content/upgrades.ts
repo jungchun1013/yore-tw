@@ -129,10 +129,10 @@ export const UPGRADE_BY_ID: Record<string, UpgradeDef> = Object.fromEntries(upgr
 
 /** Permanent upgrades bought with stars; survive prestige. */
 const STAR_EN: UpgradeDef[] = [
-  { id: 'star_kittens', name: 'Kitten nursery', desc: 'Start every new shop with 10 kittens.', cost: 3, currency: 'stars', effect: { type: 'startKittens', count: 10 }, icon: 'toy:yarn' },
-  { id: 'star_click',   name: 'Star paws',      desc: 'Patting gives twice as many macarons, forever.', cost: 5, currency: 'stars', effect: { type: 'clickMult', mult: 2 }, icon: 'toy:wand' },
-  { id: 'star_offline', name: 'Night shift',    desc: 'Offline earnings cover 16 hours instead of 8.', cost: 8, currency: 'stars', effect: { type: 'offlineHours', hours: 8 }, icon: 'toy:mouse' },
-  { id: 'star_global',  name: 'Constellation',  desc: 'All production +25%, forever.', cost: 15, currency: 'stars', effect: { type: 'globalMult', mult: 1.25 }, icon: 'toy:fish' },
+  { id: 'star_kittens', name: 'Kitten nursery', desc: 'Start every new shop with 10 kittens.', cost: 1, currency: 'stars', effect: { type: 'startKittens', count: 10 }, icon: 'toy:yarn' },
+  { id: 'star_click',   name: 'Star paws',      desc: 'Patting gives twice as many macarons, forever.', cost: 2, currency: 'stars', effect: { type: 'clickMult', mult: 2 }, icon: 'toy:wand' },
+  { id: 'star_offline', name: 'Night shift',    desc: 'Full-speed offline earnings cover 12 hours instead of 6.', cost: 3, currency: 'stars', effect: { type: 'offlineHours', hours: 6 }, icon: 'toy:mouse' },
+  { id: 'star_global',  name: 'Constellation',  desc: 'All production +25%, forever.', cost: 5, currency: 'stars', effect: { type: 'globalMult', mult: 1.25 }, icon: 'toy:fish' },
 ];
 export const STAR_UPGRADES: UpgradeDef[] = STAR_EN.map((u) => ({ ...u, zh: STAR_UPGRADE_ZH[u.id] }));
 export const STAR_UPGRADE_BY_ID: Record<string, UpgradeDef> = Object.fromEntries(STAR_UPGRADES.map((u) => [u.id, u]));

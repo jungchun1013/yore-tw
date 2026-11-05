@@ -26,11 +26,11 @@ export const CAT_BY_ID: Record<string, GeneratorDef> = Object.fromEntries(CATS.m
 
 /** Cats with a special ability, shown with a distinct frame in the shop. */
 export const SPECIAL_CATS: Record<string, { label: string; blurb: string; tone: 'rose' | 'gold' | 'sky' | 'cosmic' | 'rainbow' }> = {
-  influencer: { label: 'Meowstagram', blurb: 'Pet it when it glows: posts a photo; followers bring customers faster.', tone: 'rose' },
-  deity: { label: 'Blessing', blurb: 'Pet it when it glows: ×1.5 production for 45 s (+0.1 per extra Deity, up to ×2) + a 20 s burst.', tone: 'gold' },
-  timecat: { label: 'Time warp', blurb: 'Pet it when it glows: ×2 speed for 20 s. +2 h offline cap each.', tone: 'sky' },
-  cosmic: { label: 'Stardust', blurb: 'Pet it when it glows: a rain of stardust — +1 stardust (10 = 1 permanent ★) and a 15 s burst. +10% prestige stars each.', tone: 'cosmic' },
-  rainbow: { label: 'Nyan dash', blurb: 'Pet it when it glows: zooms across the shop with rainbows, chiptune and +10 s of production.', tone: 'rainbow' },
+  influencer: { label: 'Meowstagram', blurb: 'Pet it when it glows: posts a photo; followers bring customers faster. One post every 4 h.', tone: 'rose' },
+  deity: { label: 'Blessing', blurb: 'Pet it when it glows: ×1.5 production for 10 min (+0.1 per extra Deity, up to ×2) + 5 min of production. Recharges hourly.', tone: 'gold' },
+  timecat: { label: 'Time warp', blurb: 'Pet it when it glows: ×2 speed for 5 min. +2 h of full-speed offline baking each. Recharges every 2 h.', tone: 'sky' },
+  cosmic: { label: 'Stardust', blurb: 'Pet it when it glows: a rain of stardust — +1 stardust (10 = 1 permanent ★) and 10 min of production. +10% prestige stars each. Recharges every 3 h.', tone: 'cosmic' },
+  rainbow: { label: 'Nyan dash', blurb: 'Pet it when it glows: zooms across the shop with rainbows, chiptune and +2 min of production. Recharges hourly.', tone: 'rainbow' },
 };
 
 /** Special-cat label and blurb in the current language. */

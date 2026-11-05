@@ -56,7 +56,7 @@ test('save persists across reload', async ({ page }) => {
   expect(s.macarons).toBeGreaterThan(4000);
 });
 
-test('offline earnings: 2 hours away at 50% rate, capped at 8h', async ({ page }) => {
+test('offline earnings: 2 hours away at 50% rate (within the 6 h full-speed window)', async ({ page }) => {
   const twoHoursAgo = Date.now() - 2 * 3600 * 1000;
   await fresh(page, { version: 1, macarons: 0, gens: { apprentice: 10 }, lastTick: twoHoursAgo, createdAt: twoHoursAgo });
   const amount = page.locator('#offline-amount');
@@ -81,22 +81,22 @@ test('offline earnings doubled via (mock) rewarded ad', async ({ page }) => {
 });
 
 test('prestige resets the run and grants stars', async ({ page }) => {
-  await fresh(page, { version: 1, macarons: 1e6, totalEarned: 1e9, allTimeEarned: 1e9, gens: { baker: 20 }, lastTick: Date.now() });
+  await fresh(page, { version: 1, macarons: 1e6, totalEarned: 1e9, allTimeEarned: 2.8e16, gens: { baker: 20 }, lastTick: Date.now() }); // cbrt(28) = 3.04 → 3 stars
   const btn = page.locator('#btn-prestige');
   await expect(btn).toBeEnabled();
-  await expect(btn).toContainText('+7');
+  await expect(btn).toContainText('+3');
   await btn.click();
   await page.locator('#btn-prestige-confirm').click();
   await page.waitForFunction(() => window.__mc!.ctrl.state.prestigeCount === 1);
   const s = await state(page);
-  expect(s.stars).toBe(7);
+  expect(s.stars).toBe(3);
   expect(s.macarons).toBe(0);
   expect(s.gens.baker ?? 0).toBe(0);
   await expect(page.locator('#star-shop')).toBeVisible();
   await page.locator('[data-buy-star="star_kittens"]').click();
   const s2 = await state(page);
   expect(s2.starUpgrades).toContain('star_kittens');
-  expect(s2.stars).toBe(4);
+  expect(s2.stars).toBe(2);
 });
 
 test('late game numbers render without NaN/Infinity and max-buy works', async ({ page }) => {

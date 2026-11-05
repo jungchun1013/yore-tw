@@ -12,7 +12,7 @@ test('toys in use + fans', async ({ page }) => {
   await page.waitForFunction(() => !!window.__mc?.debug);
   await page.waitForTimeout(600);
   // a post brings a crowd of fans
-  await page.evaluate(() => { const c = window.__mc!.ctrl; c.abilityReadyAt['influencer'] = 0; window.__mc!.debug!.play(); window.__mc!.debug!.play(); });
+  await page.evaluate(() => { const c = window.__mc!.ctrl; c.state.abilityReadyAt['influencer'] = 0; window.__mc!.debug!.play(); window.__mc!.debug!.play(); });
   const dir = path.join(process.env.FRAMES_DIR ?? 'test-results', 'toys-frames'); fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir, { recursive: true });
   const t0 = Date.now();
   for (let i = 0; i < 90; i++) { await page.screenshot({ path: path.join(dir, `f${String(i).padStart(3, '0')}_${Date.now() - t0}.png`), clip: { x: 0, y: 100, width: 800, height: 620 }, animations: 'allow' }); await new Promise((r) => setTimeout(r, 120)); }

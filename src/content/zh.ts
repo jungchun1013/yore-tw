@@ -17,11 +17,11 @@ export const CAT_ZH: Record<string, { name: string; desc: string }> = {
 export const HERO_NAME_ZH = '麻糬';
 
 export const SPECIAL_ZH: Record<string, { label: string; blurb: string }> = {
-  influencer: { label: '店家 IG', blurb: '發光時摸牠：發一張照片，粉絲越多客人越常來。' },
-  deity:      { label: '聖光加護', blurb: '發光時摸牠：45 秒內全店 ×1.5（每多一隻 +0.1，上限 ×2），外加 20 秒產量。' },
-  timecat:    { label: '時間加速', blurb: '發光時摸牠：20 秒內全店 ×2 速。每隻永久 +2 小時離線上限。' },
-  cosmic:     { label: '星塵', blurb: '發光時摸牠：下一場星塵雨，直接 +1 星塵（10 顆換 1 顆永久星星）並外加 15 秒產量。開新店時每隻多給 10% 星星。' },
-  rainbow:    { label: 'Nyan dash', blurb: '發光時摸牠：拖著彩虹飛過店裡，放一段旋律，外加 10 秒產量。' },
+  influencer: { label: '店家 IG', blurb: '發光時摸牠：發一張照片，粉絲越多客人越常來。每 4 小時發一篇。' },
+  deity:      { label: '聖光加護', blurb: '發光時摸牠：10 分鐘內全店 ×1.5（每多一隻 +0.1，上限 ×2），外加 5 分鐘產量。每小時充能一次。' },
+  timecat:    { label: '時間加速', blurb: '發光時摸牠：5 分鐘內全店 ×2 速。每隻永久 +2 小時離線全速時間。每 2 小時充能一次。' },
+  cosmic:     { label: '星塵', blurb: '發光時摸牠：一場星塵雨，直接 +1 星塵（10 顆換 1 顆永久星星）並外加 10 分鐘產量。開新店時每隻多給 10% 星星。每 3 小時充能一次。' },
+  rainbow:    { label: 'Nyan dash', blurb: '發光時摸牠：拖著彩虹飛過店裡，放一段旋律，外加 2 分鐘產量。每小時充能一次。' },
 };
 
 export const PET_TEXT_ZH = {
@@ -87,6 +87,7 @@ export const DIARY_ZH: Record<DiaryKind, string[]> = {
   boxwalk: ['{a} 抱著大魚乾踢了整整一分鐘。魚乾看過很多事。', '大魚乾現在是 {a} 的了。其他人請以書面申請。'],
   treasure: ['{a} 走進帳篷，叼了一顆毛線球出來。哪來的？帳篷是空的。', '帳篷的秘密：{a} 在裡面找到了什麼。我們已經不問了。'],
   play: ['{a} 玩到忘記上班。', '{a} 說這是在訓練。'],
+  eat: ['{a} 在輸送帶旁被抓到，滿地屑屑。「品管。」', '輸送帶上少了一顆。{a} 沒有看任何人。', '{a} 說粉紅色的要再試吃一次。'],
 };
 
 /** Lines tied to the exact piece of furniture / spot a cat used, so the post matches the photo. */
@@ -131,7 +132,7 @@ export const EQUIP_EFFECT_ZH: Record<string, string> = { mixer: '拍擊產出 +6
 export const STAR_UPGRADE_ZH: Record<string, { name: string; desc: string }> = {
   star_kittens: { name: '育兒室', desc: '每間新店開始就有 10 隻小奶貓。' },
   star_click: { name: '星星肉球', desc: '拍擊永久 ×2。' },
-  star_offline: { name: '夜班', desc: '離線收益上限從 8 小時變 16 小時。' },
+  star_offline: { name: '夜班', desc: '離線全速烤的時間從 6 小時變 12 小時。' },
   star_global: { name: '星座', desc: '所有產量永久 +25%。' },
 };
 export const ACH_ZH = {

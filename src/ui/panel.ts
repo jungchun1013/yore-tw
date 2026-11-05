@@ -3,10 +3,10 @@ import { CATS, SPECIAL_CATS, specialText } from '../content/cats';
 import { t, lang, setLang, nameOf, descOf } from '../i18n';
 import { UPGRADE_BY_ID, STAR_UPGRADES, UPGRADES } from '../content/upgrades';
 import { ACHIEVEMENTS } from '../content/achievements';
-import { availableUpgrades, genCost, genCostN, maxAffordable, genProduction, globalMultiplier, PRESTIGE, timeToAfford, boostMultiplier, offlineRate, lovedCount, PET, heatCap, slackCount, SLACK, SLACK_KINDS } from '../core/economy';
+import { availableUpgrades, genCost, genCostN, maxAffordable, genProduction, globalMultiplier, PRESTIGE, timeToAfford, boostMultiplier, offlineRate, offlineHours, OFFLINE, nextStarAt, lovedCount, PET, heatCap, slackCount, SLACK, SLACK_KINDS } from '../core/economy';
 import { fmt, fmtInt, fmtTime } from '../core/format';
 import { $, el, toast, openModal } from './dom';
-import { catCanvas, iconDataUrl, propCanvas, toyCanvas, patCanvas, emoteCanvas } from '../game/sprites/pixel';
+import { catCanvas, iconDataUrl, propCanvas, toyCanvas, patCanvas, emoteCanvas, macaronCanvas } from '../game/sprites/pixel';
 import { hasInfluencer } from '../core/economy';
 import { RUSH } from '../core/controller';
 import { showJournal } from './journal';
@@ -46,7 +46,7 @@ export function initPanel(ctrl: GameController): void {
   const lovedBadge = $('#loved-badge');
   const heatBadge = $('#heat-badge');
   const hudSub = $('.hud-sub'), hudSlack = $('#hud-slack');
-  const slackIcon: Record<string, string> = { nap: emoteCanvas('zzz').toDataURL(), love: emoteCanvas('love').toDataURL(), fight: emoteCanvas('anger', '#E8453C').toDataURL(), window: emoteCanvas('dream').toDataURL(), play: emoteCanvas('scratch', '#9C8A82').toDataURL() };
+  const slackIcon: Record<string, string> = { nap: emoteCanvas('zzz').toDataURL(), love: emoteCanvas('love').toDataURL(), fight: emoteCanvas('anger', '#E8453C').toDataURL(), window: emoteCanvas('dream').toDataURL(), play: emoteCanvas('scratch', '#9C8A82').toDataURL(), eat: macaronCanvas('pink').toDataURL() };
   let slackSig = '';
   const gramBadge = $('#gram-badge'), gramCount = $('#gram-count');
   const blessBadge = $('#bless-badge');
@@ -237,7 +237,7 @@ export function initPanel(ctrl: GameController): void {
     const gain = ctrl.prestigeStars();
     btnPrestige.disabled = gain < PRESTIGE.minStars;
     prestigeGain.textContent = `(+${gain} ★)`;
-    prestigeHint.textContent = gain < 1 ? t('firstStarHint', { base: fmt(PRESTIGE.base), sofar: fmt(s.totalEarned) }) : t('nextStarHint', { n: fmt(PRESTIGE.base * Math.pow(gain + 1, 1 / PRESTIGE.exp)) });
+    prestigeHint.textContent = gain < 1 ? t('firstStarHint', { base: fmt(nextStarAt(s)), sofar: fmt(s.allTimeEarned) }) : t('nextStarHint', { n: fmt(nextStarAt(s)) });
     const boost = ctrl.boostActive();
     boostBadge.hidden = !boost;
     if (boost) boostLeft.textContent = fmtTime(ctrl.boostLeftMs() / 1000);
@@ -373,7 +373,7 @@ export function showOfflineModal(ctrl: GameController): void {
   if (!p) return;
   const body = el('div', {}, [
     el('h2', {}, [t('welcomeBack')]),
-    el('p', {}, [t('offlineBody', { t: fmtTime(p.seconds), cap: p.capped ? t('offlineCap') : '', p: Math.round(offlineRate(ctrl.state) * 100) })]),
+    el('p', {}, [t(p.capped ? 'offlineBodyLong' : 'offlineBody', { t: fmtTime(p.seconds), h: offlineHours(ctrl.state), p: Math.round(offlineRate(ctrl.state) * 100), tail: Math.round(OFFLINE.tailRate * 100) })]),
     el('div', { class: 'big', id: 'offline-amount' }, [`🍪 ${fmt(p.amount)}`]),
   ]);
   const actions = el('div', { class: 'actions' });

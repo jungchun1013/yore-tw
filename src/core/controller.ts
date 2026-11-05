@@ -36,8 +36,6 @@ export class GameController {
   state: GameState;
   adInFlight = false;
   /** when each special cat's ability can be petted again (ms timestamps); set by the scene */
-  abilityReadyAt: Record<string, number> = {};
-  static readonly ABILITY_COOLDOWN_SEC: Record<string, number> = { influencer: 150, deity: 300, timecat: 360, cosmic: 240, rainbow: 300 };
   private listeners: ((e: GameEvent) => void)[] = [];
   private timer: number | null = null;
   private lastSave = 0;
@@ -71,6 +69,11 @@ export class GameController {
   /** Compute offline earnings since the last tick and add them to the uncollected pile (persisted). */
   computeOffline(): void {
     const away = (this.now() - this.state.lastTick) / 1000;
+    if (away < eco.OFFLINE.graceSeconds) { // a tab switch, not an absence: the cats just kept baking
+      if (away > 0) eco.earn(this.state, this.cps() * away);
+      this.state.lastTick = this.now();
+      return;
+    }
     const r = eco.offlineEarnings(this.state, away);
     if (r.amount > 0) {
       const prev = this.state.pendingOffline;

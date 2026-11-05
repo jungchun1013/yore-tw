@@ -1,5 +1,5 @@
 import type { GameState } from './types';
-import { newState, SAVE_VERSION, RUSH, sanitizeName } from './economy';
+import { newState, SAVE_VERSION, RUSH, sanitizeName, ABILITY } from './economy';
 
 export const SAVE_KEY = 'meowcaron.save.v1';
 
@@ -60,16 +60,17 @@ export function deserialize(raw: string | null, now = Date.now()): GameState {
     createdAt: num(p.createdAt, now),
     playTimeMs: num(p.playTimeMs, 0),
     sound: p.sound !== false,
-    slack: { nap: 0, love: 0, fight: 0, window: 0, play: 0 }, // transient: the scene recomputes it
+    slack: { nap: 0, love: 0, fight: 0, window: 0, play: 0, eat: 0 }, // transient: the scene recomputes it
     heat: Math.min(60, Math.max(0, num(p.heat, 0))),
     heatAt: Math.min(num(p.heatAt, 0), now),
     tutorial: strs(p.tutorial),
     heroName: sanitizeName(p.heroName),
-    blessedUntil: Math.min(num(p.blessedUntil, 0), now + 60_000),
+    blessedUntil: Math.min(num(p.blessedUntil, 0), now + ABILITY.deity.durationMs),
     blessMult: Math.min(2, Math.max(1, num(p.blessMult, 1))),
-    warpUntil: Math.min(num(p.warpUntil, 0), now + 30_000),
+    warpUntil: Math.min(num(p.warpUntil, 0), now + ABILITY.timecat.durationMs),
     warpMult: Math.min(4, Math.max(1, num(p.warpMult, 1))),
     starFragments: Math.floor(num(p.starFragments, 0)),
+    abilityReadyAt: (() => { const o: Record<string, number> = {}; const src = p.abilityReadyAt; if (src && typeof src === 'object') for (const [k, v] of Object.entries(src)) o[k] = Math.min(num(v, 0), now + 24 * 3600_000); return o; })(),
     rainbowUntil: 0, // transient: the effect does not survive a reload
     diary: Array.isArray(p.diary) ? (p.diary as unknown[]).filter((d): d is GameState['diary'][number] => !!d && typeof d === 'object' && typeof (d as { text?: unknown }).text === 'string').slice(-40) : [],
     furnitureOwned: Array.from(new Set(['cushion', ...strs(p.furnitureOwned)])),

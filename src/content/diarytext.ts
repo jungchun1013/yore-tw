@@ -58,6 +58,11 @@ export const DIARY_TEXT: Record<DiaryKind, string[]> = {
     '{a} played until it forgot about work.',
     '{a} calls this training.',
   ],
+  eat: [
+    '{a} was caught by the belt with crumbs everywhere. "Quality control."',
+    'One macaron short on the belt. {a} is not looking at anyone.',
+    '{a} says the pink ones need testing. Again.',
+  ],
   rainbow: [
     'Something happened to {a} after too many pats. Rainbows. Chiptune. Nobody is explaining.',
     '{a} went full rainbow for eight seconds. The kittens tried to catch the trail.',

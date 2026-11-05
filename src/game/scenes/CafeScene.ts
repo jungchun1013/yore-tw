@@ -6,7 +6,7 @@ import { STATIONS } from '../../content/upgrades';
 import { SPECIES, pickSpecies } from '../../content/customers';
 import { FURNITURE_ITEMS, FURNITURE_BY_ID } from '../../content/furniture';
 import { JOURNAL_BY_ID, type PetReaction } from '../../content/journal';
-import { equipmentTier, PET, isLovedCat, customerGapMultiplier, hasInfluencer, warpMultiplier } from '../../core/economy';
+import { equipmentTier, PET, isLovedCat, customerGapMultiplier, hasInfluencer, warpMultiplier, ABILITY, abilityReady, abilityUsed, abilityPrime, OFFLINE } from '../../core/economy';
 import { DIARY_TEXT, SPOT_TEXT, pick } from '../../content/diarytext';
 import { SPECIES_BY_ID } from '../../content/customers';
 import type { DiaryKind, DiaryBg } from '../../core/types';
@@ -24,7 +24,7 @@ const HERO = { color: 'cream', accessory: 'none' };
 const MAX_BELT_MACARONS = 40;
 const CUSTOMER = { firstAfterSec: 30, minGapSec: 60, maxGapSec: 120, browseSec: 8 };
 
-type Mode = 'idle' | 'walk' | 'work' | 'lie' | 'react' | 'social' | 'nap' | 'rest' | 'climb' | 'play';
+type Mode = 'idle' | 'walk' | 'work' | 'lie' | 'react' | 'social' | 'nap' | 'rest' | 'climb' | 'play' | 'eat';
 interface Roamer {
   sprite: Phaser.GameObjects.Image; gen: string; slot: number; phase: number;
   mode: Mode; next: Mode; tx: number; ty: number; timer: number; speed: number; petReadyAt: number;
@@ -81,6 +81,7 @@ export class CafeScene extends Phaser.Scene {
   private pendingFurniture = true;
   private slotPos: Pt[] = [];
   private glow!: Phaser.GameObjects.Image;
+  private warmth!: Phaser.GameObjects.Image;
   private whiskBoostUntil = 0;
   private smokeAcc = 0;
   private stations: Pt[] = [];
@@ -98,6 +99,7 @@ export class CafeScene extends Phaser.Scene {
   private macaronKeys: string[] = [];
   private floatPool: Phaser.GameObjects.Text[] = [];
   private pendingRoamerRebuild = true;
+  private dozeAll = false;
   private pendingPropRefresh = true;
   private customers: Customer[] = [];
   private nextCustomerAt = CUSTOMER.firstAfterSec;
@@ -128,6 +130,7 @@ export class CafeScene extends Phaser.Scene {
     this.whisk = this.add.image(0, 0, 'whisk');
     this.glow = this.add.image(0, 0, 'glow').setAlpha(0);
     this.glow2 = this.add.image(0, 0, 'glow').setAlpha(0).setVisible(false); // the deck oven's upper window
+    this.warmth = this.add.image(0, 0, 'warmth').setAlpha(0).setDepth(1); // warm pool of light on the floor in front of the oven: why cats nap there
 
     this.boostOverlay = this.add.rectangle(0, 0, 10, 10, 0xbfe8d4, 0).setOrigin(0).setDepth(9000);
 
@@ -140,7 +143,7 @@ export class CafeScene extends Phaser.Scene {
 
     this.scale.on('resize', () => this.layout());
     this.layout();
-    for (const [k, i] of Object.entries({ influencer: 20, deity: 25, timecat: 30, cosmic: 25, rainbow: 30 })) this.ctrl.abilityReadyAt[k] = this.ctrl.now() + i * 1000;
+    this.primeAbilities();
     this.unsub = this.ctrl.on((e) => this.onEvent(e));
     this.events.once('shutdown', () => this.unsub?.());
     if (window.__mc) window.__mc.debug = {
@@ -155,6 +158,8 @@ export class CafeScene extends Phaser.Scene {
       climber: () => { const r = this.roamers.find((x) => x.spot === 'cattree'); return r ? { y: r.sprite.y, mode: r.mode } : null; },
       furniture: () => this.lounge.map((it) => it.key),
       play: () => { const r = this.freeRoamers()[0]; return r ? this.sendToPlay(r) : false; },
+      eat: () => { const r = this.freeRoamers()[0]; if (!r) return false; this.sendToEat(r); return r.next === 'eat'; },
+      eater: () => { const r = this.roamers.find((x) => x.mode === 'eat'); return r ? { x: r.sprite.x, y: r.sprite.y - 4 * this.roamerScale(), gen: r.gen } : null; },
       rainbow: () => this.nyanDash(),
       windower: () => { const r = this.roamers.find((x) => x.spot === 'window'); return r ? { x: Math.round(r.sprite.x), y: Math.round(r.sprite.y), tx: Math.round(r.tx), ty: Math.round(r.ty), mode: r.mode, next: r.next, route: r.route.length, counterY: Math.round(this.counters[0].y), topX: Math.round(this.counters[0].x) } : null; },
       napper: () => { const r = this.roamers.find((x) => x.mode === 'nap'); return r ? { x: r.sprite.x, y: r.sprite.y - 4 * this.roamerScale(), gen: r.gen } : null; },
@@ -191,6 +196,7 @@ export class CafeScene extends Phaser.Scene {
     add('emote_heart_red', emoteCanvas('heart', '#E8453C'));
     add('whisk', whiskCanvas());
     add('glow', glowCanvas());
+    { const c = document.createElement('canvas'); c.width = 96; c.height = 48; const ctx = c.getContext('2d')!; const g = ctx.createRadialGradient(48, 48, 2, 48, 48, 46); /* in the squashed space below: an ellipse of light on the floor */ g.addColorStop(0, 'rgba(255,170,80,0.55)'); g.addColorStop(0.5, 'rgba(255,150,70,0.22)'); g.addColorStop(1, 'rgba(255,140,60,0)'); ctx.save(); ctx.scale(1, 0.5); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(48, 48, 46, 0, Math.PI * 2); ctx.fill(); ctx.restore(); add('warmth', c); }
     for (const f of FURNITURE_ITEMS) add(`furn_${f.sprite}`, furnitureCanvas(f.sprite));
     add('furn_hangball_ball', furnitureCanvas('hangball_ball'));
     { // the basket's front wall as its own layer, so a cat inside sits between the back and the front rim
@@ -308,6 +314,7 @@ export class CafeScene extends Phaser.Scene {
     const ropeY = Math.min(h - 2, this.display.y + this.display.h + this.counterFront + 16 * this.roamerScale() + 4);
     this.rope.setScale(sc).setPosition(this.display.x + this.display.w + 12 * sc, ropeY + 3).setDepth(ropeY + 3); // in front of the customers standing at the same line
     this.placeMovingParts();
+    { const f = this.floorRect(); this.warmth.setPosition(this.stations[2].x - 10 * this.roamerScale(), f.y0 - 2 * this.propScale).setScale(this.propScale * 1.4, this.propScale * 1.1); }
 
     // four furniture slots down the left side
     const fs = this.propScale;
@@ -557,11 +564,12 @@ export class CafeScene extends Phaser.Scene {
 
   /** Who is slacking right now: napping, cuddling, fighting or staring out of the window. Production follows. */
   private reportSlack(): void {
-    const counts = { nap: 0, love: 0, fight: 0, window: 0, play: 0 };
+    const counts = { nap: 0, love: 0, fight: 0, window: 0, play: 0, eat: 0 };
     for (const r of this.roamers) {
       if (r.mode === 'nap') counts.nap++;
       else if (r.mode === 'rest' && (r.spot === 'window' || r.spot === 'fishbowl')) counts.window++;
       else if (r.mode === 'play') counts.play++;
+      else if (r.mode === 'eat') counts.eat++;
     }
     if (this.social?.started) { if (this.social.kind === 'cuddle') counts.love = 2; else counts.fight = 2; }
     this.ctrl.setSlack(counts);
@@ -595,6 +603,40 @@ export class CafeScene extends Phaser.Scene {
     } else sp.setFlipX(it.img.x > sp.x); // face the toy
     this.writeDiary('play', [r.gen], undefined, it.key);
   }
+  /** Sneak off to the right-hand belt, where fresh macarons roll past at cat height. */
+  private sendToEat(r: Roamer): void {
+    const s = this.roamerScale(), catH = 16 * s, hb = this.beltH / 2;
+    const cx = this.path[2].x; // the down run
+    const y0 = this.backY + hb + catH * 1.3, y1 = this.stations[3].y - catH * 0.6; // above the packaging machine: still macarons, not gifts
+    if (y1 <= y0) return;
+    this.setTarget(r, { x: cx - hb - 9 * s, y: Phaser.Math.FloatBetween(y0, y1) }, 'eat');
+    r.spot = 'belt';
+  }
+  private startEat(r: Roamer): void {
+    r.timer = Phaser.Math.FloatBetween(8, 14); r.napAcc = 0.6;
+    r.sprite.setFlipX(true); // face the belt on its right
+    this.writeDiary('eat', [r.gen]);
+  }
+  /** One bite: the nearest macaron on the belt vanishes, the cat chomps, crumbs drop to the floor and stay a while. */
+  private eatOnce(r: Roamer): void {
+    const sp = r.sprite, s = this.roamerScale();
+    const near = this.beltMacarons.filter((m) => m.seg === 2 && !m.wrapped && !m.flying && Math.abs(m.sprite.y - (sp.y - 6 * s)) < 12 * s);
+    const m = near[0];
+    const colour = m ? PALETTE[m.color]?.fill ?? '#F9CBD6' : null;
+    if (m) { this.beltMacarons.splice(this.beltMacarons.indexOf(m), 1); this.tweens.add({ targets: m.sprite, x: sp.x + 8 * s, y: sp.y - 8 * s, scale: 0, duration: 140, ease: 'Quad.in', onComplete: () => m.sprite.destroy() }); }
+    this.tweens.add({ targets: sp, scaleY: s * 0.88, scaleX: s * 1.08, duration: 90, yoyo: true, ease: 'Quad.out' });
+    if (!colour) return;
+    sfx.boing(2.2);
+    const base = Phaser.Display.Color.HexStringToColor(colour).color;
+    for (let k = 0; k < 5; k++) { // crumbs: fall from the mouth and lie on the floor by the cat's paws before fading
+      const c = this.add.rectangle(sp.x + (5 + Math.random() * 4) * s, sp.y - 7 * s, s, s, k % 2 ? base : 0xf2e2c6).setDepth(sp.depth - 0.5);
+      this.tweens.add({ targets: c, x: c.x + (Math.random() - 0.3) * 10 * s, y: sp.y + Math.random() * 3 * s, duration: 220 + Math.random() * 120, ease: 'Quad.in', onComplete: () => {
+        c.setDepth(2); // on the floor, under everything that walks past
+        this.tweens.add({ targets: c, alpha: 0, delay: 18_000 + Math.random() * 8000, duration: 2000, onComplete: () => c.destroy() });
+      } });
+    }
+  }
+
   /** One scratch (post) or one swat (hanging ball). */
   private playOnce(r: Roamer): void {
     const it = this.lounge.find((x) => x.key === r.spot);
@@ -715,13 +757,26 @@ export class CafeScene extends Phaser.Scene {
       this.roamers.push(r);
       this.tweens.add({ targets: sprite, alpha: 1, duration: 300 });
     }
+    if (this.dozeAll) { this.dozeAll = false; this.dozeEveryone(); }
+  }
+
+  /** After a long absence every floor cat is found asleep where it stands (full slack until tapped); they wake on their own over a few minutes. */
+  private dozeEveryone(): void {
+    for (const r of this.roamers) {
+      if (r.mode !== 'idle' && r.mode !== 'walk') continue;
+      const sp = r.sprite;
+      r.mode = 'nap'; r.next = 'idle'; r.spot = null; r.timer = Phaser.Math.FloatBetween(90, 240); r.napAcc = Math.random();
+      this.tweens.killTweensOf(sp);
+      this.lieDown(sp, sp.flipX ? -90 : 90, 360);
+      sp.setTexture(`cat_${r.gen}_sleep`);
+    }
   }
 
   /** Petting: each cat type has its own reaction (see journal). Cosmetic only. */
   private petCat(r: Roamer): void {
     if (r.mode === 'react' || r.mode === 'lie' || r.mode === 'climb') return;
     // a moment worth posting: tap a cat mid-interaction while an Influencer is on staff
-    const moment: DiaryKind | null = r.mode === 'social' && this.social ? this.social.kind : (this.chat && this.chat.cat === r && this.chat.started) ? 'chat' : r.mode === 'nap' ? 'nap' : r.mode === 'rest' ? 'rest' : r.mode === 'play' ? 'play' : null;
+    const moment: DiaryKind | null = r.mode === 'social' && this.social ? this.social.kind : (this.chat && this.chat.cat === r && this.chat.started) ? 'chat' : r.mode === 'nap' ? 'nap' : r.mode === 'rest' ? 'rest' : r.mode === 'play' ? 'play' : r.mode === 'eat' ? 'eat' : null;
     if (moment && hasInfluencer(this.ctrl.state) && Math.random() < 0.5) {
       const cats = moment === 'chat' && this.chat ? [r.gen, this.chat.customer.species] : moment === 'cuddle' || moment === 'fight' ? [this.social!.a.gen, this.social!.b.gen] : [r.gen];
       const spot = (moment === 'nap' || moment === 'rest' || moment === 'play') && r.spot ? (r.spot.startsWith('counter') ? 'counter' : r.spot) : null;
@@ -736,6 +791,7 @@ export class CafeScene extends Phaser.Scene {
     if (r.mode === 'nap') { r.sprite.setAngle(0); if (r.sprite.originY !== 1) { r.sprite.y += r.sprite.displayHeight * 0.33; r.sprite.setOrigin(0.5, 1); } r.sprite.setTexture(`cat_${r.gen}_open`); r.mode = 'idle'; r.spot = null; }
     if (r.mode === 'social' && this.social) { const o = this.social.a === r ? this.social.b : this.social.a; if (o.mode === 'social') { o.mode = 'idle'; o.timer = 1; } this.social = null; }
     if (r.sprite.texture.key.endsWith('_back')) r.sprite.setTexture(`cat_${r.gen}_open`);
+    if (r.mode === 'eat') { r.mode = 'idle'; r.spot = null; r.timer = 0.5; this.tweens.killTweensOf(r.sprite); r.sprite.setScale(this.roamerScale()); }
     if (r.mode === 'rest' || r.mode === 'play') { r.mode = 'idle'; r.spot = null; this.tweens.killTweensOf(r.sprite); if (r.sprite.originY !== 1) this.getUp(r.sprite, 200); else r.sprite.setAngle(0).setScale(this.roamerScale()); }
     const reaction: PetReaction = JOURNAL_BY_ID[r.gen]?.pet ?? 'happy';
     const sp = r.sprite;
@@ -814,6 +870,7 @@ export class CafeScene extends Phaser.Scene {
           if (r.next === 'rest') { r.timer = Phaser.Math.FloatBetween(12, 20); r.napAcc = 1.5; sp.setFlipX(false); if (r.spot === 'window' || r.spot === 'fishbowl') sp.setTexture(`cat_${r.gen}_back`); this.writeDiary('rest', [r.gen], undefined, r.spot?.startsWith('counter') ? 'counter' : r.spot ?? 'counter'); }
           if (r.next === 'climb') this.climbTree(r, true);
           if (r.next === 'play') this.startPlay(r);
+          if (r.next === 'eat') this.startEat(r);
           if (r.flat) { r.flat = false; sfx.boing(1.7); this.tweens.add({ targets: sp, scaleX: s, scaleY: s, duration: 420, ease: 'Elastic.out', easeParams: [1.2, 0.4] }); }
         } else {
           sp.setPosition(sp.x + (dx / d) * step, sp.y + (dy / d) * step);
@@ -842,6 +899,10 @@ export class CafeScene extends Phaser.Scene {
         r.timer -= dt; r.napAcc += dt;
         if (r.napAcc > (r.spot === 'hangball' ? 0.7 : 0.45)) { r.napAcc = 0; this.playOnce(r); }
         if (r.timer <= 0) { r.mode = 'idle'; r.timer = 0.5; r.spot = null; this.tweens.killTweensOf(sp); if (r.spot === null && sp.originY !== 1) this.getUp(sp, 240); else this.tweens.add({ targets: sp, scaleX: s, scaleY: s, angle: 0, duration: 200, ease: 'Quad.out' }); }
+      } else if (r.mode === 'eat') {
+        r.timer -= dt; r.napAcc += dt;
+        if (r.napAcc > 1.3) { r.napAcc = 0; this.eatOnce(r); }
+        if (r.timer <= 0) { r.mode = 'idle'; r.timer = 0.5; r.spot = null; }
       } else if (r.mode === 'climb') {
         // driven by tweens (see climbTree)
       } else if (r.mode === 'rest') {
@@ -864,6 +925,7 @@ export class CafeScene extends Phaser.Scene {
           else if (roll < 0.40 && !inLoungeNow) this.sendToNap(r);
           else if (roll < 0.50 && !inLoungeNow) this.sendToRest(r);
           else if (roll < 0.58 && !inLoungeNow && !this.sendToPlay(r)) this.leaveLounge(r, this.randomFloorPoint(), 'idle');
+          else if (roll < 0.66 && !inLoungeNow && this.beltMacarons.some((m) => m.seg === 2 && !m.wrapped && !m.flying)) this.sendToEat(r); // something tasty is going past on the right-hand belt
           else if (roll >= 0.58) this.leaveLounge(r, this.randomFloorPoint(), 'idle');
         }
       }
@@ -1150,8 +1212,11 @@ export class CafeScene extends Phaser.Scene {
     this.hourglasses.forEach((g) => g.destroy()); this.hourglasses = [];
     if (this.shootingStar) { this.shootingStar.destroy(); this.shootingStar = null; }
     this.rushLeft = 0;
-    for (const k of Object.keys(GameController.ABILITY_COOLDOWN_SEC)) this.ctrl.abilityReadyAt[k] = this.ctrl.now() + 25_000;
+    this.primeAbilities();
   }
+
+  /** Every special cat the player owns gets its first charge soon after hiring; later charges take hours. */
+  private primeAbilities(): void { for (const k of Object.keys(ABILITY)) if ((this.ctrl.state.gens[k] ?? 0) > 0) abilityPrime(this.ctrl.state, k, this.ctrl.now()); }
 
   private blessIcons: Phaser.GameObjects.Image[] = [];
   private updateBlessIcons(s: number): void {
@@ -1277,8 +1342,7 @@ export class CafeScene extends Phaser.Scene {
 
   // ---- special abilities (pet a charged special cat) -----------------------------------------
 
-  private isSpecial(gen: string): boolean { return gen in GameController.ABILITY_COOLDOWN_SEC; }
-  private isReady(gen: string): boolean { return this.isSpecial(gen) && this.ctrl.now() >= (this.ctrl.abilityReadyAt[gen] ?? 0); }
+  private isReady(gen: string): boolean { return abilityReady(this.ctrl.state, gen, this.ctrl.now()); }
 
   /** Petting a special cat whose ability is charged fires it. */
   private triggerAbility(r: Roamer): boolean {
@@ -1286,7 +1350,7 @@ export class CafeScene extends Phaser.Scene {
     if (!this.isReady(gen)) return false;
     if (gen === 'cosmic' && this.shootingStar) return false;
     if (gen === 'rainbow' && (this.time.now < this.rainbowUntil || this.ctrl.rainbowActive())) return false;
-    this.ctrl.abilityReadyAt[gen] = this.ctrl.now() + GameController.ABILITY_COOLDOWN_SEC[gen] * 1000;
+    abilityUsed(this.ctrl.state, gen, this.ctrl.now());
     if (gen === 'deity') this.doBless();
     else if (gen === 'timecat') this.doTimeWarp();
     else if (gen === 'cosmic') this.spawnShootingStar();
@@ -1623,6 +1687,8 @@ export class CafeScene extends Phaser.Scene {
   private onEvent(e: GameEvent): void {
     if (e.type === 'click') { this.burst(e.value, e.combo); this.spawnBeltMacaron(true); }
     if (e.type === 'buy' || e.type === 'prestige' || e.type === 'offline' || e.type === 'reset') this.pendingRoamerRebuild = true;
+    if (e.type === 'buy') abilityPrime(this.ctrl.state, e.gen, this.ctrl.now());
+    if (e.type === 'offline' && e.seconds >= OFFLINE.dozeAfterSeconds) this.dozeAll = true; // back after a long while: the whole floor is asleep, tap them awake
     if (e.type === 'upgrade' || e.type === 'prestige' || e.type === 'reset') this.pendingPropRefresh = true;
     if (e.type === 'upgrade' && e.id.startsWith('equip_box_')) this.rewrapDisplay();
     if (e.type === 'buy') this.cheer(e.gen);
@@ -1703,10 +1769,11 @@ export class CafeScene extends Phaser.Scene {
     if (producing) {
       const target = 0.45 + Math.random() * 0.35;
       this.glow.setAlpha(Phaser.Math.Linear(this.glow.alpha, target, 0.25));
+      this.warmth.setAlpha(Phaser.Math.Linear(this.warmth.alpha, 0.75 + target * 0.3, 0.08));
       this.glow2.setAlpha(Phaser.Math.Linear(this.glow2.alpha, 0.45 + Math.random() * 0.35, 0.25));
       this.smokeAcc += dt;
       if (this.smokeAcc > 0.9) { this.smokeAcc = 0; this.smoke(1); }
-    } else { this.glow.setAlpha(Phaser.Math.Linear(this.glow.alpha, 0, 0.1)); this.glow2.setAlpha(Phaser.Math.Linear(this.glow2.alpha, 0, 0.1)); }
+    } else { this.glow.setAlpha(Phaser.Math.Linear(this.glow.alpha, 0, 0.1)); this.glow2.setAlpha(Phaser.Math.Linear(this.glow2.alpha, 0, 0.1)); this.warmth.setAlpha(Phaser.Math.Linear(this.warmth.alpha, 0, 0.05)); }
     this.updateRoamers(dt, time);
     this.updateCustomer(dt, time);
     this.updateChat(dt);
