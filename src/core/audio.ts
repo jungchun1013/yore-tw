@@ -82,6 +82,25 @@ export class Sfx {
     src.start(t0); src.stop(t0 + dur + 0.02);
   }
 
+  /** A crisp little crunch (喀): a very short band-passed noise tick, for a cat biting a macaron. */
+  crunch(pitch = 1): void {
+    if (!this.enabled || this.muted) return;
+    const ctx = this.ensure();
+    if (!ctx || !this.master) return;
+    const dur = 0.06;
+    const buf = ctx.createBuffer(1, Math.floor(ctx.sampleRate * dur), ctx.sampleRate);
+    const data = buf.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / data.length);
+    const src = ctx.createBufferSource(); src.buffer = buf;
+    const bp = ctx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1900 * pitch; bp.Q.value = 1.2;
+    const g = ctx.createGain();
+    const t0 = ctx.currentTime;
+    g.gain.setValueAtTime(0.55, t0);
+    g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+    src.connect(bp).connect(g).connect(this.master);
+    src.start(t0); src.stop(t0 + dur + 0.01);
+  }
+
   /** Soft "boing" (ㄉㄨㄞ): a sine that drops quickly in pitch with a little wobble, like poking jelly. */
   boing(pitch = 1): void {
     if (!this.enabled || this.muted) return;
