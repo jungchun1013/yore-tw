@@ -308,10 +308,11 @@ export class CafeScene extends Phaser.Scene {
     const sc = this.machineScale;
     const topBase = topCounter.y + topCounter.h - 2;
     const cellW = 26 * sc;
+    const lip = 2 * this.propScale; // a steel table standing on the floor, a touch deeper than the conveyor rack on both sides
     this.drawSteelCells([
-      { x: this.stations[0].x - cellW / 2, y: topCounter.y, w: cellW, h: depth, front: this.counterFront, depth: back.depth + 0.7 },
-      { x: this.stations[2].x - cellW / 2, y: topCounter.y, w: cellW, h: depth, front: this.counterFront, depth: back.depth + 0.7 },
-      { x: rightCounter.x, y: this.stations[3].y - cellW / 2, w: depth, h: cellW, front: 0, depth: down.depth + 0.7 },
+      { x: this.stations[0].x - cellW / 2, y: topCounter.y - lip, w: cellW, h: depth + 2 * lip, front: this.counterFront, depth: back.depth + 0.7 },
+      { x: this.stations[2].x - cellW / 2, y: topCounter.y - lip, w: cellW, h: depth + 2 * lip, front: this.counterFront, depth: back.depth + 0.7 },
+      { x: rightCounter.x - lip, y: this.stations[3].y - cellW / 2, w: depth + 2 * lip, h: cellW, front: this.counterFront, depth: down.depth + 0.7 },
     ]);
     this.props.forEach((p, i) => {
       const st = this.stations[i];

@@ -47,7 +47,7 @@ export const JOURNAL: JournalEntry[] = [
     id: 'courier', pet: 'lie', title: 'Night Delivery, Rain or Shine',
     story: [
       'Delivers across town at 3 a.m., mostly to other cats who ordered at 2:59 a.m.',
-      'The blue bandana is for aerodynamics. The courier has never explained what aerodynamics are, and nobody has dared to ask.',
+      'The blue bandana was its first tip. It has worn it every day since, rain or not.',
     ],
     likes: 'Wet pavement reflections', flavour: 'Blueberry, eaten on a rooftop',
   },
