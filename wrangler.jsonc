@@ -2,5 +2,10 @@
   // Cloudflare Workers project "yore-tw": serves the static site in site/ (no Worker code).
   "name": "yore-tw",
   "compatibility_date": "2026-11-01",
-  "assets": { "directory": "./site", "not_found_handling": "404-page" }
+  "assets": { "directory": "./site", "not_found_handling": "404-page" },
+  // custom domains are attached on deploy (the zone yore-tw.com lives in the same Cloudflare account)
+  "routes": [
+    { "pattern": "yore-tw.com", "custom_domain": true },
+    { "pattern": "www.yore-tw.com", "custom_domain": true }
+  ]
 }
