@@ -433,7 +433,7 @@ export class GameController {
   /** The scene reports who is slacking; production follows immediately. */
   setSlack(counts: GameState['slack']): void {
     const cur = this.state.slack;
-    if (cur.nap === counts.nap && cur.love === counts.love && cur.fight === counts.fight && cur.window === counts.window && cur.play === counts.play) return;
+    if (eco.SLACK_KINDS.every((k) => cur[k] === counts[k])) return;
     this.state.slack = { ...counts };
   }
 

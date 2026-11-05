@@ -6,7 +6,7 @@ import { STATIONS } from '../../content/upgrades';
 import { SPECIES, pickSpecies } from '../../content/customers';
 import { FURNITURE_ITEMS, FURNITURE_BY_ID } from '../../content/furniture';
 import { JOURNAL_BY_ID, type PetReaction } from '../../content/journal';
-import { equipmentTier, PET, isLovedCat, customerGapMultiplier, hasInfluencer, warpMultiplier, ABILITY, abilityReady, abilityUsed, abilityPrime, OFFLINE } from '../../core/economy';
+import { equipmentTier, PET, isLovedCat, customerGapMultiplier, hasInfluencer, warpMultiplier, ABILITY, abilityReady, abilityUsed, abilityPrime, OFFLINE, RUSH } from '../../core/economy';
 import { DIARY_TEXT, SPOT_TEXT, CUSTOMER_POSTS, pick } from '../../content/diarytext';
 import { SPECIES_BY_ID } from '../../content/customers';
 import type { DiaryKind, DiaryBg } from '../../core/types';
@@ -33,6 +33,8 @@ interface Roamer {
   flat: boolean;
   /** after being snapped out of slacking the cat stays on task until this time (ms) */
   alertUntil: number;
+  /** colour of the macaron being chewed (null: chewing air) */
+  eating?: string | null;
   /** seconds accumulator for periodic emotes while napping */
   napAcc: number;
   /** remaining waypoints before the final target */
@@ -184,6 +186,8 @@ export class CafeScene extends Phaser.Scene {
       add(`cat_${c.id}_back`, overrideCanvas(`cat:${c.id}:back`) ?? catCanvas(c.coat, c.accessory, 'back'));
       add(`cat_${c.id}_sleep`, overrideCanvas(`cat:${c.id}:sleep`) ?? catCanvas(c.coat, c.accessory, 'sleep'));
       add(`cat_${c.id}_fight`, overrideCanvas(`cat:${c.id}:fight`) ?? catCanvas(c.coat, c.accessory, 'fight'));
+      add(`cat_${c.id}_sad`, overrideCanvas(`cat:${c.id}:sad`) ?? catCanvas(c.coat, c.accessory, 'sad'));
+      add(`cat_${c.id}_chew`, overrideCanvas(`cat:${c.id}:chew`) ?? catCanvas(c.coat, c.accessory, 'chew'));
     }
     for (const k of Object.keys(PALETTE)) add(`mac_${k}`, macaronCanvas(k));
     this.macaronKeys = ['pink', 'mint', 'lemon', 'sky', 'lavender', 'peach', 'rose', 'pistachio'].map((k) => `mac_${k}`);
@@ -197,6 +201,7 @@ export class CafeScene extends Phaser.Scene {
     add('bubble_note', bubbleCanvas('note'));
     add('bubble_shades', bubbleCanvas('shades'));
     add('bubble_heart', bubbleCanvas('heart'));
+    add('bubble_money', bubbleCanvas('money'));
     for (const e of EMOTE_NAMES) add(`emote_${e}`, emoteCanvas(e));
     add('emote_heart_red', emoteCanvas('heart', '#E8453C'));
     add('whisk', whiskCanvas());
@@ -260,7 +265,7 @@ export class CafeScene extends Phaser.Scene {
     const dx = this.cam.x + this.cam.w + w * 0.02;
     // the display counter gives up its right end so a full empty bay sits between it and the front counter (the sack's spot)
     const sackGap = 28 * this.propScale;
-    const rightCx = Math.min(w * 0.82 + 22 * this.roamerScale(), w - depth / 2 - 4 * this.propScale);
+    const rightCx = Math.min(w * 0.82 + 22 * this.roamerScale(), w - 13 * this.propScale - 2 * this.propScale); // room for the packaging table (26 px wide) beside the right-hand run
     const displayEndOrig = dx + Math.max(80, Math.min(w * 0.40, w * 0.62 - dx));
     this.display = { x: dx, y: h * (narrow ? 0.78 : 0.80), w: Math.max(60, displayEndOrig - sackGap - dx), h: depth };
 
@@ -287,7 +292,7 @@ export class CafeScene extends Phaser.Scene {
     // packaging machine at the bottom-right corner (→ gift in the macaron's colour) and into the sack at the end.
     // mixer, piping and oven spread evenly from the counter's left end to just before the corner
     const mx0 = topX0 + 12 * this.propScale, mx1 = rightCx - 30 * this.propScale;
-    const ovenX = mx1;
+    const ovenX = mx1 - 16 * this.propScale; // one cell left of the corner
     this.stations = [
       { x: mx0, y: this.backY },                 // mixer: the belt starts here
       { x: (mx0 + mx1) / 2, y: -1000 },          // tray station: upgrades only, not on the floor (nothing to transform yet)
@@ -312,7 +317,7 @@ export class CafeScene extends Phaser.Scene {
     this.drawSteelCells([
       { x: this.stations[0].x - cellW / 2, y: topCounter.y - lip, w: cellW, h: depth + 2 * lip, front: this.counterFront, depth: back.depth + 0.7 },
       { x: this.stations[2].x - cellW / 2, y: topCounter.y - lip, w: cellW, h: depth + 2 * lip, front: this.counterFront, depth: back.depth + 0.7 },
-      { x: rightCounter.x - lip, y: this.stations[3].y - cellW / 2, w: depth + 2 * lip, h: cellW, front: this.counterFront, depth: down.depth + 0.7 },
+      { x: rightCx - cellW / 2, y: this.stations[3].y + depth / 2 + lip + 2 - (depth + 2 * lip), w: cellW, h: depth + 2 * lip, front: this.counterFront, depth: down.depth + 0.7 }, // the same table as the two above, across the right-hand run
     ]);
     this.props.forEach((p, i) => {
       const st = this.stations[i];
@@ -330,7 +335,7 @@ export class CafeScene extends Phaser.Scene {
     this.rope.setScale(sc).setPosition(this.display.x + this.display.w + 12 * sc, ropeY + 3).setDepth(ropeY + 3); // in front of the customers standing at the same line
     this.rope2.setScale(sc).setPosition(this.rope.x + 18 * sc, ropeY + 3).setDepth(ropeY + 3); // shares the middle stanchion
     this.placeMovingParts();
-    { const f = this.floorRect(); this.warmth.setPosition(this.stations[2].x - 12 * this.roamerScale(), f.y0 - 2 * this.propScale).setScale(this.propScale * 0.55, this.propScale * 0.5); } // a pool about two cats wide, right in front of the oven
+    this.warmth.setOrigin(0.5, 0.3).setPosition(this.stations[2].x, topCounter.y + topCounter.h + this.counterFront).setScale(this.propScale * 0.9, this.propScale * 0.8); // radiates from the oven down onto the floor // a pool about two cats wide, right in front of the oven
 
     // four furniture slots down the left side
     const fs = this.propScale;
@@ -400,6 +405,24 @@ export class CafeScene extends Phaser.Scene {
     this.bgImage = this.add.image(0, 0, key).setOrigin(0).setDepth(0);
   }
 
+  /** Bounding box of a sprite's doorway: transparent pixels that have opaque pixels on both sides in their row. */
+  private doorway(key: string): { x0: number; y0: number; x1: number; y1: number; w: number; h: number } {
+    const src = this.textures.get(key).getSourceImage() as HTMLCanvasElement;
+    const w = src.width, h = src.height;
+    const data = src.getContext('2d')!.getImageData(0, 0, w, h).data;
+    const opaque = (x: number, y: number) => data[(y * w + x) * 4 + 3] > 0;
+    let x0 = w, y0 = h, x1 = -1, y1 = -1;
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+      if (opaque(x, y)) continue;
+      let left = false, right = false;
+      for (let i = x - 1; i >= 0; i--) if (opaque(i, y)) { left = true; break; }
+      for (let i = x + 1; i < w; i++) if (opaque(i, y)) { right = true; break; }
+      if (left && right && y > h / 2) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
+    }
+    if (x1 < 0) return { x0: Math.round(w / 2) - 5, y0: h - 13, x1: Math.round(w / 2) + 4, y1: h - 1, w, h };
+    return { x0, y0, x1, y1, w, h };
+  }
+
   /** Steel cells under the machines, drawn over the belt (and its frame) but under the items and the machines. */
   private drawSteelCells(cells: { x: number; y: number; w: number; h: number; front: number; depth: number }[]): void {
     while (this.cellGfx.length < cells.length) this.cellGfx.push(this.add.graphics());
@@ -463,10 +486,14 @@ export class CafeScene extends Phaser.Scene {
     this.shelfLayer.removeAll(true);
     const scale = Math.max(2, Math.round(this.propScale * 0.7));
     const tier = this.shelfTier; // bare macarons → ribbon boxes → gift boxes → shiny boxes
-    for (let i = 0; i < count; i++) {
-      const p = slots[i];
+    // a tidy row: items side by side with a gap, centred on the counter, never overlapping
+    const itemW = (tier > 0 ? 17 : 9) * scale, gap = 2 * scale;
+    const fit = Math.max(1, Math.min(count, Math.floor((this.display.w - 4 * scale + gap) / (itemW + gap))));
+    const rowW = fit * itemW + (fit - 1) * gap;
+    const x0 = this.display.x + (this.display.w - rowW) / 2 + itemW / 2, y = slots[0].y;
+    for (let i = 0; i < fit; i++) {
       const key = tier > 0 ? `gift_t${tier}_${this.macaronKeys[i % this.macaronKeys.length].slice(4)}` : this.macaronKeys[i % this.macaronKeys.length];
-      this.shelfLayer.add(this.add.image(p.x, p.y - (tier > 0 ? 2 : 0), key).setScale(scale));
+      this.shelfLayer.add(this.add.image(x0 + i * (itemW + gap), y - (tier > 0 ? 2 : 0), key).setScale(scale));
     }
     this.shelfLayer.setDepth(this.display.y + this.display.h + this.counterFront + 1);
   }
@@ -523,7 +550,8 @@ export class CafeScene extends Phaser.Scene {
       const img = this.add.image(p.x, p.y, `furn_${def.sprite}`).setOrigin(0.5, 1).setScale(fs).setDepth(fd);
       let dark: Phaser.GameObjects.Rectangle | undefined;
       if (def.inside) {
-        dark = this.add.rectangle(p.x - 2 * fs, p.y - 1 * fs, 10 * fs, 13 * fs, 0x3a2a22).setOrigin(0.5, 1).setDepth(fd - 2); // the dark inside, seen through the doorway; the sleeping cat sits between it and the house
+        const d = this.doorway(`furn_${def.sprite}`); // the dark inside, exactly the sprite's doorway hole; the sleeping cat sits between it and the house
+        dark = this.add.rectangle(p.x + (d.x0 - d.w / 2) * fs, p.y - (d.h - d.y1 - 1) * fs, (d.x1 - d.x0 + 1) * fs, (d.y1 - d.y0 + 1) * fs, 0x3a2a22).setOrigin(0, 1).setDepth(fd - 2);
       }
       let ball: Phaser.GameObjects.Image | undefined;
       if (def.id === 'hangball') ball = this.add.image(p.x + 2 * fs, p.y - 25 * fs, 'furn_hangball_ball').setOrigin(0.5, 0).setScale(fs).setDepth(fd + 0.5); // hangs from the arm's hook and swings about it
@@ -581,19 +609,38 @@ export class CafeScene extends Phaser.Scene {
   }
 
   /** Rainbow energy: a vertical pixel bar left of the owner, bottom aligned with the owner's feet; drains top-down. */
+  /** Every running effect as a pixel bar, no words: the rainbow bar stands left of the owner; blessing (gold),
+   *  time warp (sky) and catnip rush (green) lie above the owner's head and drain as they run out. */
   private drawEnergyBar(): void {
     const g = this.energyBar; g.clear();
-    const e = this.ctrl.rainbowEnergy;
-    if (e <= 0) return;
     const u = this.heroScale; // one "pixel" of the owner
-    const w = 3 * u, h = 14 * u, x = 4, bottom = this.heroY + 12 * u; // the owner's feet
-    g.fillStyle(0x5a4038, 1).fillRect(x, bottom - h, w, h);              // outline
-    g.fillStyle(0xfff7f0, 1).fillRect(x + u, bottom - h + u, w - 2 * u, h - 2 * u); // empty inside
-    const bands = [0xff5f6d, 0xffb347, 0xfff36b, 0x7ee787, 0x6fb3ff, 0xc38cff];
-    const inner = h - 2 * u, filled = Math.round((inner * e) / u) * u;  // snapped to pixels
-    for (let i = 0; i < filled / u; i++) {
-      const row = bottom - u - (i + 1) * u;
-      g.fillStyle(bands[Math.floor((i / (inner / u)) * bands.length) % bands.length], 1).fillRect(x + u, row, w - 2 * u, u);
+    const now = this.ctrl.now(), s = this.ctrl.state;
+    const e = this.ctrl.rainbowEnergy;
+    if (e > 0) {
+      const w = 3 * u, h = 14 * u, x = 4, bottom = this.heroY + 12 * u; // the owner's feet
+      g.fillStyle(0x5a4038, 1).fillRect(x, bottom - h, w, h);              // outline
+      g.fillStyle(0xfff7f0, 1).fillRect(x + u, bottom - h + u, w - 2 * u, h - 2 * u); // empty inside
+      const bands = [0xff5f6d, 0xffb347, 0xfff36b, 0x7ee787, 0x6fb3ff, 0xc38cff];
+      const inner = h - 2 * u, filled = Math.round((inner * e) / u) * u;  // snapped to pixels
+      for (let i = 0; i < filled / u; i++) {
+        const row = bottom - u - (i + 1) * u;
+        g.fillStyle(bands[Math.floor((i / (inner / u)) * bands.length) % bands.length], 1).fillRect(x + u, row, w - 2 * u, u);
+      }
+    }
+    const timed: { left: number; total: number; colour: number }[] = [
+      { left: s.blessedUntil - now, total: ABILITY.deity.durationMs, colour: 0xffd84d },
+      { left: s.warpUntil - now, total: ABILITY.timecat.durationMs, colour: 0x6fb3ff },
+      { left: s.boostUntil - now, total: RUSH.durationMs, colour: 0x7ee787 },
+    ].filter((b) => b.left > 0);
+    const bw = 20 * u, bh = 3 * u, x0 = this.cam.x + 4;
+    let y = this.heroY - 10 * u; // just above the owner's ears, stacking upward
+    for (const b of timed) {
+      const top = y - bh;
+      g.fillStyle(0x5a4038, 1).fillRect(x0, top, bw, bh);
+      g.fillStyle(0xfff7f0, 1).fillRect(x0 + u, top + u, bw - 2 * u, bh - 2 * u);
+      const inner = bw - 2 * u, filled = Math.round((inner * Math.min(1, b.left / b.total)) / u) * u;
+      if (filled > 0) g.fillStyle(b.colour, 1).fillRect(x0 + u, top + u, filled, bh - 2 * u);
+      y = top - u;
     }
   }
 
@@ -642,7 +689,7 @@ export class CafeScene extends Phaser.Scene {
   private sendToEat(r: Roamer): void {
     const s = this.roamerScale(), catH = 16 * s, hb = this.beltH / 2;
     const cx = this.path[2].x; // the down run
-    const y0 = this.backY + hb + catH * 1.3, y1 = this.stations[3].y - catH * 0.6; // above the packaging machine: still macarons, not gifts
+    const y0 = this.backY + hb + catH * 2.3, y1 = this.stations[3].y - catH * 0.3; // a row below the corner, above the packaging machine: still macarons, not gifts
     if (y1 <= y0) return;
     this.setTarget(r, { x: cx - hb - 9 * s, y: Phaser.Math.FloatBetween(y0, y1) }, 'eat');
     r.spot = 'belt';
@@ -653,17 +700,22 @@ export class CafeScene extends Phaser.Scene {
     this.writeDiary('eat', [r.gen]);
   }
   /** One bite: the nearest macaron on the belt vanishes, the cat chomps, crumbs drop to the floor and stay a while. */
-  private eatOnce(r: Roamer): void {
+  private eatOnce(r: Roamer, bite = 0): void {
     const sp = r.sprite, s = this.roamerScale();
-    const near = this.beltMacarons.filter((m) => m.seg === 2 && !m.wrapped && !m.flying && Math.abs(m.sprite.y - (sp.y - 6 * s)) < 12 * s);
-    const m = near[0];
-    const colour = m ? PALETTE[m.color]?.fill ?? '#F9CBD6' : null;
-    if (m) { this.beltMacarons.splice(this.beltMacarons.indexOf(m), 1); this.tweens.add({ targets: m.sprite, x: sp.x + 8 * s, y: sp.y - 8 * s, scale: 0, duration: 140, ease: 'Quad.in', onComplete: () => m.sprite.destroy() }); }
-    this.tweens.add({ targets: sp, scaleY: s * 0.88, scaleX: s * 1.08, duration: 90, yoyo: true, ease: 'Quad.out' });
+    if (bite === 0) { // the first bite of the burst takes a macaron off the belt (if one is passing); the next two chew it
+      const near = this.beltMacarons.filter((m) => m.seg === 2 && !m.wrapped && !m.flying && Math.abs(m.sprite.y - (sp.y - 6 * s)) < 12 * s);
+      const m = near[0];
+      r.eating = m ? PALETTE[m.color]?.fill ?? '#F9CBD6' : null;
+      if (m) { this.beltMacarons.splice(this.beltMacarons.indexOf(m), 1); this.tweens.add({ targets: m.sprite, x: sp.x + 8 * s, y: sp.y - 8 * s, scale: 0, duration: 140, ease: 'Quad.in', onComplete: () => m.sprite.destroy() }); }
+    }
+    this.tweens.add({ targets: sp, scaleY: s * 0.88, scaleX: s * 1.08, duration: 45, yoyo: true, ease: 'Quad.out' });
+    sp.setTexture(`cat_${r.gen}_${bite % 2 === 0 ? 'chew' : 'open'}`); // the mouth works: shut, open, shut
+    this.time.delayedCall(60, () => { if (r.mode === 'eat' && sp.active) sp.setTexture(`cat_${r.gen}_${bite % 2 === 0 ? 'open' : 'chew'}`); });
+    const colour = r.eating;
     if (!colour) return;
-    sfx.boing(2.2);
+    sfx.boing(2.2 + bite * 0.15);
     const base = Phaser.Display.Color.HexStringToColor(colour).color;
-    for (let k = 0; k < 5; k++) { // crumbs: fall from the mouth and lie on the floor by the cat's paws before fading
+    for (let k = 0; k < 3; k++) { // crumbs: fall from the mouth and lie on the floor by the cat's paws before fading
       const c = this.add.rectangle(sp.x + (5 + Math.random() * 4) * s, sp.y - 7 * s, s, s, k % 2 ? base : 0xf2e2c6).setDepth(sp.depth - 0.5);
       this.tweens.add({ targets: c, x: c.x + (Math.random() - 0.3) * 10 * s, y: sp.y + Math.random() * 3 * s, duration: 220 + Math.random() * 120, ease: 'Quad.in', onComplete: () => {
         c.setDepth(2); // on the floor, under everything that walks past
@@ -835,13 +887,15 @@ export class CafeScene extends Phaser.Scene {
     if (r.mode === 'nap') { r.sprite.setAngle(0); if (r.sprite.originY !== 1) { r.sprite.y += r.sprite.displayHeight * 0.33; r.sprite.setOrigin(0.5, 1); } r.sprite.setTexture(`cat_${r.gen}_open`); r.mode = 'idle'; r.spot = null; }
     if (r.mode === 'social' && this.social) { const o = this.social.a === r ? this.social.b : this.social.a; if (o.mode === 'social') { o.mode = 'idle'; o.timer = 1; } this.social = null; }
     if (r.sprite.texture.key.endsWith('_back')) r.sprite.setTexture(`cat_${r.gen}_open`);
-    if (r.mode === 'eat') { r.mode = 'idle'; r.spot = null; r.timer = 0.5; this.tweens.killTweensOf(r.sprite); r.sprite.setScale(this.roamerScale()); }
+    if (r.mode === 'eat') { r.mode = 'idle'; r.spot = null; r.timer = 0.5; this.tweens.killTweensOf(r.sprite); r.sprite.setScale(this.roamerScale()).setTexture(`cat_${r.gen}_open`); }
     if (r.mode === 'rest' || r.mode === 'play') { r.mode = 'idle'; r.spot = null; this.tweens.killTweensOf(r.sprite); if (r.sprite.originY !== 1) this.getUp(r.sprite, 200); else r.sprite.setAngle(0).setScale(this.roamerScale()); }
     if (slacking) { // the first tap only ends the slacking: a startled hop and a "?"; the next tap is the pat
       const sp0 = r.sprite, s0 = this.roamerScale();
       r.timer = Phaser.Math.FloatBetween(1.5, 3); r.alertUntil = this.time.now + 60_000; // snapped out of it: stays on task for a minute
       this.tweens.add({ targets: sp0, y: sp0.y - 6 * s0, duration: 110, yoyo: true, ease: 'Quad.out' });
-      const q = this.add.image(sp0.x + 7 * s0, sp0.y - 18 * s0, 'emote_question').setScale(s0 * 0.9).setDepth(8000);
+      sp0.setTexture(`cat_${r.gen}_sad`); // 😞 for a moment, then back to normal when its timer runs out
+      this.time.delayedCall(1400, () => { if (sp0.active && sp0.texture.key.endsWith('_sad')) sp0.setTexture(`cat_${r.gen}_open`); });
+      const q = this.add.image(sp0.x + 7 * s0, sp0.y - 18 * s0, Math.random() < 0.5 ? 'emote_question' : 'emote_exclaim').setScale(s0 * 0.9).setDepth(8000);
       this.tweens.add({ targets: q, y: q.y - 16, alpha: 0, duration: 700, delay: 200, onComplete: () => q.destroy() });
       sfx.boing(1.4);
       this.ctrl.analytics.track('wake', { gen: r.gen, mode: moment ?? r.mode });
@@ -930,7 +984,7 @@ export class CafeScene extends Phaser.Scene {
           sp.setPosition(sp.x + (dx / d) * step, sp.y + (dy / d) * step);
           if (warpMultiplier(this.ctrl.state, this.ctrl.now()) > 1 && Math.floor(time / 160) !== Math.floor((time - dt * 1000) / 160)) { // ))) behind a hurrying cat
             const back = sp.flipX ? -1 : 1; // behind the cat: left when it faces right
-            const e = this.add.image(sp.x + back * 12 * s, sp.y - 7 * s, 'emote_speed').setScale(s * 0.7).setFlipX(!sp.flipX).setAlpha(0.8).setDepth(sp.depth - 1);
+            const e = this.add.image(sp.x + back * 12 * s, sp.y - 7 * s, 'emote_speed').setScale(s * 0.7).setFlipX(sp.flipX).setAlpha(0.8).setDepth(sp.depth - 1); // head, tail, ))) — the arcs bulge away from the cat
             this.tweens.add({ targets: e, x: e.x + back * 8, alpha: 0, duration: 260, onComplete: () => e.destroy() });
           }
           if (r.next === 'social') { r.napAcc += dt; if (r.napAcc > 0.7) { r.napAcc = 0; const e = this.add.image(sp.x + 6 * s, sp.y - 18 * s, 'emote_note').setScale(s * 0.8).setDepth(8000); this.tweens.add({ targets: e, y: e.y - 22, alpha: 0, duration: 700, onComplete: () => e.destroy() }); } }
@@ -947,6 +1001,10 @@ export class CafeScene extends Phaser.Scene {
         sp.setScale(s, s * (1 + Math.sin(time / 200 + r.phase) * 0.04));
       } else if (r.mode === 'nap') {
         r.timer -= dt; r.napAcc += dt;
+        if (r.spot === 'oven' && Math.random() < dt * 1.5) { // toasty by the oven: little wisps of warm air rise off the sleeper
+          const w = this.add.image(sp.x + (Math.random() - 0.5) * 14 * s, sp.y - 2 * s, 'emote_puff').setScale(s * 0.28).setAlpha(0.35).setTint(0xffc9a0).setDepth(sp.depth + 1);
+          this.tweens.add({ targets: w, y: w.y - 16 * s, x: w.x + (Math.random() - 0.5) * 6 * s, alpha: 0, scale: s * 0.5, duration: 1300, ease: 'Quad.out', onComplete: () => w.destroy() });
+        }
         if (r.napAcc > 1.6) { r.napAcc = 0; const e = this.add.image(sp.x + 6 * s, sp.y - 10 * s, 'emote_zzz').setScale(s * 0.8).setDepth(8000); this.tweens.add({ targets: e, y: e.y - 24, alpha: 0, duration: 1200, onComplete: () => e.destroy() }); }
         if (r.timer <= 0) { r.mode = 'idle'; r.timer = 1; r.spot = null; sp.setTexture(`cat_${r.gen}_open`); this.getUp(sp); }
       } else if (r.mode === 'play') {
@@ -955,8 +1013,8 @@ export class CafeScene extends Phaser.Scene {
         if (r.timer <= 0) { r.mode = 'idle'; r.timer = 0.5; r.spot = null; this.tweens.killTweensOf(sp); if (r.spot === null && sp.originY !== 1) this.getUp(sp, 240); else this.tweens.add({ targets: sp, scaleX: s, scaleY: s, angle: 0, duration: 200, ease: 'Quad.out' }); }
       } else if (r.mode === 'eat') {
         r.timer -= dt; r.napAcc += dt;
-        if (r.napAcc > 1.3) { r.napAcc = 0; this.eatOnce(r); }
-        if (r.timer <= 0) { r.mode = 'idle'; r.timer = 0.5; r.spot = null; }
+        if (r.napAcc > 1.0) { r.napAcc = 0; for (let k = 0; k < 3; k++) this.time.delayedCall(k * 100, () => { if (r.mode === 'eat' && r.sprite.active) this.eatOnce(r, k); }); } // 喀喀喀, pause
+        if (r.timer <= 0) { r.mode = 'idle'; r.timer = 0.5; r.spot = null; sp.setTexture(`cat_${r.gen}_open`); }
       } else if (r.mode === 'climb') {
         // driven by tweens (see climbTree)
       } else if (r.mode === 'rest') {
@@ -1018,7 +1076,7 @@ export class CafeScene extends Phaser.Scene {
   private smoke(size: number): void {
     const oven = this.props[2];
     const puff = this.add.image(oven.x + (Math.random() - 0.5) * oven.displayWidth * 0.4, this.machineTop(2) + 2, 'emote_puff')
-      .setScale(this.propScale * 0.35 * size).setAlpha(0.55).setTint(0xcfc6c0).setDepth(oven.depth + 2);
+      .setScale(this.propScale * 0.35 * size).setAlpha(0.6).setTint(0xffffff).setDepth(oven.depth + 2); // steam off the hot oven
     this.tweens.add({ targets: puff, y: puff.y - 30 * size, x: puff.x + (Math.random() - 0.5) * 12, alpha: 0, scale: this.propScale * 0.7 * size, duration: 1100, ease: 'Quad.out', onComplete: () => puff.destroy() });
   }
 
@@ -1159,7 +1217,8 @@ export class CafeScene extends Phaser.Scene {
       this.ctrl.customerPost(c.species, pick(lang() === 'zh' ? CUSTOMER_POSTS_ZH : CUSTOMER_POSTS).replace('{shop}', '@meowcaron.official'));
       this.banner(tr('bannerTagged'), '#7A5AA8');
     }
-    c.bubble.setVisible(false);
+    c.bubble.setTexture('bubble_money').setVisible(true); // paying
+    this.time.delayedCall(900, () => { if (c.bubble.active) c.bubble.setVisible(false); });
     const happyKey = `${c.sprite.texture.key}_happy`;
     if (this.textures.exists(happyKey)) c.sprite.setTexture(happyKey);
     const px = c.sprite.x, py = c.sprite.y - 10 * this.roamerScale();
@@ -1828,7 +1887,7 @@ export class CafeScene extends Phaser.Scene {
     if (producing) {
       const target = 0.45 + Math.random() * 0.35;
       this.glow.setAlpha(Phaser.Math.Linear(this.glow.alpha, target, 0.25));
-      this.warmth.setAlpha(Phaser.Math.Linear(this.warmth.alpha, 0.75 + target * 0.3, 0.08));
+      this.warmth.setAlpha(Phaser.Math.Linear(this.warmth.alpha, 1.1 + target * 0.3, 0.08));
       this.glow2.setAlpha(Phaser.Math.Linear(this.glow2.alpha, 0.45 + Math.random() * 0.35, 0.25));
       this.smokeAcc += dt;
       if (this.smokeAcc > 0.9) { this.smokeAcc = 0; this.smoke(1); }

@@ -73,7 +73,7 @@ test('frame rate with a crowded floor stays playable', async ({ page }) => {
 test('language switch mid-game keeps the save', async ({ page }) => {
   test.skip(!process.env.QA, 'set QA=1');
   await boot(page, rich, 'en');
-  await page.locator('#btn-lang').click();
+  await page.locator('#btn-settings').click(); await page.locator('#btn-lang-switch').click();
   await page.waitForFunction(() => !!window.__mc && document.documentElement.lang === 'zh-TW');
   const s = await page.evaluate(() => JSON.parse(JSON.stringify(window.__mc!.ctrl.state)));
   expect(s.gens.kitten).toBe(60);

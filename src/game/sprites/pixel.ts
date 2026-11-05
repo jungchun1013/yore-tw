@@ -75,7 +75,23 @@ const CAT_FIGHT = CAT_HAPPY.map((row, y) => {
   if (y === 7) return set(set(row, [8], 'b'), [7, 9], 'm');
   return row;
 });
-export type CatFrame = 'open' | 'blink' | 'happy' | 'laugh' | 'back' | 'sleep' | 'fight';
+/** Sad: eyes slanting down (\ /) over a little frown — a cat just snapped out of its nap. */
+const CAT_SAD = CAT_OPEN.map((row, y) => {
+  const set = (r: string, idxs: number[], ch: string) => { const a = r.split(''); for (const i of idxs) a[i] = ch; return a.join(''); };
+  if (y === 5) return set(row.replace(/e/g, 'b'), [4, 12], 'm');
+  if (y === 6) return set(set(row, [7, 9], 'b'), [5, 11], 'm');
+  if (y === 7) return set(row, [8], 'm');
+  if (y === 8) return set(row, [7, 9], 'm');
+  return row;
+});
+/** Chewing: mouth shut in a flat line, cheeks a little fuller. Alternates with the open face while a cat eats. */
+const CAT_CHEW = CAT_OPEN.map((row, y) => {
+  const set = (r: string, idxs: number[], ch: string) => { const a = r.split(''); for (const i of idxs) a[i] = ch; return a.join(''); };
+  if (y === 6) return set(set(row, [7, 9], 'b'), [1, 15], 'p');
+  if (y === 7) return set(row, [7, 8, 9], 'm');
+  return row;
+});
+export type CatFrame = 'open' | 'blink' | 'happy' | 'laugh' | 'back' | 'sleep' | 'fight' | 'sad' | 'chew';
 const SHADE: [number, number][] = [];
 
 /** Patch masks aligned with CAT_OPEN: A = first patch colour, B = second. Applied only over fur pixels. */
@@ -306,7 +322,7 @@ export function drawCat(ctx: CanvasRenderingContext2D, coatKey: string, accessor
   const coat: Coat = COATS[coatKey] ?? COATS.cream;
   const accent = PALETTE.pink.accent;
   const colors: Record<string, string> = { '#': OUTLINE, b: coat.fill, s: coat.stripe, e: coat.eye ?? EYE, p: PINK, c: CHEEK, w: WHITE, a: accent, d: '#2A1E1B', o: '#F2A65A', m: coat.face ?? OUTLINE, y: '#FFD84D', r: '#D9534F', P: '#E7A3B4', k: '#6FA8DC', K: '#4A86C5' };
-  let rows = frame === 'blink' ? CAT_BLINK : frame === 'happy' ? CAT_HAPPY : frame === 'laugh' ? CAT_LAUGH : frame === 'back' ? CAT_BACK : frame === 'sleep' ? CAT_SLEEP : frame === 'fight' ? CAT_FIGHT : CAT_OPEN;
+  let rows = frame === 'blink' ? CAT_BLINK : frame === 'happy' ? CAT_HAPPY : frame === 'laugh' ? CAT_LAUGH : frame === 'back' ? CAT_BACK : frame === 'sleep' ? CAT_SLEEP : frame === 'fight' ? CAT_FIGHT : frame === 'sad' ? CAT_SAD : frame === 'chew' ? CAT_CHEW : CAT_OPEN;
   if (species) { const extraRows = species.head.length - 3; rows = [...species.head, ...rows.slice(3)]; oy -= extraRows; }
   drawTemplate(ctx, rows, ox, oy, colors);
   for (const [x, y] of SHADE) if (rows[y][x] === 'b') px(ctx, ox + x, oy + y, coat.stripe);
@@ -852,9 +868,9 @@ const SEAT = [
   '..######..',
 ];
 export function seatCanvas(): HTMLCanvasElement {
-  const ov = overrideCanvas('misc:seat'); if (ov) return ov;
+  const ov = overrideCanvas('misc:seat', { '#F9CBD6': '#BFD8F5', '#F28CA3': '#7FB0E0', '#FFF3E6': '#EAF3FC' }); if (ov) return ov; // the counter cushions are blue
   const c = makeCanvas(10, 6);
-  drawTemplate(c.getContext('2d')!, SEAT, 0, 0, { '#': OUTLINE, p: '#F9CBD6', w: '#FFF3E6' });
+  drawTemplate(c.getContext('2d')!, SEAT, 0, 0, { '#': OUTLINE, p: '#BFD8F5', w: '#EAF3FC' });
   return c;
 }
 
@@ -994,9 +1010,15 @@ const BUBBLE = [
   '.....#........',
 ];
 /** Speech bubble with a macaron: "I'd like one of those". */
-export function bubbleCanvas(kind: 'macaron' | 'note' | 'heart' | 'shades' = 'macaron'): HTMLCanvasElement {
+export function bubbleCanvas(kind: 'macaron' | 'note' | 'heart' | 'shades' | 'money' = 'macaron'): HTMLCanvasElement {
   const c = makeCanvas(14, 11);
   const ctx = c.getContext('2d')!;
+  if (kind === 'money') { // paying: a $ in the bubble
+    drawTemplate(ctx, BUBBLE, 0, 0, { '#': OUTLINE, w: WHITE, a: WHITE, s: WHITE });
+    ctx.fillStyle = WHITE; ctx.fillRect(4, 2, 6, 5);
+    drawTemplate(ctx, ['..g..', '.gggg', 'gg...', '.ggg.', '...gg', 'gggg.', '..g..'], 5, 1, { g: '#3E9B5F' });
+    return c;
+  }
   if (kind === 'macaron') { drawTemplate(ctx, BUBBLE, 0, 0, { '#': OUTLINE, w: WHITE, a: PALETTE.pink.fill, s: PALETTE.pink.shade }); return c; }
   if (kind === 'shades') { // a fan: "I saw the post" — the influencer's sunglasses in the bubble
     drawTemplate(ctx, BUBBLE, 0, 0, { '#': OUTLINE, w: WHITE, a: WHITE, s: WHITE });
@@ -1100,6 +1122,16 @@ const EMOTES: Record<string, string[]> = {
     '...#....',
     '..#.....',
     '.###....',
+  ],
+  exclaim: [ // !
+    '....#...',
+    '....#...',
+    '....#...',
+    '....#...',
+    '....#...',
+    '........',
+    '....#...',
+    '........',
   ],
   question: [
     '..####..',

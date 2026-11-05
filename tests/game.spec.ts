@@ -295,12 +295,9 @@ test('furniture: buy, auto-place, put away; floor shows what is placed', async (
 
 test('Traditional Chinese: language toggle localizes UI, names and numbers', async ({ page }) => {
   await fresh(page, { version: 1, macarons: 123_456, totalEarned: 123_456, allTimeEarned: 123_456, gens: { kitten: 3 }, lastTick: Date.now() });
-  await expect(page.locator('#btn-lang')).toHaveText('中');
-  // on small phones the language button lives in Settings instead of the header
-  if (await page.locator('#btn-lang').isVisible()) await page.locator('#btn-lang').click(); // saves, flips the language and reloads
-  else { await page.locator('#btn-settings').click(); await page.locator('#btn-lang-switch').click(); }
+  await expect(page.locator('html')).toHaveAttribute('lang', 'en');
+  await page.locator('#btn-settings').click(); await page.locator('#btn-lang-switch').click(); // language lives in Settings; saves, flips and reloads
   await page.waitForFunction(() => !!window.__mc && document.documentElement.lang === 'zh-TW');
-  await expect(page.locator('#btn-lang')).toHaveText('EN');
   await expect(page.locator('.hud-unit')).toHaveText('個馬卡龍');
   await expect(page.locator('#hud-macarons')).toContainText('萬'); // 12.35萬 (trailing zeros trimmed: 5萬 not 5.00萬)
   await expect(page.locator('.cat[data-cat="kitten"] .name')).toContainText('小奶貓');

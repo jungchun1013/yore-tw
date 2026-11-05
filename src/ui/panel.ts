@@ -40,17 +40,15 @@ export function initPanel(ctrl: GameController): void {
   const patEl = $('#pat-upgrades'), patHint = $('#pat-hint');
   const catsEl = $('#cats'), starShop = $('#star-shop');
   const btnPrestige = $<HTMLButtonElement>('#btn-prestige'), prestigeGain = $('#prestige-gain'), prestigeHint = $('#prestige-hint');
-  const btnRush = $<HTMLButtonElement>('#btn-rush'), boostBadge = $('#boost-badge'), boostLeft = $('#boost-left');
+  const btnRush = $<HTMLButtonElement>('#btn-rush');
   const playtime = $('#playtime');
   const hudCpsText = $('#hud-cps-text'), hudClickText = $('#hud-click-text');
   const lovedBadge = $('#loved-badge');
   const heatBadge = $('#heat-badge');
   const hudSub = $('.hud-sub'), hudSlack = $('#hud-slack');
-  const slackIcon: Record<string, string> = { nap: emoteCanvas('zzz').toDataURL(), love: emoteCanvas('love').toDataURL(), fight: emoteCanvas('anger', '#E8453C').toDataURL(), window: emoteCanvas('dream').toDataURL(), play: emoteCanvas('scratch', '#9C8A82').toDataURL(), eat: macaronCanvas('pink').toDataURL() };
+  const slackIcon: Record<string, string> = { nap: emoteCanvas('zzz').toDataURL(), love: emoteCanvas('love').toDataURL(), fight: emoteCanvas('anger', '#E8453C').toDataURL(), window: emoteCanvas('dream').toDataURL(), play: emoteCanvas('scratch', '#9C8A82').toDataURL(), eat: bitten(macaronCanvas('pink')).toDataURL() };
   let slackSig = '';
   const gramBadge = $('#gram-badge'), gramCount = $('#gram-count');
-  const blessBadge = $('#bless-badge');
-  const warpBadge = $('#warp-badge');
   $('#star-bonus').textContent = `+${Math.round(PRESTIGE.bonusPerStar * 100)}%`;
 
   // buy amount segmented control
@@ -63,10 +61,6 @@ export function initPanel(ctrl: GameController): void {
   });
 
   // header buttons
-  const btnSound = $('#btn-sound');
-  const syncSound = () => { btnSound.textContent = ctrl.state.sound ? '🔊' : '🔇'; };
-  btnSound.addEventListener('click', () => { ctrl.toggleSound(); syncSound(); });
-  syncSound();
   $('#btn-achievements').addEventListener('click', () => showAchievements(ctrl));
   $('#btn-journal').addEventListener('click', () => showJournal(ctrl));
   $('#btn-codex').addEventListener('click', () => showCodex(ctrl));
@@ -74,7 +68,6 @@ export function initPanel(ctrl: GameController): void {
   $('#btn-furniture').addEventListener('click', () => showFurniture(ctrl));
   $('#gram-badge').addEventListener('click', () => showFeed(ctrl));
   $('#btn-settings').addEventListener('click', () => showSettings(ctrl));
-  $('#btn-lang').addEventListener('click', () => switchLang(ctrl));
 
   btnPrestige.addEventListener('click', () => {
     const gain = ctrl.prestigeStars();
@@ -148,7 +141,7 @@ export function initPanel(ctrl: GameController): void {
         el('div', { class: 'meta' }, [r.owned ? `${fmt(prod)}/${t('sec')} ${t('total')} · ${fmt(each)}/${t('sec')} ${t('each')}` : `${fmt(each)}/${t('sec')} ${t('each')}`]),
       );
       const lovedHere = lovedCount(s, now, r.def.id);
-      if (lovedHere > 0) info.append(el('div', { class: 'loved' }, ['♥ ' + t('petted', { n: lovedHere, p: Math.round(lovedHere * PET.lovedEach * 100) })]));
+      if (lovedHere > 0) info.append(el('div', { class: 'loved' }, [t('petted', { n: lovedHere, p: Math.round(lovedHere * PET.lovedEach * 100) })]));
       const mine = catUps.filter((u) => u.effect.type === 'genMult' && u.effect.gen === r.def.id);
       if (mine.length) {
         const strip = el('div', { class: 'row-upgrades' });
@@ -238,21 +231,13 @@ export function initPanel(ctrl: GameController): void {
     btnPrestige.disabled = gain < PRESTIGE.minStars;
     prestigeGain.textContent = `(+${gain} ★)`;
     prestigeHint.textContent = gain < 1 ? t('firstStarHint', { base: fmt(nextStarAt(s)), sofar: fmt(s.allTimeEarned) }) : t('nextStarHint', { n: fmt(nextStarAt(s)) });
-    const boost = ctrl.boostActive();
-    boostBadge.hidden = !boost;
-    if (boost) boostLeft.textContent = fmtTime(ctrl.boostLeftMs() / 1000);
+    const boost = ctrl.boostActive(); // running effects are pixel bars on the stage, not pills
     const cd = ctrl.rushCooldownLeftMs();
     btnRush.hidden = boost || cd > 0; // no countdown: it simply appears when ready
     btnRush.disabled = ctrl.adInFlight;
     const narrow = window.innerWidth < 700;
     btnRush.textContent = narrow ? t('rushShort', { m: RUSH.mult }) : t('rushLong', { m: RUSH.mult });
     playtime.textContent = t('footer', { t: fmtTime(s.playTimeMs / 1000) });
-    const warped = ctrl.now() < s.warpUntil;
-    warpBadge.hidden = !warped;
-    if (warped) warpBadge.textContent = `⏳ ×${s.warpMult} · ${fmtTime((s.warpUntil - ctrl.now()) / 1000)}`;
-    const blessed = ctrl.now() < s.blessedUntil;
-    blessBadge.hidden = !blessed;
-    if (blessed) blessBadge.textContent = t('blessedPill', { m: s.blessMult.toFixed(2), t: fmtTime((s.blessedUntil - ctrl.now()) / 1000) });
     starsCount.textContent = s.starFragments > 0 ? `${s.stars} ✦${s.starFragments}` : String(s.stars);
     gramBadge.hidden = !hasInfluencer(s) && s.followers === 0;
     gramCount.textContent = fmt(s.followers);
@@ -273,7 +258,7 @@ export function initPanel(ctrl: GameController): void {
     if (heat >= 0.5) heatBadge.textContent = t('heatPill', { n: heat.toFixed(heat < 10 ? 1 : 0) });
     const lovedAll = lovedCount(s, ctrl.now());
     lovedBadge.hidden = lovedAll === 0;
-    if (lovedAll > 0) lovedBadge.textContent = '♥ ' + t('petted', { n: lovedAll, p: Math.round(lovedAll * PET.lovedEach * 100) });
+    if (lovedAll > 0) lovedBadge.textContent = t('petted', { n: lovedAll, p: Math.round(lovedAll * PET.lovedEach * 100) });
   };
 
   let lastSlow = 0;
@@ -298,6 +283,15 @@ export function initPanel(ctrl: GameController): void {
 }
 
 /** A Meowstagram post card that pops up on the stage for a few seconds. */
+/** A macaron with a bite taken out of its top-right: the slack icon for a cat eating off the belt. */
+function bitten(src: HTMLCanvasElement): HTMLCanvasElement {
+  const c = document.createElement('canvas'); c.width = src.width; c.height = src.height;
+  const ctx = c.getContext('2d')!; ctx.drawImage(src, 0, 0);
+  ctx.globalCompositeOperation = 'destination-out';
+  ctx.beginPath(); ctx.arc(src.width * 0.82, src.height * 0.22, src.width * 0.3, 0, Math.PI * 2); ctx.fill();
+  return c;
+}
+
 function showPost(entry: DiaryEntry, followers: number): void {
   const stage = document.getElementById('hud');
   if (!stage) return;
@@ -352,7 +346,7 @@ function showSettings(ctrl: GameController): void {
   const langRow = el('div', { class: 'row settings-row' }, [el('span', {}, [`${t('language')}: ${t('langName')}`]), el('button', { class: 'btn', id: 'btn-lang-switch' }, [t('switchLang')])]);
   const soundBtn = el('button', { class: 'btn', id: 'btn-sound-switch' }, ['']);
   const soundRow = el('div', { class: 'row settings-row' }, [el('span', {}, [t('sound')]), soundBtn]);
-  const syncSound = () => { soundBtn.textContent = ctrl.state.sound ? `🔊 ${t('on')}` : `🔇 ${t('off')}`; $('#btn-sound').textContent = ctrl.state.sound ? '🔊' : '🔇'; };
+  const syncSound = () => { soundBtn.textContent = ctrl.state.sound ? `🔊 ${t('on')}` : `🔇 ${t('off')}`; };
   soundBtn.onclick = () => { ctrl.toggleSound(); syncSound(); };
   syncSound();
   body.append(soundRow, langRow);
