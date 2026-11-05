@@ -1,5 +1,6 @@
 import { SPRITE_PX } from '../../content/sprites-override';
 import { objectFurniture, objectProp, objectPat } from './objects';
+import { scaleObject } from './density';
 import { PALETTE } from '../../content/palette';
 import { COATS, type Coat } from '../../content/coats';
 
@@ -727,9 +728,13 @@ export const PROP_ANCHOR: Record<string, ({ x: number; y: number } | null)[]> = 
   oven: [{ x: 10.5, y: 17.5 }, { x: 10.5, y: 17.5 }, { x: 9.5, y: 13.5 }, { x: 10.5, y: 17.5 }],      // window centre (glow)
   box: [{ x: 11, y: 8 }, { x: 11, y: 17 }, { x: 11, y: 14 }, { x: 11, y: 8 }],                         // where a batch lands
 };
-export function propRows(name: string, tier = 0): number { return (PROP_TIERS[name] ?? PROP_TIERS.box)[Math.max(0, Math.min(3, tier))].length; }
-export function propCanvas(name: string, tier = 0): HTMLCanvasElement {
+export function propRows(name: string, tier = 0): number {
   const t = Math.max(0, Math.min(3, tier));
+  return PROP_NAMES.includes(name) ? 24 : (PROP_TIERS[name] ?? PROP_TIERS.box)[t].length;
+}
+export function propCanvas(name: string, tier = 0, density = 1): HTMLCanvasElement {
+  const t = Math.max(0, Math.min(3, tier));
+  if (density !== 1) return scaleObject(propCanvas(name, t), density);
   const ov = overrideCanvas(`prop:${name}:${t}`);
   if (ov) return ov;
   if (PROP_NAMES.includes(name)) return objectProp(name, t);
@@ -984,18 +989,18 @@ export function patCanvas(variant: string): HTMLCanvasElement {
 }
 
 const BELT = [ // chevrons pointing along +x; the frame is drawn by the scene so corners and ends close properly
-  'mmmmmmmm',
-  'ddddddmd',
-  'ddddddmd',
-  'ddddddmd',
-  'ddddddmd',
-  'ddddddmd',
-  'ddddddmd',
-  'mmmmmmmm',
+  'dmdddmdd',
+  'dmdddmdd',
+  'ddmdddmd',
+  'dddmdddm',
+  'dddmdddm',
+  'ddmdddmd',
+  'dmdddmdd',
+  'dmdddmdd',
 ];
 export function beltCanvas(): HTMLCanvasElement {
   const c = makeCanvas(8, 8);
-  drawTemplate(c.getContext('2d')!, BELT, 0, 0, { '#': OUTLINE, d: '#B5C8C3', m: '#E1EAE3' });
+  drawTemplate(c.getContext('2d')!, BELT, 0, 0, { '#': OUTLINE, d: '#9C7B6A', m: '#B79A8A' });
   return c;
 }
 
@@ -1795,7 +1800,8 @@ export const FURNITURE_PX: Record<string, { rows: string[]; colors: Record<strin
   ] },
 };
 
-export function furnitureCanvas(name: string): HTMLCanvasElement {
+export function furnitureCanvas(name: string, density = 1): HTMLCanvasElement {
+  if (density !== 1) return scaleObject(furnitureCanvas(name), density);
   const redrawn = objectFurniture(name);
   if (redrawn) return redrawn;
   const ov = overrideCanvas(`furniture:${name}`);

@@ -20,7 +20,7 @@ test('sprite sheet', async ({ page }) => {
       const row = document.createElement('div'); row.className = 'row';
       for (let t = 0; t <= 3; t++) {
         const u = UPGRADES.find((x) => x.id === `equip_${st}_t${t}`);
-        row.insertAdjacentHTML('beforeend', `<div class="cell"><img src="${sprites.propCanvas(st, t).toDataURL()}" width="88" height="96"><span>${t === 0 ? '起始' : i18n.nameOf(u!)}</span></div>`);
+        row.insertAdjacentHTML('beforeend', `<div class="cell"><img src="${sprites.propCanvas(st, t, 4).toDataURL()}" width="88" height="96"><span>${t === 0 ? '起始' : i18n.nameOf(u!)}</span></div>`);
       }
       root.append(row);
     }

@@ -5,6 +5,7 @@ import { PALETTE, UI } from '../../content/palette';
 import { STATIONS } from '../../content/upgrades';
 import { SPECIES, pickSpecies } from '../../content/customers';
 import { FURNITURE_ITEMS, FURNITURE_BY_ID } from '../../content/furniture';
+import { OBJECT_DENSITY } from '../sprites/density';
 import { JOURNAL_BY_ID, type PetReaction } from '../../content/journal';
 import { equipmentTier, PET, isLovedCat, customerGapMultiplier, hasInfluencer, warpMultiplier, ABILITY, abilityReady, abilityUsed, abilityPrime, OFFLINE, RUSH } from '../../core/economy';
 import { DIARY_TEXT, SPOT_TEXT, CUSTOMER_POSTS, pick } from '../../content/diarytext';
@@ -197,7 +198,7 @@ export class CafeScene extends Phaser.Scene {
     this.macaronKeys = ['pink', 'mint', 'lemon', 'sky', 'lavender', 'peach', 'rose', 'pistachio'].map((k) => `mac_${k}`);
     add('star', starCanvas());
     add('belt', beltCanvas());
-    for (const name of PROP_NAMES) for (let t = 0; t <= 3; t++) add(`prop_${name}_t${t}`, propCanvas(name, t));
+    for (const name of PROP_NAMES) for (let t = 0; t <= 3; t++) add(`prop_${name}_t${t}`, propCanvas(name, t, OBJECT_DENSITY));
     add('sack', sackCanvas()); add('rope', ropeCanvas()); add('seat', seatCanvas());
     for (const k of ['pink', 'mint', 'lemon', 'sky', 'lavender', 'peach', 'rose', 'pistachio']) { add(`ball_${k}`, doughCanvas(k)); for (let t = 1; t <= 3; t++) add(`gift_t${t}_${k}`, packCanvas(t, k)); }
     for (const sp of SPECIES) for (const coat of sp.coats) { add(`cust_${sp.id}_${coat}`, animalCanvas(sp, coat)); add(`cust_${sp.id}_${coat}_happy`, animalCanvas(sp, coat, 'happy')); add(`cust_${sp.id}_${coat}_fan`, animalCanvas(sp, coat, 'open', true)); add(`cust_${sp.id}_${coat}_fan_happy`, animalCanvas(sp, coat, 'happy', true)); }
@@ -213,10 +214,12 @@ export class CafeScene extends Phaser.Scene {
     add('whisk', whiskCanvas());
     add('glow', glowCanvas());
     { const c = document.createElement('canvas'); c.width = 96; c.height = 48; const ctx = c.getContext('2d')!; const g = ctx.createRadialGradient(48, 48, 2, 48, 48, 46); /* in the squashed space below: an ellipse of light on the floor */ g.addColorStop(0, 'rgba(255,170,80,0.55)'); g.addColorStop(0.5, 'rgba(255,150,70,0.22)'); g.addColorStop(1, 'rgba(255,140,60,0)'); ctx.save(); ctx.scale(1, 0.5); ctx.fillStyle = g; ctx.beginPath(); ctx.arc(48, 48, 46, 0, Math.PI * 2); ctx.fill(); ctx.restore(); add('warmth', c); }
-    for (const f of FURNITURE_ITEMS) add(`furn_${f.sprite}`, furnitureCanvas(f.sprite));
-    add('furn_hangball_ball', furnitureCanvas('hangball_ball'));
+    for (const f of FURNITURE_ITEMS) add(`furn_${f.sprite}`, furnitureCanvas(f.sprite, OBJECT_DENSITY));
+    add('furn_hangball_ball', furnitureCanvas('hangball_ball', OBJECT_DENSITY));
     { // the basket's front wall as its own layer, so a cat inside sits between the back and the front rim
-      const full = furnitureCanvas('basket'); const split = Math.round(full.height * 0.55);
+      const full = furnitureCanvas('basket', OBJECT_DENSITY);
+      // Match the original basket rim and split only between native pixel rows.
+      const split = Math.round(full.height / OBJECT_DENSITY * 0.55) * OBJECT_DENSITY;
       const front = document.createElement('canvas'); front.width = full.width; front.height = full.height;
       front.getContext('2d')!.drawImage(full, 0, split, full.width, full.height - split, 0, split, full.width, full.height - split);
       add('furn_basket_front', front);
@@ -333,8 +336,8 @@ export class CafeScene extends Phaser.Scene {
       const st = this.stations[i];
       // above the belt and the steel cell (belt depth = counter bottom + front + 1) so items slide through the machine
       if (i === 1) { p.setVisible(false); return; } // the tray station stays off the floor for now
-      if (i === 3) p.setOrigin(0.5, 1).setScale(sc).setPosition(st.x, st.y + depth / 2).setDepth(down.depth + 2); // across the right-hand run: items go in under it, the belt below it runs in front
-      else p.setOrigin(0.5, 1).setScale(sc).setPosition(st.x, topBase).setDepth(topBase + 2 + this.counterFront + 4);
+      if (i === 3) p.setOrigin(0.5, 1).setScale(sc / OBJECT_DENSITY).setPosition(st.x, st.y + depth / 2).setDepth(down.depth + 2); // across the right-hand run: items go in under it, the belt below it runs in front
+      else p.setOrigin(0.5, 1).setScale(sc / OBJECT_DENSITY).setPosition(st.x, topBase).setDepth(topBase + 2 + this.counterFront + 4);
     });
     // the sack stands on the floor in its own bay, mouth up toward the belt end hanging above it
     const sackFeet = frontCounter.y + frontCounter.h + this.counterFront + 2;
@@ -429,8 +432,8 @@ export class CafeScene extends Phaser.Scene {
       for (let i = x + 1; i < w; i++) if (opaque(i, y)) { right = true; break; }
       if (left && right && y > h / 2) { x0 = Math.min(x0, x); y0 = Math.min(y0, y); x1 = Math.max(x1, x); y1 = Math.max(y1, y); }
     }
-    if (x1 < 0) return { x0: Math.round(w / 2) - 5, y0: h - 13, x1: Math.round(w / 2) + 4, y1: h - 1, w, h };
-    return { x0, y0, x1, y1, w, h };
+    if (x1 < 0) { const lw = w / OBJECT_DENSITY, lh = h / OBJECT_DENSITY; return { x0: Math.round(lw / 2) - 5, y0: lh - 13, x1: Math.round(lw / 2) + 4, y1: lh - 1, w: lw, h: lh }; }
+    return { x0: x0 / OBJECT_DENSITY, y0: y0 / OBJECT_DENSITY, x1: x1 / OBJECT_DENSITY, y1: y1 / OBJECT_DENSITY, w: w / OBJECT_DENSITY, h: h / OBJECT_DENSITY };
   }
 
   /** Steel cells under the machines, drawn over the belt (and its frame) but under the items and the machines. */
@@ -514,10 +517,10 @@ export class CafeScene extends Phaser.Scene {
   private anchor(i: number): Pt {
     const st = STATIONS[i], p = this.props[i];
     const a = PROP_ANCHOR[st][equipmentTier(this.ctrl.state, st)] ?? { x: 11, y: 12 };
-    return { x: p.x + (a.x - 11) * p.scaleX, y: p.y - (24 - a.y) * p.scaleY };
+    return { x: p.x + (a.x - 11) * p.scaleX * OBJECT_DENSITY, y: p.y - (24 - a.y) * p.scaleY * OBJECT_DENSITY };
   }
   /** Top edge of a machine (templates are bottom-aligned, so short machines are shorter). */
-  private machineTop(i: number): number { const p = this.props[i]; return p.y - propRows(STATIONS[i], equipmentTier(this.ctrl.state, STATIONS[i])) * p.scaleY; }
+  private machineTop(i: number): number { const p = this.props[i]; return p.y - propRows(STATIONS[i], equipmentTier(this.ctrl.state, STATIONS[i])) * p.scaleY * OBJECT_DENSITY; }
 
   /** The whisk spins inside the mixer bowl and the oven window carries a flickering glow; both follow the tier's anchors. */
   private placeMovingParts(): void {
@@ -527,7 +530,7 @@ export class CafeScene extends Phaser.Scene {
     this.whisk.setScale(this.propScale).setPosition(wa.x, wa.y).setDepth(mixer.depth + 1);
     this.glow.setScale(this.machineScale * 2).setPosition(ga.x, ga.y).setDepth(oven.depth + 1);
     const deck = equipmentTier(this.ctrl.state, 'oven') === 3; // two decks, two fires
-    this.glow2.setVisible(deck).setScale(this.machineScale * 2).setPosition(oven.x + (10.5 - 11) * oven.scaleX, oven.y - (24 - 9.5) * oven.scaleY).setDepth(oven.depth + 1);
+    this.glow2.setVisible(deck).setScale(this.machineScale * 2).setPosition(oven.x + (10.5 - 11) * oven.scaleX * OBJECT_DENSITY, oven.y - (24 - 9.5) * oven.scaleY * OBJECT_DENSITY).setDepth(oven.depth + 1);
   }
 
   private refreshProps(): void {
@@ -559,16 +562,16 @@ export class CafeScene extends Phaser.Scene {
       const def = FURNITURE_BY_ID[id]; const p = this.slotPos[slot];
       if (!def || !p) return;
       const fd = 5 + p.y / 10000; // furniture lies on the floor: every walking cat passes in front of it; only cats using it sort inside/behind
-      const img = this.add.image(p.x, p.y, `furn_${def.sprite}`).setOrigin(0.5, 1).setScale(fs).setDepth(fd);
+      const img = this.add.image(p.x, p.y, `furn_${def.sprite}`).setOrigin(0.5, 1).setScale(fs / OBJECT_DENSITY).setDepth(fd);
       let dark: Phaser.GameObjects.Rectangle | undefined;
       if (def.inside) {
         const d = this.doorway(`furn_${def.sprite}`); // the dark inside, exactly the sprite's doorway hole; the sleeping cat sits between it and the house
         dark = this.add.rectangle(p.x + (d.x0 - d.w / 2) * fs, p.y - (d.h - d.y1 - 1) * fs, (d.x1 - d.x0 + 1) * fs, (d.y1 - d.y0 + 1) * fs, 0x3a2a22).setOrigin(0, 1).setDepth(fd - 2);
       }
       let ball: Phaser.GameObjects.Image | undefined;
-      if (def.id === 'hangball') ball = this.add.image(p.x + 2 * fs, p.y - 25 * fs, 'furn_hangball_ball').setOrigin(0.5, 0).setScale(fs).setDepth(fd + 0.5); // hangs from the arm's hook and swings about it
+      if (def.id === 'hangball') ball = this.add.image(p.x + 4.5 * fs, p.y - 25 * fs, 'furn_hangball_ball').setOrigin(0.5, 0).setScale(fs / OBJECT_DENSITY).setDepth(fd + 0.5); // hangs from the arm's hook and swings about it
       let front: Phaser.GameObjects.Image | undefined;
-      if (def.id === 'basket') front = this.add.image(p.x, p.y, 'furn_basket_front').setOrigin(0.5, 1).setScale(fs).setDepth(fd + 1.5); // over the cat (at fd + 1); the full basket stays behind it
+      if (def.id === 'basket') front = this.add.image(p.x, p.y, 'furn_basket_front').setOrigin(0.5, 1).setScale(fs / OBJECT_DENSITY).setDepth(fd + 1.5); // over the cat (at fd + 1); the full basket stays behind it
       this.lounge.push({ key: def.id, slot, img, dark, ball, front, use: def.use, inside: def.inside });
     });
     // cats heading to / using a piece that is gone: back to the floor
@@ -1080,7 +1083,7 @@ export class CafeScene extends Phaser.Scene {
     const sx = p.scaleX, sy = p.scaleY;
     if (i === 0) { // mixer: the whisk spins up for a moment; the sifter sheds a little flour
       this.whiskBoostUntil = this.time.now + 1200;
-      if (equipmentTier(this.ctrl.state, 'mixer') === 1) for (let k = 0; k < 5; k++) { const n = this.add.rectangle(p.x + (Math.random() - 0.5) * 10 * p.scaleX, p.y - 18 * p.scaleY, p.scaleX, p.scaleY, 0xf2e2c6).setDepth(p.depth + 1); this.tweens.add({ targets: n, y: n.y + 7 * p.scaleY, alpha: 0, duration: 500 + Math.random() * 300, delay: k * 90, ease: 'Quad.in', onComplete: () => n.destroy() }); }
+      if (equipmentTier(this.ctrl.state, 'mixer') === 1) for (let k = 0; k < 5; k++) { const scale = p.scaleX * OBJECT_DENSITY; const n = this.add.rectangle(p.x + (Math.random() - 0.5) * 10 * scale, p.y - 18 * scale, scale, scale, 0xf2e2c6).setDepth(p.depth + 1); this.tweens.add({ targets: n, y: n.y + 7 * scale, alpha: 0, duration: 500 + Math.random() * 300, delay: k * 90, ease: 'Quad.in', onComplete: () => n.destroy() }); }
     } else if (i === 1) { // tray station: the tray dips as a ball lands on it
       this.tweens.add({ targets: p, scaleY: sy * 0.94, scaleX: sx * 1.03, duration: 110, yoyo: true, ease: 'Quad.out', onComplete: () => p.setScale(sx, sy) });
     } else if (i === 2) { // oven: a bright flare as the batch goes in, plus a bigger puff of smoke

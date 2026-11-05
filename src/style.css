@@ -241,14 +241,10 @@ button.pill:active { transform: translateY(1px); box-shadow: none; }
 .modal.diary { background: transparent; border: 0; box-shadow: none; padding: 0; width: min(460px, 100%); }
 @media (max-height: 720px) { .diary-page { height: min(480px, calc(100dvh - 150px)); } }
 
-/* Onboarding coach: a pulsing ring on the thing to tap and one big-text bubble */
+/* Onboarding hints stay near the action, without arrows or target rings. */
 #coach-root { position: fixed; inset: 0; pointer-events: none; z-index: 9; }
 .coach { position: fixed; inset: 0; pointer-events: none; }
-.coach-ring { position: fixed; border: 4px solid var(--accent); border-radius: 18px; box-shadow: 0 0 0 4px rgba(242,140,163,0.25), 0 0 18px rgba(242,140,163,0.6); animation: coach-pulse 1.2s ease-in-out infinite; }
-@keyframes coach-pulse { 0%, 100% { box-shadow: 0 0 0 4px rgba(242,140,163,0.25), 0 0 18px rgba(242,140,163,0.6); } 50% { box-shadow: 0 0 0 10px rgba(242,140,163,0.12), 0 0 26px rgba(242,140,163,0.9); } }
 .coach-bubble { position: fixed; max-width: min(340px, calc(100vw - 16px)); background: var(--ink); color: #fff; font-size: 17px; font-weight: 800; line-height: 1.45; padding: 12px 14px; border-radius: 16px; box-shadow: 0 6px 18px rgba(90,64,56,0.35); pointer-events: auto; display: flex; gap: 10px; align-items: center; }
-.coach-bubble::after { content: ''; position: absolute; left: 50%; bottom: -9px; width: 18px; height: 18px; background: var(--ink); transform: translateX(-50%) rotate(45deg); border-radius: 3px; }
-.coach-bubble.below::after { bottom: auto; top: -9px; }
 .coach-ok { flex: none; width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--accent); color: #fff; font-size: 18px; font-weight: 900; }
 
 /* slacking indicator on the HUD's per-second line */

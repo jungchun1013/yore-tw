@@ -27,7 +27,7 @@ function upgradeIcon(key: string): string {
     const m = /^prop:(\w+):(\d)$/.exec(key);
     const t = /^toy:(\w+)$/.exec(key);
     const p = /^pat:(\w+)$/.exec(key);
-    upIcon[key] = m ? propCanvas(m[1], Number(m[2])).toDataURL() : t ? toyCanvas(t[1]).toDataURL() : p ? patCanvas(p[1]).toDataURL() : iconDataUrl(key);
+    upIcon[key] = m ? propCanvas(m[1], Number(m[2]), 4).toDataURL() : t ? toyCanvas(t[1]).toDataURL() : p ? patCanvas(p[1]).toDataURL() : iconDataUrl(key);
   }
   return upIcon[key];
 }

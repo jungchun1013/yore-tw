@@ -367,8 +367,31 @@ test('onboarding: pat → hire → wake the dozing kitten → pet it; nothing re
   await expect(page.locator('.coach[data-step="pat"]')).toBeVisible();
 });
 
+test('onboarding: customer hint does not wait for a nap, switches language, and completes on serving', async ({ page }) => {
+  await fresh(page, { version: 1, macarons: 100, totalEarned: 100, allTimeEarned: 100, gens: { apprentice: 1 }, tutorial: ['pat', 'hire'], lastTick: Date.now() });
+  await page.waitForFunction(() => !!window.__mc?.debug);
+  await page.evaluate(() => window.__mc!.debug!.spawnCustomer());
+  const hint = page.locator('.coach[data-step="customer"]');
+  await expect(hint).toBeVisible({ timeout: 20000 });
+  await expect(hint).toContainText('front counter');
+  await page.evaluate(() => window.__mc!.i18n.setLang('zh'));
+  await expect(hint).toContainText('有客人來買點心了');
+  const bubble = hint.locator('.coach-bubble');
+  expect(await bubble.evaluate((e) => getComputedStyle(e, '::after').content)).toBe('none');
+  const box = (await page.locator('#game canvas').boundingBox())!;
+  const pos = (await page.evaluate(() => window.__mc!.debug!.customer()))!;
+  await page.mouse.click(box.x + pos.x, box.y + pos.y);
+  await expect(hint).toHaveCount(0);
+  expect((await state(page)).tutorial).toContain('customer');
+  await page.reload();
+  await page.waitForFunction(() => !!window.__mc?.debug);
+  await page.evaluate(() => window.__mc!.debug!.spawnCustomer());
+  await page.waitForFunction(() => window.__mc!.debug!.customer()?.mode === 'browse', null, { timeout: 20000 });
+  await expect(hint).toHaveCount(0);
+});
+
 test('onboarding: a save that is past every step shows no coach', async ({ page }) => {
-  await fresh(page, { version: 1, macarons: 10, totalEarned: 5e6, allTimeEarned: 5e6, clicks: 50, gens: { kitten: 5, influencer: 1 }, upgrades: ['kitten_t1'], tutorial: ['pat', 'hire', 'wake', 'pet'], lastTick: Date.now() });
+  await fresh(page, { version: 1, macarons: 10, totalEarned: 5e6, allTimeEarned: 5e6, clicks: 50, gens: { kitten: 5, influencer: 1 }, upgrades: ['kitten_t1'], tutorial: ['pat', 'hire', 'wake', 'pet', 'customer'], lastTick: Date.now() });
   await page.waitForTimeout(600);
   await expect(page.locator('.coach')).toHaveCount(0);
 });

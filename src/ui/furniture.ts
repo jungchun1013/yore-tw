@@ -9,7 +9,7 @@ import { t, lang } from '../i18n';
 const text = (id: string, en: { name: string; desc: string }) => (lang() === 'zh' && FURNITURE_ZH[id] ? FURNITURE_ZH[id] : en);
 
 const icons: Record<string, string> = {};
-function icon(id: string): string { return (icons[id] ??= furnitureCanvas(FURNITURE_BY_ID[id].sprite).toDataURL()); }
+function icon(id: string): string { return (icons[id] ??= furnitureCanvas(FURNITURE_BY_ID[id].sprite, 4).toDataURL()); }
 
 /** Furniture shop: buy pieces with macarons, keep up to four on the floor, store the rest. */
 export function showFurniture(ctrl: GameController): void {
