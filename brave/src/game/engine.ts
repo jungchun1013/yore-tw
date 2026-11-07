@@ -1,30 +1,39 @@
 import { PRIMARY, type Item, type L, type Save } from './types';
 import { derive, xpNeed, type Derived } from './stats';
-import { spawn, type Monster } from './monsters';
+import { difficulty, spawn, type Monster } from './monsters';
 import { AREAS, areaOf } from '../data/areas';
-import { ageFactor, raceOf } from '../data/races';
-import { SKILLS } from '../data/skills';
+import { LEVEL_SHARE, ageGrowth, raceOf } from '../data/races';
+import { SKILLS, type SkillDef } from '../data/skills';
 import { PETS, BOND_MAX, BOND_SEC, petOf, petXpNeed, stageOf } from '../data/pets';
 import { TITLES } from '../data/titles';
 import { FATE_CHANCE, FATE_LINES } from '../data/fate';
 import { BAG_SIZE, DROP_CHANCE, RARITY } from '../data/items';
-import { chance, pick, range } from '../core/rng';
+import { chance, pick, range, rnd } from '../core/rng';
 import { makeItem, nameOf, rollRarity, sellPrice } from './loot';
 import { REBIRTH_AGE, YEAR_SEC } from './state';
 import { tr } from '../core/i18n';
 
+/** A log line is a list of parts; styled parts carry a CSS class or a colour. */
+export type Part = string | { text: string; cls?: string; color?: string };
 export type GameEvent =
-  | { t: 'log'; text: string; cls?: string }
-  | { t: 'hit'; from: 'hero' | 'mon' | 'pet'; dmg: number; crit?: boolean; miss?: boolean; skill?: string }
+  | { t: 'log'; parts: Part[]; cls?: string }
+  | { t: 'hit'; from: 'hero' | 'mon' | 'pet'; dmg: number; crit?: boolean; skill?: string; blocked?: boolean }
   | { t: 'spawn' } | { t: 'kill' } | { t: 'death' } | { t: 'level' } | { t: 'heal'; amt: number };
 
+/** Running tally shown as "Loot in current map"; resets when you move. */
+export interface MapLoot { gold: number; xp: number; items: number[] }
+
 const KILL_PAUSE = 0.6, RESPAWN = 5, PET_INTERVAL = 2.2;
+const ATTACKS = SKILLS.filter(s => s.act?.on === 'attack');
+const DEFENDS = SKILLS.filter(s => s.act?.on === 'defend');
 
 export class Game {
   s: Save;
   d!: Derived;
-  hp = 0;
+  hp = 0; mp = 0;
   mon!: Monster;
+  monColor = '#555';
+  loot: MapLoot = { gold: 0, xp: 0, items: RARITY.map(() => 0) };
   quiet = false;
   private heroT = 0; private monT = 0; private petT = 0;
   private pause = 0; private down = 0;
@@ -33,26 +42,44 @@ export class Game {
   constructor(s: Save) {
     this.s = s;
     this.refresh();
-    this.hp = this.d.hp;
+    this.hp = this.d.hp; this.mp = this.d.mp;
     this.newMonster();
   }
 
   on(f: (e: GameEvent) => void): void { this.listeners.push(f); }
   private emit(e: GameEvent): void { if (!this.quiet) for (const f of this.listeners) f(e); }
-  log(x: L | string, cls?: string): void { if (!this.quiet) this.emit({ t: 'log', text: typeof x === 'string' ? x : tr(x), cls }); }
+
+  /** Log a line. tpl may contain {0} {1} ... filled with styled parts. */
+  say(tpl: L | string, args: Part[] = [], cls?: string): void {
+    if (this.quiet) return;
+    const text = typeof tpl === 'string' ? tpl : tr(tpl);
+    const parts: Part[] = [];
+    text.split(/(\{\d\})/).forEach(seg => {
+      const m = /^\{(\d)\}$/.exec(seg);
+      if (m) parts.push(args[Number(m[1])]); else if (seg) parts.push(seg);
+    });
+    this.emit({ t: 'log', parts, cls });
+  }
+  private monPart(): Part { return { text: tr(this.mon.def.name), color: this.monColor }; }
+  private n(x: number, cls = 'num'): Part { return { text: String(Math.max(0, Math.round(x))), cls }; }
 
   /** Recompute derived stats; call after anything that changes gear, skills, level, pet or titles. */
   refresh(): void {
-    const prevMax = this.d ? this.d.hp : 0;
+    const prev = this.d;
     this.d = derive(this.s);
-    if (prevMax && this.hp > 0) this.hp = Math.min(this.d.hp, this.hp * (this.d.hp / prevMax));
+    if (prev && this.hp > 0) this.hp = Math.min(this.d.hp, this.hp * (this.d.hp / prev.hp));
+    if (prev) this.mp = Math.min(this.d.mp, this.mp);
   }
 
   newMonster(): void {
     this.mon = spawn(areaOf(this.s.area));
+    this.monColor = difficulty(this.mon.cp, this.d.cp).color;
     this.monT = this.mon.interval * 0.8; this.heroT = 0;
     this.emit({ t: 'spawn' });
+    this.say({ zh: '遭遇 {0}！', en: 'You meet {0}!' }, [this.monPart()]);
   }
+
+  resetLoot(): void { this.loot = { gold: 0, xp: 0, items: RARITY.map(() => 0) }; }
 
   get downFor(): number { return this.down; }
 
@@ -61,9 +88,10 @@ export class Game {
     s.counters.playSec += dt;
     this.ageTick(dt);
     this.petBondTick(dt);
+    this.mp = Math.min(this.d.mp, this.mp + this.d.mp * 0.01 * dt);
     if (this.down > 0) {
       this.down -= dt;
-      if (this.down <= 0) { this.hp = this.d.hp; this.newMonster(); }
+      if (this.down <= 0) { this.hp = this.d.hp; this.mp = this.d.mp; this.newMonster(); }
       return;
     }
     if (this.pause > 0) { this.pause -= dt; if (this.pause <= 0) this.newMonster(); return; }
@@ -79,36 +107,53 @@ export class Game {
     }
 
     this.monT += dt;
-    while (this.monT >= this.mon.interval && this.hp > 0) { this.monT -= this.mon.interval; this.monAttack(); }
+    while (this.monT >= this.mon.interval && this.hp > 0 && this.mon.hp > 0) { this.monT -= this.mon.interval; this.monAttack(); }
   }
 
-  private hitChance(): number {
-    return Math.max(0.35, Math.min(0.99, 0.86 + (this.d.acc - this.mon.lvl * 1.6) * 0.004 - this.mon.eva));
+  /** A physical roll: min..max, pulled toward max by balance. */
+  private roll(): number {
+    const d = this.d;
+    const r = Math.max(0, Math.min(1, d.bal + (rnd() + rnd() - 1) * 0.45));
+    return d.atkMin + (d.atkMax - d.atkMin) * r;
   }
-  private armorCut(): number { return 1 - this.mon.armor / (this.mon.armor + 150); }
+  private vsArmor(x: number): number { return Math.max(1, x - this.mon.armor) * (1 - this.mon.prt); }
+  private rank(sk: SkillDef): number { return this.s.skills[sk.key] || 0; }
 
   private heroAttack(): void {
-    if (!chance(this.hitChance())) { this.emit({ t: 'hit', from: 'hero', dmg: 0, miss: true }); return; }
-    let mult = 1, skill: string | undefined, magic = false;
-    for (const sk of SKILLS) {
-      const lv = this.s.skills[sk.key] || 0;
-      if (sk.proc && lv && chance(sk.proc.chance(lv))) { mult = sk.proc.mult(lv); skill = sk.key; magic = sk.proc.scale === 'magic'; break; }
+    for (const sk of ATTACKS) {
+      const r = this.rank(sk), a = sk.act!;
+      if (!r || !chance(a.chance(r))) continue;
+      const cost = a.mp ? a.mp(r) : 0;
+      if (cost > this.mp) continue;
+      this.mp -= cost;
+      const crit = chance(this.d.crit);
+      let dmg = a.mp ? this.d.magic * a.power(r) : this.roll() * a.power(r);
+      if (a.effect !== 'pierce') dmg = this.vsArmor(dmg);
+      if (crit) dmg *= this.d.critDmg;
+      dmg *= range(0.95, 1.05);
+      if (a.effect === 'slow') this.monT -= this.mon.interval * 0.5;
+      this.say({ zh: '你使用 {0}，對 {1} 造成 {2} 傷害', en: 'You use {0}, cause {1} {2} damage.' }, [{ text: tr(sk.name), cls: 'skill' }, this.monPart(), this.n(dmg, crit ? 'num crit' : 'num')]);
+      this.damageMon(dmg, 'hero', crit, sk.key);
+      return;
     }
     const crit = chance(this.d.crit);
-    let dmg = (magic ? this.d.magic : this.d.atk * this.armorCut()) * mult * range(0.9, 1.1);
+    let dmg = this.vsArmor(this.roll());
     if (crit) dmg *= this.d.critDmg;
-    this.damageMon(dmg, 'hero', crit, skill);
+    this.say({ zh: '你對 {0} 造成 {1} 傷害', en: 'You cause {1} damage to {0}' }, [this.monPart(), this.n(dmg, crit ? 'num crit' : 'num')]);
+    this.damageMon(dmg, 'hero', crit);
   }
 
   private petAttack(): void {
     const st = this.s.pets.find(p => p.key === this.s.activePet);
     if (!st) return;
-    const stage = stageOf(st.lvl);
-    const dmg = this.d.atk * (0.12 + st.lvl * 0.006) * [1, 1.5, 2.2][stage] * this.d.petPower * range(0.9, 1.1) * this.armorCut();
+    const d = petOf(st.key)!, stage = stageOf(st.lvl);
+    const avg = this.d.atkMin + (this.d.atkMax - this.d.atkMin) * this.d.bal;
+    const dmg = this.vsArmor(avg * (0.12 + st.lvl * 0.006) * [1, 1.5, 2.2][stage] * this.d.petPower * range(0.9, 1.1));
     if (this.d.petHeal > 0 && this.hp < this.d.hp) {
       const amt = Math.min(this.d.hp - this.hp, this.d.hp * this.d.petHeal);
       this.hp += amt; this.emit({ t: 'heal', amt });
     }
+    this.say({ zh: '{0} 對 {1} 造成 {2} 傷害', en: '{0} causes {2} damage to {1}' }, [{ text: tr(d.stages[stage].name), cls: 'pet' }, this.monPart(), this.n(dmg)]);
     this.damageMon(dmg, 'pet', false);
   }
 
@@ -119,14 +164,29 @@ export class Game {
   }
 
   private monAttack(): void {
-    if (chance(this.d.eva)) { this.emit({ t: 'hit', from: 'mon', dmg: 0, miss: true }); return; }
-    const def = this.d.def;
-    const dmg = this.mon.atk * range(0.85, 1.15) * (1 - def / (def + 30 + this.mon.lvl * 5)) * (1 - this.d.guard);
+    let mult = 1;
+    for (const sk of DEFENDS) {
+      const r = this.rank(sk), a = sk.act!;
+      if (!r || !chance(a.chance(r))) continue;
+      if (a.effect === 'counter') {
+        const dmg = this.vsArmor(this.roll() * a.power(r));
+        this.say({ zh: '你使用 {0}，對 {1} 造成 {2} 傷害', en: 'You use {0}, cause {1} {2} damage.' }, [{ text: tr(sk.name), cls: 'skill' }, this.monPart(), this.n(dmg)]);
+        this.emit({ t: 'hit', from: 'mon', dmg: 0, blocked: true });
+        this.damageMon(dmg, 'hero', false, sk.key);
+        return;
+      }
+      mult = a.power(r);
+      this.say({ zh: '你使用 {0}', en: 'You use {0}' }, [{ text: tr(sk.name), cls: 'skill' }]);
+      break;
+    }
+    const raw = this.mon.atk * range(0.85, 1.15);
+    const dmg = Math.max(1, raw - this.d.def) * (1 - this.d.prt) * (1 - this.d.guard) * mult;
     this.hp -= dmg;
-    this.emit({ t: 'hit', from: 'mon', dmg });
+    this.emit({ t: 'hit', from: 'mon', dmg, blocked: mult < 1 });
+    this.say({ zh: '{0} 對你造成 {1} 傷害', en: '{0} cause {1} damage to You' }, [this.monPart(), this.n(dmg, 'num big')]);
     if (this.hp <= 0) {
       this.hp = 0; this.down = RESPAWN; this.s.counters.deaths++;
-      this.log({ zh: `${this.s.name} 倒下了……${RESPAWN} 秒後重新站起來。`, en: `${this.s.name} falls... back up in ${RESPAWN}s.` }, 'bad');
+      this.say({ zh: '你倒下了！', en: 'You die!' }, [], 'bad');
       this.emit({ t: 'death' });
       this.checkTitles();
     }
@@ -138,19 +198,21 @@ export class Game {
     const idx = AREAS.findIndex(a => a.key === s.area);
     if (idx > c.deepest) c.deepest = idx;
     const diff = s.lvl - m.lvl;
-    const xpScale = diff > 5 ? Math.max(0.05, 1 - (diff - 5) * 0.12) : 1;
-    const xp = m.xp * this.d.xp * xpScale;
+    const xp = m.xp * this.d.xp * (diff > 5 ? Math.max(0.05, 1 - (diff - 5) * 0.12) : 1);
     const gold = m.gold * this.d.gold * range(0.8, 1.2);
     s.gold += gold;
+    this.loot.gold += gold; this.loot.xp += xp;
     this.emit({ t: 'kill' });
-    this.log({ zh: `擊倒 ${tr(m.def.name)} Lv${m.lvl}  +${Math.floor(xp)} 經驗 +${Math.floor(gold)} 金`, en: `Felled ${tr(m.def.name)} Lv${m.lvl}  +${Math.floor(xp)} XP +${Math.floor(gold)} g` }, 'dim');
+    this.say({ zh: '獲得 {0} 經驗。', en: 'You get {0} experience.' }, [this.n(xp, 'xp')]);
+    this.say({ zh: '獲得 {0}。', en: 'You earn {0}.' }, [{ text: '$' + Math.floor(gold), cls: 'gold' }]);
     this.gainXp(xp);
     this.hp = Math.min(this.d.hp, this.hp + this.d.hp * this.d.heal);
+    this.mp = Math.min(this.d.mp, this.mp + this.d.mp * this.d.heal);
 
     if (chance(DROP_CHANCE * this.d.drop)) this.dropItem(m.lvl);
     this.petKill(m.lvl);
     this.tryBefriend();
-    if (chance(FATE_CHANCE)) { c.fateLines++; this.log(pick(FATE_LINES), 'fate'); }
+    if (chance(FATE_CHANCE)) { c.fateLines++; this.say(pick(FATE_LINES), [], 'fate'); }
     if (c.kills % 25 === 0) this.checkTitles();
     this.pause = KILL_PAUSE;
   }
@@ -160,16 +222,13 @@ export class Game {
     s.xp += x;
     let up = false;
     while (s.xp >= xpNeed(s.lvl)) {
-      s.xp -= xpNeed(s.lvl); s.lvl++; up = true;
-      if (s.lvl % 5 === 0) s.ap++;
-      const r = raceOf(s.race);
-      for (const k of PRIMARY) s.grown[k] += r.growth[k] * ageFactor(s.age, k);
+      s.xp -= xpNeed(s.lvl); s.lvl++; s.ap++; up = true;
+      const g = ageGrowth(raceOf(s.race), s.age);
+      for (const k of PRIMARY) s.grown[k] += g[k] * LEVEL_SHARE;
+      this.say({ zh: '升級！到達 Lv.{0}！', en: 'Level Up! You reach Lv.{0}!' }, [{ text: String(s.lvl), cls: 'good' }], 'good');
+      this.say({ zh: '獲得 {0} AP！', en: 'You get {0} ap!' }, [{ text: '1', cls: 'ap' }], 'ap');
     }
-    if (up) {
-      this.refresh(); this.hp = this.d.hp;
-      this.log({ zh: `升級！Lv ${s.lvl}`, en: `Level up! Lv ${s.lvl}` }, 'good');
-      this.emit({ t: 'level' });
-    }
+    if (up) { this.refresh(); this.hp = this.d.hp; this.mp = this.d.mp; this.emit({ t: 'level' }); }
   }
 
   private ageTick(dt: number): void {
@@ -177,13 +236,13 @@ export class Game {
     s.ageT += dt;
     while (s.ageT >= YEAR_SEC) {
       s.ageT -= YEAR_SEC; s.age++;
-      const r = raceOf(s.race);
-      for (const k of PRIMARY) s.grown[k] += r.birthday[k];
-      const ap = s.age >= 18 ? 3 : 2;
-      s.ap += ap;
+      const g = ageGrowth(raceOf(s.race), s.age);
+      for (const k of PRIMARY) s.grown[k] += g[k];
+      s.ap += 5;
       this.refresh();
-      this.log({ zh: `${s.name} ${s.age} 歲了。AP +${ap}`, en: `${s.name} turns ${s.age}. AP +${ap}` }, 'good');
-      if (s.age === REBIRTH_AGE) this.log({ zh: '轉生之門開啟了。', en: 'The gate of rebirth opens.' }, 'fate');
+      this.say({ zh: '你 {0} 歲了！', en: 'You are {0} now!' }, [{ text: String(s.age), cls: 'good' }], 'good');
+      this.say({ zh: '獲得 {0} AP！', en: 'You get {0} ap!' }, [{ text: '5', cls: 'ap' }], 'ap');
+      if (s.age === REBIRTH_AGE) this.say({ zh: '轉生之門開啟了。', en: 'The gate of rebirth opens.' }, [], 'fate');
     }
   }
 
@@ -194,7 +253,7 @@ export class Game {
     if (st.bondT >= BOND_SEC) {
       st.bondT -= BOND_SEC; st.bond++; this.refresh();
       const d = petOf(st.key)!;
-      this.log({ zh: `和 ${tr(d.stages[stageOf(st.lvl)].name)} 的羈絆加深了（${st.bond}）。`, en: `Your bond with ${tr(d.stages[stageOf(st.lvl)].name)} deepens (${st.bond}).` }, 'pet');
+      this.say({ zh: '和 {0} 的羈絆加深了（{1}）。', en: 'Your bond with {0} deepens ({1}).' }, [{ text: tr(d.stages[stageOf(st.lvl)].name), cls: 'pet' }, String(st.bond)], 'pet');
     }
   }
 
@@ -208,19 +267,16 @@ export class Game {
       const before = stageOf(st.lvl);
       st.lvl++;
       const after = stageOf(st.lvl);
-      if (after > before) this.log({ zh: `${tr(d.stages[before].name)} 進化成 ${tr(d.stages[after].name)}！`, en: `${tr(d.stages[before].name)} grew into ${tr(d.stages[after].name)}!` }, 'pet');
+      if (after > before) this.say({ zh: '{0} 進化成 {1}！', en: '{0} grew into {1}!' }, [{ text: tr(d.stages[before].name), cls: 'pet' }, { text: tr(d.stages[after].name), cls: 'pet' }], 'pet');
       this.refresh();
     }
-    if (chance(0.02)) this.log(pick(d.quips), 'pet');
+    if (chance(0.02)) this.say(pick(d.quips), [], 'pet');
   }
 
   private tryBefriend(): void {
     const s = this.s;
     // the first pal is a sure thing so everyone meets the system early
-    if (s.pets.length === 0 && s.counters.kills >= 25) {
-      this.befriend(PETS[0].key);
-      return;
-    }
+    if (s.pets.length === 0 && s.counters.kills >= 25) { this.befriend(PETS[0].key); return; }
     for (const d of PETS) {
       if (d.home !== s.area || s.pets.some(p => p.key === d.key)) continue;
       if (d.needRebirths && s.counters.rebirths < d.needRebirths) continue;
@@ -234,21 +290,22 @@ export class Game {
     s.pets.push({ key, lvl: 1, xp: 0, bond: 0, bondT: 0 });
     if (!s.activePet) s.activePet = key;
     this.refresh();
-    this.log({ zh: `${tr(d.stages[0].name)} 想跟著你走！`, en: `${tr(d.stages[0].name)} wants to come with you!` }, 'pet');
+    this.say({ zh: '{0} 想跟著你走！', en: '{0} wants to come with you!' }, [{ text: tr(d.stages[0].name), cls: 'pet' }], 'pet');
     this.checkTitles();
   }
 
   private dropItem(lvl: number): void {
     const s = this.s;
     const it = makeItem(s, lvl, rollRarity(this.d.drop));
-    const label = `${tr(RARITY[it.rarity].name)} ${tr(nameOf(it))}`;
+    this.loot.items[it.rarity]++;
+    const label: Part = { text: `${tr(RARITY[it.rarity].name)} ${tr(nameOf(it))}`, color: RARITY[it.rarity].color };
     if (it.rarity < s.autoSell || s.bag.length >= BAG_SIZE) {
       const g = sellPrice(it); s.gold += g;
-      this.log({ zh: `撿到 ${label}，自動賣出 +${g} 金`, en: `Found ${label}, auto-sold +${g} g` }, 'dim');
+      this.say({ zh: '撿到 {0}，自動賣出 {1}', en: 'You find {0}, sold for {1}' }, [label, { text: '$' + g, cls: 'gold' }]);
       return;
     }
     s.bag.push(it);
-    this.log({ zh: `撿到 ${label}`, en: `Found ${label}` }, 'r' + it.rarity);
+    this.say({ zh: '撿到 {0}！', en: 'You find {0}!' }, [label]);
   }
 
   checkTitles(): void {
@@ -256,7 +313,7 @@ export class Game {
     for (const t of TITLES) {
       if (this.s.titles.includes(t.key) || !t.test(this.s.counters, this.s)) continue;
       this.s.titles.push(t.key); got = true;
-      this.log({ zh: `獲得稱號「${t.name.zh}」`, en: `Title earned: ${t.name.en}` }, 'title');
+      this.say({ zh: '獲得稱號「{0}」', en: 'Title earned: {0}' }, [{ text: tr(t.name), cls: 'title' }], 'title');
     }
     if (got) this.refresh();
   }

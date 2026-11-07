@@ -32,12 +32,12 @@ export class Scene {
     if (e.t === 'hit') {
       if (e.from === 'mon') {
         this.monLunge = 1;
-        this.float(78, 52, e.miss ? 'MISS' : num(e.dmg), e.miss ? '#9fb3c8' : '#ff6b6b');
+        this.float(78, 52, e.blocked && !e.dmg ? 'BLOCK' : num(e.dmg), e.blocked ? '#9fb3c8' : '#ff6b6b');
       } else {
         if (e.from === 'hero') this.heroLunge = 1; else this.petLunge = 1;
-        if (!e.miss) this.monFlash = 1;
-        const col = e.miss ? '#9fb3c8' : e.skill === 'fireball' ? '#ff9f43' : e.crit ? '#ffd166' : e.from === 'pet' ? '#b8f2a0' : '#ffffff';
-        this.float(238 + (e.from === 'pet' ? -10 : 0), 46, e.miss ? 'MISS' : num(e.dmg) + (e.crit ? '!' : ''), col);
+        this.monFlash = 1;
+        const col = e.skill === 'firebolt' ? '#ff9f43' : e.skill === 'icebolt' ? '#8fd3ff' : e.skill === 'lightning' ? '#fff27a' : e.crit ? '#ffd166' : e.from === 'pet' ? '#b8f2a0' : '#ffffff';
+        this.float(238 + (e.from === 'pet' ? -10 : 0), 46, num(e.dmg) + (e.crit ? '!' : ''), col);
       }
     } else if (e.t === 'heal') this.float(70, 40, '+' + num(e.amt), '#7ee081');
     else if (e.t === 'kill') this.monFade = 1;
@@ -109,7 +109,7 @@ export class Scene {
     }
 
     // floaters
-    c.textAlign = 'center'; c.font = 'bold 12px ui-monospace, Menlo, monospace';
+    c.textAlign = 'center'; c.font = '11px Cubic11, monospace';
     for (const f of this.floats) {
       f.age += dt;
       c.globalAlpha = Math.max(0, 1 - f.age / 1.1);

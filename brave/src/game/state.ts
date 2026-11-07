@@ -2,7 +2,7 @@ import { PRIMARY, type Save, type StatKey } from './types';
 import { makeItem } from './loot';
 
 export const SAVE_KEY = 'aeonbrave.save';
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 export const YEAR_SEC = 20 * 60;     // one year of age per 20 real minutes
 export const REBIRTH_AGE = 20;
 export const LEGACY_RATE = 0.1;
@@ -14,12 +14,13 @@ export function newSave(name: string, race: string, age: number): Save {
   const s: Save = {
     v: SAVE_VERSION, name, race, age, ageT: 0, lvl: 1, xp: 0,
     grown: zeroStats(), legacy: zeroStats(),
-    gold: 0, ap: 3, skills: {}, equip: {}, bag: [], nextUid: 1,
+    gold: 0, ap: 5, skills: {}, equip: {}, bag: [], nextUid: 1,
     area: 'meadow', pets: [], activePet: null, titles: [],
     counters: { kills: 0, deaths: 0, rebirths: 0, bestPlus: 0, fateLines: 0, deepest: 0, playSec: 0 },
     autoSell: 1, lastSeen: Date.now(),
   };
   s.equip.weapon = makeItem(s, 1, 0, 'weapon', 'medium');
+  s.equip.body = makeItem(s, 1, 0, 'body', 'light');
   return s;
 }
 
@@ -31,7 +32,8 @@ export function loadSave(): Save | null {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
     const s = JSON.parse(raw);
-    while ((s.v || 0) < SAVE_VERSION) { MIGRATIONS[s.v || 0]?.(s); s.v = (s.v || 0) + 1; }
+    if ((s.v || 0) < 2) return null; // v1 was the first prototype with a different stat model
+    while (s.v < SAVE_VERSION) { MIGRATIONS[s.v]?.(s); s.v++; }
     return s as Save;
   } catch (e) { return null; }
 }

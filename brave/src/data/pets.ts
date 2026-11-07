@@ -69,7 +69,7 @@ export const PETS: PetDef[] = [
     key: 'griffy', home: 'ruins', chance: 1 / 400,
     stages: [{ name: { zh: '獅鷲雛', en: 'Griffon Chick' }, color: '#e3c27f' }, { name: { zh: '風翼獅鷲', en: 'Windwing' }, color: '#d9a94f' }, { name: { zh: '天空之王', en: 'Sky Sovereign' }, color: '#ffe08a' }],
     ability: { zh: '帶起順風，攻擊速度提升', en: 'Tailwind: faster attacks' },
-    mods: (st, b) => [{ key: 'speed', mul: 0.06 + st * 0.05 + b * 0.012 }, { key: 'eva', add: 0.02 + st * 0.01 }],
+    mods: (st, b) => [{ key: 'speed', mul: 0.06 + st * 0.05 + b * 0.012 }, { key: 'bal', add: 0.02 + st * 0.01 }],
     lore: { zh: '從遺跡的巢裡掉下來，你接住了牠。牠認定你是媽媽。', en: 'Fell out of a ruin nest and you caught it. It decided you are its mother.' },
     quips: [{ zh: '獅鷲雛試著飛，失敗，坐在你頭上。', en: 'The chick tries to fly, fails, sits on your head.' }],
   },
@@ -79,7 +79,7 @@ export const PETS: PetDef[] = [
     ability: { zh: '每轉生一次，就更記得你', en: 'Remembers you a little more each rebirth' },
     mods: (st, b, rb) => {
       const x = 0.02 * rb * (1 + st * 0.5) * (1 + b * 0.05);
-      return (['str', 'dex', 'int', 'vit', 'agi', 'luk'] as const).map(k => ({ key: k, mul: x }));
+      return (['str', 'dex', 'int', 'will', 'luk'] as const).map(k => ({ key: k, mul: x }));
     },
     lore: { zh: '牠沒有名字，但牠知道你的。牠說你上一次也選了這條路。', en: 'It has no name, but it knows yours. It says you took this road last time, too.' },
     quips: [{ zh: '無名之仔看著你，像在核對什麼。', en: 'The Nameless watches you, as if checking a list.' }, { zh: '……你剛才好像聽見翻頁的聲音。', en: '...You think you heard a page turn.' }],

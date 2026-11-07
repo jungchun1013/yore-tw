@@ -5,25 +5,26 @@ import { newSave } from '../src/game/state';
 import { derive } from '../src/game/stats';
 import { AREAS } from '../src/data/areas';
 import { AREA_CP } from '../src/game/monsters';
-import { SKILLS } from '../src/data/skills';
+import { MAX_RANK } from '../src/data/skills';
 import * as A from '../src/game/actions';
 import { mulberry32, setRandom } from '../src/core/rng';
 import { SLOTS } from '../src/game/types';
 
 setRandom(mulberry32(7));
 const hours = Number(process.argv[2] || 10), startAge = Number(process.argv[3] || 14);
-const g = new Game(newSave('Sim', 'human', startAge));
+const g = new Game(newSave('Sim', process.argv[4] || 'human', startAge));
 const s = g.s;
-const PRIORITY = ['mastery', 'smash', 'tough', 'mediumArms', 'firstAid', 'insight', 'swift', 'fortune'];
+const PRIORITY = ['mastery', 'smash', 'tough', 'mediumArms', 'firebolt', 'defense', 'meditation', 'insight', 'counter', 'fortune'];
 
 function policy(): void {
   // gear: try every bag item, keep it when CP goes up
   for (const it of s.bag.slice()) {
-    const old = s.equip[it.slot];
+    const slot = A.targetSlot(s, it);
+    const old = s.equip[slot];
     const before = derive(s).cp;
-    s.equip[it.slot] = it;
+    s.equip[slot] = it;
     const after = derive(s).cp;
-    s.equip[it.slot] = old;
+    s.equip[slot] = old;
     if (after > before || !old) A.equip(g, it.uid);
   }
   A.sellAll(g);
@@ -36,7 +37,7 @@ function policy(): void {
   }
   // skills
   for (let n = 0; n < 50; n++) {
-    const k = PRIORITY.filter(k => SKILLS.find(d => d.key === k)!.max > (s.skills[k] || 0)).sort((a, b) => (s.skills[a] || 0) - (s.skills[b] || 0))[0];
+    const k = PRIORITY.filter(k => MAX_RANK > (s.skills[k] || 0)).sort((a, b) => (s.skills[a] || 0) - (s.skills[b] || 0))[0];
     const before = s.ap; A.learn(g, k); if (s.ap === before) break;
   }
   // area: deepest one whose suggested CP we meet
@@ -44,7 +45,7 @@ function policy(): void {
   AREAS.forEach((_a, i) => { if (AREA_CP[i] <= g.d.cp * 1.0) best = i; });
   A.goArea(g, AREAS[best].key);
   if (s.pets.length && !s.activePet) A.setPet(g, s.pets[0].key);
-  if (s.age >= 20) A.rebirth(g, 'human', 17);
+  if (s.age >= 20) A.rebirth(g, s.race, 17);
 }
 
 console.log('area CP:', AREAS.map((a, i) => `${a.key}=${AREA_CP[i]}`).join(' '));

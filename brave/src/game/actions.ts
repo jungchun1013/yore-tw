@@ -1,8 +1,8 @@
 import type { Game } from './engine';
-import type { Item, Slot } from './types';
+import type { Item, Save, Slot } from './types';
 import { BAG_SIZE, SMITH_CHANCE, SMITH_DROP_FROM, SMITH_MAX, smithCost } from '../data/items';
 import { SMITH_BONUS } from '../data/races';
-import { skillOf } from '../data/skills';
+import { MAX_RANK, rankCost, skillOf } from '../data/skills';
 import { AREAS } from '../data/areas';
 import { REBIRTH_LINES } from '../data/fate';
 import { chance, pick } from '../core/rng';
@@ -11,12 +11,19 @@ import { LEGACY_RATE, REBIRTH_AGE, zeroStats } from './state';
 import { PRIMARY } from './types';
 import { tr } from '../core/i18n';
 
-export function equip(g: Game, uid: number): void {
+/** Where an item would go: its own slot, or for accessories the empty one (else the first). */
+export function targetSlot(s: Save, it: Item): Slot {
+  if (it.kind !== 'acc') return it.kind as Slot;
+  return !s.equip.acc1 ? 'acc1' : !s.equip.acc2 ? 'acc2' : 'acc1';
+}
+
+export function equip(g: Game, uid: number, slot?: Slot): void {
   const s = g.s, i = s.bag.findIndex(x => x.uid === uid);
   if (i < 0) return;
   const it = s.bag.splice(i, 1)[0];
-  const old = s.equip[it.slot];
-  s.equip[it.slot] = it;
+  const to = slot || targetSlot(s, it);
+  const old = s.equip[to];
+  s.equip[to] = it;
   if (old) s.bag.splice(i, 0, old);
   g.refresh();
 }
@@ -49,30 +56,30 @@ export function upgrade(g: Game, uid: number): 'ok' | 'fail' | 'drop' | 'none' {
   if (chance(smithChance(g, it))) {
     it.plus++;
     if (it.plus > s.counters.bestPlus) s.counters.bestPlus = it.plus;
-    g.log({ zh: `鐵匠：「成了！」${name} +${it.plus}`, en: `Smith: "Done!" ${name} +${it.plus}` }, 'good');
+    g.say({ zh: `鐵匠：「成了！」${name} +${it.plus}`, en: `Smith: "Done!" ${name} +${it.plus}` }, [], 'good');
     g.checkTitles(); g.refresh();
     return 'ok';
   }
   if (it.plus >= SMITH_DROP_FROM) {
     it.plus--; g.refresh();
-    g.log({ zh: `鐵匠：「……抱歉。」${name} 掉回 +${it.plus}`, en: `Smith: "...Sorry." ${name} slips to +${it.plus}` }, 'bad');
+    g.say({ zh: `鐵匠：「……抱歉。」${name} 掉回 +${it.plus}`, en: `Smith: "...Sorry." ${name} slips to +${it.plus}` }, [], 'bad');
     return 'drop';
   }
-  g.log({ zh: `鐵匠：「再來一次。」強化失敗`, en: `Smith: "Again." Upgrade failed` }, 'bad');
+  g.say({ zh: `鐵匠：「再來一次。」強化失敗`, en: `Smith: "Again." Upgrade failed` }, [], 'bad');
   return 'fail';
 }
 
 export function learn(g: Game, key: string): void {
   const d = skillOf(key), s = g.s;
   if (!d) return;
-  const lv = s.skills[key] || 0, cost = d.cost(lv);
-  if (lv >= d.max || s.ap < cost) return;
+  const lv = s.skills[key] || 0, cost = rankCost(lv);
+  if (lv >= MAX_RANK || s.ap < cost) return;
   s.ap -= cost; s.skills[key] = lv + 1; g.refresh();
 }
 
 export function goArea(g: Game, key: string): void {
   if (!AREAS.some(a => a.key === key) || g.s.area === key) return;
-  g.s.area = key; g.newMonster();
+  g.s.area = key; g.resetLoot(); g.newMonster();
 }
 
 export function setPet(g: Game, key: string | null): void {
@@ -88,9 +95,9 @@ export function rebirth(g: Game, race: string, age: number): boolean {
   s.lvl = 1; s.xp = 0; s.race = race; s.age = Math.max(10, Math.min(17, age)); s.ageT = 0;
   s.counters.rebirths++;
   s.area = 'meadow';
-  g.refresh(); g.hp = g.d.hp; g.newMonster();
-  g.log({ zh: `${s.name} 轉生了。（第 ${s.counters.rebirths} 次）`, en: `${s.name} is reborn. (#${s.counters.rebirths})` }, 'fate');
-  if (chance(0.5)) g.log(pick(REBIRTH_LINES), 'fate');
+  g.refresh(); g.hp = g.d.hp; g.mp = g.d.mp; g.resetLoot(); g.newMonster();
+  g.say({ zh: `${s.name} 轉生了。（第 ${s.counters.rebirths} 次）`, en: `${s.name} is reborn. (#${s.counters.rebirths})` }, [], 'fate');
+  if (chance(0.5)) g.say(pick(REBIRTH_LINES), [], 'fate');
   g.checkTitles();
   return true;
 }

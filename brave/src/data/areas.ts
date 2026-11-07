@@ -1,11 +1,11 @@
 import type { L } from '../game/types';
 
 /** Archetype multipliers on the level formula in game/monsters.ts. */
-export interface MonDef { key: string; name: L; hp: number; atk: number; def: number; spd: number; eva: number; color: string; size: number }
+export interface MonDef { key: string; name: L; hp: number; atk: number; def: number; spd: number; prt: number; color: string; size: number }
 export interface Area { key: string; name: L; flavor: L; min: number; max: number; mons: MonDef[]; bg: string }
 
-const m = (key: string, zh: string, en: string, hp: number, atk: number, def: number, spd: number, eva: number, color: string, size = 1): MonDef =>
-  ({ key, name: { zh, en }, hp, atk, def, spd, eva, color, size });
+const m = (key: string, zh: string, en: string, hp: number, atk: number, def: number, spd: number, prt: number, color: string, size = 1): MonDef =>
+  ({ key, name: { zh, en }, hp, atk, def, spd, prt, color, size });
 
 export const AREAS: Area[] = [
   { key: 'meadow', name: { zh: '啟程草原', en: 'Dawn Meadow' }, flavor: { zh: '每個勇者都從這裡出發。', en: 'Every hero starts here.' }, min: 1, max: 6, bg: '#5d8a4a',

@@ -7,7 +7,7 @@ import { num } from './core/fmt';
 
 const root = document.getElementById('app')!;
 document.documentElement.lang = lang === 'zh' ? 'zh-TW' : 'en';
-document.title = `${t('title')} | Aeon Brave`;
+document.title = lang === 'zh' ? '永劫勇者 Aeon Brave' : 'Aeon Brave';
 
 function start(save: ReturnType<typeof newSave>, fresh: boolean): void {
   const g = new Game(save);
@@ -20,7 +20,7 @@ function start(save: ReturnType<typeof newSave>, fresh: boolean): void {
       const r = g.fastForward(away);
       app.addLog(lang === 'zh'
         ? `${t('offline')}（${Math.round(away / 60)} 分）：擊倒 ${num(r.kills)}、+${num(r.gold)} 金、升 ${r.xpLv} 級`
-        : `${t('offline')} (${Math.round(away / 60)} min): ${num(r.kills)} kills, +${num(r.gold)} g, +${r.xpLv} levels`, 'good');
+        : `${t('offline')} (${Math.round(away / 60)} min): ${num(r.kills)} kills, +${num(r.gold)} g, +${r.xpLv} levels`, 'fate');
     }
   }
   app.addLog(lang === 'zh' ? '冒險繼續。' : 'The adventure goes on.', 'dim');
@@ -33,7 +33,7 @@ function start(save: ReturnType<typeof newSave>, fresh: boolean): void {
     while (acc >= STEP) { g.tick(STEP); acc -= STEP; }
     app.frame(dt);
     panelT += dt;
-    if (panelT > 0.4) { panelT = 0; app.renderPanel(); }
+    if (panelT > 0.4) { panelT = 0; app.render(); }
     requestAnimationFrame(loop);
   };
   requestAnimationFrame(loop);
