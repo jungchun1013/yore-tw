@@ -295,6 +295,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .ddbtn { background: #efece2; border: 0; height: 28px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; line-height: 1; }
 .ddbtn .ddarrow { margin: 0; width: 12px; height: 12px; opacity: .75; }
 .ddmenu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 100%; background: var(--box); border: 2px solid var(--line); clip-path: var(--px2); display: flex; flex-direction: column; padding: 2px 0; }
+.ddmenu[hidden] { display: none; }
 .ddopt { background: none; border: 0; text-align: left; padding: 0 12px; height: 28px; white-space: nowrap; }
 .ddopt:hover, .ddopt.on { background: var(--accent-soft); }
 .kv.left > span:last-child:not(.lbl) { margin-left: 0; }
