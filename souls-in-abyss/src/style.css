@@ -235,7 +235,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .gi.star { color: #c9c9c9; opacity: 1; } .gi.star.on { color: var(--accent); }
 
 /* ---------- battle panel: your bars left, the monster's right ---------- */
-.fight { display: grid; grid-template-columns: 1.4fr 1fr; gap: 0 18px; }
+.fight { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
 .fight .kv.bar .lbl { min-width: 40px; }
 .fight .kv .v { margin-left: 8px; min-width: 64px; text-align: right; font-size: var(--fs-xs); color: var(--dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .fight .side-mon .kv .v { min-width: 0; }

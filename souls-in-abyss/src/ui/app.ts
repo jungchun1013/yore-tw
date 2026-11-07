@@ -60,8 +60,9 @@ export class App {
   }
 
   private build(): void {
+    // battle bars carry no numbers: the log already reports every hit, and big numbers would squeeze the bars
     const bar = (id: string, cls: string, lbl: string) =>
-      `<div class="kv bar"><span class="lbl">${lbl}</span><div class="line"><div id="${id}" class="${cls}"></div></div><span class="v" id="${id}-v"></span></div>`;
+      `<div class="kv bar"><span class="lbl">${lbl}</span><div class="line"><div id="${id}" class="${cls}"></div></div></div>`;
     this.root.innerHTML = `
       <div class="game">
         <section class="box sheet" id="sheet"></section>
@@ -173,9 +174,7 @@ export class App {
     this.width('m-hp', m.hp / m.maxHp);
     this.width('s-san', g.s.san / SAN_MAX);
     const tier = SAN_TIERS[sanTier(g.s.san)];
-    this.text('s-san-v', `${Math.floor(g.s.san)} ${tr(tier.name)}`); (document.getElementById('s-san-v') as HTMLElement).style.color = tier.color;
-    this.text('s-hp-v', `${num(g.hp)}/${num(g.d.hp)}`); this.text('s-mp-v', `${num(g.mp)}/${num(g.d.mp)}`);
-    this.text('s-xp-v', pct(g.s.xp / xpNeed(g.s.lvl), 1)); this.text('m-hp-v', num(Math.max(0, m.hp)));
+    this.text('s-san-v', tr(tier.name)); (document.getElementById('s-san-v') as HTMLElement).style.color = tier.color;
     this.width('s-hp', g.hp / g.d.hp); this.width('s-mp', g.mp / g.d.mp); this.width('s-xp', g.s.xp / xpNeed(g.s.lvl));
   }
   private text(id: string, v: string) { const el = document.getElementById(id); if (el && el.textContent !== v) el.textContent = v; }
@@ -212,7 +211,7 @@ export class App {
         <div class="kv"><span class="lbl">${t('race')}</span><span>${tr(r.name)}</span></div>
         <div class="kv"><span class="lbl">${t('age')}</span><span>${s.age} <small class="dim">${clock(YEAR_SEC - s.ageT)}</small></span></div>
         <div class="kv"><span class="lbl">${t('lv')}</span><span>${s.lvl}</span></div>
-        <div class="kv bar"><span class="lbl">${t('exp')}</span><div class="line"><div id="s-xp" class="grey"></div></div><span class="v" id="s-xp-v"></span></div>
+        <div class="kv bar"><span class="lbl">${t('exp')}</span><div class="line"><div id="s-xp" class="grey"></div></div></div>
         <div class="kv bar"><span class="lbl">${t('san')}</span><div class="line"><div id="s-san" class="purple"></div></div><span class="v" id="s-san-v"></span></div>
         <div class="kv"><span class="lbl">${t('gold')}</span><span>${num(s.gold)}</span></div>
         ${this.pactLine()}
