@@ -120,7 +120,8 @@ small { font-size: var(--fs-xs); }
 .doll .slot.on .cell { fill: #ddd3df; }
 .doll .slot:not(.full) > svg { opacity: .45; }
 .doll .slot.locked .cell { fill: #d9d4cc; } .doll .slot.locked line { stroke: #b47f76; stroke-width: 2; }
-.doll .cap { fill: var(--dim); font: var(--fs-xs) Cubic11, monospace; text-anchor: middle; }
+.doll .cap { fill: var(--dim); font: var(--fs-xs) Cubic11, monospace; }
+.doll .cap.l { text-anchor: start; } .doll .cap.r { text-anchor: end; }
 .doll .slot text.pr { text-anchor: end; }
 .doll .slot text.plus { fill: var(--accent); font: var(--fs-xs) Cubic11, monospace; text-anchor: middle; pointer-events: none; }
 

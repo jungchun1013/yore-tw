@@ -354,7 +354,7 @@ export class App {
     // the hand cells show what is held, so the figure itself goes bare-handed here
     const outfit = { ...s.equip, weapon: undefined, off: undefined };
     return `<svg class="doll" viewBox="0 0 280 240">
-      <text class="cap" x="26" y="16">${t('navEquip')}</text><text class="cap" x="254" y="16">${t('charms')}</text>
+      <text class="cap l" x="8" y="16">${t('navEquip')}</text><text class="cap r" x="272" y="16">${t('charms')}</text>
       <svg x="92" y="40" width="96" height="144" viewBox="0 0 32 48" shape-rendering="crispEdges" data-avatar="${s.race}">${avatarMarkup(s.race, outfit)}</svg>
       ${cellSvg}${petSvg}</svg>`;
   }
