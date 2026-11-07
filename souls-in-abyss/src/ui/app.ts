@@ -5,7 +5,7 @@ import { clock, num, pct } from '../core/fmt';
 import { derive, armorDef, armorPrt, weaponRange, xpNeed } from '../game/stats';
 import { nameOf, sellPrice } from '../game/loot';
 import { RACES, START_AGES, ageGrowth, raceOf } from '../data/races';
-import { BAG_SIZE, RARITY, SMITH_DROP_FROM, SMITH_MAX, WEIGHTS, smithCost } from '../data/items';
+import { BAG_SIZE, RARITY, SMITH_BREAK_FROM, SMITH_DROP_FROM, SMITH_MAX, WEIGHTS, smithCost } from '../data/items';
 import { MAX_RANK, RANKS, SKILLS, rankCost, type Tab as SkillTab } from '../data/skills';
 import { AREAS } from '../data/areas';
 import { AREA_CP, difficulty } from '../game/monsters';
@@ -490,7 +490,7 @@ export class App {
     const rule = (k: string, v: string) => `<div class="kv"><span class="lbl">${k}</span><span>${v}</span></div>`;
     const worn = SLOTS.map(k => s.equip[k]).filter(Boolean) as Item[];
     const empty = `<p class="dim">${t('empty')}</p>`;
-    return `<div class="rules">${rule('LV +1', t('smithGain'))}${rule(`LV 1–${SMITH_DROP_FROM}`, t('smithKeep'))}${rule(`LV ${SMITH_DROP_FROM}+`, t('smithDrop'))}</div>
+    return `<div class="rules">${rule('LV +1', t('smithGain'))}${rule(`LV 1–${SMITH_DROP_FROM}`, t('smithKeep'))}${rule(`LV ${SMITH_DROP_FROM}–${SMITH_BREAK_FROM - 1}`, t('smithDrop'))}${rule(`LV ${SMITH_BREAK_FROM}+`, t('smithBreak'))}</div>
       <h4>${t('smithWorn')}</h4>${worn.map(row).join('') || empty}
       <h4>${t('bag')}</h4>${s.bag.map(row).join('') || empty}`;
   }

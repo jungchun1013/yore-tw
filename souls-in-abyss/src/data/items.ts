@@ -70,6 +70,8 @@ export const SMITH_MAX = 10;
 export const SMITH_CHANCE = [1, 0.95, 0.9, 0.8, 0.7, 0.6, 0.5, 0.4, 0.3, 0.2];
 export const SMITH_STEP = 0.1;
 export const SMITH_DROP_FROM = 5;
+/** From this level a failed upgrade destroys the item. */
+export const SMITH_BREAK_FROM = 9;
 export const smithCost = (ilvl: number, plus: number): number => Math.floor((ilvl + 8) * 4 * Math.pow(plus + 1, 2.2));
 
 export const DROP_CHANCE = 0.14;

@@ -1,6 +1,6 @@
 import type { Game } from './engine';
 import { SLOT_OF, twoHanded, type Item, type Save, type Slot } from './types';
-import { BAG_SIZE, SMITH_CHANCE, SMITH_DROP_FROM, SMITH_MAX, smithCost } from '../data/items';
+import { BAG_SIZE, SMITH_BREAK_FROM, SMITH_CHANCE, SMITH_DROP_FROM, SMITH_MAX, smithCost } from '../data/items';
 import { SMITH_BONUS } from '../data/races';
 import { MAX_RANK, rankCost, skillOf } from '../data/skills';
 import { AREAS } from '../data/areas';
@@ -55,8 +55,8 @@ export function smithChance(g: Game, it: Item): number {
   return Math.min(1, (SMITH_CHANCE[it.plus] ?? 0) + (SMITH_BONUS[g.s.race] || 0));
 }
 
-/** Blacksmith: pay gold, roll. Failing at +5 or higher drops the item one level. */
-export function upgrade(g: Game, uid: number): 'ok' | 'fail' | 'drop' | 'none' {
+/** Blacksmith: pay gold, roll. Failing at +5 or higher drops the item one level; at +9 or higher it breaks. */
+export function upgrade(g: Game, uid: number): 'ok' | 'fail' | 'drop' | 'break' | 'none' {
   const s = g.s, it = g.itemOf(uid);
   if (!it || it.plus >= SMITH_MAX) return 'none';
   const cost = smithCost(it.ilvl, it.plus);
@@ -69,6 +69,13 @@ export function upgrade(g: Game, uid: number): 'ok' | 'fail' | 'drop' | 'none' {
     g.say({ zh: `鐵匠：「成了！」${name} +${it.plus}`, en: `Smith: "Done!" ${name} +${it.plus}` }, [], 'good');
     g.checkTitles(); g.refresh();
     return 'ok';
+  }
+  if (it.plus >= SMITH_BREAK_FROM) {
+    const i = s.bag.findIndex(x => x.uid === uid);
+    if (i >= 0) s.bag.splice(i, 1); else for (const k of Object.keys(s.equip) as (keyof typeof s.equip)[]) if (s.equip[k]?.uid === uid) delete s.equip[k];
+    g.refresh();
+    g.say({ zh: `鐵匠沉默了很久。${name} 碎成了粉末。`, en: `The smith is silent for a long time. ${name} crumbles to dust.` }, [], 'bad');
+    return 'break';
   }
   if (it.plus >= SMITH_DROP_FROM) {
     it.plus--; g.refresh();

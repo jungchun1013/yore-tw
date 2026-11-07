@@ -80,6 +80,7 @@ export const UI = {
   smithGain: { zh: '基礎數值增加 10%', en: 'base numbers +10%' },
   smithKeep: { zh: '升級失敗 LV 不變', en: 'a failed upgrade keeps the LV' },
   smithDrop: { zh: '升級失敗 LV −1', en: 'a failed upgrade costs one LV' },
+  smithBreak: { zh: '升級失敗 裝備消失', en: 'a failed upgrade destroys the item' },
   rebirthNeed: { zh: '直到你成年（20），深淵才會回應你', en: 'Only when you come of age (20) will the Abyss answer' },
   rebirthLead: { zh: '讓靈魂沉入深淵，轉生為新的種族。', en: 'Let your soul sink into the Abyss and be reborn as a new race.' },
   inherit: { zh: '繼承', en: 'Kept' },
