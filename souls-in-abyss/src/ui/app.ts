@@ -338,7 +338,7 @@ export class App {
     const CELL = 36;
     const cells: [Slot, number, number][] = [
       ['head', 26, 44], ['body', 26, 90], ['legs', 26, 136], ['feet', 26, 182],
-      ['ring', 254, 44], ['neck', 254, 90], ['off', 66, 113], ['weapon', 214, 113],
+      ['ring', 254, 44], ['neck', 254, 90], ['off', 70, 113], ['weapon', 210, 113],
     ];
     const ico = (name: string, x: number, y: number, sz: number) => `<svg x="${x - sz / 2}" y="${y - sz / 2}" width="${sz}" height="${sz}" viewBox="0 0 16 16" shape-rendering="crispEdges">${pixelMarkup(name)}</svg>`;
     const cellSvg = cells.map(([k, x, y]) => {
@@ -350,7 +350,7 @@ export class App {
     }).join('');
     // the pal is not a cell: it stands at its master's feet
     const pet = s.pets.find(p => p.key === s.activePet);
-    const petSvg = pet ? `<g class="petspr" data-a="petTap"><title>${tr(petOf(pet.key)!.stages[stageOf(pet.lvl)].name)}</title>${ico('pet-' + pet.key, 214, 168, 40)}</g>` : '';
+    const petSvg = pet ? `<g class="petspr" data-a="petTap"><title>${tr(petOf(pet.key)!.stages[stageOf(pet.lvl)].name)}</title>${ico('pet-' + pet.key, 210, 168, 40)}</g>` : '';
     // the hand cells show what is held, so the figure itself goes bare-handed here
     const outfit = { ...s.equip, weapon: undefined, off: undefined };
     return `<svg class="doll" viewBox="0 0 280 240">
