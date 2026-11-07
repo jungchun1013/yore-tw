@@ -12,12 +12,12 @@ export const WEIGHT_KEYS: Weight[] = ['light', 'medium', 'heavy'];
 export const PIECE: Record<string, number> = { head: 0.2, body: 0.45, hands: 0.15, feet: 0.2 };
 
 export const RARITY: { name: L; color: string; affixes: number; w: number }[] = [
-  { name: { zh: '普通', en: 'Basic' },     color: '#555555', affixes: 0, w: 66 },
-  { name: { zh: '魔法', en: 'Magic' },     color: '#3fa34d', affixes: 1, w: 22 },
-  { name: { zh: '稀有', en: 'Rare' },      color: '#3b6fd8', affixes: 2, w: 8 },
-  { name: { zh: '完美', en: 'Perfect' },   color: '#a8a01f', affixes: 3, w: 3 },
-  { name: { zh: '史詩', en: 'Epic' },      color: '#e0791a', affixes: 4, w: 0.8 },
-  { name: { zh: '傳說', en: 'Legendary' }, color: '#8e3fd1', affixes: 5, w: 0.2 },
+  { name: { zh: '普通', en: 'Basic' },     color: '#667681', affixes: 0, w: 66 },
+  { name: { zh: '魔法', en: 'Magic' },     color: '#53695e', affixes: 1, w: 22 },
+  { name: { zh: '稀有', en: 'Rare' },      color: '#5f7d87', affixes: 2, w: 8 },
+  { name: { zh: '完美', en: 'Perfect' },   color: '#a88a55', affixes: 3, w: 3 },
+  { name: { zh: '史詩', en: 'Epic' },      color: '#b47f76', affixes: 4, w: 0.8 },
+  { name: { zh: '傳說', en: 'Legendary' }, color: '#625575', affixes: 5, w: 0.2 },
 ];
 
 /** Name pools by tier; an item picks by ilvl so names get grander deeper in. */
