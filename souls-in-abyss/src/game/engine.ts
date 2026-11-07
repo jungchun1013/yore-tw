@@ -118,7 +118,11 @@ export class Game {
     if (areaOf(s.area).dread === 0 && s.san < SAN_MAX) this.setSan(s.san + SAN_REGEN * dt);
     if (this.down > 0) {
       this.down -= dt;
-      if (this.down <= 0) { this.hp = this.d.hp; this.mp = this.d.mp; this.petHp = this.petMaxHp; this.petDown = 0; this.newMonster(); }
+      if (this.down <= 0) {
+        this.hp = this.d.hp; this.mp = this.d.mp; this.petHp = this.petMaxHp; this.petDown = 0;
+        this.say({ zh: '深淵賜予你重生', en: 'The Abyss grants you rebirth' }, [], 'fate');
+        this.newMonster();
+      }
       return;
     }
     if (this.pause > 0) { this.pause -= dt; if (this.pause <= 0) this.newMonster(); return; }
@@ -232,7 +236,7 @@ export class Game {
     this.say({ zh: '{0} 對你造成 {1} 傷害', en: '{0} cause {1} damage to You' }, [this.monPart(), this.n(dmg, 'num big')]);
     if (this.hp <= 0) {
       this.hp = 0; this.down = RESPAWN; this.s.counters.deaths++; this.loot.deaths++;
-      this.say({ zh: '你倒下了！深淵賜予你重生', en: 'You die! The Abyss grants you rebirth' }, [], 'bad');
+      this.say({ zh: '你倒下了！', en: 'You die!' }, [], 'bad'); // the Abyss answers once the revive animation is over
       this.emit({ t: 'death' });
       this.checkTitles();
     }
