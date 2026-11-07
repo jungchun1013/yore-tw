@@ -494,7 +494,7 @@ export class App {
       const [x, y] = POS[i], here = s.area === a.key, cp = AREA_CP[i];
       const state = here ? 'here' : d.cp >= cp ? 'ok' : d.cp >= cp * 0.6 ? 'risky' : 'far';
       return `<button class="node ${state} ${sel === a.key ? 'sel' : ''}" style="left:${x}%;top:${y}%" data-a="mapsel" data-k="${a.key}" data-tip="area:${a.key}">
-        <span class="nico">${icon('area-' + a.key)}</span><span class="nname">${tr(a.name)}</span></button>`;
+        <span class="nico">${icon('area-' + a.key)}</span></button>`; // the name is in the tooltip
     }).join('');
     const a = AREAS.find(x => x.key === sel)!, here = s.area === a.key;
     // the name, level range, suggested CP, SAN cost, pals and the wall-writing live in the icon's tooltip
