@@ -328,37 +328,36 @@ export class App {
 
   /** BWE's paper doll: seven circles around a figure. */
   /**
-   * The equipment board, 200x260: a column of four armour cells on the left (裝備), the two charm
-   * cells top-aligned on the right (加護) with the pal underneath, and the figure in the middle.
-   * Weapons are not cells: the figure holds them, and the hands are the click targets.
+   * The equipment board, 200x240, laid out like an inventory screen: four armour cells down the
+   * left (裝備), ring and necklace top-aligned on the right (加護), the figure in the middle with
+   * its two hand cells beside it, level with the gap between the second and third armour cells,
+   * and the pal standing at its master's feet. Cells are frameless; selection is a fill change.
    */
   private dollSvg(): string {
     const s = this.g.s;
     const CELL = 36;
-    const cells: [Slot, number, number][] = [['head', 24, 44], ['body', 24, 90], ['legs', 24, 136], ['feet', 24, 182], ['ring', 176, 44], ['neck', 176, 90]];
+    const cells: [Slot, number, number][] = [
+      ['head', 24, 44], ['body', 24, 90], ['legs', 24, 136], ['feet', 24, 182],
+      ['ring', 176, 44], ['neck', 176, 90], ['off', 60, 113], ['weapon', 140, 113],
+    ];
     const ico = (name: string, x: number, y: number, sz: number) => `<svg x="${x - sz / 2}" y="${y - sz / 2}" width="${sz}" height="${sz}" viewBox="0 0 16 16" shape-rendering="crispEdges">${pixelMarkup(name)}</svg>`;
     const cellSvg = cells.map(([k, x, y]) => {
-      const it = s.equip[k], on = this.slot === k;
-      return `<g class="slot ${on ? 'on' : ''} ${it ? 'full' : ''}" data-a="slot" data-k="${k}" ${it ? `data-tip="item:${it.uid}"` : ''}><title>${tr(SLOT_NAME[k])}</title>
-        <rect class="cell" x="${x - CELL / 2}" y="${y - CELL / 2}" width="${CELL}" height="${CELL}"/>${ico('slot-' + k, x, y, 24)}
-        ${it ? `<rect class="rar" x="${x - CELL / 2 + 2}" y="${y + CELL / 2 - 5}" width="${CELL - 4}" height="3" fill="${RARITY[it.rarity].color}"/>` : ''}
-        ${it && it.plus ? `<text class="plus pr" x="${x + CELL / 2 - 3}" y="${y - CELL / 2 + 12}">+${it.plus}</text>` : ''}</g>`;
-    }).join('');
-    // hands: invisible hit boxes over the figure; a dashed outline when selected or empty, a cross when both hands hold the weapon
-    const hand = (k: 'weapon' | 'off', x: number, y: number, w: number, h: number) => {
       const it = s.equip[k], on = this.slot === k, locked = k === 'off' && twoHanded(s.equip.weapon);
-      const label = locked ? `<line x1="${x + 4}" y1="${y + 4}" x2="${x + w - 4}" y2="${y + h - 4}"/><line x1="${x + w - 4}" y1="${y + 4}" x2="${x + 4}" y2="${y + h - 4}"/>` : '';
-      return `<g class="slot hand ${on ? 'on' : ''} ${it ? 'full' : ''} ${locked ? 'locked' : ''}" data-a="slot" data-k="${k}" ${it ? `data-tip="item:${it.uid}"` : ''}><title>${locked ? t('twoHanded') : tr(SLOT_NAME[k])}</title>
-        <rect class="hit" x="${x}" y="${y}" width="${w}" height="${h}"/>${label}
-        ${it && it.plus ? `<text class="plus" x="${x + w / 2}" y="${y + h + 11}">+${it.plus}</text>` : ''}</g>`;
-    };
-    // the pal is not a cell: it stands at its master's feet, bottom left of the figure
+      const x0 = x - CELL / 2, y0 = y - CELL / 2;
+      const cross = locked ? `<line x1="${x0 + 6}" y1="${y0 + 6}" x2="${x0 + CELL - 6}" y2="${y0 + CELL - 6}"/><line x1="${x0 + CELL - 6}" y1="${y0 + 6}" x2="${x0 + 6}" y2="${y0 + CELL - 6}"/>` : '';
+      return `<g class="slot ${on ? 'on' : ''} ${it ? 'full' : ''} ${locked ? 'locked' : ''}" data-a="slot" data-k="${k}" ${it ? `data-tip="item:${it.uid}"` : ''}><title>${locked ? t('twoHanded') : tr(SLOT_NAME[k])}</title>
+        <rect class="cell" x="${x0}" y="${y0}" width="${CELL}" height="${CELL}"/>${locked ? cross : ico('slot-' + k, x, y, 24)}
+        ${it && it.plus ? `<text class="plus pr" x="${x0 + CELL - 3}" y="${y0 + 12}">+${it.plus}</text>` : ''}</g>`;
+    }).join('');
+    // the pal is not a cell: it stands at its master's feet
     const pet = s.pets.find(p => p.key === s.activePet);
-    const petSvg = pet ? `<g class="petspr" data-a="petTap"><title>${tr(petOf(pet.key)!.stages[stageOf(pet.lvl)].name)}</title>${ico('pet-' + pet.key, 74, 214, 40)}</g>` : '';
+    const petSvg = pet ? `<g class="petspr" data-a="petTap"><title>${tr(petOf(pet.key)!.stages[stageOf(pet.lvl)].name)}</title>${ico('pet-' + pet.key, 170, 206, 40)}</g>` : '';
+    // the hand cells show what is held, so the figure itself goes bare-handed here
+    const outfit = { ...s.equip, weapon: undefined, off: undefined };
     return `<svg class="doll" viewBox="0 0 200 240">
       <text class="cap" x="24" y="16">${t('navEquip')}</text><text class="cap" x="176" y="16">${t('charms')}</text>
-      <svg x="52" y="40" width="96" height="144" viewBox="0 0 32 48" shape-rendering="crispEdges" data-avatar="${s.race}">${avatarMarkup(s.race, s.equip)}</svg>
-      ${cellSvg}${hand('off', 50, 100, 26, 52)}${hand('weapon', 130, 66, 24, 100)}${petSvg}</svg>`;
+      <svg x="52" y="40" width="96" height="144" viewBox="0 0 32 48" shape-rendering="crispEdges" data-avatar="${s.race}">${avatarMarkup(s.race, outfit)}</svg>
+      ${cellSvg}${petSvg}</svg>`;
   }
 
   /** Equipment page: the figure with its slots, and the worn piece of the selected slot. The bag is its own page. */

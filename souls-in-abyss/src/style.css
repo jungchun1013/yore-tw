@@ -116,15 +116,12 @@ small { font-size: var(--fs-xs); }
 .doll { width: 100%; max-width: 260px; display: block; margin: 0 auto; }
 
 .doll .slot { cursor: pointer; }
-.doll .cell { fill: #e3e0d5; stroke: #a6aa9c; stroke-width: 1; }
-.doll .slot.full .cell { fill: #d2d7cd; }
-.doll .slot.on .cell { fill: #ddd3df; stroke: #81728e; stroke-width: 2; }
-.doll .hand .hit { fill: transparent; stroke: none; }
-.doll .hand:not(.full) .hit { stroke: #a6aa9c; stroke-width: 1; stroke-dasharray: 3 2; }
-.doll .hand.on .hit { stroke: #81728e; stroke-width: 2; stroke-dasharray: none; }
-.doll .hand.locked .hit { stroke: #b47f76; stroke-dasharray: none; } .doll .hand.locked line { stroke: #b47f76; stroke-width: 2; }
+.doll .cell { fill: #e3e0d5; stroke: none; }
+.doll .slot.on .cell { fill: #ddd3df; }
+.doll .slot:not(.full) > svg { opacity: .45; }
+.doll .slot.locked .cell { fill: #d9d4cc; } .doll .slot.locked line { stroke: #b47f76; stroke-width: 2; }
 .doll .cap { fill: var(--dim); font: var(--fs-xs) Cubic11, monospace; text-anchor: middle; }
-.doll text.pr { text-anchor: end; }
+.doll .slot text.pr { text-anchor: end; }
 .doll .slot text.plus { fill: var(--accent); font: var(--fs-xs) Cubic11, monospace; text-anchor: middle; pointer-events: none; }
 
 .stabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
