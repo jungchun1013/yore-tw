@@ -48,7 +48,9 @@ test('title, create a hero, fight, and open every view', async ({ page }, info) 
 test('rebirth with a pact keeps gear and adds legacy', async ({ page }, info) => {
   await page.addInitScript(fresh, 'en');
   await page.goto('/');
+  await page.screenshot({ path: `${SHOTS}/${info.project.name}-title-en.png` });
   await page.click('#t-play');
+  await page.screenshot({ path: `${SHOTS}/${info.project.name}-create-en.png` });
   await page.click('#c-go');
   const uid = await page.evaluate(() => {
     const g = (window as any).__game;

@@ -14,6 +14,7 @@ import { TITLES } from '../data/titles';
 import { LEGACY_RATE, REBIRTH_AGE, YEAR_SEC, clearSave } from '../game/state';
 import { Scene } from './scene';
 import * as A from '../game/actions';
+import { icon } from './icons';
 import { curseOf, giftOf, type PactDef } from '../data/pacts';
 import { SAN_TIERS, sanTier, willResist } from '../data/sanity';
 import { SAN_MAX } from '../game/state';
@@ -71,7 +72,7 @@ export class App {
         <section class="box att" id="att"></section>
         <section class="box loot" id="loot"></section>
         <section class="box side">
-          <nav class="nav">${NAV.map(([k, l, g]) => `<button class="ico" data-a="view" data-k="${k}" title="${t(l)}" aria-label="${t(l)}"><span>${g}</span></button>`).join('')}</nav>
+          <nav class="nav">${NAV.map(([k, l]) => `<button class="ico" data-a="view" data-k="${k}" title="${t(l)}" aria-label="${t(l)}"><span>${icon(k)}</span></button>`).join('')}</nav>
           <div class="vtitle" id="vtitle"></div>
           <div class="view" id="view"></div>
         </section>
@@ -187,7 +188,7 @@ export class App {
     const base = (k: string) => r.base[k as 'str'] + s.grown[k as 'str'] + s.legacy[k as 'str'];
     const stat = (k: string) => {
       const v = Math.floor(d.prim[k as 'str']), b = Math.floor(base(k));
-      return `<div class="kv"><span class="lbl">${tr(STAT[k])}</span><span class="val ${v > b ? 'boost' : 'stat'}">${v}</span><span class="dim">(${b})</span></div>`;
+      return `<div class="kv"><span class="lbl">${icon(k, 'gi sm')}${tr(STAT[k])}</span><span class="val ${v > b ? 'boost' : 'stat'}">${v}</span><span class="dim">(${b})</span></div>`;
     };
     const bar = (id: string, cls: string, lbl: string) => `<div class="kv"><span class="lbl">${lbl}</span><div class="line"><div id="${id}" class="${cls}"></div></div></div>`;
     return `<div class="col">
@@ -407,35 +408,47 @@ export class App {
 
   private settingsHtml(): string {
     return `<div class="row"><b>${t('language')}</b><button data-a="lang" data-k="zh" ${lang === 'zh' ? 'disabled' : ''}>中文</button><button data-a="lang" data-k="en" ${lang === 'en' ? 'disabled' : ''}>English</button></div>
-      <p><button class="ghost" data-a="reset">${t('reset')}</button></p><p class="dim">${t('credits')}</p>`;
+      <p><button class="ghost" data-a="reset">${t('reset')}</button></p>
+      <p class="dim">${t('credits')}</p><p class="dim">Saira Extra Condensed (OFL) · Icons: Lorc, Delapouite / game-icons.net (CC BY 3.0)</p>`;
   }
 }
 
-/** Race list + age figures + growth readout. Shared by the creation screen and rebirth. */
+/** A BWE-style pictogram; taller for older ages. */
+const figure = (h: number) => `<svg class="pict" viewBox="0 0 30 64" style="height:${h}px" aria-hidden="true">
+  <circle cx="15" cy="7" r="6"/><rect x="7" y="15" width="16" height="22" rx="2"/><rect x="1" y="16" width="5" height="18" rx="2"/>
+  <rect x="24" y="16" width="5" height="18" rx="2"/><rect x="8" y="38" width="6" height="24" rx="1"/><rect x="16" y="38" width="6" height="24" rx="1"/></svg>`;
+
+/** Race list (left) + age figures (right) + stats below. Shared by creation and rebirth. */
 export function raceAgePicker(race: string, age: number, raceAction: string, ageAction: string): string {
   const r = raceOf(race), g = ageGrowth(r, age);
-  const list = RACES.map(x => `<button class="rrow ${x.key === race ? 'on' : ''}" data-a="${raceAction}" data-k="${x.key}"><span class="rico">${x.icon}</span><span>${tr(x.name)}</span></button>`).join('');
-  const figs = START_AGES.map(a => `<button class="fig ${a === age ? 'on' : ''}" data-a="${ageAction}" data-k="${a}" title="${a}" style="--h:${28 + (a - 10) * 3}px"><i></i><b></b></button>`).join('');
-  const line = (o: Record<string, number>, plus: boolean) => PRIMARY.map(k => `${tr(STAT[k])}${plus ? '+' : ' '}${o[k]}`).join('  ');
+  const list = RACES.map(x => `<button class="rrow ${x.key === race ? 'on' : ''}" data-a="${raceAction}" data-k="${x.key}" title="${tr(x.name)}">
+      <span class="rico">${icon(x.key)}</span><span class="rname">${tr(x.name)}</span></button>`).join('');
+  const figs = START_AGES.map(a => `<button class="fig ${a === age ? 'on' : ''}" data-a="${ageAction}" data-k="${a}" title="${a}">${figure(40 + (a - 10) * 3)}</button>`).join('');
+  const line = (o: Record<string, number>, plus: boolean) => PRIMARY.map(k => `<span class="st">${icon(k, 'gi sm')}${tr(STAT[k])}<b>${plus ? '+' : ''}${o[k]}</b></span>`).join('');
   return `<div class="picker"><div class="rlist">${list}</div><div class="rinfo">
       <div class="agehead">${t('age')}:${age}</div><div class="figs">${figs}</div>
-      <p>${t('initStat')}: ${line(r.base, false)}</p>
-      <p>${t('ageGrowth')}: ${line(g, true)}</p><p class="dim small">${t('levelShare')}</p>
-      <p class="dim">${tr(r.desc)}</p></div></div>`;
+      <div class="stline"><span class="stlbl">${t('initStat')}</span>${line(r.base, false)}</div>
+      <div class="stline"><span class="stlbl">${t('ageGrowth')}</span>${line(g, true)}</div>
+      <p class="dim small center">${t('levelShare')}</p>
+      <p class="rdesc">${tr(r.desc)}</p></div></div>`;
 }
 
-/** Title screen, then creation. */
+/** CJK lines use the pixel font's own metrics so the glow banner does not overlap. */
+const cjk = (s: string) => (/[\u3400-\u9fff]/.test(s) ? ' cjk' : '');
+const banner = (small = false) => `<div class="banner ${small ? 'small' : ''}"><h1 class="glow${cjk(t('title'))}">${t('title')}</h1>${t('subtitle') ? `<div class="subtitle${cjk(t('subtitle'))}">${t('subtitle')}</div>` : ''}</div>`;
+
+/** Title banner, then creation. */
 export function creation(root: HTMLElement, done: (name: string, race: string, age: number) => void): void {
-  let race = 'human', age = 13, name = lang === 'zh' ? '勇者' : 'Hero';
+  let race = 'elf', age = 13, name = lang === 'zh' ? '勇者' : 'Hero';
   const titleScreen = () => {
-    root.innerHTML = `<div class="title"><h1 class="glow">${t('title')}</h1>${t('subtitle') ? `<div class="subtitle">${t('subtitle')}</div>` : ''}<p class="tagline">${t('tagline')}</p><button class="link" id="t-play">${t('play')}</button></div>`;
+    root.innerHTML = `<div class="title">${banner()}<p class="tagline">${t('tagline')}</p><button class="link play" id="t-play">${t('play')}</button></div>`;
     root.querySelector<HTMLElement>('#t-play')!.onclick = draw;
   };
   const draw = () => {
-    root.innerHTML = `<div class="create"><h1 class="glow small">${t('title')}</h1>
-      <label class="kv"><span class="lbl">${t('name')}</span><input id="c-name" maxlength="12" value="${esc(name)}" /></label>
+    root.innerHTML = `<div class="create">${banner(true)}
       ${raceAgePicker(race, age, 'cRace', 'cAge')}
-      <button class="link big" id="c-go">${t('ok')}</button></div>`;
+      <div class="cfoot"><label class="namebox"><span>${t('name')}</span><input id="c-name" maxlength="12" value="${esc(name)}" /></label>
+      <button class="link play" id="c-go">${t('ok')}</button></div></div>`;
     root.querySelectorAll<HTMLElement>('[data-a="cRace"]').forEach(b => b.onclick = () => { keep(); race = b.dataset.k!; draw(); });
     root.querySelectorAll<HTMLElement>('[data-a="cAge"]').forEach(b => b.onclick = () => { keep(); age = Number(b.dataset.k); draw(); });
     root.querySelector<HTMLElement>('#c-go')!.onclick = () => { keep(); done((name.trim() || 'Hero').slice(0, 12), race, age); };

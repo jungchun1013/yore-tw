@@ -17,7 +17,8 @@ npm run site     # build and copy into ../site/souls-in-abyss/
 - Rebirth from age 20: level and growth reset, race and starting age re-chosen. Skills, titles, gold, AP, pals and items are kept. 10% of the life's growth becomes permanent.
 - Paper doll with seven slots: weapon, head, body, hands, feet, two accessories. Light, medium or heavy weapons and armor. Six rarities (Basic, Magic, Rare, Perfect, Epic, Legendary) with random affixes. Blacksmith +1 to +10 with falling success; failing at +5 or higher drops a level.
 - Skills in COMBAT / MAGIC / PASSIVE tabs, ranked F to 1 with AP.
-- Text uses the Cubic 11 pixel font (OFL, license in public/fonts).
+- Type: Latin in Saira Extra Condensed (an SAO-like condensed face, OFL), Chinese in the Cubic 11 pixel font (OFL). Licenses in public/fonts.
+- Icons from game-icons.net (Lorc, Delapouite; CC BY 3.0), generated into src/ui/icons.ts and credited in Settings.
 
 ## Beyond BWE (asked for by the user)
 - **Gifts and curses** (`src/data/pacts.ts`): at each rebirth the Abyss offers three gift + curse pairs; take one or refuse. The pact lasts one life. Offers are stored in the save so reloading cannot reroll them.

@@ -22,7 +22,7 @@ export const tr = (x: L): string => x[lang];
 /** UI strings. Content strings live next to their data. */
 export const UI = {
   title: { zh: '輪迴無止盡', en: 'SOULS IN ABYSS' },
-  subtitle: { zh: 'SOULS IN ABYSS', en: '' },
+  subtitle: { zh: 'SOULS IN ABYSS', en: '輪迴無止盡' },
   tagline: { zh: '世界底下有一道深淵，所有靈魂最後都會落進去。<br>除了你。你總是會回來。', en: 'Beneath the world lies the Abyss. Every soul falls in at last.<br>Except yours. Yours keeps coming back.' },
   play: { zh: '開始遊戲', en: 'Play Game' },
   name: { zh: '名字', en: 'NAME' },
