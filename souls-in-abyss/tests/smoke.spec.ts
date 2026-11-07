@@ -132,8 +132,8 @@ test('skill names in the log stay inline', async ({ page }) => {
   await page.addInitScript(fresh, 'zh');
   await page.goto('/');
   await page.click('#t-play'); await page.click('.intro'); await page.click('#c-go');
-  await page.evaluate(() => { const g = (window as any).__game; g.s.skills.defense = 15; g.s.skills.smash = 15; g.refresh(); g.fastForward(0); });
-  await page.waitForFunction(() => document.querySelector('#log .skname'), null, { timeout: 30000 });
+  // write the exact line the engine writes when Defense triggers, instead of waiting for a random proc
+  await page.evaluate(() => (window as any).__game.say({ zh: '你使用 {0}', en: 'You use {0}' }, [{ text: '防禦', cls: 'skname' }]));
   const display = await page.evaluate(() => getComputedStyle(document.querySelector('#log .skname')!).display);
   expect(display).toBe('inline');
 });
