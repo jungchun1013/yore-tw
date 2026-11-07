@@ -26,7 +26,7 @@ input:focus, select:focus { background: var(--accent-soft); }
 .dim { color: var(--dim); } .up { color: var(--up); } .down { color: var(--down); } .warn { color: var(--warn); }
 .small { font-size: var(--fs-xs); }
 /* small text (13px target) sits on a 20px line */
-.small, small, .istat, .lore, .pactline, .santier, .tip { line-height: 20px; }
+.small, small, .istat, .lore, .pactline, .santier { line-height: 20px; }
 h3 { margin: 0 0 6px; font-weight: normal; font-size: var(--fs-xl); color: var(--lbl); }
 small { font-size: var(--fs-xs); }
 
@@ -301,7 +301,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 
 /* ---------- tooltip (skills) ---------- */
 .tip { position: fixed; z-index: 20; width: 270px; padding: 14px 18px; background: #f9f7f0; color: var(--ink);
-  border: 2px solid #cfccbf; pointer-events: none; font-size: var(--fs-xs); }
+  border: 2px solid #cfccbf; pointer-events: none; font-size: 14px; line-height: 21px; }
 .tip[hidden] { display: none; }
 .tip .tname { font-size: var(--fs-m); color: var(--lbl); margin-bottom: 4px; }
 .tip .tnext { margin-top: 8px; color: var(--accent); }
