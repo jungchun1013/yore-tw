@@ -74,7 +74,7 @@ export function upgrade(g: Game, uid: number): 'ok' | 'fail' | 'drop' | 'break' 
     const i = s.bag.findIndex(x => x.uid === uid);
     if (i >= 0) s.bag.splice(i, 1); else for (const k of Object.keys(s.equip) as (keyof typeof s.equip)[]) if (s.equip[k]?.uid === uid) delete s.equip[k];
     g.refresh();
-    g.say({ zh: `鐵匠沉默了很久。${name} 碎成了粉末。`, en: `The smith is silent for a long time. ${name} crumbles to dust.` }, [], 'bad');
+    g.say({ zh: `${name} +${it.plus} 化成粉末消失了`, en: `${name} +${it.plus} turned to dust and vanished` }, [], 'bad');
     return 'break';
   }
   if (it.plus >= SMITH_DROP_FROM) {
