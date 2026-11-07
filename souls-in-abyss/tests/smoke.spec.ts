@@ -103,7 +103,7 @@ test('sanity drains in the abyss, glitches the log, and collapses at zero', asyn
   expect(r.mid).toBeLessThan(r.before);
   expect(r.collapses).toBeGreaterThan(0);
   expect(r.titles).toContain('broken');
-  await expect(page.locator('#sheet')).toContainText('SAN');
+  await expect(page.locator('.fight')).toContainText('SAN');
 });
 
 test('the gear on the title screen switches language', async ({ page }) => {

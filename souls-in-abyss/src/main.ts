@@ -1,10 +1,12 @@
 import './style.css';
+import { installFontSnapping } from './ui/pixelfont';
 import { Game } from './game/engine';
 import { OFFLINE_CAP, loadSave, newSave, writeSave } from './game/state';
 import { App, creation } from './ui/app';
 import { lang, t } from './core/i18n';
 import { num } from './core/fmt';
 
+installFontSnapping();
 const root = document.getElementById('app')!;
 document.documentElement.lang = lang === 'zh' ? 'zh-TW' : 'en';
 document.title = lang === 'zh' ? '輪迴無止盡 Souls in Abyss' : 'Souls in Abyss';

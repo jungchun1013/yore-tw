@@ -59,14 +59,23 @@ export class App {
   }
 
   private build(): void {
+    const bar = (id: string, cls: string, lbl: string) =>
+      `<div class="kv bar"><span class="lbl">${lbl}</span><div class="line"><div id="${id}" class="${cls}"></div></div><span class="v" id="${id}-v"></span></div>`;
     this.root.innerHTML = `
       <div class="game">
         <section class="box sheet" id="sheet"></section>
         <section class="box monster">
           <div class="mhead"><span class="lbl">${t('monster')}</span> <b id="m-diff"></b> <span id="m-name"></span></div>
           <div class="stage"></div>
-          <div class="kv"><span class="lbl">HP</span><div class="line"><div id="m-hp" class="red"></div></div></div>
-          <div class="kv"><span class="lbl">${t('cp')}</span><span id="m-cp"></span></div>
+          <div class="fight">
+            <div class="side-hero">
+              ${bar('s-hp', 'red', t('hp'))}${bar('s-mp', 'blue', t('mp'))}${bar('s-xp', 'grey', t('exp'))}${bar('s-san', 'purple', t('san'))}
+            </div>
+            <div class="side-mon">
+              ${bar('m-hp', 'red', t('hp'))}
+              <div class="kv"><span class="lbl">${t('cp')}</span><span id="m-cp" class="v"></span></div>
+            </div>
+          </div>
         </section>
         <section class="box petbox" id="petbox"></section>
         <section class="box log" id="log"></section>
@@ -160,6 +169,10 @@ export class App {
     this.text('m-cp', num(m.cp));
     this.width('m-hp', m.hp / m.maxHp);
     this.width('s-san', g.s.san / SAN_MAX);
+    const tier = SAN_TIERS[sanTier(g.s.san)];
+    this.text('s-san-v', `${Math.floor(g.s.san)} ${tr(tier.name)}`); (document.getElementById('s-san-v') as HTMLElement).style.color = tier.color;
+    this.text('s-hp-v', `${num(g.hp)}/${num(g.d.hp)}`); this.text('s-mp-v', `${num(g.mp)}/${num(g.d.mp)}`);
+    this.text('s-xp-v', pct(g.s.xp / xpNeed(g.s.lvl), 1)); this.text('m-hp-v', num(Math.max(0, m.hp)));
     this.width('s-hp', g.hp / g.d.hp); this.width('s-mp', g.mp / g.d.mp); this.width('s-xp', g.s.xp / xpNeed(g.s.lvl));
   }
   private text(id: string, v: string) { const el = document.getElementById(id); if (el && el.textContent !== v) el.textContent = v; }
@@ -191,14 +204,11 @@ export class App {
       const v = Math.floor(d.prim[k as 'str']), b = Math.floor(base(k));
       return `<div class="kv"><span class="lbl">${icon(k, 'gi sm')}${tr(STAT[k])}</span><span class="val ${v > b ? 'boost' : 'stat'}">${v}</span><span class="dim">(${b})</span></div>`;
     };
-    const bar = (id: string, cls: string, lbl: string) => `<div class="kv"><span class="lbl">${lbl}</span><div class="line"><div id="${id}" class="${cls}"></div></div></div>`;
     return `<div class="col">
         <div class="kv"><span class="lbl">${t('name')}</span><span>${esc(s.name)}</span></div>
         <div class="kv"><span class="lbl">${t('race')}</span><span>${tr(r.name)}</span></div>
         <div class="kv"><span class="lbl">${t('age')}</span><span>${s.age} <small class="dim">${clock(YEAR_SEC - s.ageT)}</small></span></div>
         <div class="kv"><span class="lbl">${t('lv')}</span><span>${s.lvl}</span></div>
-        ${bar('s-hp', 'red', t('hp'))}${bar('s-mp', 'blue', t('mp'))}${bar('s-xp', 'grey', t('exp'))}
-        <div class="kv"><span class="lbl">${t('san')}</span><div class="line"><div id="s-san" class="purple"></div></div><span class="santier" style="color:${SAN_TIERS[sanTier(s.san)].color}">${Math.floor(s.san)} ${tr(SAN_TIERS[sanTier(s.san)].name)}</span></div>
         <div class="kv"><span class="lbl">${t('gold')}</span><span>${num(s.gold)}</span></div>
         ${this.pactLine()}
       </div>
@@ -289,7 +299,7 @@ export class App {
       const [x, y] = P[k], it = s.equip[k], on = this.slot === k;
       const ring = it ? RARITY[it.rarity].color : 'none';
       return `<g class="slot ${on ? 'on' : ''} ${it ? 'full' : ''}" data-a="slot" data-k="${k}"><title>${tr(SLOT_NAME[k])}</title>
-        <circle cx="${x}" cy="${y}" r="17" style="stroke:${ring}"/>${ico('slot-' + k, x, y, 22)}${it && it.plus ? `<text class="plus" x="${x + 15}" y="${y + 18}">+${it.plus}</text>` : ''}</g>`;
+        <circle cx="${x}" cy="${y}" r="17" style="${it && !on ? `fill:${ring}` : ''}"/>${ico('slot-' + k, x, y, 22)}${it && it.plus ? `<text class="plus" x="${x + 15}" y="${y + 18}">+${it.plus}</text>` : ''}</g>`;
     }).join('');
     return `<svg class="doll" viewBox="0 0 200 260">
       <g class="fig">${ico('figure', 100, 128, 200)}</g>
@@ -412,7 +422,7 @@ export class App {
   private settingsHtml(): string {
     return `<div class="row"><b>${t('language')}</b><button data-a="lang" data-k="zh" ${lang === 'zh' ? 'disabled' : ''}>中文</button><button data-a="lang" data-k="en" ${lang === 'en' ? 'disabled' : ''}>English</button></div>
       <p><button class="ghost" data-a="reset">${t('reset')}</button></p>
-      <p class="dim">${t('credits')}</p><p class="dim">Icons: Lorc, Delapouite / game-icons.net (CC BY 3.0)</p>`;
+      <p class="dim">${t('credits')}</p><p class="dim">Icons: Lorc, Delapouite, Skoll / game-icons.net (CC BY 3.0)</p>`;
   }
 }
 
