@@ -97,6 +97,7 @@ export class App {
     this.root.querySelector('.stage')!.appendChild(this.scene.cv);
     this.logEl = this.root.querySelector('#log')!;
     this.root.addEventListener('click', e => this.onClick(e));
+    this.installTips();
     this.root.addEventListener('change', e => this.onChange(e));
     this.root.addEventListener('input', e => this.onChange(e));
     this.setView(this.view);
@@ -292,15 +293,22 @@ export class App {
     }
   }
 
+  /** One-line item name; the stats live in the tooltip (data-tip="item:<uid>"). */
   private itemHtml(it: Item): string {
     const r = RARITY[it.rarity];
-    let base = '';
-    if (it.kind === 'weapon') { const [a, b] = weaponRange(it); base = `${t('atk')} ${Math.floor(a)}~${Math.floor(b)} · ${t('spd')} ${WEIGHTS[it.weight!].spd}`; }
-    else if (it.kind !== 'acc') { base = `${t('def')} ${Math.floor(armorDef(it))}${armorPrt(it) > 0 ? ` · ${t('prt')} ${pct(armorPrt(it), 1)}` : ''}`; }
-    const aff = it.affixes.map(modText).join(' · ');
     const wt = it.weight ? `<span class="wt">${tr(WEIGHTS[it.weight].name)}</span>` : '';
-    return `<div class="iname" style="color:${r.color}">${wt}${tr(nameOf(it))}${it.plus ? ' +' + it.plus : ''}</div>
-      <div class="istat">${base}${base && aff ? ' · ' : ''}${aff}</div>`;
+    return `<div class="iname" style="color:${r.color}">${wt}${tr(nameOf(it))}${it.plus ? ' +' + it.plus : ''}</div>`;
+  }
+  private itemTip(it: Item): string {
+    const r = RARITY[it.rarity];
+    const lines: string[] = [];
+    if (it.kind === 'weapon') { const [a, b] = weaponRange(it); lines.push(`${t('atk')} ${Math.floor(a)}~${Math.floor(b)}`, `${t('spd')} ${WEIGHTS[it.weight!].spd}`); }
+    else if (it.kind !== 'acc') { lines.push(`${t('def')} ${Math.floor(armorDef(it))}`); if (armorPrt(it) > 0) lines.push(`${t('prt')} ${pct(armorPrt(it), 1)}`); }
+    return `<div class="tname" style="color:${r.color}">${tr(nameOf(it))}${it.plus ? ' +' + it.plus : ''}</div>
+      <div class="dim">${tr(r.name)}${it.weight ? ` · ${tr(WEIGHTS[it.weight].name)}` : ''}</div>
+      ${lines.length ? `<div class="tsec">${lines.join('<br>')}</div>` : ''}
+      ${it.affixes.length ? `<div class="tsec next">${it.affixes.map(modText).join('<br>')}</div>` : ''}
+      <div class="tcost">${t('sell')} $${num(sellPrice(it))}</div>`;
   }
 
   private cpDelta(it: Item, slot: Slot): number {
@@ -324,7 +332,7 @@ export class App {
     const circles = SLOTS.map(k => {
       const [x, y] = P[k], it = s.equip[k], on = this.slot === k;
       const ring = it ? RARITY[it.rarity].color : 'none';
-      return `<g class="slot ${on ? 'on' : ''} ${it ? 'full' : ''}" data-a="slot" data-k="${k}"><title>${tr(SLOT_NAME[k])}</title>
+      return `<g class="slot ${on ? 'on' : ''} ${it ? 'full' : ''}" data-a="slot" data-k="${k}" ${it ? `data-tip="item:${it.uid}"` : ''}><title>${tr(SLOT_NAME[k])}</title>
         <circle cx="${x}" cy="${y}" r="17" style="${it && !on ? `fill:${ring}` : ''}"/>${ico('slot-' + k, x, y, 22)}${it && it.plus ? `<text class="plus" x="${x + 15}" y="${y + 18}">+${it.plus}</text>` : ''}</g>`;
     }).join('');
     return `<svg class="doll" viewBox="0 0 200 260">
@@ -337,12 +345,12 @@ export class App {
     const kind = sel === 'all' ? null : KIND_OF[sel];
     const worn = sel === 'all' ? '' : (() => {
       const it = s.equip[sel];
-      return `<div class="item worn"><div class="grow"><div class="dim">${tr(SLOT_NAME[sel])}</div>${it ? this.itemHtml(it) : t('empty')}</div>${it ? `<button data-a="unequip" data-k="${sel}">${t('unequip')}</button>` : ''}</div>`;
+      return `<div class="item worn" ${it ? `data-tip="item:${it.uid}"` : ''}><div class="grow"><div class="dim">${tr(SLOT_NAME[sel])}</div>${it ? this.itemHtml(it) : t('empty')}</div>${it ? `<button data-a="unequip" data-k="${sel}">${t('unequip')}</button>` : ''}</div>`;
     })();
     const bag = s.bag.filter(it => !kind || it.kind === kind).map(it => {
       const slot = sel !== 'all' && KIND_OF[sel] === it.kind ? sel : A.targetSlot(s, it);
       const dcp = this.cpDelta(it, slot);
-      return `<div class="item"><div class="grow">${this.itemHtml(it)}</div><div class="acts">
+      return `<div class="item" data-tip="item:${it.uid}"><div class="grow">${this.itemHtml(it)}</div><div class="acts">
         <span class="${dcp > 0 ? 'up' : dcp < 0 ? 'down' : 'dim'}">${dcp ? icon('arrow', dcp > 0 ? 'gi sm pointup' : 'gi sm') : ''}${num(Math.abs(dcp))}</span>
         <button data-a="equip" data-uid="${it.uid}">${t('equip')}</button>
         <button class="ghost" data-a="sell" data-uid="${it.uid}">$${num(sellPrice(it))}</button></div></div>`;
@@ -354,14 +362,68 @@ export class App {
       ${bag}`;
   }
 
+  /** Tooltip shared by every [data-tip] element: hover on desktop, tap on touch screens. */
+  private tipEl!: HTMLElement;
+  private tipFor: HTMLElement | null = null;
+  private tipByTap = false;
+  private lastPointer = 'mouse';
+  private installTips(): void {
+    this.tipEl = document.createElement('div');
+    this.tipEl.className = 'tip'; this.tipEl.hidden = true;
+    document.body.appendChild(this.tipEl);
+    const show = (el: HTMLElement) => {
+      const html = this.tipHtml(el.getAttribute('data-tip') || '');
+      if (!html) return;
+      this.tipFor = el; this.tipEl.innerHTML = html; this.tipEl.hidden = false;
+      const r = el.getBoundingClientRect(), w = this.tipEl.offsetWidth, h = this.tipEl.offsetHeight;
+      // prefer the left of the row (like the side panel's neighbour), fall back below it on narrow screens
+      let x = r.left - w - 8, y = r.top;
+      if (x < 8) { x = Math.max(8, Math.min(window.innerWidth - w - 8, r.left)); y = r.bottom + 6; }
+      y = Math.max(8, Math.min(window.innerHeight - h - 8, y));
+      this.tipEl.style.left = x + 'px'; this.tipEl.style.top = y + 'px';
+    };
+    const hide = () => { this.tipFor = null; this.tipByTap = false; this.tipEl.hidden = true; };
+    this.root.addEventListener('pointerover', e => {
+      if ((e as PointerEvent).pointerType === 'touch') return;
+      const el = (e.target as HTMLElement).closest('[data-tip]') as HTMLElement | null;
+      if (el && el !== this.tipFor) { this.tipByTap = false; show(el); } else if (!el && this.tipFor) hide();
+    });
+    this.root.addEventListener('pointerleave', e => { if ((e as PointerEvent).pointerType !== 'touch') hide(); }); // a lifted finger 'leaves' too
+    this.root.addEventListener('pointerdown', e => { this.lastPointer = (e as PointerEvent).pointerType || 'mouse'; }, true);
+    this.root.addEventListener('click', e => {
+      const el = (e.target as HTMLElement).closest('[data-tip]') as HTMLElement | null;
+      if ((e.target as HTMLElement).closest('[data-a]')) { if (this.tipFor) setTimeout(() => this.tipFor && document.contains(this.tipFor) ? show(this.tipFor) : hide(), 0); return; }
+      if (!el) { hide(); return; }
+      if (this.lastPointer === 'touch') { if (el === this.tipFor) hide(); else { this.tipByTap = true; show(el); } } // tap toggles
+      else if (el !== this.tipFor) show(el); // a mouse click keeps the hover tip
+    });
+    // close when the page or the panel holding the row scrolls, not when the log scrolls itself
+    window.addEventListener('scroll', e => {
+      const tgt = e.target as Node;
+      // a tapped tip stays until the next tap: phones re-anchor the page as panels refresh
+      if (this.tipFor && !this.tipByTap && (tgt === document || (tgt as Element).contains?.(this.tipFor))) hide();
+    }, true);
+  }
+  private tipHtml(key: string): string {
+    const [kind, id] = key.split(':');
+    if (kind === 'item') { const it = this.g.itemOf(Number(id)); return it ? this.itemTip(it) : ''; }
+    if (kind !== 'skill') return '';
+    const k = SKILLS.find(x => x.key === id); if (!k) return '';
+    const r = this.g.s.skills[k.key] || 0, max = r >= MAX_RANK;
+    return `<div class="tname">${tr(k.name)} ${r ? RANKS[r] : ''}</div>
+      <div class="tsec">${r ? tr(k.desc(r)) : `<span class="dim">${t('notLearned')}</span>`}</div>
+      ${max ? `<div class="tsec dim">${t('maxed')}</div>` : `<div class="tnext">${t('nextRank')} ${RANKS[r + 1]}</div><div class="tsec next">${tr(k.desc(r + 1))}</div>
+      <div class="tcost">${t('ap')} ${rankCost(r)}</div>`}`;
+  }
+
   private skillsHtml(): string {
     const s = this.g.s;
     const tabs = (['combat', 'magic', 'passive'] as SkillTab[]).map(k => `<button class="stab ${this.skillTab === k ? 'on' : ''}" data-a="stab" data-k="${k}">${t(k)}</button>`).join('');
     const rows = SKILLS.filter(k => k.tab === this.skillTab).map(k => {
       const r = s.skills[k.key] || 0, cost = rankCost(r), max = r >= MAX_RANK, can = !max && s.ap >= cost;
-      return `<div class="skill ${can ? 'can' : ''}"><div class="sico">${icon('sk-' + k.key)}</div>
-        <div class="grow"><div class="sname">${tr(k.name)} <b>${r ? RANKS[r] : ''}</b></div>
-        <div class="istat">${r ? tr(k.desc(r)) : ''}${max ? '' : `${r ? '<br>' : ''}${icon('arrow', 'gi sm pointup')}${RANKS[r + 1]}: ${tr(k.desc(r + 1))}`}</div></div>
+      // one fixed-height row; the effect text lives in a hover/tap tooltip so ranking up never changes the layout
+      return `<div class="skill ${can ? 'can' : ''}" data-tip="skill:${k.key}"><div class="sico">${icon('sk-' + k.key)}</div>
+        <div class="grow"><div class="sname">${tr(k.name)} <b>${r ? RANKS[r] : ''}</b></div></div>
         ${max ? `<span class="dim">${t('maxed')}</span>` : `<button class="up-btn" data-a="learn" data-k="${k.key}" ${can ? '' : 'disabled'} title="${cost} ${t('ap')}">${icon('arrow', 'gi pointup')}<small>${cost}</small></button>`}</div>`;
     }).join('');
     return `<div class="stabs">${tabs}</div><p class="dim">${t('ap')} ${s.ap}</p>${rows}`;
@@ -395,9 +457,9 @@ export class App {
     const g = this.g, s = g.s;
     const list = [...SLOTS.map(k => s.equip[k]).filter(Boolean) as Item[], ...s.bag];
     return `<p class="dim">${lang === 'zh' ? '每 +1 增加基礎數值 10%。' : 'Each +1 adds 10% to base numbers.'} ${icon('hazard', 'gi sm')}${t('failDrop')}</p>` + list.map(it => {
-      if (it.plus >= SMITH_MAX) return `<div class="item"><div class="grow">${this.itemHtml(it)}</div><span class="dim">${t('maxed')}</span></div>`;
+      if (it.plus >= SMITH_MAX) return `<div class="item" data-tip="item:${it.uid}"><div class="grow">${this.itemHtml(it)}</div><span class="dim">${t('maxed')}</span></div>`;
       const cost = smithCost(it.ilvl, it.plus), ch = A.smithChance(g, it);
-      return `<div class="item"><div class="grow">${this.itemHtml(it)}</div><div class="acts">
+      return `<div class="item" data-tip="item:${it.uid}"><div class="grow">${this.itemHtml(it)}</div><div class="acts">
         <span class="dim">+${it.plus}→+${it.plus + 1} ${pct(ch)}${it.plus >= SMITH_DROP_FROM ? icon('hazard', 'gi sm') : ''}</span>
         <button data-a="smith" data-uid="${it.uid}" ${s.gold < cost ? 'disabled' : ''}>$${num(cost)}</button></div></div>`;
     }).join('');

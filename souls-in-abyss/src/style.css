@@ -7,7 +7,7 @@
 }
 :root {
   --bg: #e6e6e6; --box: #ffffff; --line: #cfcfcf; --ink: #555555; --lbl: #3e3e3e; --dim: #9a9a9a;
-  --gold: #e8b33d; --num: 22px; --fs-xs: 13px; --fs-m: 17px; --fs-l: 21px; --fs-xl: 25px; --fs-xxl: 30px; --fs-title: 84px; --fs-title-s: 52px; --slot: 34px; --accent: #6e52b8; --accent-soft: #f1ecfa; --glow1: #5b3fa8; --glow2: #8467cf; --glow3: #b6a3e6; --glow4: #e2daf6; --orange: #e8933d; --red: #a8322d; --blue: #2d6ea8; --up: #3fa34d; --down: #d43d3d; --warn: #e0791a;
+  --gold: #e8b33d; --num: 22px; --r-box: 12px; --r-item: 8px; --fs-xs: 13px; --fs-m: 17px; --fs-l: 21px; --fs-xl: 25px; --fs-xxl: 30px; --fs-title: 84px; --fs-title-s: 52px; --slot: 34px; --accent: #6e52b8; --accent-soft: #f1ecfa; --glow1: #5b3fa8; --glow2: #8467cf; --glow3: #b6a3e6; --glow4: #e2daf6; --orange: #e8933d; --red: #a8322d; --blue: #2d6ea8; --up: #3fa34d; --down: #d43d3d; --warn: #e0791a;
   color-scheme: light;
 }
 * { box-sizing: border-box; }
@@ -272,3 +272,22 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .kv.left > span:last-child:not(.lbl) { margin-left: 0; }
 .sheet .line > div { transition: none; }
 .lat { padding-left: 0.17em; }
+
+/* ---------- tooltip (skills) ---------- */
+.tip { position: fixed; z-index: 20; width: 260px; padding: 10px 12px; background: #fbfbfb; color: var(--ink);
+  box-shadow: 0 6px 22px rgba(40, 30, 70, .18); pointer-events: none; font-size: var(--fs-xs); line-height: 1.6; }
+.tip[hidden] { display: none; }
+.tip .tname { font-size: var(--fs-m); color: var(--lbl); margin-bottom: 4px; }
+.tip .tnext { margin-top: 8px; color: var(--accent); }
+.tip .tsec.next { color: var(--accent); }
+.tip .tcost { margin-top: 8px; color: var(--dim); }
+.view .skill { min-height: 52px; cursor: default; }
+
+/* ---------- rounded corners on every box ---------- */
+.box { border-radius: var(--r-box); }
+.item, .view .skill, .pact, .mapboard, .tip, .cogmenu { border-radius: var(--r-item); }
+button:not(.ico):not(.cog):not(.rrow):not(.fig):not(.node):not(.link):not(.up-btn), select, input { border-radius: var(--r-item); }
+.stab { border-radius: var(--r-item); }
+.iname .wt { border-radius: 4px; }
+.stage, .scene { border-radius: var(--r-item); overflow: hidden; }
+.line, .line > div { border-radius: 2px; }

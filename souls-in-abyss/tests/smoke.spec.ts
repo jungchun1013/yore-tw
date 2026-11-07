@@ -157,3 +157,32 @@ test('EXP and SAN bars never flash empty when the sheet refreshes', async ({ pag
   expect(minWidths[0]).toBeGreaterThan(0);
   expect(minWidths[1]).toBeGreaterThan(50);
 });
+
+test('skills and gear explain themselves in a tooltip, rows keep their height', async ({ page }, info) => {
+  await page.addInitScript(fresh, 'zh');
+  await page.goto('/');
+  await page.click('#t-play'); await page.click('.intro'); await page.click('#c-go');
+  await page.evaluate(() => { const g = (window as any).__game; g.s.ap = 50; });
+  await page.click('.nav [data-k="skills"]');
+  const row = page.locator('.view .skill[data-tip="skill:smash"]');
+  const h0 = (await row.boundingBox())!.height;
+  if (info.project.name === 'desktop') {
+    await row.hover();
+    await expect(page.locator('.tip')).toBeVisible();
+    await expect(page.locator('.tip')).toContainText('下一級');
+    await page.screenshot({ path: `${SHOTS}/${info.project.name}-skill-tip.png` });
+  }
+  await page.click('[data-a="learn"][data-k="smash"]');
+  await page.click('[data-a="learn"][data-k="smash"]');
+  const h1 = (await page.locator('.view .skill[data-tip="skill:smash"]').boundingBox())!.height;
+  expect(Math.abs(h1 - h0)).toBeLessThan(1);
+  await page.click('.nav [data-k="equip"]');
+  await page.click('.doll [data-k="weapon"]');
+  const worn = page.locator('.item.worn');
+  if (info.project.name === 'desktop') { await worn.hover(); }
+  else { await worn.tap({ position: { x: 20, y: 20 } }); }
+  await expect(page.locator('.tip')).toContainText('攻擊');
+  await page.waitForTimeout(1500); // log lines keep arriving; the tooltip must stay open
+  await expect(page.locator('.tip')).toBeVisible();
+  await page.screenshot({ path: `${SHOTS}/${info.project.name}-item-tip.png` });
+});

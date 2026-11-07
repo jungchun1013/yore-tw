@@ -106,6 +106,8 @@ export const UI = {
   dread: { zh: 'SAN 每擊倒', en: 'SAN per kill' },
   sep: { zh: '：', en: ': ' },
   unknown: { zh: '？', en: '?' },
+  notLearned: { zh: '尚未學習', en: 'Not learned' },
+  nextRank: { zh: '下一級', en: 'Next rank' },
   credits: { zh: '字型：俐方體11號 Cubic 11（OFL）', en: 'Font: Cubic 11 (OFL)' },
 } satisfies Record<string, L>;
 
