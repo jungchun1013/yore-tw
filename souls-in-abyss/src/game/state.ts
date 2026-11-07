@@ -16,7 +16,7 @@ export function newSave(name: string, race: string, age: number): Save {
     v: SAVE_VERSION, name, race, age, ageT: 0, lvl: 1, xp: 0,
     grown: zeroStats(), legacy: zeroStats(),
     gold: 0, ap: 5, skills: {}, equip: {}, bag: [], nextUid: 1,
-    area: 'meadow', pets: [], activePet: null, titles: [],
+    area: 'meadow', visited: ['meadow'], pets: [], activePet: null, titles: [],
     counters: { kills: 0, deaths: 0, rebirths: 0, bestPlus: 0, fateLines: 0, deepest: 0, playSec: 0 },
     autoSell: 1, san: SAN_MAX, pact: null, offers: null, lastSeen: Date.now(),
   };

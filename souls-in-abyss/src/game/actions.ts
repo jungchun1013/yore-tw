@@ -96,6 +96,8 @@ export function learn(g: Game, key: string): void {
 
 export function goArea(g: Game, key: string): void {
   if (!AREAS.some(a => a.key === key) || g.s.area === key) return;
+  const seen = g.s.visited || (g.s.visited = [g.s.area]);
+  if (!seen.includes(key)) seen.push(key);
   g.s.area = key; g.resetLoot(); g.newMonster();
 }
 

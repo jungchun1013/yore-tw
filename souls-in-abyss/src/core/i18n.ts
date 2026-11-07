@@ -72,6 +72,7 @@ export const UI = {
   upgrade: { zh: '強化', en: 'Upgrade' },
   go: { zh: '前往', en: 'Go' },
   here: { zh: '所在地', en: 'Here' },
+  clickGo: { zh: '點擊前往', en: 'Click to go' },
   bag: { zh: '背包', en: 'Bag' },
   all: { zh: '全部', en: 'All' },
   empty: { zh: '（空）', en: '(empty)' },

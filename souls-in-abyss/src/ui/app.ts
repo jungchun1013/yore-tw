@@ -47,7 +47,6 @@ export class App {
   private view: View = 'equip';
   private slot: Slot | 'all' = 'all';
   private skillTab: SkillTab = 'combat';
-  private mapSel: string | null = null;
   private rbRace: string; private rbAge = 17; private rbPact = -1;
   private lastHtml: Record<string, string> = {};
   private logEl!: HTMLElement;
@@ -133,8 +132,10 @@ export class App {
       case 'sellAll': A.sellAll(g); break;
       case 'smith': A.upgrade(g, uid); break;
       case 'learn': A.learn(g, k); break;
-      case 'go': A.goArea(g, k); this.mapSel = null; break;
-      case 'mapsel': this.mapSel = k; break;
+      case 'go':
+        // on a touch screen the first tap on a map node only shows its tooltip; the second tap goes
+        if (this.lastPointer === 'touch' && el.classList.contains('node') && this.tipFor !== el) { this.showTip(el); this.tipByTap = true; return; }
+        A.goArea(g, k); break;
       case 'pet': A.setPet(g, k || null); break;
       case 'ddToggle': { const m = el.parentElement!.querySelector<HTMLElement>('.ddmenu'); if (m) m.hidden = !m.hidden; return; }
       case 'autoSell': g.s.autoSell = Number(k); break;
@@ -401,12 +402,13 @@ export class App {
   private tipEl!: HTMLElement;
   private tipFor: HTMLElement | null = null;
   private tipByTap = false;
+  private showTip: (el: HTMLElement) => void = () => {};
   private lastPointer = 'mouse';
   private installTips(): void {
     this.tipEl = document.createElement('div');
     this.tipEl.className = 'tip'; this.tipEl.hidden = true;
     document.body.appendChild(this.tipEl);
-    const show = (el: HTMLElement) => {
+    const show = this.showTip = (el: HTMLElement) => {
       const html = this.tipHtml(el.getAttribute('data-tip') || '');
       if (!html) return;
       this.tipFor = el; this.tipEl.innerHTML = html; this.tipEl.hidden = false;
@@ -455,7 +457,8 @@ export class App {
     const pals = PETS.filter(p => p.home === a.key && !p.hidden).map(p => s.pets.some(x => x.key === p.key) ? tr(p.stages[0].name) : t('unknown')).join(' · ');
     return `<div class="tname">${tr(a.name)} <small class="dim">Lv ${a.min}–${a.max}</small></div>
       <div class="tsec">${t('recArea')} <b class="${cls}">${num(cp)}</b> · ${a.dread ? `<span class="madtxt">${t('dread')} -${(a.dread * willResist(d.prim.will) * d.sanDrain).toFixed(2)}</span>` : `<span class="up">${t('safe')}</span>`}${pals ? ` · ${t('pet')}${t('sep')}${pals}` : ''}</div>
-      <p class="lore">${tr(a.flavor)}</p>`;
+      <p class="lore">${tr(a.flavor)}</p>
+      <div class="tnext">${this.g.s.area === a.key ? t('here') : t('clickGo')}</div>`;
   }
   private tipHtml(key: string): string {
     const [kind, id] = key.split(':');
@@ -486,24 +489,21 @@ export class App {
 
   /** The map as a descent: icon nodes winding down into the Abyss. Tap a node for details. */
   private mapHtml(): string {
-    const { s, d } = this.g;
-    const sel = this.mapSel || s.area;
+    const { s } = this.g;
+    const seen = s.visited || [s.area];
     // positions in % of the board: a winding path, top = surface, bottom = the Abyss
     const POS = WORLD_MAP_POSITIONS;
     const path = POS.map(([x, y], i) => `${i ? 'L' : 'M'}${x} ${y}`).join(' ');
     const nodes = AREAS.map((a, i) => {
-      const [x, y] = POS[i], here = s.area === a.key, cp = AREA_CP[i];
-      const state = here ? 'here' : d.cp >= cp ? 'ok' : d.cp >= cp * 0.6 ? 'risky' : 'far';
-      return `<button class="node ${state} ${sel === a.key ? 'sel' : ''}" style="left:${x}%;top:${y}%" data-a="mapsel" data-k="${a.key}" data-tip="area:${a.key}">
+      // never been: grey · been, but not here: dark · here: lit
+      const [x, y] = POS[i], here = s.area === a.key;
+      const state = here ? 'here' : seen.includes(a.key) ? 'seen' : 'unseen';
+      return `<button class="node ${state}" style="left:${x}%;top:${y}%" ${here ? '' : 'data-a="go"'} data-k="${a.key}" data-tip="area:${a.key}">
         <span class="nico">${icon('area-' + a.key)}</span></button>`; // the name is in the tooltip
     }).join('');
-    const a = AREAS.find(x => x.key === sel)!, here = s.area === a.key;
-    // the name, level range, suggested CP, SAN cost, pals and the wall-writing live in the icon's tooltip
-    const card = `<div class="item mapcard"><div class="dot" style="background:${a.bg}" data-tip="area:${a.key}">${icon('area-' + a.key)}</div>
-      <div class="grow"></div>
-      ${here ? `<span class="dim">${t('here')}</span>` : `<button data-a="go" data-k="${a.key}">${t('go')}</button>`}</div>`;
-    // .mapinner keeps the illustration's 2:3 shape inside a board of any size, so the nodes stay on their landmarks
-    return `<div class="mapboard"><div class="mapinner"><img class="map-art" src="./sprites/abyss-world-map.png" width="1024" height="1536" alt="" draggable="false"><svg class="maproute" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${path}"/></svg>${nodes}</div></div>${card}${this.lootHtml()}`;
+    // .mapwrap takes whatever height the column has left; the board inside keeps the illustration's 2:3 shape,
+    // so the nodes stay on their landmarks. .mapshade darkens toward violet: the deeper, the heavier.
+    return `<div class="mapwrap"><div class="mapboard"><img class="map-art" src="./sprites/abyss-world-map.png" width="1024" height="1536" alt="" draggable="false"><div class="mapshade"></div><svg class="maproute" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${path}"/></svg>${nodes}</div></div>${this.lootHtml()}`;
   }
 
   /** Blacksmith: the rules in three lines, then what is worn and what is carried. */

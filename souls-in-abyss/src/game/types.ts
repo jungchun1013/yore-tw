@@ -60,6 +60,7 @@ export interface Save {
   bag: Item[];
   nextUid: number;
   area: string;
+  visited?: string[];               // areas this soul has stood in (missing in older saves: just the current one)
   pets: PetState[];
   activePet: string | null;
   titles: string[];

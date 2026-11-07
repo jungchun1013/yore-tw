@@ -290,10 +290,20 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 @media (max-width: 900px) { .mapboard { height: auto; } }
 /* the map and its stats share the column without scrolling: the board shrinks first, down to 240px */
 .view.v-map { display: flex; flex-direction: column; }
-.view.v-map .mapboard { flex: 1 1 auto; min-height: 240px; max-height: 520px; }
-.view.v-map .mapcard, .view.v-map .loot { flex: none; }
-.mapboard { container-type: size; }
-.mapinner { position: absolute; left: 50%; top: 50%; height: min(100cqh, 150cqw); aspect-ratio: 2 / 3; transform: translate(-50%, -50%); }
+.view.v-map .loot { flex: none; }
+/* the wrap starts 2:3 at full width and gives up height when the column is short; the map stays 2:3, centred, no bands */
+.view.v-map .mapwrap { position: relative; flex: 0 1 auto; aspect-ratio: 2 / 3; min-height: 240px; container-type: size; margin: 4px 0 8px; }
+.view.v-map .mapboard { position: absolute; left: 50%; top: 0; transform: translateX(-50%); height: min(100cqh, 150cqw); width: auto; margin: 0; }
+.mapshade { position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(rgba(249,247,240,0) 0%, rgba(232,227,234,0) 35%, rgba(185,174,196,.32) 70%, rgba(61,51,80,.72) 100%); }
+/* never been: grey · been, not here: dark · here: lit */
+.view .mapboard .node.unseen .nico { background: #bcc5bd; filter: grayscale(1); opacity: .8; }
+.view .mapboard .node.seen .nico { background: #9ba39a; filter: brightness(.68); }
+.view .mapboard .node.here .nico { background: #f9f7f0; outline: 0; box-shadow: none; }
+/* the icon is clipped to pixel corners, so its frame is a gold staircase square behind it */
+.view .mapboard .node.here::before { content: ''; position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; transform: translate(-50%, -50%);
+  background: #c1a775; clip-path: var(--px2); z-index: -1; box-shadow: none; }
+.view .mapboard .node:not(.here):hover .nico { filter: none; opacity: 1; background: #e3ddc9; }
 
 .rblead { margin: 4px 0 8px; color: var(--lbl); }
 .create .rbtext { width: 100%; max-width: 520px; }
