@@ -501,7 +501,7 @@ export class App {
       const d = petOf(p.key)!, st = stageOf(p.lvl), on = s.activePet === p.key, next = STAGE_LV[st + 1];
       return `<div class="item ${on ? 'here' : ''}"><div class="dot" style="background:${d.stages[st].color}">${icon('pet-' + p.key)}</div>
         <div class="grow"><div class="iname">${tr(d.stages[st].name)} <small class="dim">Lv ${p.lvl}${next ? ` → Lv ${next}` : ''}</small></div>
-        <div class="istat">${tr(d.ability)} · <span class="hearts">${hearts(p.bond)}</span></div>
+        <div class="istat">${tr(d.ability)}<br><span class="hearts">${hearts(p.bond)}</span></div>
         <p class="lore">${tr(d.lore)}</p></div>
         ${on ? `<span class="dim">${t('active')}</span>` : `<button data-a="pet" data-k="${p.key}">${t('call')}</button>`}</div>`;
     }).join('');
