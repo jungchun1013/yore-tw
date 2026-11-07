@@ -450,7 +450,7 @@ export class App {
       // one fixed-height row; the effect text lives in a hover/tap tooltip so ranking up never changes the layout
       return `<div class="skill ${can ? 'can' : ''}" data-tip="skill:${k.key}"><div class="sico">${icon('sk-' + k.key)}</div>
         <div class="grow"><div class="sname">${tr(k.name)} <b>${r ? RANKS[r] : ''}</b></div></div>
-        ${max ? `<span class="dim">${t('maxed')}</span>` : `<button class="up-btn" data-a="learn" data-k="${k.key}" ${can ? '' : 'disabled'} title="${cost} ${t('ap')}">${icon('arrow', 'gi pointup')}<small>${cost}</small></button>`}</div>`;
+        ${max ? `<span class="dim">${t('maxed')}</span>` : `<button class="up-btn" data-a="learn" data-k="${k.key}" ${can ? '' : 'disabled'} title="${cost} ${t('ap')}"><small>${cost}</small>${icon('arrow', 'gi sm pointup')}</button>`}</div>`;
     }).join('');
     return `<div class="stabs">${tabs}</div><p class="dim">${t('ap')} ${s.ap}</p>${rows}`;
   }
