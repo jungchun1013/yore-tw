@@ -17,7 +17,7 @@ button, input, select { font: inherit; color: inherit; }
 button { background: #e3ddc9; border: 0; padding: 6px 14px; cursor: pointer; white-space: nowrap; }
 button:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent); }
 button:disabled { opacity: .45; cursor: default; }
-button.ghost { background: #e3ddc9; }
+button.ghost { background: #e3ddc9; } button.danger { background: var(--red); color: #fff; }
 button.big { font-size: var(--fs-xl); padding: 6px 26px; }
 button.link { background: none; border: 0; color: var(--ink); font-size: var(--fs-xl); }
 button.link:hover { color: var(--accent); background: none; }
@@ -87,7 +87,7 @@ small { font-size: var(--fs-xs); }
 .loot { margin-top: 14px; } .lootcols { display: flex; gap: 20px; } .lootcols .lcol { flex: 1; min-width: 0; } .loot .kv { min-height: 28px; } .loot .kv.sub { padding-left: .5em; } .loot .gold { color: var(--gold); } .loot .xp { color: var(--blue); }
 
 /* ---------- side panel ---------- */
-.nav { display: grid; grid-template-columns: repeat(9, 1fr); gap: 2px; }
+.nav { display: grid; grid-template-columns: repeat(8, 1fr); gap: 2px; }
 .ico { border: 0; background: none; padding: 0; display: grid; place-items: center; }
 .ico span { width: 32px; height: 32px; clip-path: var(--px1); background: #e3ddc9; color: #fff; display: grid; place-items: center; font-size: var(--fs-m); }
 .ico.on span { background: #83957b; }
@@ -289,6 +289,14 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 @media (max-width: 900px) { .mapboard { height: 420px; } }
 
 .rblead { margin: 4px 0 8px; color: var(--lbl); }
+.create .rbtext { width: 100%; max-width: 520px; }
+/* pixel dropdown: the button shows the choice, the menu hangs under it with the panel's corners */
+.dd { position: relative; display: inline-block; vertical-align: middle; }
+.ddbtn { background: #efece2; border: 0; height: 28px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; line-height: 1; }
+.ddbtn .ddarrow { margin: 0; width: 12px; height: 12px; transform: rotate(180deg); opacity: .75; }
+.ddmenu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 100%; background: var(--box); border: 2px solid var(--line); clip-path: var(--px2); display: flex; flex-direction: column; padding: 2px 0; }
+.ddopt { background: none; border: 0; text-align: left; padding: 0 12px; height: 28px; white-space: nowrap; }
+.ddopt:hover, .ddopt.on { background: var(--accent-soft); }
 .kv.left > span:last-child:not(.lbl) { margin-left: 0; }
 .sheet .line > div { transition: none; }
 .lat { padding-left: 0.17em; }
@@ -307,7 +315,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 :root { --px3: polygon(12px 0, 12px 4px, 8px 4px, 8px 8px, 4px 8px, 4px 12px, 0 12px, 0 calc(100% - 12px), 4px calc(100% - 12px), 4px calc(100% - 8px), 8px calc(100% - 8px), 8px calc(100% - 4px), 12px calc(100% - 4px), 12px 100%, calc(100% - 12px) 100%, calc(100% - 12px) calc(100% - 4px), calc(100% - 8px) calc(100% - 4px), calc(100% - 8px) calc(100% - 8px), calc(100% - 4px) calc(100% - 8px), calc(100% - 4px) calc(100% - 12px), 100% calc(100% - 12px), 100% 12px, calc(100% - 4px) 12px, calc(100% - 4px) 8px, calc(100% - 8px) 8px, calc(100% - 8px) 4px, calc(100% - 12px) 4px, calc(100% - 12px) 0); --px2: polygon(8px 0, 8px 4px, 4px 4px, 4px 8px, 0 8px, 0 calc(100% - 8px), 4px calc(100% - 8px), 4px calc(100% - 4px), 8px calc(100% - 4px), 8px 100%, calc(100% - 8px) 100%, calc(100% - 8px) calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) calc(100% - 8px), 100% calc(100% - 8px), 100% 8px, calc(100% - 4px) 8px, calc(100% - 4px) 4px, calc(100% - 8px) 4px, calc(100% - 8px) 0); --px1: polygon(2px 0, 2px 2px, 0 2px, 0 calc(100% - 2px), 2px calc(100% - 2px), 2px 100%, calc(100% - 2px) 100%, calc(100% - 2px) calc(100% - 2px), 100% calc(100% - 2px), 100% 2px, calc(100% - 2px) 2px, calc(100% - 2px) 0); }
 .box { clip-path: var(--px3); }
 .item, .view .skill, .pact, .mapboard, .tip, .cogmenu { clip-path: var(--px2); }
-button:not(.ico):not(.cog):not(.rrow):not(.fig):not(.node):not(.link):not(.up-btn), select, input { clip-path: var(--px2); }
+button:not(.ico):not(.cog):not(.rrow):not(.fig):not(.node):not(.link):not(.up-btn):not(.ddopt), select, input { clip-path: var(--px2); }
 .stab { clip-path: var(--px2); }
 .iname .wt { clip-path: var(--px1); }
 .stage, .scene { border-radius: var(--r-item); overflow: hidden; }

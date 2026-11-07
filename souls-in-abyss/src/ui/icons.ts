@@ -63,6 +63,8 @@ const patterns: Record<string, string> = {
   star: '...yy.../...yy.../yyyyyyyy/.yyyyyy./..yyyy../.yyyyyy./.yy..yy./........',
   heart: '.rr..rr./rrrrrrrr/rwrrrrrr/rrrrrrrr/.rrrrrr./..rrrr../...rr.../........',
   hazard: '...yy.../..yyyy../..ykky../.yykkyy./.yykkyy./yyyyyyyy/yyykk yyy/........',
+  'warn-soft': '...oo.../..owwo../..owwo../..owwo../...oo.../......../...oo.../...oo...',
+  'warn-hard': '...rr.../..rrrr../..rrrr../..rrrr../...rr.../......../...rr.../...rr...',
 };
 // The 8-cell silhouettes are refined into a 16×16 grid with single-pixel
 // edge lighting, contact shadows and bespoke facial/material accents.

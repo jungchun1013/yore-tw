@@ -30,7 +30,7 @@ test('title, create a hero, fight, and open every view', async ({ page }, info) 
   expect(s.counters.kills).toBeGreaterThan(20);
   await expect(page.locator('#log p').first()).toBeVisible();
 
-  for (const k of ['pets', 'skills', 'map', 'smith', 'titles', 'rebirth', 'settings', 'equip']) {
+  for (const k of ['pets', 'skills', 'map', 'smith', 'titles', 'settings', 'equip']) {
     await page.click(`.nav [data-k="${k}"]`);
     await expect(page.locator('#view')).not.toBeEmpty();
   }
@@ -69,14 +69,16 @@ test('rebirth with a pact keeps gear and adds legacy', async ({ page }, info) =>
     g.fastForward(300); g.s.age = 20;
     return g.s.equip.weapon.uid;
   });
-  await page.click('.nav [data-k="rebirth"]');
+  page.once('dialog', d => d.accept());
+  await page.click('.nav [data-k="settings"]');
+  await page.click('[data-a="rebirthOpen"]');
   await page.click('[data-a="rbRace"][data-k="giant"]');
   await page.click('[data-a="rbAge"][data-k="15"]');
   await expect(page.locator('.pact')).toHaveCount(4);
   await page.click('[data-a="rbPact"][data-k="1"]');
   await page.screenshot({ path: `${SHOTS}/${info.project.name}-rebirth.png` });
   const offer = await page.evaluate(() => (window as any).__game.s.offers[1]);
-  await page.click('[data-a="rebirth"]');
+  await page.click('#rb-go');
   const s = await page.evaluate(() => (window as any).__game.s);
   expect(s.pact).toEqual(offer);
   expect(s.offers).toBeNull();

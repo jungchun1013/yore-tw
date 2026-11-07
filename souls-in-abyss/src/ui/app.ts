@@ -19,10 +19,10 @@ import { curseOf, giftOf, type PactDef } from '../data/pacts';
 import { SAN_TIERS, sanTier, willResist } from '../data/sanity';
 import { SAN_MAX } from '../game/state';
 
-type View = 'equip' | 'bag' | 'pets' | 'skills' | 'map' | 'smith' | 'titles' | 'rebirth' | 'settings';
+type View = 'equip' | 'bag' | 'pets' | 'skills' | 'map' | 'smith' | 'titles' | 'settings';
 const NAV: [View, keyof typeof UI][] = [
   ['equip', 'navEquip'], ['bag', 'navBag'], ['pets', 'navPets'], ['skills', 'navSkills'], ['map', 'navMap'],
-  ['smith', 'navSmith'], ['titles', 'navTitles'], ['rebirth', 'navRebirth'], ['settings', 'navSettings'],
+  ['smith', 'navSmith'], ['titles', 'navTitles'], ['settings', 'navSettings'],
 ];
 const STAT: Record<string, L> = {
   str: { zh: '力量', en: 'STR' }, dex: { zh: '靈巧', en: 'DEX' }, int: { zh: '智力', en: 'INT' }, will: { zh: '意志', en: 'WILL' }, luk: { zh: '幸運', en: 'LUCK' },
@@ -55,6 +55,10 @@ export class App {
     this.rbRace = g.s.race;
     this.scene = new Scene(g);
     this.build();
+    this.root.addEventListener('click', e => this.onClick(e));
+    this.installTips();
+    this.root.addEventListener('change', e => this.onChange(e));
+    this.root.addEventListener('input', e => this.onChange(e));
     g.on(e => { if (e.t === 'log') this.addLog(e.parts, e.cls); });
   }
 
@@ -94,10 +98,6 @@ export class App {
       </div>`;
     this.root.querySelector('.stage')!.appendChild(this.scene.cv);
     this.logEl = this.root.querySelector('#log')!;
-    this.root.addEventListener('click', e => this.onClick(e));
-    this.installTips();
-    this.root.addEventListener('change', e => this.onChange(e));
-    this.root.addEventListener('input', e => this.onChange(e));
     this.setView(this.view);
   }
 
@@ -111,7 +111,10 @@ export class App {
   }
 
   private onClick(e: Event): void {
+    if (this.overlay) return; // the rebirth screen binds its own handlers
     const el = (e.target as HTMLElement).closest('[data-a]') as HTMLElement | null;
+    // a click anywhere else closes an open pixel dropdown
+    this.root.querySelectorAll<HTMLElement>('.ddmenu:not([hidden])').forEach(m => { if (!m.parentElement!.contains(e.target as Node)) m.hidden = true; });
     if (!el || (el as HTMLButtonElement).disabled) return;
     const a = el.dataset.a!, k = el.dataset.k || '', uid = Number(el.dataset.uid);
     const g = this.g;
@@ -130,10 +133,9 @@ export class App {
       case 'go': A.goArea(g, k); this.mapSel = null; break;
       case 'mapsel': this.mapSel = k; break;
       case 'pet': A.setPet(g, k || null); break;
-      case 'rbRace': this.rbRace = k; break;
-      case 'rbAge': this.rbAge = Number(k); break;
-      case 'rbPact': this.rbPact = Number(k); break;
-      case 'rebirth': A.rebirth(g, this.rbRace, this.rbAge, this.rbPact); this.rbPact = -1; break;
+      case 'ddToggle': { const m = el.parentElement!.querySelector<HTMLElement>('.ddmenu'); if (m) m.hidden = !m.hidden; return; }
+      case 'autoSell': g.s.autoSell = Number(k); break;
+      case 'rebirthOpen': if (confirm(t('rebirthConfirm'))) this.rebirthScreen(); return;
       case 'reset': if (confirm(t('resetConfirm'))) { clearSave(); (window as any).__noSave = true; location.reload(); } return;
     }
     this.lastHtml = {};
@@ -142,7 +144,6 @@ export class App {
 
   private onChange(e: Event): void {
     const el = e.target as HTMLInputElement | HTMLSelectElement;
-    if (el.dataset.a === 'autoSell') this.g.s.autoSell = Number(el.value);
     if (el.dataset.a === 'rbAge') { this.rbAge = Number(el.value); this.lastHtml = {}; this.render(); }
   }
 
@@ -169,6 +170,7 @@ export class App {
 
   /** Every frame: canvas and bars. */
   frame(dt: number): void {
+    if (this.overlay) return;
     this.scene.draw(dt);
     const g = this.g, m = g.mon;
     const dif = difficulty(m.cp, g.d.cp);
@@ -193,12 +195,12 @@ export class App {
 
   /** A few times a second: panels whose HTML changed get replaced. */
   render(): void {
+    if (this.overlay) return;
     this.put('sheet', this.sheetHtml());
     this.put('petbox', this.petBoxHtml());
     this.put('att', this.attHtml());
-    // an open dropdown (auto-sell) must not be replaced under the player's finger: hold the view until it blurs
-    const ae = document.activeElement;
-    const busy = !!ae && ae.tagName === 'SELECT' && document.getElementById('view')!.contains(ae);
+    // an open dropdown must not be replaced under the player's finger: hold the view until it closes
+    const busy = !!document.querySelector('#view .ddmenu:not([hidden])');
     if (!busy) this.put('view', this.viewHtml());
     if (this.view === 'map') this.text('loot-sec', clock(this.g.loot.sec));
     this.markLatin();
@@ -301,7 +303,6 @@ export class App {
       case 'map': return this.mapHtml();
       case 'smith': return this.smithHtml();
       case 'titles': return this.titlesHtml();
-      case 'rebirth': return this.rebirthHtml();
       case 'settings': return this.settingsHtml();
     }
   }
@@ -387,9 +388,9 @@ export class App {
         <button data-a="equip" data-uid="${it.uid}">${t('equip')}</button>
         <button class="ghost" data-a="sell" data-uid="${it.uid}">$${num(sellPrice(it))}</button></div></div>`;
     }).join('') || `<p class="dim">${t('empty')}</p>`;
-    const opts = RARITY.map((r, i) => `<option value="${i}" ${s.autoSell === i ? 'selected' : ''}>${i === 0 ? '-' : tr(r.name)}</option>`).join('');
+    const opts = RARITY.map((r, i) => [String(i), i === 0 ? '-' : tr(r.name)] as [string, string]);
     return `<div class="row between"><b>${t('bag')} ${s.bag.length}/${BAG_SIZE}</b>
-        <span class="row"><label class="dim">${t('autoSell')} <select data-a="autoSell">${opts}</select></label><button class="ghost" data-a="sellAll">${t('sellAll')}</button></span></div>
+        <span class="row"><span class="dim">${t('autoSell')} ${dropdown('autoSell', opts, String(s.autoSell))}</span><button class="ghost" data-a="sellAll">${t('sellAll')}</button></span></div>
       ${bag}`;
   }
 
@@ -491,13 +492,13 @@ export class App {
       if (it.plus >= SMITH_MAX) return `<div class="item" data-tip="item:${it.uid}"><div class="grow">${this.itemHtml(it)}</div><span class="dim">${t('maxed')}</span></div>`;
       const cost = smithCost(it.ilvl, it.plus), ch = A.smithChance(g, it);
       return `<div class="item" data-tip="item:${it.uid}"><div class="grow">${this.itemHtml(it)}</div><div class="acts">
-        <span class="dim">${pct(ch)}${it.plus >= SMITH_DROP_FROM ? icon('hazard', 'gi sm') : ''}</span>
+        <span class="dim">${it.plus >= SMITH_BREAK_FROM ? icon('warn-hard', 'gi sm') : it.plus >= SMITH_DROP_FROM ? icon('warn-soft', 'gi sm') : ''}${pct(ch)}</span>
         <button data-a="smith" data-uid="${it.uid}" ${s.gold < cost ? 'disabled' : ''}>$${num(cost)}</button></div></div>`;
     };
     const rule = (k: string, v: string) => `<div class="kv"><span class="lbl">${k}</span><span>${v}</span></div>`;
     const worn = SLOTS.map(k => s.equip[k]).filter(Boolean) as Item[];
     const empty = `<p class="dim">${t('empty')}</p>`;
-    return `<div class="rules">${rule('LV +1', t('smithGain'))}${rule(`LV 1–${SMITH_DROP_FROM}`, t('smithKeep'))}${rule(`LV ${SMITH_DROP_FROM}–${SMITH_BREAK_FROM - 1}`, t('smithDrop'))}${rule(`LV ${SMITH_BREAK_FROM}+`, t('smithBreak'))}</div>
+    return `<div class="rules">${rule('LV +1', t('smithGain'))}${rule(`LV 1–${SMITH_DROP_FROM}`, t('smithKeep'))}${rule(`LV ${SMITH_DROP_FROM}–${SMITH_BREAK_FROM - 1} ${icon('warn-soft', 'gi sm')}`, t('smithDrop'))}${rule(`LV ${SMITH_BREAK_FROM}+ ${icon('warn-hard', 'gi sm')}`, t('smithBreak'))}</div>
       <h4>${t('smithWorn')}</h4>${worn.map(row).join('') || empty}
       <h4>${t('bag')}</h4>${s.bag.map(row).join('') || empty}`;
   }
@@ -526,15 +527,27 @@ export class App {
     }).join('') + `<p class="dim">${t('kills')} ${num(s.counters.kills)} · ${t('deaths')} ${num(s.counters.deaths)} · ${t('rebirths')} ${s.counters.rebirths}</p>`;
   }
 
-  private rebirthHtml(): string {
-    const s = this.g.s, ok = s.age >= REBIRTH_AGE;
-    return `<p class="rblead">${t('rebirthLead')}</p>
-      <div class="kv left"><span class="lbl">${t('inherit')}</span><span>${t('inheritList')}</span></div>
-      <div class="kv left"><span class="lbl">${t('lose')}</span><span>${t('loseList')}</span></div>
-
-      ${raceAgePicker(this.rbRace, this.rbAge, 'rbRace', 'rbAge')}
-      ${ok ? this.offersHtml() : ''}
-      <p><button class="big" data-a="rebirth" ${ok ? '' : 'disabled'}>${ok ? t('rebirthDo') : t('rebirthNeed')}</button></p>`;
+  /** Rebirth takes over the page with the creation screen: race and age picker, the Abyss's offers, one button. */
+  private overlay = false;
+  private rebirthScreen(): void {
+    const g = this.g, root = this.root;
+    this.overlay = true; this.rbPact = -1; this.rbRace = g.s.race;
+    const back = () => { this.overlay = false; this.build(); this.lastHtml = {}; this.setView('equip'); };
+    const draw = () => {
+      root.innerHTML = `<div class="create">${banner(true)}
+        <div class="rbtext"><p class="rblead">${t('rebirthLead')}</p>
+        <div class="kv left"><span class="lbl">${t('inherit')}</span><span>${t('inheritList')}</span></div>
+        <div class="kv left"><span class="lbl">${t('lose')}</span><span>${t('loseList')}</span></div></div>
+        ${raceAgePicker(this.rbRace, this.rbAge, 'rbRace', 'rbAge')}
+        <div class="rbtext">${this.offersHtml()}</div>
+        <div class="cfoot"><button class="link play" id="rb-go">${t('rebirthDo')}</button><button class="link" id="rb-back">${t('back')}</button></div></div>`;
+      root.querySelectorAll<HTMLElement>('[data-a="rbRace"]').forEach(b => b.onclick = () => { this.rbRace = b.dataset.k!; draw(); });
+      root.querySelectorAll<HTMLElement>('[data-a="rbAge"]').forEach(b => b.onclick = () => { this.rbAge = Number(b.dataset.k); draw(); });
+      root.querySelectorAll<HTMLElement>('[data-a="rbPact"]').forEach(b => b.onclick = () => { this.rbPact = Number(b.dataset.k); draw(); });
+      root.querySelector<HTMLElement>('#rb-back')!.onclick = back;
+      root.querySelector<HTMLElement>('#rb-go')!.onclick = () => { back(); A.rebirth(g, this.rbRace, this.rbAge, this.rbPact); this.rbPact = -1; this.lastHtml = {}; this.render(); };
+    };
+    draw();
   }
 
   private pactLine(): string {
@@ -558,11 +571,20 @@ export class App {
   }
 
   private settingsHtml(): string {
+    const ok = this.g.s.age >= REBIRTH_AGE;
     return `<div class="row"><b>${t('language')}</b><button data-a="lang" data-k="zh" ${lang === 'zh' ? 'disabled' : ''}>中文</button><button data-a="lang" data-k="en" ${lang === 'en' ? 'disabled' : ''}>English</button></div>
+      <p><button class="danger" data-a="rebirthOpen" ${ok ? '' : 'disabled'}>${t('navRebirth')}</button>${ok ? '' : ` <span class="dim">${t('rebirthNeed')}</span>`}</p>
       <p><button class="ghost" data-a="reset">${t('reset')}</button></p>
       <p class="dim">${t('credits')}</p><p class="dim">Original pixel artwork · Souls in Abyss</p>`;
   }
 }
+
+/** A pixel-styled dropdown: a button showing the choice, a menu of options; picking one fires `action` with data-k. */
+const dropdown = (action: string, items: [string, string][], value: string) => {
+  const cur = items.find(([v]) => v === value)?.[1] ?? items[0][1];
+  return `<span class="dd"><button type="button" class="ddbtn" data-a="ddToggle">${cur}${icon('arrow', 'gi sm ddarrow')}</button>
+    <div class="ddmenu" hidden>${items.map(([v, l]) => `<button type="button" class="ddopt ${v === value ? 'on' : ''}" data-a="${action}" data-k="${v}">${l}</button>`).join('')}</div></span>`;
+};
 
 /** Age preview uses the same pixel character as the equipment and battle views. */
 const figure = (h: number) => `<svg class="pict" viewBox="0 0 16 16" style="height:${h}px;width:${h}px" shape-rendering="crispEdges" aria-hidden="true">${pixelMarkup('human')}</svg>`;
