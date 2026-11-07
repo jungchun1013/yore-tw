@@ -4,8 +4,8 @@
  * So font sizes are tokens (--fs-*) snapped to the nearest multiple of 12 device pixels,
  * recomputed when the screen density or width changes (zoom, rotation, moving windows).
  */
-const DESKTOP = { xs: 13, m: 17, l: 21, xl: 25, xxl: 30, num: 22, title: 84, 'title-s': 52 };
-const PHONE = { xs: 12, m: 15, l: 18, xl: 22, xxl: 26, num: 18, title: 46, 'title-s': 34 };
+const DESKTOP = { xs: 13, m: 16, l: 21, xl: 25, xxl: 30, num: 22, title: 84, 'title-s': 52 };
+const PHONE = { xs: 13, m: 16, l: 18, xl: 22, xxl: 26, num: 18, title: 46, 'title-s': 34 };
 
 export function snapFonts(): void {
   const dpr = window.devicePixelRatio || 1;

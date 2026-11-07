@@ -7,7 +7,7 @@
 }
 :root {
   --bg: #eeece3; --box: #f9f7f0; --line: #d7d7cb; --ink: #343842; --lbl: #343842; --dim: #667681;
-  --gold: #c1a775; --num: 22px; --r-box: 12px; --r-item: 8px; --fs-xs: 13px; --fs-m: 17px; --fs-l: 21px; --fs-xl: 25px; --fs-xxl: 30px; --fs-title: 84px; --fs-title-s: 52px; --slot: 34px; --accent: #625575; --accent-soft: #e8e3ea; --glow1: #625575; --glow2: #9586a4; --glow3: #c4bacd; --glow4: #e8e3ea; --orange: #b47f76; --red: #9c4f47; --blue: #5f7d87; --up: #53695e; --down: #9c4f47; --warn: #a88a55;
+  --gold: #c1a775; --num: 22px; --r-box: 12px; --r-item: 8px; --fs-xs: 13px; --fs-m: 16px; --fs-l: 21px; --fs-xl: 25px; --fs-xxl: 30px; --fs-title: 84px; --fs-title-s: 52px; --slot: 34px; --accent: #625575; --accent-soft: #e8e3ea; --glow1: #625575; --glow2: #9586a4; --glow3: #c4bacd; --glow4: #e8e3ea; --orange: #b47f76; --red: #9c4f47; --blue: #5f7d87; --up: #53695e; --down: #9c4f47; --warn: #a88a55;
   color-scheme: light;
 }
 * { box-sizing: border-box; }
@@ -25,6 +25,8 @@ select, input { background: #efece2; border: 0; padding: 4px 8px; outline: none;
 input:focus, select:focus { background: var(--accent-soft); }
 .dim { color: var(--dim); } .up { color: var(--up); } .down { color: var(--down); } .warn { color: var(--warn); }
 .small { font-size: var(--fs-xs); }
+/* small text (13px target) sits on a 20px line */
+.small, small, .istat, .lore, .pactline, .santier, .tip { line-height: 20px; }
 h3 { margin: 0 0 6px; font-weight: normal; font-size: var(--fs-xl); color: var(--lbl); }
 small { font-size: var(--fs-xs); }
 
@@ -287,7 +289,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 
 /* ---------- tooltip (skills) ---------- */
 .tip { position: fixed; z-index: 20; width: 270px; padding: 14px 18px; background: #f9f7f0; color: var(--ink);
-  border: 2px solid #cfccbf; pointer-events: none; font-size: var(--fs-xs); line-height: 1.6; }
+  border: 2px solid #cfccbf; pointer-events: none; font-size: var(--fs-xs); }
 .tip[hidden] { display: none; }
 .tip .tname { font-size: var(--fs-m); color: var(--lbl); margin-bottom: 4px; }
 .tip .tnext { margin-top: 8px; color: var(--accent); }
