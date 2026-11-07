@@ -15,7 +15,6 @@ import { REBIRTH_AGE, YEAR_SEC, clearSave } from '../game/state';
 import { Scene } from './scene';
 import * as A from '../game/actions';
 import { icon, pixelMarkup } from './icons';
-import { avatarMarkup } from './avatar';
 import { curseOf, giftOf, type PactDef } from '../data/pacts';
 import { SAN_TIERS, sanTier, willResist } from '../data/sanity';
 import { SAN_MAX } from '../game/state';
@@ -332,15 +331,17 @@ export class App {
    * The equipment board, 280x240, laid out like an inventory screen: four armour cells down the
    * far left (裝備), ring and necklace top-aligned on the far right (加護), the figure in the middle
    * with a hand cell on each side (level with the gap between the second and third armour cells,
-   * never over the figure), and the pal at its master's side. Cells are frameless; selection is a fill change.
+   * never over the figure): the main hand is the figure's right hand, so it sits on the viewer's left.
+   * The pal stands at its master's side. Cells are frameless; selection is a fill change.
+   * The figure is the plain 8×8 race sprite, like the pals and icons, until the 16×16 art lands.
    */
   private dollSvg(): string {
     const s = this.g.s;
     const CELL = 36;
     const cells: [Slot, number, number][] = [
-      // 8px between the figure's arms (x 104..176) and the hand cells, and 8px again to the columns
+      // 8px between the figure (x 104..176) and the hand cells, and 8px again to the columns
       ['head', 34, 44], ['body', 34, 90], ['legs', 34, 136], ['feet', 34, 182],
-      ['ring', 246, 44], ['neck', 246, 90], ['off', 78, 113], ['weapon', 202, 113],
+      ['ring', 246, 44], ['neck', 246, 90], ['weapon', 78, 113], ['off', 202, 113],
     ];
     const ico = (name: string, x: number, y: number, sz: number) => `<svg x="${x - sz / 2}" y="${y - sz / 2}" width="${sz}" height="${sz}" viewBox="0 0 16 16" shape-rendering="crispEdges">${pixelMarkup(name)}</svg>`;
     const cellSvg = cells.map(([k, x, y]) => {
@@ -353,12 +354,10 @@ export class App {
     // the pal is not a cell: it stands at its master's feet
     const pet = s.pets.find(p => p.key === s.activePet);
     const petSvg = pet ? `<g class="petspr" data-a="petTap"><title>${tr(petOf(pet.key)!.stages[stageOf(pet.lvl)].name)}</title>${ico('pet-' + pet.key, 202, 168, 40)}</g>` : '';
-    // the hand cells show what is held, so the figure itself goes bare-handed here
-    const outfit = { ...s.equip, weapon: undefined, off: undefined };
     return `<svg class="doll" viewBox="0 0 280 240">
       <text class="cap" x="34" y="16">${t('navEquip')}</text><text class="cap" x="246" y="16">${t('charms')}</text>
-      <text class="cap" x="78" y="89">${t('capSupport')}</text><text class="cap" x="202" y="89">${t('capAttack')}</text>
-      <svg x="92" y="40" width="96" height="144" viewBox="0 0 32 48" shape-rendering="crispEdges" data-avatar="${s.race}">${avatarMarkup(s.race, outfit)}</svg>
+      <text class="cap" x="78" y="89">${t('capAttack')}</text><text class="cap" x="202" y="89">${t('capSupport')}</text>
+      <svg x="104" y="76" width="72" height="72" viewBox="0 0 16 16" shape-rendering="crispEdges" data-avatar="${s.race}">${pixelMarkup(s.race)}</svg>
       ${cellSvg}${petSvg}</svg>`;
   }
 
@@ -560,7 +559,7 @@ export class App {
 }
 
 /** Age preview uses the same pixel character as the equipment and battle views. */
-const figure = (h: number) => `<svg class="pict" viewBox="0 0 32 48" style="height:${h}px;width:${h / 2}px" shape-rendering="crispEdges" aria-hidden="true">${avatarMarkup('human')}</svg>`;
+const figure = (h: number) => `<svg class="pict" viewBox="0 0 16 16" style="height:${h}px;width:${h}px" shape-rendering="crispEdges" aria-hidden="true">${pixelMarkup('human')}</svg>`;
 
 /** Race icons (left), age figures (right), and a stat table below. Shared by creation and rebirth. */
 export function raceAgePicker(race: string, age: number, raceAction: string, ageAction: string): string {

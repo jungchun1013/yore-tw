@@ -1,6 +1,5 @@
 import type { Game, GameEvent } from '../game/engine';
 import { areaOf } from '../data/areas';
-import { avatarPixels } from './avatar';
 import { pixels } from './icons';
 import { stageOf } from '../data/pets';
 import { sprite } from './sprites';
@@ -87,9 +86,9 @@ export class Scene {
     c.globalAlpha = 1;
     const hs = sprite('hero.' + s.race);
     c.globalAlpha = down ? Math.max(0, 1 - motion.deathAge / .65) : Math.min(1, motion.reviveAge / .65);
-    if (hs) c.drawImage(hs, hx - 16, hy - 48 + bob, 32, 48);
-    else for (const p of avatarPixels(s.race, s.equip, stride)) {
-      c.fillStyle = p.color; c.fillRect(Math.round(hx - 16 + p.x), Math.round(hy - 48 + bob) + p.y, 1, 1);
+    if (hs) c.drawImage(hs, hx - 16, hy - 32 + bob, 32, 32);
+    else for (const p of pixels(s.race)) { // the plain 8×8 race sprite at 2x, same family as the pal
+      c.fillStyle = p.color; c.fillRect(Math.round(hx - 16 + p.x * 2), Math.round(hy - 32 + bob) + p.y * 2, 2, 2);
     }
     c.globalAlpha = 1;
 

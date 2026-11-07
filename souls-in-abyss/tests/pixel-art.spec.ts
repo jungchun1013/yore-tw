@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('pixel icons and shared avatar respond to equipping and removing armor', async ({ page }) => {
+test('pixel icons and the equipment board respond to equipping and removing armor', async ({ page }) => {
   await page.addInitScript(() => { localStorage.clear(); localStorage.setItem('yore.lang', 'zh'); });
   await page.goto('/');
   await page.click('#t-play');
@@ -8,6 +8,8 @@ test('pixel icons and shared avatar respond to equipping and removing armor', as
   await page.click('#c-go');
   const avatar = page.locator('[data-avatar]');
   const before = await avatar.innerHTML();
+  const head = page.locator('.doll [data-k="head"]');
+  await expect(head).not.toHaveClass(/full/);
   await page.evaluate(() => {
     const g = (window as any).__game;
     g.s.bag.push({ uid: 999999, kind: 'head', weight: 'heavy', ilvl: 10, rarity: 5, plus: 3, affixes: [], name: 0 });
@@ -16,11 +18,11 @@ test('pixel icons and shared avatar respond to equipping and removing armor', as
   await page.click('.nav [data-k="bag"]');
   await page.click('[data-a="equip"][data-uid="999999"]');
   await page.click('.nav [data-k="equip"]');
-  await expect.poll(() => avatar.innerHTML()).not.toBe(before);
-  const worn = await avatar.innerHTML();
+  await expect(head).toHaveClass(/full/);
   await page.screenshot({ path: `/tmp/souls-pixel-${test.info().project.name}.png` });
   await page.click('[data-a="unequip"][data-k="head"]');
-  await expect.poll(() => avatar.innerHTML()).not.toBe(worn);
+  await expect(head).not.toHaveClass(/full/);
+  // the figure itself is the plain race sprite for now; it does not change with the outfit
   await expect(avatar).toHaveJSProperty('innerHTML', before);
   await page.evaluate(() => {
     const g = (window as any).__game;
