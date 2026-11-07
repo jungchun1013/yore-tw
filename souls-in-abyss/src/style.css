@@ -265,3 +265,4 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 @media (max-width: 900px) { .mapboard { height: 420px; } }
 
 .rblead { margin: 4px 0 8px; color: var(--lbl); }
+.kv.left > span:last-child:not(.lbl) { margin-left: 0; }

@@ -76,8 +76,8 @@
         <div class="istat">${d(l.ability)} · <span class="hearts">${V1(a.bond)}</span></div>
         <p class="lore">${d(l.lore)}</p></div>
         ${c?`<span class="dim">${o("active")}</span>`:`<button data-a="pet" data-k="${a.key}">${o("call")}</button>`}</div>`}).join(""),n=K.filter(a=>!a.hidden&&!e.pets.some(l=>l.key===a.key)).map(a=>`<div class="item faded"><div class="dot q">${b("unknown")}</div><div class="grow"><div class="iname">${o("unknownPet")}</div><div class="istat">${o("petHint")}${o("sep")}${d(C.find(l=>l.key===a.home).name)}</div></div></div>`).join("");return s+n}titlesHtml(){const e=this.g.s;return x1.map(s=>{const n=e.titles.includes(s.key);return s.secret&&!n?`<div class="item faded"><div class="grow"><div class="iname">${b("unknown","gi sm")}${o("unknownPet")}</div></div></div>`:`<div class="item ${n?"here":"faded"}"><div class="grow"><div class="iname">${b("star",n?"gi sm star on":"gi sm star")}${d(s.name)}</div><div class="istat">${d(s.how)} · ${s.mods.map(d1).join(" · ")}</div></div></div>`}).join("")+`<p class="dim">${o("kills")} ${$(e.counters.kills)} · ${o("deaths")} ${$(e.counters.deaths)} · ${o("rebirths")} ${e.counters.rebirths}</p>`}rebirthHtml(){const e=this.g.s,s=e.age>=T1,n=R.map(a=>`${d(a1[a])} +${Math.floor(e.grown[a]*h2)}`).join(" · ");return`<p class="rblead">${o("rebirthLead")}</p>
-      <div class="kv"><span class="lbl">${o("inherit")}</span><span>${o("inheritList")}</span></div>
-      <div class="kv"><span class="lbl">${o("lose")}</span><span>${o("loseList")}</span></div>
+      <div class="kv left"><span class="lbl">${o("inherit")}</span><span>${o("inheritList")}</span></div>
+      <div class="kv left"><span class="lbl">${o("lose")}</span><span>${o("loseList")}</span></div>
       <p class="dim small">${o("legacyLine")}${o("sep")}${n}</p>
       ${g2(this.rbRace,this.rbAge,"rbRace","rbAge")}
       ${s?this.offersHtml():""}

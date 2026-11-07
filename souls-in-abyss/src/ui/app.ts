@@ -408,8 +408,8 @@ export class App {
     const s = this.g.s, ok = s.age >= REBIRTH_AGE;
     const gain = PRIMARY.map(k => `${tr(STAT[k])} +${Math.floor(s.grown[k] * LEGACY_RATE)}`).join(' · ');
     return `<p class="rblead">${t('rebirthLead')}</p>
-      <div class="kv"><span class="lbl">${t('inherit')}</span><span>${t('inheritList')}</span></div>
-      <div class="kv"><span class="lbl">${t('lose')}</span><span>${t('loseList')}</span></div>
+      <div class="kv left"><span class="lbl">${t('inherit')}</span><span>${t('inheritList')}</span></div>
+      <div class="kv left"><span class="lbl">${t('lose')}</span><span>${t('loseList')}</span></div>
       <p class="dim small">${t('legacyLine')}${t('sep')}${gain}</p>
       ${raceAgePicker(this.rbRace, this.rbAge, 'rbRace', 'rbAge')}
       ${ok ? this.offersHtml() : ''}
