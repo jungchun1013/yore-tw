@@ -44,6 +44,7 @@ export const UI = {
   spd: { zh: '攻速', en: 'SPD' },
   monster: { zh: '怪物', en: 'MONSTER' },
   pet: { zh: '夥伴', en: 'Pet' },
+  petRest: { zh: '休息中', en: 'resting' },
   bond: { zh: '羈絆', en: 'Bond' },
   att: { zh: '技能發動', en: 'ATT.' },
   loot: { zh: '戰利品', en: 'Loot' },

@@ -177,6 +177,7 @@ export class App {
     this.text('m-cp', num(m.cp)); this.text('s-cp', num(g.d.cp));
     this.width('m-hp', m.hp / m.maxHp);
     this.width('s-hp', g.hp / g.d.hp); this.width('s-mp', g.mp / g.d.mp);
+    if (g.petMaxHp > 0) { this.width('p-hp', g.petHp / g.petMaxHp); this.width('p-mp', g.petMp / g.petMaxMp); }
     this.syncSheetBars();
   }
   /** EXP and SAN live in the sheet, which is rebuilt when its text changes; fill them right away so they never flash empty. */
@@ -261,9 +262,12 @@ export class App {
     const s = this.g.s, p = s.pets.find(x => x.key === s.activePet);
     if (!p) return `<div class="kv"><span class="lbl">${t('pet')}</span></div><div class="kv"><span class="lbl">${t('lv')}</span></div><div class="kv"><span class="lbl">${t('exp')}</span><div class="line"></div></div>`;
     const d = petOf(p.key)!, st = stageOf(p.lvl);
-    // text only: the pal itself stands on the equipment board, where it can be tapped
-    return `<div class="kv"><span class="lbl">${t('pet')}</span><span class="petname">${tr(d.stages[st].name)}</span></div>
+    // text only: the pal itself stands on the equipment board, where it can be tapped. HP and MP share one row.
+    const bar = (id: string, cls: string, lbl: string) => `<div class="kv bar"><span class="lbl">${lbl}</span><div class="line"><div id="${id}" class="${cls}"></div></div></div>`;
+    const rest = this.g.petDownFor > 0 ? ` <small class="dim">${t('petRest')}</small>` : '';
+    return `<div class="kv"><span class="lbl">${t('pet')}</span><span class="petname">${tr(d.stages[st].name)}${rest}</span></div>
       <div class="kv"><span class="lbl">${t('lv')}</span><span>${p.lvl}</span></div>
+      <div class="petbars">${bar('p-hp', 'red', t('hp'))}${bar('p-mp', 'blue', t('mp'))}</div>
       <div class="kv"><span class="lbl">${t('exp')}</span><div class="line"><div class="grey" style="width:${(p.xp / petXpNeed(p.lvl) * 100).toFixed(0)}%"></div></div></div>
       <div class="kv"><span class="lbl">${t('bond')}</span><span class="hearts">${hearts(p.bond)}</span></div>`;
   }

@@ -261,6 +261,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 /* ---------- battle panel: your bars left, the monster's right ---------- */
 .fight { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
 .fight .kv.bar .lbl { min-width: 40px; }
+.petbars { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; } .petbars .kv.bar .lbl { min-width: 40px; }
 .fight .kv .v { margin-left: 8px; min-width: 64px; text-align: right; font-size: var(--fs-xs); color: var(--dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .fight .side-mon .kv .v { min-width: 0; }
 .fight .kv.cp .v, .fight .side-mon .kv.cp .v { margin-left: auto; font-size: var(--fs-m); color: var(--accent); }

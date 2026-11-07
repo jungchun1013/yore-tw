@@ -38,7 +38,7 @@ export class Scene {
     if (e.t === 'hit') {
       if (e.from === 'mon') {
         this.monLunge = 1;
-        this.float(78, 52, e.blocked && !e.dmg ? 'BLOCK' : num(e.dmg), e.blocked ? '#9fb3c8' : '#ff6b6b');
+        this.float(e.target === 'pet' ? 46 : 78, 52, e.blocked && !e.dmg ? 'BLOCK' : num(e.dmg), e.blocked ? '#9fb3c8' : '#ff6b6b');
       } else {
         if (e.from === 'hero') this.heroLunge = 1; else this.petLunge = 1;
         this.monFlash = 1;
@@ -97,6 +97,7 @@ export class Scene {
     if (ps) {
       const st = stageOf(ps.lvl);
       const px = 40 + (reduced ? 0 : this.petLunge * 20 + stride), py = 88;
+      c.globalAlpha = g.petDownFor > 0 ? .3 : 1; // a resting pal fades
       const img = sprite(`pet.${ps.key}.${st}`);
       if (img) c.drawImage(img, px - 12, py - 24, 24, 24);
       else for (const p of pixels('pet-' + ps.key)) {
@@ -104,6 +105,7 @@ export class Scene {
         const scale = st === 2 ? 2 : 1;
         c.fillRect(Math.round(px - 8 * scale + p.x * scale), Math.round(py - 16 * scale - (reduced ? 0 : Math.round(Math.abs(Math.sin(this.t * 5)) * 3)) + p.y * scale), Math.ceil(scale), Math.ceil(scale));
       }
+      c.globalAlpha = 1;
     }
 
     // monster

@@ -19,13 +19,15 @@ import { SAN_MAX } from './state';
 export type Part = string | { text: string; cls?: string; color?: string };
 export type GameEvent =
   | { t: 'log'; parts: Part[]; cls?: string }
-  | { t: 'hit'; from: 'hero' | 'mon' | 'pet'; dmg: number; crit?: boolean; skill?: string; blocked?: boolean }
+  | { t: 'hit'; from: 'hero' | 'mon' | 'pet'; dmg: number; crit?: boolean; skill?: string; blocked?: boolean; target?: 'pet' }
   | { t: 'spawn' } | { t: 'kill' } | { t: 'death' } | { t: 'level' } | { t: 'heal'; amt: number };
 
 /** Running tally shown as "Loot in current map"; resets when you move. */
 export interface MapLoot { sec: number; kills: number; deaths: number; gold: number; xp: number; items: number[] }
 
 const KILL_PAUSE = 0.6, RESPAWN = 5, PET_INTERVAL = 2.2;
+/** Pals: a quarter of the monster's blows land on the pal; a downed pal rests this long; its big hit costs this share of its MP. */
+const PET_TARGET = 0.25, PET_REST = 20, PET_SKILL_COST = 0.3;
 const ATTACKS = SKILLS.filter(s => s.act?.on === 'attack');
 const DEFENDS = SKILLS.filter(s => s.act?.on === 'defend');
 
@@ -33,12 +35,14 @@ export class Game {
   s: Save;
   d!: Derived;
   hp = 0; mp = 0;
+  petHp = 0; petMp = 0;
   mon!: Monster;
   monColor = '#555';
   loot: MapLoot = { sec: 0, kills: 0, deaths: 0, gold: 0, xp: 0, items: RARITY.map(() => 0) };
   quiet = false;
   private heroT = 0; private monT = 0; private petT = 0;
   private pause = 0; private down = 0;
+  private petDown = 0; private petKey: string | null = null;
   private listeners: ((e: GameEvent) => void)[] = [];
 
   constructor(s: Save) {
@@ -88,6 +92,14 @@ export class Game {
   resetLoot(): void { this.loot = { sec: 0, kills: 0, deaths: 0, gold: 0, xp: 0, items: RARITY.map(() => 0) }; }
 
   get downFor(): number { return this.down; }
+  get petDownFor(): number { return this.petDown; }
+  /** The pal's own pools: a share of yours, growing with its stage and bond. */
+  get petMaxHp(): number { const st = this.s.pets.find(p => p.key === this.s.activePet); return st ? this.d.hp * [0.45, 0.6, 0.8][stageOf(st.lvl)] * (1 + st.bond * 0.02) : 0; }
+  get petMaxMp(): number { return this.s.activePet ? this.d.mp * 0.6 : 0; }
+  private petPart(): Part {
+    const st = this.s.pets.find(p => p.key === this.s.activePet)!;
+    return { text: tr(petOf(st.key)!.stages[stageOf(st.lvl)].name), cls: 'pet' };
+  }
 
   tick(dt: number): void {
     const s = this.s;
@@ -95,10 +107,18 @@ export class Game {
     this.ageTick(dt);
     this.petBondTick(dt);
     this.mp = Math.min(this.d.mp, this.mp + this.d.mp * 0.01 * dt);
+    if (s.activePet !== this.petKey) { this.petKey = s.activePet; this.petHp = this.petMaxHp; this.petMp = this.petMaxMp; this.petDown = 0; }
+    if (s.activePet) {
+      this.petMp = Math.min(this.petMaxMp, this.petMp + this.petMaxMp * 0.01 * dt);
+      if (this.petDown > 0) {
+        this.petDown -= dt;
+        if (this.petDown <= 0) { this.petHp = this.petMaxHp; this.say({ zh: '{0} 回到你身邊', en: '{0} returns to your side' }, [this.petPart()], 'pet'); }
+      }
+    }
     if (areaOf(s.area).dread === 0 && s.san < SAN_MAX) this.setSan(s.san + SAN_REGEN * dt);
     if (this.down > 0) {
       this.down -= dt;
-      if (this.down <= 0) { this.hp = this.d.hp; this.mp = this.d.mp; this.newMonster(); }
+      if (this.down <= 0) { this.hp = this.d.hp; this.mp = this.d.mp; this.petHp = this.petMaxHp; this.petDown = 0; this.newMonster(); }
       return;
     }
     if (this.pause > 0) { this.pause -= dt; if (this.pause <= 0) this.newMonster(); return; }
@@ -107,7 +127,7 @@ export class Game {
     while (this.heroT >= this.d.interval && this.mon.hp > 0) { this.heroT -= this.d.interval; this.heroAttack(); }
     if (this.mon.hp <= 0) return;
 
-    if (s.activePet) {
+    if (s.activePet && this.petDown <= 0) {
       this.petT += dt;
       while (this.petT >= PET_INTERVAL && this.mon.hp > 0) { this.petT -= PET_INTERVAL; this.petAttack(); }
       if (this.mon.hp <= 0) return;
@@ -155,12 +175,17 @@ export class Game {
     if (!st) return;
     const d = petOf(st.key)!, stage = stageOf(st.lvl);
     const avg = this.d.atkMin + (this.d.atkMax - this.d.atkMin) * this.d.bal;
-    const dmg = this.vsArmor(avg * (0.12 + st.lvl * 0.006) * [1, 1.5, 2.2][stage] * this.d.petPower * range(0.9, 1.1));
+    let dmg = this.vsArmor(avg * (0.12 + st.lvl * 0.006) * [1, 1.5, 2.2][stage] * this.d.petPower * range(0.9, 1.1));
     if (this.d.petHeal > 0 && this.hp < this.d.hp) {
       const amt = Math.min(this.d.hp - this.hp, this.d.hp * this.d.petHeal);
       this.hp += amt; this.emit({ t: 'heal', amt });
     }
-    this.say({ zh: '{0} 對 {1} 造成 {2} 傷害', en: '{0} causes {2} damage to {1}' }, [{ text: tr(d.stages[stage].name), cls: 'pet' }, this.monPart(), this.n(dmg)]);
+    // with enough MP the pal puts everything into one blow
+    const cost = this.petMaxMp * PET_SKILL_COST, allOut = cost > 0 && this.petMp >= cost;
+    if (allOut) { this.petMp -= cost; dmg *= 2; }
+    const name: Part = { text: tr(d.stages[stage].name), cls: 'pet' };
+    if (allOut) this.say({ zh: '{0} 使出全力一擊，對 {1} 造成 {2} 傷害', en: '{0} goes all out, {2} damage to {1}' }, [name, this.monPart(), this.n(dmg)]);
+    else this.say({ zh: '{0} 對 {1} 造成 {2} 傷害', en: '{0} causes {2} damage to {1}' }, [name, this.monPart(), this.n(dmg)]);
     this.damageMon(dmg, 'pet', false);
   }
 
@@ -170,7 +195,21 @@ export class Game {
     if (this.mon.hp <= 0) this.onKill();
   }
 
+  /** The monster turns on the pal: it shares your defences but not your guard, and rests when it falls. */
+  private hitPet(): void {
+    const raw = this.mon.atk * range(0.85, 1.15);
+    const dmg = Math.max(1, raw - this.d.def) * (1 - this.d.prt) * this.d.dmgTaken;
+    this.petHp -= dmg;
+    this.emit({ t: 'hit', from: 'mon', dmg, target: 'pet' });
+    this.say({ zh: '{0} 對 {1} 造成 {2} 傷害', en: '{0} causes {2} damage to {1}' }, [this.monPart(), this.petPart(), this.n(dmg)]);
+    if (this.petHp <= 0) {
+      this.petHp = 0; this.petDown = PET_REST;
+      this.say({ zh: '{0} 倒下了，先休息一下', en: '{0} is down and needs a rest' }, [this.petPart()], 'bad');
+    }
+  }
+
   private monAttack(): void {
+    if (this.s.activePet && this.petDown <= 0 && chance(PET_TARGET)) { this.hitPet(); return; }
     let mult = 1;
     for (const sk of DEFENDS) {
       const r = this.rank(sk), a = sk.act!;
