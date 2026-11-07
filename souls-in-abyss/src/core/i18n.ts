@@ -22,7 +22,7 @@ export const tr = (x: L): string => x[lang];
 /** UI strings. Content strings live next to their data. */
 export const UI = {
   title: { zh: '輪迴無止盡', en: 'SOULS IN ABYSS' },
-  subtitle: { zh: 'SOULS IN ABYSS', en: '輪迴無止盡' },
+  subtitle: { zh: 'SOULS IN ABYSS', en: '' },
   tagline: { zh: '所有靈魂最後都會落入深淵<br>而你，總是會回來', en: 'Every soul falls into the Abyss in the end.<br>And you, you always come back.' },
   play: { zh: '開始遊戲', en: 'Play Game' },
   name: { zh: '名字', en: 'NAME' },
@@ -31,7 +31,7 @@ export const UI = {
   lv: { zh: '等級', en: 'LV' },
   hp: { zh: 'HP', en: 'HP' },
   mp: { zh: 'MP', en: 'MP' },
-  exp: { zh: '經驗', en: 'EXP' },
+  exp: { zh: 'EXP', en: 'EXP' },
   gold: { zh: '金幣', en: 'GOLD' },
   ap: { zh: 'AP', en: 'AP' },
   cp: { zh: '戰力', en: 'CP' },
@@ -100,6 +100,8 @@ export const UI = {
   noPact: { zh: '這一世沒有契約', en: 'No pact this life' },
   safe: { zh: '安全：SAN 會恢復', en: 'Safe: SAN recovers' },
   dread: { zh: 'SAN 每擊倒', en: 'SAN per kill' },
+  sep: { zh: '：', en: ': ' },
+  unknown: { zh: '？', en: '?' },
   credits: { zh: '字型：俐方體11號 Cubic 11（OFL）', en: 'Font: Cubic 11 (OFL)' },
 } satisfies Record<string, L>;
 

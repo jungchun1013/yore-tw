@@ -14,21 +14,21 @@ import { TITLES } from '../data/titles';
 import { LEGACY_RATE, REBIRTH_AGE, YEAR_SEC, clearSave } from '../game/state';
 import { Scene } from './scene';
 import * as A from '../game/actions';
-import { icon } from './icons';
+import { icon, ICONS } from './icons';
 import { curseOf, giftOf, type PactDef } from '../data/pacts';
 import { SAN_TIERS, sanTier, willResist } from '../data/sanity';
 import { SAN_MAX } from '../game/state';
 
 type View = 'equip' | 'pets' | 'skills' | 'map' | 'smith' | 'titles' | 'rebirth' | 'settings';
-const NAV: [View, keyof typeof UI, string][] = [
-  ['equip', 'navEquip', '甲'], ['pets', 'navPets', '伴'], ['skills', 'navSkills', '技'], ['map', 'navMap', '圖'],
-  ['smith', 'navSmith', '鍛'], ['titles', 'navTitles', '冠'], ['rebirth', 'navRebirth', '輪'], ['settings', 'navSettings', '設'],
+const NAV: [View, keyof typeof UI][] = [
+  ['equip', 'navEquip'], ['pets', 'navPets'], ['skills', 'navSkills'], ['map', 'navMap'],
+  ['smith', 'navSmith'], ['titles', 'navTitles'], ['rebirth', 'navRebirth'], ['settings', 'navSettings'],
 ];
 const STAT: Record<string, L> = {
   str: { zh: '力量', en: 'STR' }, dex: { zh: '靈巧', en: 'DEX' }, int: { zh: '智力', en: 'INT' }, will: { zh: '意志', en: 'WILL' }, luk: { zh: '幸運', en: 'LUCK' },
   hp: { zh: 'HP', en: 'HP' }, mp: { zh: 'MP', en: 'MP' }, atk: { zh: '攻擊', en: 'ATK' }, atkMin: { zh: '最小攻擊', en: 'Min ATK' }, atkMax: { zh: '最大攻擊', en: 'Max ATK' },
   bal: { zh: '平衡', en: 'BAL' }, crit: { zh: '爆擊', en: 'CRT' }, def: { zh: '防禦', en: 'DEF' }, prt: { zh: '保護', en: 'PRT' },
-  speed: { zh: '攻速', en: 'Speed' }, magic: { zh: '魔力', en: 'Magic' }, xp: { zh: '經驗', en: 'EXP' }, gold: { zh: '金幣', en: 'Gold' }, drop: { zh: '掉寶', en: 'Drops' },
+  speed: { zh: '攻速', en: 'Speed' }, magic: { zh: '魔力', en: 'Magic' }, xp: { zh: 'EXP', en: 'EXP' }, gold: { zh: '金幣', en: 'Gold' }, drop: { zh: '掉寶', en: 'Drops' },
   petPower: { zh: '夥伴傷害', en: 'Pal damage' }, sanDrain: { zh: 'SAN 流失', en: 'SAN loss' }, dmgTaken: { zh: '受到傷害', en: 'Damage taken' }, guard: { zh: '減傷', en: 'Guard' }, petHeal: { zh: '夥伴治療', en: 'Pal heal' }, heal: { zh: '擊倒回復', en: 'Kill heal' },
 };
 const SLOT_NAME: Record<Slot, L> = {
@@ -36,6 +36,7 @@ const SLOT_NAME: Record<Slot, L> = {
   feet: { zh: '腳', en: 'Feet' }, acc1: { zh: '飾品 1', en: 'Accessory 1' }, acc2: { zh: '飾品 2', en: 'Accessory 2' },
 };
 const KIND_OF: Record<Slot, Kind> = { weapon: 'weapon', head: 'head', body: 'body', hands: 'hands', feet: 'feet', acc1: 'acc', acc2: 'acc' };
+const hearts = (n: number) => Array.from({ length: BOND_MAX }, (_, i) => icon('heart', i < n ? 'gi hrt on' : 'gi hrt')).join('');
 const esc = (x: string) => x.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 const PCT_KEYS = new Set(['bal', 'crit', 'prt']);
 const modText = (m: { key: string; add?: number; mul?: number }) =>
@@ -223,7 +224,7 @@ export class App {
     return `<div class="kv"><span class="lbl">${t('pet')}</span><span class="petname">${tr(d.stages[st].name)}</span></div>
       <div class="kv"><span class="lbl">${t('lv')}</span><span>${p.lvl}</span></div>
       <div class="kv"><span class="lbl">${t('exp')}</span><div class="line"><div class="grey" style="width:${(p.xp / petXpNeed(p.lvl) * 100).toFixed(0)}%"></div></div></div>
-      <div class="kv"><span class="lbl">${t('bond')}</span><span class="hearts">${'♥'.repeat(p.bond)}${'♡'.repeat(BOND_MAX - p.bond)}</span></div>`;
+      <div class="kv"><span class="lbl">${t('bond')}</span><span class="hearts">${hearts(p.bond)}</span></div>`;
   }
 
   private attHtml(): string {
@@ -277,19 +278,21 @@ export class App {
   /** BWE's paper doll: seven circles around a figure. */
   private dollSvg(): string {
     const s = this.g.s;
-    const P: Record<Slot, [number, number, number, number, string]> = {
-      head: [100, 20, 100, 38, '頭'], weapon: [28, 92, 66, 112, '武'], body: [174, 84, 108, 92, '身'], hands: [178, 136, 134, 116, '手'],
-      acc1: [24, 150, 88, 82, '飾'], feet: [100, 238, 100, 206, '足'], acc2: [44, 214, 80, 124, '飾'],
+    // [circle x, y, joint x, y] on a 200x260 board; the figure is game-icons' "person"
+    const P: Record<Slot, [number, number, number, number]> = {
+      head: [100, 18, 100, 44], weapon: [26, 96, 64, 118], body: [174, 86, 112, 96], hands: [178, 140, 136, 120],
+      acc1: [24, 156, 90, 84], feet: [100, 242, 100, 214], acc2: [46, 218, 84, 150],
     };
+    const ico = (name: string, x: number, y: number, s: number) => `<svg x="${x - s / 2}" y="${y - s / 2}" width="${s}" height="${s}" viewBox="0 0 512 512"><path d="${ICONS[name]}"/></svg>`;
     const lines = SLOTS.map(k => { const [x, y, tx, ty] = P[k]; return `<line x1="${x}" y1="${y}" x2="${tx}" y2="${ty}"/><circle class="joint" cx="${tx}" cy="${ty}" r="2.5"/>`; }).join('');
     const circles = SLOTS.map(k => {
-      const [x, y, , , glyph] = P[k], it = s.equip[k], on = this.slot === k;
+      const [x, y] = P[k], it = s.equip[k], on = this.slot === k;
       const ring = it ? RARITY[it.rarity].color : 'none';
       return `<g class="slot ${on ? 'on' : ''} ${it ? 'full' : ''}" data-a="slot" data-k="${k}"><title>${tr(SLOT_NAME[k])}</title>
-        <circle cx="${x}" cy="${y}" r="17" style="stroke:${ring}"/><text x="${x}" y="${y + 5}">${it && it.plus ? '+' + it.plus : glyph}</text></g>`;
+        <circle cx="${x}" cy="${y}" r="17" style="stroke:${ring}"/>${ico('slot-' + k, x, y, 22)}${it && it.plus ? `<text class="plus" x="${x + 15}" y="${y + 18}">+${it.plus}</text>` : ''}</g>`;
     }).join('');
     return `<svg class="doll" viewBox="0 0 200 260">
-      <g class="fig"><circle cx="100" cy="52" r="14"/><path d="M84 70h32l8 54h-12l-2 22 6 56h-12l-6-50-6 50h-12l6-56-2-22h-12z"/><path d="M84 72l-18 40 6 3 16-30zM116 72l18 40-6 3-16-30z"/></g>
+      <g class="fig">${ico('figure', 100, 128, 200)}</g>
       <g class="links">${lines}</g>${circles}</svg>`;
   }
 
@@ -304,7 +307,7 @@ export class App {
       const slot = sel !== 'all' && KIND_OF[sel] === it.kind ? sel : A.targetSlot(s, it);
       const dcp = this.cpDelta(it, slot);
       return `<div class="item"><div class="grow">${this.itemHtml(it)}</div><div class="acts">
-        <span class="${dcp > 0 ? 'up' : dcp < 0 ? 'down' : 'dim'}">${dcp > 0 ? '▲' : dcp < 0 ? '▼' : '='}${num(Math.abs(dcp))}</span>
+        <span class="${dcp > 0 ? 'up' : dcp < 0 ? 'down' : 'dim'}">${dcp ? icon('arrow', dcp > 0 ? 'gi sm pointup' : 'gi sm') : ''}${num(Math.abs(dcp))}</span>
         <button data-a="equip" data-uid="${it.uid}">${t('equip')}</button>
         <button class="ghost" data-a="sell" data-uid="${it.uid}">$${num(sellPrice(it))}</button></div></div>`;
     }).join('') || `<p class="dim">${t('empty')}</p>`;
@@ -320,10 +323,10 @@ export class App {
     const tabs = (['combat', 'magic', 'passive'] as SkillTab[]).map(k => `<button class="stab ${this.skillTab === k ? 'on' : ''}" data-a="stab" data-k="${k}">${t(k)}</button>`).join('');
     const rows = SKILLS.filter(k => k.tab === this.skillTab).map(k => {
       const r = s.skills[k.key] || 0, cost = rankCost(r), max = r >= MAX_RANK, can = !max && s.ap >= cost;
-      return `<div class="skill ${can ? 'can' : ''}"><div class="sico">${tr(k.name).slice(0, 1)}</div>
+      return `<div class="skill ${can ? 'can' : ''}"><div class="sico">${icon('sk-' + k.key)}</div>
         <div class="grow"><div class="sname">${tr(k.name)} <b>${r ? RANKS[r] : ''}</b></div>
-        <div class="istat">${r ? tr(k.desc(r)) : ''}${max ? '' : `${r ? '<br>' : ''}→ ${RANKS[r + 1]}: ${tr(k.desc(r + 1))}`}</div></div>
-        ${max ? `<span class="dim">${t('maxed')}</span>` : `<button class="up-btn" data-a="learn" data-k="${k.key}" ${can ? '' : 'disabled'} title="${cost} AP">▲<small>${cost}</small></button>`}</div>`;
+        <div class="istat">${r ? tr(k.desc(r)) : ''}${max ? '' : `${r ? '<br>' : ''}${icon('arrow', 'gi sm pointup')}${RANKS[r + 1]}: ${tr(k.desc(r + 1))}`}</div></div>
+        ${max ? `<span class="dim">${t('maxed')}</span>` : `<button class="up-btn" data-a="learn" data-k="${k.key}" ${can ? '' : 'disabled'} title="${cost} AP">${icon('arrow', 'gi pointup')}<small>${cost}</small></button>`}</div>`;
     }).join('');
     return `<div class="stabs">${tabs}</div><p class="dim">AP ${s.ap}</p>${rows}`;
   }
@@ -333,8 +336,8 @@ export class App {
     return AREAS.map((a, i) => {
       const here = s.area === a.key, cp = AREA_CP[i];
       const cls = d.cp >= cp ? 'up' : d.cp >= cp * 0.6 ? 'warn' : 'down';
-      const pals = PETS.filter(p => p.home === a.key && !p.hidden).map(p => s.pets.some(x => x.key === p.key) ? tr(p.stages[0].name) : '？').join(' · ');
-      return `<div class="item ${here ? 'here' : ''}"><div class="swatch" style="background:${a.bg}"></div>
+      const pals = PETS.filter(p => p.home === a.key && !p.hidden).map(p => s.pets.some(x => x.key === p.key) ? tr(p.stages[0].name) : t('unknown')).join(' · ');
+      return `<div class="item ${here ? 'here' : ''}"><div class="dot" style="background:${a.bg}">${icon('area-' + a.key)}</div>
         <div class="grow"><div class="iname">${tr(a.name)} <small class="dim">Lv ${a.min}–${a.max}</small></div>
         <div class="istat">${t('recArea')} <b class="${cls}">${num(cp)}</b> · ${a.dread ? `<span class="madtxt">${t('dread')} -${(a.dread * willResist(d.prim.will) * d.sanDrain).toFixed(2)}</span>` : `<span class="up">${t('safe')}</span>`} · ${tr(a.flavor)}${pals ? ` · ${t('pet')}: ${pals}` : ''}</div></div>
         ${here ? `<span class="dim">${t('here')}</span>` : `<button data-a="go" data-k="${a.key}">${t('go')}</button>`}</div>`;
@@ -344,11 +347,11 @@ export class App {
   private smithHtml(): string {
     const g = this.g, s = g.s;
     const list = [...SLOTS.map(k => s.equip[k]).filter(Boolean) as Item[], ...s.bag];
-    return `<p class="dim">${lang === 'zh' ? '每 +1 增加基礎數值 10%。' : 'Each +1 adds 10% to base numbers.'} ⚠ ${t('failDrop')}</p>` + list.map(it => {
+    return `<p class="dim">${lang === 'zh' ? '每 +1 增加基礎數值 10%。' : 'Each +1 adds 10% to base numbers.'} ${icon('hazard', 'gi sm')}${t('failDrop')}</p>` + list.map(it => {
       if (it.plus >= SMITH_MAX) return `<div class="item"><div class="grow">${this.itemHtml(it)}</div><span class="dim">${t('maxed')}</span></div>`;
       const cost = smithCost(it.ilvl, it.plus), ch = A.smithChance(g, it);
       return `<div class="item"><div class="grow">${this.itemHtml(it)}</div><div class="acts">
-        <span class="dim">+${it.plus}→+${it.plus + 1} ${pct(ch)}${it.plus >= SMITH_DROP_FROM ? ' ⚠' : ''}</span>
+        <span class="dim">+${it.plus}→+${it.plus + 1} ${pct(ch)}${it.plus >= SMITH_DROP_FROM ? icon('hazard', 'gi sm') : ''}</span>
         <button data-a="smith" data-uid="${it.uid}" ${s.gold < cost ? 'disabled' : ''}>$${num(cost)}</button></div></div>`;
     }).join('');
   }
@@ -357,14 +360,14 @@ export class App {
     const s = this.g.s;
     const owned = s.pets.map(p => {
       const d = petOf(p.key)!, st = stageOf(p.lvl), on = s.activePet === p.key, next = STAGE_LV[st + 1];
-      return `<div class="item ${on ? 'here' : ''}"><div class="dot" style="background:${d.stages[st].color}"></div>
+      return `<div class="item ${on ? 'here' : ''}"><div class="dot" style="background:${d.stages[st].color}">${icon('pet-' + p.key)}</div>
         <div class="grow"><div class="iname">${tr(d.stages[st].name)} <small class="dim">Lv ${p.lvl}${next ? ` → Lv ${next}` : ''}</small></div>
-        <div class="istat">${tr(d.ability)} · <span class="hearts">${'♥'.repeat(p.bond)}${'♡'.repeat(BOND_MAX - p.bond)}</span></div>
+        <div class="istat">${tr(d.ability)} · <span class="hearts">${hearts(p.bond)}</span></div>
         <p class="lore">${tr(d.lore)}</p></div>
         ${on ? `<span class="dim">${t('active')}</span>` : `<button data-a="pet" data-k="${p.key}">${t('call')}</button>`}</div>`;
     }).join('');
     const unknown = PETS.filter(p => !p.hidden && !s.pets.some(x => x.key === p.key)).map(p =>
-      `<div class="item faded"><div class="dot q">?</div><div class="grow"><div class="iname">${t('unknownPet')}</div><div class="istat">${t('petHint')}：${tr(AREAS.find(a => a.key === p.home)!.name)}</div></div></div>`).join('');
+      `<div class="item faded"><div class="dot q">${icon('unknown')}</div><div class="grow"><div class="iname">${t('unknownPet')}</div><div class="istat">${t('petHint')}${t('sep')}${tr(AREAS.find(a => a.key === p.home)!.name)}</div></div></div>`).join('');
     return owned + unknown;
   }
 
@@ -372,8 +375,8 @@ export class App {
     const s = this.g.s;
     return TITLES.map(ti => {
       const got = s.titles.includes(ti.key);
-      if (ti.secret && !got) return `<div class="item faded"><div class="grow"><div class="iname">？？？</div></div></div>`;
-      return `<div class="item ${got ? 'here' : 'faded'}"><div class="grow"><div class="iname">${got ? '★' : '☆'} ${tr(ti.name)}</div><div class="istat">${tr(ti.how)} · ${ti.mods.map(modText).join(' · ')}</div></div></div>`;
+      if (ti.secret && !got) return `<div class="item faded"><div class="grow"><div class="iname">${icon('unknown', 'gi sm')}${t('unknownPet')}</div></div></div>`;
+      return `<div class="item ${got ? 'here' : 'faded'}"><div class="grow"><div class="iname">${icon('star', got ? 'gi sm star on' : 'gi sm star')}${tr(ti.name)}</div><div class="istat">${tr(ti.how)} · ${ti.mods.map(modText).join(' · ')}</div></div></div>`;
     }).join('') + `<p class="dim">${t('kills')} ${num(s.counters.kills)} · ${t('deaths')} ${num(s.counters.deaths)} · ${t('rebirths')} ${s.counters.rebirths}</p>`;
   }
 
@@ -413,10 +416,8 @@ export class App {
   }
 }
 
-/** A BWE-style pictogram; taller for older ages. */
-const figure = (h: number) => `<svg class="pict" viewBox="0 0 30 64" style="height:${h}px" aria-hidden="true">
-  <circle cx="15" cy="7" r="6"/><rect x="7" y="15" width="16" height="22" rx="2"/><rect x="1" y="16" width="5" height="18" rx="2"/>
-  <rect x="24" y="16" width="5" height="18" rx="2"/><rect x="8" y="38" width="6" height="24" rx="1"/><rect x="16" y="38" width="6" height="24" rx="1"/></svg>`;
+/** game-icons' "person", cropped to its body and scaled taller for older ages. */
+const figure = (h: number) => `<svg class="pict" viewBox="136 16 240 480" style="height:${h}px;width:${h / 2}px" aria-hidden="true"><path d="${ICONS.figure}"/></svg>`;
 
 /** Race icons (left), age figures (right), and a stat table below. Shared by creation and rebirth. */
 export function raceAgePicker(race: string, age: number, raceAction: string, ageAction: string): string {
@@ -427,7 +428,7 @@ export function raceAgePicker(race: string, age: number, raceAction: string, age
       <span class="agev">${a === age ? `<small>${t('age')}</small>${a}` : ''}</span>${figure(40 + (a - 10) * 3)}</button>`).join('');
   const head = PRIMARY.map(k => `<th>${icon(k, 'gi sm')}${tr(STAT[k])}</th>`).join('');
   const row = (o: Record<string, number>, plus: boolean) => PRIMARY.map(k => `<td class="${plus ? 'plus' : ''}">${plus ? '+' : ''}${o[k]}</td>`).join('');
-  return `<div class="picker"><div class="rcol"><div class="rlist">${list}</div><p class="rdesc">${tr(r.name)}：${tr(r.desc)}</p></div><div class="rinfo">
+  return `<div class="picker"><div class="rcol"><div class="rlist">${list}</div><p class="rdesc">${tr(r.name)}${t('sep')}${tr(r.desc)}</p></div><div class="rinfo">
       <div class="figs">${figs}</div>
       <table class="sttable"><thead><tr><th></th>${head}</tr></thead>
         <tbody><tr><th>${t('initStat')}</th>${row(r.base, false)}</tr><tr><th>${t('ageGrowth')}</th>${row(g, true)}</tr></tbody></table>

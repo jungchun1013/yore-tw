@@ -86,7 +86,7 @@ export const SKILLS: SkillDef[] = [
   {
     key: 'insight', tab: 'passive', name: { zh: '求知', en: 'Insight' },
     mods: r => [{ key: 'xp', mul: 0.04 * r }],
-    desc: r => ({ zh: `經驗 +${p(0.04 * r)}`, en: `XP +${p(0.04 * r)}` }),
+    desc: r => ({ zh: `EXP +${p(0.04 * r)}`, en: `EXP +${p(0.04 * r)}` }),
   },
 ];
 

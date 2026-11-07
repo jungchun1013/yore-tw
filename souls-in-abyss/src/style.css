@@ -11,8 +11,7 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
-  font: 16px/1.5 Cubic11, "PingFang TC", "Noto Sans TC", sans-serif;
-  -webkit-font-smoothing: none; font-smooth: never; text-rendering: optimizeSpeed; }
+  font: 16px/1.5 Cubic11, "PingFang TC", "Noto Sans TC", sans-serif; }
 button, input, select { font: inherit; color: inherit; }
 button { background: #f2f2f2; border: 1px solid var(--line); padding: 3px 10px; cursor: pointer; white-space: nowrap; }
 button:hover:not(:disabled) { background: var(--accent-soft); border-color: var(--accent); }
@@ -96,14 +95,15 @@ small { font-size: 13px; }
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } .between { justify-content: space-between; margin: 8px 0 2px; }
 
 .doll { width: 100%; max-width: 260px; display: block; margin: 0 auto; }
-.doll .fig { fill: #7a7a7a; }
+
 .doll .links line { stroke: #7a7a7a; stroke-width: 1.5; }
 .doll .joint { fill: #fff; stroke: #7a7a7a; stroke-width: 1.5; }
 .doll .slot { cursor: pointer; }
 .doll .slot circle { fill: #7a7a7a; stroke-width: 3; }
 .doll .slot.full circle { fill: #5a5a5a; }
 .doll .slot.on circle { fill: var(--accent); }
-.doll .slot text { fill: #fff; font: 13px Cubic11, monospace; text-anchor: middle; pointer-events: none; }
+.doll .slot svg path { fill: #fff; } .doll .fig path { fill: #7a7a7a; }
+.doll .slot text.plus { fill: var(--accent); font: 12px Cubic11, monospace; text-anchor: middle; pointer-events: none; }
 
 .stabs { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--line); }
 .stab { border: 0; background: none; font-size: 17px; padding: 4px 0; color: var(--lbl); }
@@ -135,7 +135,7 @@ small { font-size: 13px; }
 .banner.small .subtitle { font-size: 14px; }
 .intro { min-height: 100vh; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; cursor: pointer; outline: none;
   animation: introOut 1.2s ease-in 4.6s forwards; }
-.introline { margin: 0; font-size: clamp(20px, 3.2vw, 30px); color: #5a4f78; letter-spacing: .12em; text-align: center; opacity: 0;
+.introline { margin: 0; font-size: 24px; color: #5a4f78; letter-spacing: .12em; text-align: center; opacity: 0;
   animation: introIn 1.4s ease-out var(--d) forwards; }
 @keyframes introIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
 @keyframes introOut { to { opacity: 0; } }
@@ -222,3 +222,13 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .cogmenu[hidden] { display: none; }
 .cogmenu button { border: 0; background: none; padding: 8px 18px; text-align: right; font-size: 17px; color: #6b6b6b; }
 .cogmenu button.on { color: var(--accent); }
+
+/* ---------- icons in lists ---------- */
+.gi.pointup { transform: rotate(180deg); }
+.dot { color: #fff; padding: 4px; } .dot .gi { width: 100%; height: 100%; }
+.dot.q { background: #bdbdbd; }
+.skill .sico { padding: 6px; }
+.skill .up-btn { flex-direction: column; } .skill .up-btn .gi { width: 13px; height: 13px; }
+.gi.hrt { width: 12px; height: 12px; display: inline-block; vertical-align: -1px; color: #d6d6d6; margin-right: 1px; }
+.gi.hrt.on { color: #e05a8a; }
+.gi.star { color: #c9c9c9; opacity: 1; } .gi.star.on { color: var(--accent); }

@@ -210,7 +210,7 @@ export class Game {
     s.gold += gold;
     this.loot.gold += gold; this.loot.xp += xp;
     this.emit({ t: 'kill' });
-    this.say({ zh: '獲得 {0} 經驗。', en: 'You get {0} experience.' }, [this.n(xp, 'xp')]);
+    this.say({ zh: '獲得 {0} EXP。', en: 'You get {0} EXP.' }, [this.n(xp, 'xp')]);
     this.say({ zh: '獲得 {0}。', en: 'You earn {0}.' }, [{ text: '$' + Math.floor(gold), cls: 'gold' }]);
     this.gainXp(xp);
     this.hp = Math.min(this.d.hp, this.hp + this.d.hp * this.d.heal);

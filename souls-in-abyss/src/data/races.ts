@@ -19,7 +19,7 @@ export interface Race {
 export const RACES: Race[] = [
   {
     key: 'human', name: { zh: '人族', en: 'Human' }, icon: '人',
-    desc: { zh: '樣樣通。經驗 +10%。', en: 'Even at everything. XP +10%.' },
+    desc: { zh: '樣樣通。EXP +10%。', en: 'Even at everything. EXP +10%.' },
     base: { str: 18, dex: 18, int: 18, will: 18, luk: 14 },
     growth: { str: 2, dex: 2, int: 2, will: 2, luk: 1 },
     mods: [{ key: 'xp', mul: 0.1 }], color: '#d9a066',
