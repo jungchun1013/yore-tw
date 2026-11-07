@@ -15,6 +15,7 @@ import { REBIRTH_AGE, YEAR_SEC, clearSave } from '../game/state';
 import { Scene } from './scene';
 import * as A from '../game/actions';
 import { icon, pixelMarkup } from './icons';
+import { heroMarkup } from './hero';
 import { curseOf, giftOf, type PactDef } from '../data/pacts';
 import { SAN_TIERS, sanTier, willResist } from '../data/sanity';
 import { SAN_MAX } from '../game/state';
@@ -340,7 +341,7 @@ export class App {
    * with a hand cell on each side (level with the gap between the second and third armour cells,
    * never over the figure): the main hand is the figure's right hand, so it sits on the viewer's left.
    * The pal stands at its master's side. Cells are frameless; selection is a fill change.
-   * The figure is the plain 8×8 race sprite, like the pals and icons, until the 16×16 art lands.
+   * The figure is the B-original 24×32 hero (hero.ts), drawn bare-handed: the hand cells show what is held.
    */
   private dollSvg(): string {
     const s = this.g.s;
@@ -364,7 +365,7 @@ export class App {
     return `<svg class="doll" viewBox="0 0 280 240">
       <text class="cap" x="34" y="16">${t('navEquip')}</text><text class="cap" x="246" y="16">${t('charms')}</text>
       <text class="cap" x="78" y="89">${t('capAttack')}</text><text class="cap" x="202" y="89">${t('capSupport')}</text>
-      <svg x="104" y="76" width="72" height="72" viewBox="0 0 16 16" shape-rendering="crispEdges" data-avatar="${s.race}">${pixelMarkup(s.race)}</svg>
+      <svg x="92" y="48" width="96" height="128" viewBox="0 0 24 32" shape-rendering="crispEdges" data-avatar="${s.race}">${heroMarkup(s.race, { ...s.equip, weapon: undefined, off: undefined })}</svg>
       ${cellSvg}${petSvg}</svg>`;
   }
 
@@ -587,7 +588,7 @@ const dropdown = (action: string, items: [string, string][], value: string) => {
 };
 
 /** Age preview uses the same pixel character as the equipment and battle views. */
-const figure = (h: number) => `<svg class="pict" viewBox="0 0 16 16" style="height:${h}px;width:${h}px" shape-rendering="crispEdges" aria-hidden="true">${pixelMarkup('human')}</svg>`;
+const figure = (h: number) => `<svg class="pict" viewBox="0 0 24 32" style="height:${h}px;width:${h * 0.75}px" shape-rendering="crispEdges" aria-hidden="true">${heroMarkup('human')}</svg>`;
 
 /** Race icons (left), age figures (right), and a stat table below. Shared by creation and rebirth. */
 export function raceAgePicker(race: string, age: number, raceAction: string, ageAction: string): string {

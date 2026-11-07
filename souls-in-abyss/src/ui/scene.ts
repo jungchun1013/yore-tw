@@ -1,6 +1,7 @@
 import type { Game, GameEvent } from '../game/engine';
 import { areaOf } from '../data/areas';
 import { pixels } from './icons';
+import { heroPixels } from './hero';
 import { stageOf } from '../data/pets';
 import { sprite } from './sprites';
 import { num } from '../core/fmt';
@@ -86,9 +87,9 @@ export class Scene {
     c.globalAlpha = 1;
     const hs = sprite('hero.' + s.race);
     c.globalAlpha = down ? Math.max(0, 1 - motion.deathAge / .65) : Math.min(1, motion.reviveAge / .65);
-    if (hs) c.drawImage(hs, hx - 16, hy - 32 + bob, 32, 32);
-    else for (const p of pixels(s.race)) { // the plain 8×8 race sprite at 2x, same family as the pal
-      c.fillStyle = p.color; c.fillRect(Math.round(hx - 16 + p.x * 2), Math.round(hy - 32 + bob) + p.y * 2, 2, 2);
+    if (hs) c.drawImage(hs, hx - 12, hy - 32 + bob, 24, 32);
+    else for (const p of heroPixels(s.race, s.equip)) { // the B-original 24×32 hero, wearing what is equipped
+      c.fillStyle = p.color; c.fillRect(Math.round(hx - 12 + p.x), Math.round(hy - 32 + bob) + p.y, 1, 1);
     }
     c.globalAlpha = 1;
 

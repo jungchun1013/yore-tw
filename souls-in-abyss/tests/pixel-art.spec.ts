@@ -19,10 +19,12 @@ test('pixel icons and the equipment board respond to equipping and removing armo
   await page.click('[data-a="equip"][data-uid="999999"]');
   await page.click('.nav [data-k="equip"]');
   await expect(head).toHaveClass(/full/);
+  await expect.poll(() => avatar.innerHTML()).not.toBe(before);
+  const worn = await avatar.innerHTML();
   await page.screenshot({ path: `/tmp/souls-pixel-${test.info().project.name}.png` });
   await page.click('[data-a="unequip"][data-k="head"]');
   await expect(head).not.toHaveClass(/full/);
-  // the figure itself is the plain race sprite for now; it does not change with the outfit
+  await expect.poll(() => avatar.innerHTML()).not.toBe(worn);
   await expect(avatar).toHaveJSProperty('innerHTML', before);
   await page.evaluate(() => {
     const g = (window as any).__game;
