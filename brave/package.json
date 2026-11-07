@@ -1,0 +1,15 @@
+{
+  "name": "aeon-brave",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Aeon Brave: a Battle-Without-End style auto RPG. Independent from Meowcaron; it only borrows the parent folder's node_modules.",
+  "scripts": {
+    "dev": "vite --host --port 5180",
+    "build": "tsc --noEmit -p . && vite build",
+    "preview": "vite preview --port 4180",
+    "site": "npm run build && rm -rf ../site/aeon-brave && cp -r dist ../site/aeon-brave",
+    "sim": "esbuild sim/simulate.ts --bundle --platform=node --target=node16 --outfile=.sim/simulate.cjs --log-level=warning && node .sim/simulate.cjs",
+    "test": "playwright test",
+    "typecheck": "tsc --noEmit -p ."
+  }
+}
