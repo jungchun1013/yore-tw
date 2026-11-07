@@ -9,7 +9,7 @@ import type { Pixel } from './icons';
  */
 export type Outfit = Partial<Record<Slot, Item | null>>;
 export const HERO_W = 24, HERO_H = 32;
-const metals = ['#83939a', '#82947b', '#839da5', '#c1ad83', '#b18c79', '#9586a4'];
+const metals = ['#83939a', '#839da5', '#c1ad83', '#b18c79', '#9586a4'];
 
 export function heroPixels(race: string, equip: Outfit = {}): Pixel[] {
   const out = new Map<string, Pixel>();

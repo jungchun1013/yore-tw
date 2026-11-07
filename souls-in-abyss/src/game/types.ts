@@ -30,7 +30,7 @@ export interface Item {
   kind: Kind;
   weight?: Weight;   // weapon and armor pieces
   ilvl: number;
-  rarity: number;    // 0 basic .. 5 legendary
+  rarity: number;    // index into RARITY: 0 basic, 1 rare .. 4 legendary
   plus: number;      // blacksmith level
   affixes: Mod[];
   name: number;      // index into the name pool of its kind/weight

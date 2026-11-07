@@ -2,7 +2,7 @@ import { PRIMARY, type Save, type StatKey } from './types';
 import { makeItem } from './loot';
 
 export const SAVE_KEY = 'soulsinabyss.save';
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 export const YEAR_SEC = 20 * 60;     // one year of age per 20 real minutes
 export const REBIRTH_AGE = 20;
 export const LEGACY_RATE = 0.1;
@@ -42,6 +42,11 @@ MIGRATIONS[3] = s => { // v3 -> v4: accessories become rings and necklaces in th
     if (!it) continue;
     if (s.equip[it.kind]) s.bag.push(it); else s.equip[it.kind] = it;
   }
+};
+MIGRATIONS[4] = s => { // v4 -> v5: the Magic tier is gone; magic items become basic (they keep their affix), higher tiers move down one
+  const fix = (it: any) => { if (it && it.rarity > 0) it.rarity -= 1; };
+  s.bag.forEach(fix); Object.values(s.equip).forEach(fix);
+  s.autoSell = [0, 1, 1, 2, 3, 4][s.autoSell] ?? 1;
 };
 
 export function loadSave(): Save | null {

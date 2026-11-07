@@ -5,7 +5,7 @@ import { pick, range, weighted } from '../core/rng';
 export function rollRarity(dropMul: number): number {
   // luck flattens the curve: rarer tiers gain weight faster than common ones
   const f = Math.max(1, dropMul);
-  return weighted(RARITY.map((r, i) => r.w * Math.pow(f, i * 0.6)));
+  return weighted(RARITY.map(r => r.w * Math.pow(f, r.rank * 0.6)));
 }
 
 const KIND_ROLL: Kind[] = ['weapon', 'weapon', 'shield', 'head', 'body', 'legs', 'feet', 'ring', 'neck'];
@@ -19,11 +19,11 @@ export function makeItem(s: Save, ilvl: number, rarity: number, kind?: Kind, wei
   const want = Math.max(RARITY[rarity].affixes, isCharm(k) ? 1 : 0);
   for (let i = 0; i < want && pool.length; i++) {
     const a = pool.splice(Math.floor(range(0, pool.length)), 1)[0];
-    const v = (a.flat + a.per * ilvl) * range(0.6, 1.2) * (1 + 0.15 * rarity);
+    const v = (a.flat + a.per * ilvl) * range(0.6, 1.2) * (1 + 0.15 * RARITY[rarity].rank);
     affixes.push(a.kind === 'add' ? { key: a.key, add: v < 1 ? Math.round(v * 1000) / 1000 : Math.round(v) } : { key: a.key, mul: Math.round(v * 1000) / 1000 });
   }
   return { uid: s.nextUid++, kind: k, weight: w, ilvl, rarity, plus: 0, affixes, name: Math.min(4, Math.floor(ilvl / 26)) };
 }
 
 export const nameOf = (it: Item): L => NAMES[it.weight ? it.kind + '.' + it.weight : it.kind][it.name];
-export const sellPrice = (it: Item): number => Math.floor((it.ilvl + 5) * 2 * Math.pow(1 + it.rarity, 1.5) * (1 + it.plus * 0.6));
+export const sellPrice = (it: Item): number => Math.floor((it.ilvl + 5) * 2 * Math.pow(1 + RARITY[it.rarity].rank, 1.5) * (1 + it.plus * 0.6));

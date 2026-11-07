@@ -12,7 +12,7 @@ test('pixel icons and the equipment board respond to equipping and removing armo
   await expect(head).not.toHaveClass(/full/);
   await page.evaluate(() => {
     const g = (window as any).__game;
-    g.s.bag.push({ uid: 999999, kind: 'head', weight: 'heavy', ilvl: 10, rarity: 5, plus: 3, affixes: [], name: 0 });
+    g.s.bag.push({ uid: 999999, kind: 'head', weight: 'heavy', ilvl: 10, rarity: 4, plus: 3, affixes: [], name: 0 });
   });
   await page.click('.doll [data-k="head"]');
   await page.click('.nav [data-k="bag"]');

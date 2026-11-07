@@ -11,13 +11,13 @@ export const WEIGHT_KEYS: Weight[] = ['light', 'medium', 'heavy'];
 /** Share of an armor set's defense carried by each piece. */
 export const PIECE: Record<string, number> = { head: 0.2, body: 0.4, legs: 0.25, feet: 0.15, shield: 0.35 };
 
-export const RARITY: { name: L; color: string; affixes: number; w: number }[] = [
-  { name: { zh: '普通', en: 'Basic' },     color: '#667681', affixes: 0, w: 66 },
-  { name: { zh: '魔法', en: 'Magic' },     color: '#53695e', affixes: 1, w: 22 },
-  { name: { zh: '稀有', en: 'Rare' },      color: '#5f7d87', affixes: 2, w: 8 },
-  { name: { zh: '完美', en: 'Perfect' },   color: '#a88a55', affixes: 3, w: 3 },
-  { name: { zh: '史詩', en: 'Epic' },      color: '#b47f76', affixes: 4, w: 0.8 },
-  { name: { zh: '傳說', en: 'Legendary' }, color: '#625575', affixes: 5, w: 0.2 },
+/** rank is the power step used by drop scaling, affix values and price; it skips 1 since the old Magic tier was removed. */
+export const RARITY: { name: L; color: string; affixes: number; w: number; rank: number }[] = [
+  { name: { zh: '普通', en: 'Basic' },     color: '#667681', affixes: 0, w: 88,  rank: 0 },
+  { name: { zh: '稀有', en: 'Rare' },      color: '#5f7d87', affixes: 2, w: 8,   rank: 2 },
+  { name: { zh: '完美', en: 'Perfect' },   color: '#a88a55', affixes: 3, w: 3,   rank: 3 },
+  { name: { zh: '史詩', en: 'Epic' },      color: '#b47f76', affixes: 4, w: 0.8, rank: 4 },
+  { name: { zh: '傳說', en: 'Legendary' }, color: '#625575', affixes: 5, w: 0.2, rank: 5 },
 ];
 
 /** Name pools by tier; an item picks by ilvl so names get grander deeper in. */
@@ -47,7 +47,7 @@ export const NAMES: Record<string, L[]> = {
 export interface AffixDef { key: ModKey; kind: 'add' | 'mul'; per: number; flat: number; kinds: Kind[] }
 const ALL: Kind[] = ['weapon', 'shield', 'head', 'body', 'legs', 'feet', 'ring', 'neck'];
 const CHARMS: Kind[] = ['ring', 'neck'];
-/** value = (flat + per * ilvl) * random(0.6..1.2) * (1 + 0.15 * rarity) */
+/** value = (flat + per * ilvl) * random(0.6..1.2) * (1 + 0.15 * rank) */
 export const AFFIXES: AffixDef[] = [
   { key: 'str', kind: 'add', flat: 2, per: 0.35, kinds: ALL },
   { key: 'dex', kind: 'add', flat: 2, per: 0.35, kinds: ALL },

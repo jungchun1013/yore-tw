@@ -2,7 +2,7 @@ import type { Item, Slot } from '../game/types';
 import { PALETTE, type Pixel } from './icons';
 export type Outfit = Partial<Record<Slot, Item | null>>;
 export const AVATAR_WIDTH = 32, AVATAR_HEIGHT = 48;
-const metals = ['#83939a', '#82947b', '#839da5', '#c1ad83', '#b18c79', '#9586a4'];
+const metals = ['#83939a', '#839da5', '#c1ad83', '#b18c79', '#9586a4'];
 /** Shared 32×48 grid. Walking changes the legs rather than scaling the sprite. */
 export function avatarPixels(race: string, equip: Outfit = {}, stride = 0): Pixel[] {
   const out = new Map<string, Pixel>();
