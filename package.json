@@ -1,18 +1,18 @@
 {
-  "name": "meowcaron",
+  "name": "yore-games",
   "version": "0.1.0",
   "private": true,
+  "description": "yore-tw.com: the entry site in site/ plus two independent games, each its own npm workspace. Shared tooling only (Vite, TypeScript, Playwright); no shared game code.",
+  "workspaces": [
+    "meowcaron",
+    "souls-in-abyss"
+  ],
   "scripts": {
-    "dev": "vite --host --port 5173",
-    "build": "tsc --noEmit && vite build",
-    "preview": "vite preview --port 4173",
-    "site": "npm run build && rm -rf site/meowcaron && cp -r dist site/meowcaron",
-    "sim": "esbuild sim/simulate.ts --bundle --platform=node --target=node16 --outfile=.sim/simulate.cjs --log-level=warning && node .sim/simulate.cjs",
-    "test": "playwright test",
-    "typecheck": "tsc --noEmit"
-  },
-  "dependencies": {
-    "phaser": "3.80.1"
+    "typecheck": "npm run typecheck --workspaces",
+    "test": "npm test --workspaces",
+    "build": "npm run build --workspaces",
+    "site": "npm run build && rm -rf dist-site && cp -r site dist-site && cp -r meowcaron/dist dist-site/meowcaron && cp -r souls-in-abyss/dist dist-site/souls-in-abyss",
+    "serve:site": "python3 -m http.server 4100 --directory dist-site"
   },
   "devDependencies": {
     "@playwright/test": "1.44.1",

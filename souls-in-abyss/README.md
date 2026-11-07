@@ -1,12 +1,11 @@
 # Souls in Abyss 輪迴無止盡
 
-A Battle Without End style auto-battle RPG. Fully independent from Meowcaron: own package, config, save key (`soulsinabyss.save`) and build. It only borrows the parent folder's `node_modules`.
+A Battle Without End style auto-battle RPG. Fully independent from Meowcaron: own package, config, save key (`soulsinabyss.save`) and build. It is one workspace of the repo root, which only supplies the tooling (`node_modules`).
 
 ```
 npm run dev      # http://localhost:5180
 npm run sim      # headless pacing table: npm run sim -- <hours> <startAge>
 npm test         # Playwright smoke tests, desktop + mobile
-npm run site     # build and copy into ../site/souls-in-abyss/
 ```
 
 ## What is replicated from BWE

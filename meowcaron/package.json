@@ -1,0 +1,17 @@
+{
+  "name": "meowcaron",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Meowcaron: cat macaron idle clicker. Tooling (Vite, TypeScript, Playwright) comes from the workspace root.",
+  "scripts": {
+    "dev": "vite --host --port 5173",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview --port 4173",
+    "sim": "esbuild sim/simulate.ts --bundle --platform=node --target=node16 --outfile=.sim/simulate.cjs --log-level=warning && node .sim/simulate.cjs",
+    "test": "playwright test",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "phaser": "3.80.1"
+  }
+}
