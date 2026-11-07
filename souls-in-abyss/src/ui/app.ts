@@ -86,7 +86,6 @@ export class App {
         </section>
         <section class="box petbox" id="petbox"></section>
         <section class="box att" id="att"></section>
-        <section class="box loot" id="loot"></section>
         </div>
         <section class="box side">
           <nav class="nav">${NAV.map(([k, l]) => `<button class="ico" data-a="view" data-k="${k}" title="${t(l)}" aria-label="${t(l)}"><span>${icon(k)}</span></button>`).join('')}</nav>
@@ -196,8 +195,8 @@ export class App {
     this.put('sheet', this.sheetHtml());
     this.put('petbox', this.petBoxHtml());
     this.put('att', this.attHtml());
-    this.put('loot', this.lootHtml());
     this.put('view', this.viewHtml());
+    if (this.view === 'map') this.text('loot-sec', clock(this.g.loot.sec));
     this.markLatin();
   }
   /**
@@ -270,12 +269,14 @@ export class App {
     return `<h3>${t('att')}</h3>${rows}`;
   }
 
+  /** Map stats for the area the hero is in, under the map: time, kills, falls, gold, EXP | loot total and by rarity. */
   private lootHtml(): string {
     const l = this.g.loot;
-    return `<h3>${t('loot')}</h3>
-      <div class="kv"><span class="gold">$</span><span>${num(l.gold)}</span></div>
-      <div class="kv"><span class="xp">${t('exp')}</span><span>${num(l.xp)}</span></div>
-      ${RARITY.map((r, i) => `<div class="kv"><span style="color:${r.color}">${tr(r.name)}</span><span>${l.items[i]}</span></div>`).join('')}`;
+    const kv = (k: string, v: string, cls = '') => `<div class="kv"><span${cls ? ` class="${cls}"` : ''}>${k}</span><span>${v}</span></div>`;
+    return `<div class="loot"><h3>${t('mapStats')}</h3><div class="lootcols">
+      <div class="lcol">${kv(t('stay'), '<span id="loot-sec"></span>')}${kv(t('kills'), num(l.kills))}${kv(t('deaths'), num(l.deaths))}${kv('$', num(l.gold), 'gold')}${kv(t('exp'), num(l.xp), 'xp')}</div>
+      <div class="lcol">${kv(t('loot'), num(l.items.reduce((a, b) => a + b, 0)))}${RARITY.map((r, i) => `<div class="kv"><span style="color:${r.color}">${tr(r.name)}</span><span>${l.items[i]}</span></div>`).join('')}</div>
+    </div></div>`;
   }
 
   // ---------- side views ----------
@@ -450,7 +451,7 @@ export class App {
       <div class="istat">${t('recArea')} <b class="${cls}">${num(cp)}</b> · ${a.dread ? `<span class="madtxt">${t('dread')} -${(a.dread * willResist(d.prim.will) * d.sanDrain).toFixed(2)}</span>` : `<span class="up">${t('safe')}</span>`}${pals ? ` · ${t('pet')}${t('sep')}${pals}` : ''}</div>
       <p class="lore">${tr(a.flavor)}</p></div>
       ${here ? `<span class="dim">${t('here')}</span>` : `<button data-a="go" data-k="${a.key}">${t('go')}</button>`}</div>`;
-    return `<div class="mapboard"><svg class="maproute" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${path}"/></svg>${nodes}</div>${card}`;
+    return `<div class="mapboard"><svg class="maproute" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${path}"/></svg>${nodes}</div>${card}${this.lootHtml()}`;
   }
 
   private smithHtml(): string {

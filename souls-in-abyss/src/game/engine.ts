@@ -23,7 +23,7 @@ export type GameEvent =
   | { t: 'spawn' } | { t: 'kill' } | { t: 'death' } | { t: 'level' } | { t: 'heal'; amt: number };
 
 /** Running tally shown as "Loot in current map"; resets when you move. */
-export interface MapLoot { gold: number; xp: number; items: number[] }
+export interface MapLoot { sec: number; kills: number; deaths: number; gold: number; xp: number; items: number[] }
 
 const KILL_PAUSE = 0.6, RESPAWN = 5, PET_INTERVAL = 2.2;
 const ATTACKS = SKILLS.filter(s => s.act?.on === 'attack');
@@ -35,7 +35,7 @@ export class Game {
   hp = 0; mp = 0;
   mon!: Monster;
   monColor = '#555';
-  loot: MapLoot = { gold: 0, xp: 0, items: RARITY.map(() => 0) };
+  loot: MapLoot = { sec: 0, kills: 0, deaths: 0, gold: 0, xp: 0, items: RARITY.map(() => 0) };
   quiet = false;
   private heroT = 0; private monT = 0; private petT = 0;
   private pause = 0; private down = 0;
@@ -85,13 +85,13 @@ export class Game {
     this.say({ zh: '遭遇 {0}！', en: 'You meet {0}!' }, [this.monPart()]);
   }
 
-  resetLoot(): void { this.loot = { gold: 0, xp: 0, items: RARITY.map(() => 0) }; }
+  resetLoot(): void { this.loot = { sec: 0, kills: 0, deaths: 0, gold: 0, xp: 0, items: RARITY.map(() => 0) }; }
 
   get downFor(): number { return this.down; }
 
   tick(dt: number): void {
     const s = this.s;
-    s.counters.playSec += dt;
+    s.counters.playSec += dt; this.loot.sec += dt;
     this.ageTick(dt);
     this.petBondTick(dt);
     this.mp = Math.min(this.d.mp, this.mp + this.d.mp * 0.01 * dt);
@@ -192,7 +192,7 @@ export class Game {
     this.emit({ t: 'hit', from: 'mon', dmg, blocked: mult < 1 });
     this.say({ zh: '{0} 對你造成 {1} 傷害', en: '{0} cause {1} damage to You' }, [this.monPart(), this.n(dmg, 'num big')]);
     if (this.hp <= 0) {
-      this.hp = 0; this.down = RESPAWN; this.s.counters.deaths++;
+      this.hp = 0; this.down = RESPAWN; this.s.counters.deaths++; this.loot.deaths++;
       this.say({ zh: '你倒下了！深淵賜予你重生', en: 'You die! The Abyss grants you rebirth' }, [], 'bad');
       this.emit({ t: 'death' });
       this.checkTitles();
@@ -201,7 +201,7 @@ export class Game {
 
   private onKill(): void {
     const s = this.s, m = this.mon, c = s.counters;
-    c.kills++;
+    c.kills++; this.loot.kills++;
     const idx = AREAS.findIndex(a => a.key === s.area);
     if (idx > c.deepest) c.deepest = idx;
     const diff = s.lvl - m.lvl;
