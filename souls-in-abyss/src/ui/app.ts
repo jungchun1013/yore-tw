@@ -357,6 +357,7 @@ export class App {
     const outfit = { ...s.equip, weapon: undefined, off: undefined };
     return `<svg class="doll" viewBox="0 0 280 240">
       <text class="cap" x="34" y="16">${t('navEquip')}</text><text class="cap" x="246" y="16">${t('charms')}</text>
+      <text class="cap" x="78" y="89">${t('capSupport')}</text><text class="cap" x="202" y="89">${t('capAttack')}</text>
       <svg x="92" y="40" width="96" height="144" viewBox="0 0 32 48" shape-rendering="crispEdges" data-avatar="${s.race}">${avatarMarkup(s.race, outfit)}</svg>
       ${cellSvg}${petSvg}</svg>`;
   }

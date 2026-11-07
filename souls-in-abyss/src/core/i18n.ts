@@ -51,6 +51,8 @@ export const UI = {
   stay: { zh: '停留', en: 'Time here' },
   navEquip: { zh: '裝備', en: 'Equipment' },
   charms: { zh: '加護', en: 'Charms' },
+  capAttack: { zh: '攻擊', en: 'Attack' },
+  capSupport: { zh: '輔助', en: 'Support' },
   twoHanded: { zh: '雙手持', en: 'Two-handed' },
   navBag: { zh: '背包', en: 'Bag' },
   navPets: { zh: '夥伴', en: 'Pals' },
