@@ -14,7 +14,7 @@
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
   font: var(--fs-m)/1.5 Cubic11, "PingFang TC", "Noto Sans TC", sans-serif; }
 button, input, select { font: inherit; color: inherit; }
-button { background: #ececec; border: 0; padding: 4px 11px; cursor: pointer; white-space: nowrap; }
+button { background: #ececec; border: 0; padding: 6px 14px; cursor: pointer; white-space: nowrap; }
 button:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent); }
 button:disabled { opacity: .45; cursor: default; }
 button.ghost { background: #ececec; }
@@ -30,15 +30,15 @@ small { font-size: var(--fs-xs); }
 
 /* ---------- main layout: BWE's three columns ---------- */
 .game {
-  display: grid; gap: 8px; padding: 8px; height: 100vh; max-width: 1400px; margin: 0 auto;
+  display: grid; gap: 14px; padding: 14px; height: 100vh; max-width: 1400px; margin: 0 auto;
   grid-template-columns: 1.3fr 0.78fr 0.85fr;
   grid-template-rows: minmax(0, 1fr);
   grid-template-areas: "colL colM side";
 }
-.box { background: var(--box); border: 0; padding: 10px 14px; min-width: 0; min-height: 0; }
+.box { background: var(--box); border: 0; padding: 18px 22px; min-width: 0; min-height: 0; }
 .sheet { grid-area: sheet; display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 0 14px; align-content: start; }
 .monster { grid-area: monster; } .petbox { grid-area: pet; } .log { grid-area: log; } .att { grid-area: att; overflow-y: auto; }
-.loot { grid-area: loot; } .side { grid-area: side; display: flex; flex-direction: column; padding: 8px 10px; }
+.loot { grid-area: loot; } .side { grid-area: side; display: flex; flex-direction: column; padding: 18px 20px; }
 
 .kv { display: flex; align-items: center; gap: 10px; min-height: 26px; }
 .kv .lbl { color: var(--lbl); min-width: 48px; }
@@ -78,7 +78,7 @@ small { font-size: var(--fs-xs); }
 .vtitle { font-size: var(--fs-xl); color: var(--lbl); margin: 8px 2px 4px; }
 .view { flex: 1; overflow-y: auto; padding-right: 4px; }
 
-.item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin: 5px 0; border: 0; background: #f5f5f5; }
+.item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin: 8px 0; border: 0; background: #f5f5f5; }
 .item.here { background: var(--accent-soft); }
 .item.faded { opacity: .55; }
 .item .grow { flex: 1; min-width: 0; }
@@ -106,7 +106,7 @@ small { font-size: var(--fs-xs); }
 .stabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
 .stab { border: 0; background: none; font-size: var(--fs-m); padding: 4px 0; color: var(--lbl); }
 .stab.on { color: #fff; background: var(--accent); }
-.view .skill { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin: 4px 0; background: #6b6b6b; color: #fff; }
+.view .skill { display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin: 8px 0; background: #6b6b6b; color: #fff; }
 .view .skill.can { background: var(--accent); }
 .view .skill .sico { width: 34px; height: 34px; border-radius: 50%; background: #fff; color: #6b6b6b; display: grid; place-items: center; flex: none; }
 .view .skill.can .sico { color: var(--accent); }
@@ -176,7 +176,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 
 /* ---------- narrow screens: stack ---------- */
 /* left and middle columns size their boxes independently: the sheet takes what it needs, the log the rest */
-.colL, .colM { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
+.colL, .colM { display: flex; flex-direction: column; gap: 14px; min-height: 0; min-width: 0; }
 .colL { grid-area: colL; } .colM { grid-area: colM; }
 .colL .sheet, .colM .monster, .colM .petbox, .colM .loot { flex: none; }
 .colL .log { flex: 1; min-height: 0; }
@@ -274,7 +274,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .lat { padding-left: 0.17em; }
 
 /* ---------- tooltip (skills) ---------- */
-.tip { position: fixed; z-index: 20; width: 260px; padding: 10px 12px; background: #fbfbfb; color: var(--ink);
+.tip { position: fixed; z-index: 20; width: 270px; padding: 14px 18px; background: #fbfbfb; color: var(--ink);
   box-shadow: 0 6px 22px rgba(40, 30, 70, .18); pointer-events: none; font-size: var(--fs-xs); line-height: 1.6; }
 .tip[hidden] { display: none; }
 .tip .tname { font-size: var(--fs-m); color: var(--lbl); margin-bottom: 4px; }
