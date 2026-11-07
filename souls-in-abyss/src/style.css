@@ -61,7 +61,7 @@ small { font-size: var(--fs-xs); }
 .petname { color: #a8657a; } .hearts { color: #b47f76; letter-spacing: 1px; font-size: var(--fs-xs); }
 
 /* blacksmith rules and section headings; pal sprite beside its numbers */
-.rules { margin-bottom: 10px; } .rules .kv .lbl { min-width: 72px; color: var(--dim); } .rules .kv > span:last-child { margin-left: 0; }
+.rules { margin-bottom: 10px; font-size: var(--fs-xs); line-height: 20px; } .rules .kv { min-height: 20px; } .rules .kv .lbl { min-width: 64px; color: var(--dim); } .rules .kv > span:last-child { margin-left: 0; }
 .view h4 { margin: 14px 0 4px; font-weight: normal; font-size: var(--fs-l); color: var(--lbl); }
 .petspr.hop { animation: hop .35s ease-out; } .doll .petspr { cursor: pointer; transform-box: fill-box; transform-origin: center bottom; }
 @keyframes hop { 0% { transform: translateY(0); } 40% { transform: translateY(-8px); } 100% { transform: translateY(0); } }
