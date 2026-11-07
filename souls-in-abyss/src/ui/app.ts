@@ -259,13 +259,11 @@ export class App {
     const s = this.g.s, p = s.pets.find(x => x.key === s.activePet);
     if (!p) return `<div class="kv"><span class="lbl">${t('pet')}</span></div><div class="kv"><span class="lbl">${t('lv')}</span></div><div class="kv"><span class="lbl">${t('exp')}</span><div class="line"></div></div>`;
     const d = petOf(p.key)!, st = stageOf(p.lvl);
-    // the pal sits beside its numbers; tapping it gets a quip (and, once a minute, a little bond)
-    return `<div class="petrow"><div class="petinfo">
-      <div class="kv"><span class="lbl">${t('pet')}</span><span class="petname">${tr(d.stages[st].name)}</span></div>
+    // text only: the pal itself stands on the equipment board, where it can be tapped
+    return `<div class="kv"><span class="lbl">${t('pet')}</span><span class="petname">${tr(d.stages[st].name)}</span></div>
       <div class="kv"><span class="lbl">${t('lv')}</span><span>${p.lvl}</span></div>
       <div class="kv"><span class="lbl">${t('exp')}</span><div class="line"><div class="grey" style="width:${(p.xp / petXpNeed(p.lvl) * 100).toFixed(0)}%"></div></div></div>
-      <div class="kv"><span class="lbl">${t('bond')}</span><span class="hearts">${hearts(p.bond)}</span></div></div>
-      <button class="petspr" data-a="petTap" title="${tr(d.stages[st].name)}">${icon('pet-' + p.key, 'gi')}</button></div>`;
+      <div class="kv"><span class="lbl">${t('bond')}</span><span class="hearts">${hearts(p.bond)}</span></div>`;
   }
 
   private attHtml(): string {

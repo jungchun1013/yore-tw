@@ -63,9 +63,6 @@ small { font-size: var(--fs-xs); }
 /* blacksmith rules and section headings; pal sprite beside its numbers */
 .rules { margin-bottom: 10px; } .rules .kv .lbl { min-width: 72px; color: var(--dim); } .rules .kv > span:last-child { margin-left: 0; }
 .view h4 { margin: 14px 0 4px; font-weight: normal; font-size: var(--fs-l); color: var(--lbl); }
-.petrow { display: flex; align-items: center; gap: 12px; } .petinfo { flex: 1; min-width: 0; }
-.petspr { background: none; border: 0; padding: 0; cursor: pointer; flex: none; display: grid; place-items: center; }
-.petbox .petspr { width: 60px; height: 60px; } .petbox .petspr .gi { width: 48px; height: 48px; }
 .petspr.hop { animation: hop .35s ease-out; } .doll .petspr { cursor: pointer; transform-box: fill-box; transform-origin: center bottom; }
 @keyframes hop { 0% { transform: translateY(0); } 40% { transform: translateY(-8px); } 100% { transform: translateY(0); } }
 /* the box keeps its padding while the list inside scrolls */
