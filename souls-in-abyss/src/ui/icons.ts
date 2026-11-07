@@ -2,7 +2,7 @@
 export const PALETTE: Record<string, string> = {
   o: '#343842', s: '#667681', h: '#bcc5bd', w: '#e3ddc9', g: '#82947b',
   G: '#53695e', b: '#839da5', p: '#9586a4', P: '#625575', y: '#c1a775',
-  r: '#b47f76', t: '#ac917b', d: '#725e53', k: '#343842',
+  r: '#b47f76', t: '#ac917b', d: '#725e53', k: '#343842', W: '#ffffff',
 };
 const patterns: Record<string, string> = {
   human: '..oooo../.otttto./.twwwwt./.twkwkw./..tw wt../..gggg../.ggyygg./..g..g..',
@@ -16,7 +16,7 @@ const patterns: Record<string, string> = {
   will: '...pp.../..pwwp../.pwb bwp./.pwwwwp./..pwwp../...pp.../...yy.../..yyyy..',
   luk: '.gg..gg./gwwggwwg/gggggggg/.gggggg./..gggg../...gg.../...g..../..gg....',
   equip: '..ssss../.shhhhs./sshhh hss/sshhhhss/.shhhhs./..shhs../...ss.../........',
-  pets: '.ww..ww./.ww..ww./..wwww../.wwwwww./.wkwkw../..wrw.../...w..../........',
+  pets: '.WW..WW./.WW..WW./..WWWW../.WWWWWW./.WkWkW../..WrW.../...W..../........', // white, so it shows on the cream tab
   skills: '...p..../...pp.../..pypp../.ppyypp./ppywyppp/.pyyyp../..ppp.../...p....',
   map: '.oo..oo./owwoowwo/owwggwwo/owgggwwo/owwgwwwo/owwwgwwo/.oowwoo./...oo...',
   smith: '...ss.../.ssssss./.hhhhhh./..ssss../...ss.../..ssss../.ssssss./........',
