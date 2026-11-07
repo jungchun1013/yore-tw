@@ -107,6 +107,7 @@ export class App {
     this.root.querySelectorAll('.nav .ico').forEach(b => b.classList.toggle('on', (b as HTMLElement).dataset.k === v));
     const label = NAV.find(n => n[0] === v)![1];
     (this.root.querySelector('#vtitle') as HTMLElement).textContent = t(label);
+    (this.root.querySelector('#view') as HTMLElement).className = `view v-${v}`;
     this.lastHtml.view = '';
     this.render();
   }
@@ -437,9 +438,20 @@ export class App {
       if (this.tipFor && !this.tipByTap && (tgt === document || (tgt as Element).contains?.(this.tipFor))) hide();
     }, true);
   }
+  private areaTip(key: string): string {
+    const { s, d } = this.g;
+    const i = AREAS.findIndex(a => a.key === key); if (i < 0) return '';
+    const a = AREAS[i], cp = AREA_CP[i];
+    const cls = d.cp >= cp ? 'up' : d.cp >= cp * 0.6 ? 'warn' : 'down';
+    const pals = PETS.filter(p => p.home === a.key && !p.hidden).map(p => s.pets.some(x => x.key === p.key) ? tr(p.stages[0].name) : t('unknown')).join(' · ');
+    return `<div class="tname">${tr(a.name)} <small class="dim">Lv ${a.min}–${a.max}</small></div>
+      <div class="tsec">${t('recArea')} <b class="${cls}">${num(cp)}</b> · ${a.dread ? `<span class="madtxt">${t('dread')} -${(a.dread * willResist(d.prim.will) * d.sanDrain).toFixed(2)}</span>` : `<span class="up">${t('safe')}</span>`}${pals ? ` · ${t('pet')}${t('sep')}${pals}` : ''}</div>
+      <p class="lore">${tr(a.flavor)}</p>`;
+  }
   private tipHtml(key: string): string {
     const [kind, id] = key.split(':');
     if (kind === 'item') { const it = this.g.itemOf(Number(id)); return it ? this.itemTip(it) : ''; }
+    if (kind === 'area') return this.areaTip(id);
     if (kind !== 'skill') return '';
     const k = SKILLS.find(x => x.key === id); if (!k) return '';
     const r = this.g.s.skills[k.key] || 0, max = r >= MAX_RANK;
@@ -472,16 +484,13 @@ export class App {
     const nodes = AREAS.map((a, i) => {
       const [x, y] = POS[i], here = s.area === a.key, cp = AREA_CP[i];
       const state = here ? 'here' : d.cp >= cp ? 'ok' : d.cp >= cp * 0.6 ? 'risky' : 'far';
-      return `<button class="node ${state} ${sel === a.key ? 'sel' : ''}" style="left:${x}%;top:${y}%" data-a="mapsel" data-k="${a.key}" title="${tr(a.name)}">
+      return `<button class="node ${state} ${sel === a.key ? 'sel' : ''}" style="left:${x}%;top:${y}%" data-a="mapsel" data-k="${a.key}" data-tip="area:${a.key}">
         <span class="nico">${icon('area-' + a.key)}</span><span class="nname">${tr(a.name)}</span></button>`;
     }).join('');
-    const i = AREAS.findIndex(a => a.key === sel), a = AREAS[i], cp = AREA_CP[i], here = s.area === a.key;
-    const cls = d.cp >= cp ? 'up' : d.cp >= cp * 0.6 ? 'warn' : 'down';
-    const pals = PETS.filter(p => p.home === a.key && !p.hidden).map(p => s.pets.some(x => x.key === p.key) ? tr(p.stages[0].name) : t('unknown')).join(' · ');
-    const card = `<div class="item mapcard"><div class="dot" style="background:${a.bg}">${icon('area-' + a.key)}</div>
-      <div class="grow"><div class="iname">${tr(a.name)} <small class="dim">Lv ${a.min}–${a.max}</small></div>
-      <div class="istat">${t('recArea')} <b class="${cls}">${num(cp)}</b> · ${a.dread ? `<span class="madtxt">${t('dread')} -${(a.dread * willResist(d.prim.will) * d.sanDrain).toFixed(2)}</span>` : `<span class="up">${t('safe')}</span>`}${pals ? ` · ${t('pet')}${t('sep')}${pals}` : ''}</div>
-      <p class="lore">${tr(a.flavor)}</p></div>
+    const a = AREAS.find(x => x.key === sel)!, here = s.area === a.key;
+    // the name, level range, suggested CP, SAN cost, pals and the wall-writing live in the icon's tooltip
+    const card = `<div class="item mapcard"><div class="dot" style="background:${a.bg}" data-tip="area:${a.key}">${icon('area-' + a.key)}</div>
+      <div class="grow"></div>
       ${here ? `<span class="dim">${t('here')}</span>` : `<button data-a="go" data-k="${a.key}">${t('go')}</button>`}</div>`;
     return `<div class="mapboard"><svg class="maproute" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${path}"/></svg>${nodes}</div>${card}${this.lootHtml()}`;
   }

@@ -285,8 +285,13 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .node.here .nname { color: var(--accent); }
 .node.sel .nico { transform: scale(1.15); }
 .node:hover .nico { background: var(--accent); }
-.mapcard .lore { margin-top: 2px; }
+.mapcard .dot { cursor: help; }
+.tip .lore { margin-top: 6px; }
 @media (max-width: 900px) { .mapboard { height: 420px; } }
+/* the map and its stats share the column without scrolling: the board shrinks first, down to 240px */
+.view.v-map { display: flex; flex-direction: column; }
+.view.v-map .mapboard { flex: 1 1 auto; min-height: 240px; max-height: 520px; }
+.view.v-map .mapcard, .view.v-map .loot { flex: none; }
 
 .rblead { margin: 4px 0 8px; color: var(--lbl); }
 .create .rbtext { width: 100%; max-width: 520px; }
