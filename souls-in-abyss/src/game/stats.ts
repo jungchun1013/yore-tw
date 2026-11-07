@@ -7,7 +7,9 @@ import { addOf, collectMods, mulOf } from './mods';
 export interface Derived {
   prim: Record<StatKey, number>;
   hp: number; mp: number; atkMin: number; atkMax: number; bal: number; crit: number; critDmg: number;
-  def: number; prt: number; magic: number; interval: number;
+  def: number; prt: number; magic: number;
+  spd: number;       // attack speed stat shown to the player
+  interval: number;  // seconds between swings, derived from spd
   xp: number; gold: number; drop: number; heal: number;
   petPower: number; guard: number; petHeal: number;
   dmgTaken: number; sanDrain: number;
@@ -44,10 +46,11 @@ export function derive(s: Save): Derived {
   const hp = (50 + s.lvl * 6 + prim.will * 1.2 + prim.str * 0.6 + addOf(t, 'hp')) * mulOf(t, 'hp');
   const mp = (20 + s.lvl * 2 + prim.int * 1.5 + addOf(t, 'mp')) * mulOf(t, 'mp');
   const magic = (5 + s.lvl + prim.int * 1.2 + addOf(t, 'magic')) * mulOf(t, 'magic');
-  const interval = Math.max(0.35, (w ? wd.interval : 1.5) / ((1 + prim.dex * 0.002) * mulOf(t, 'speed')));
+  const spd = (w ? wd.spd : 120) * (1 + prim.dex * 0.002) * mulOf(t, 'speed');
+  const interval = Math.max(0.35, SPD_SECONDS / spd);
 
   const d: Derived = {
-    prim, hp, mp, atkMin, atkMax, bal, crit, critDmg: 1.5 + addOf(t, 'critDmg'), def, prt, magic, interval,
+    prim, hp, mp, atkMin, atkMax, bal, crit, critDmg: 1.5 + addOf(t, 'critDmg'), def, prt, magic, spd, interval,
     xp: mulOf(t, 'xp'),
     gold: (1 + prim.luk * 0.004) * mulOf(t, 'gold'),
     drop: (1 + prim.luk * 0.003) * mulOf(t, 'drop'),
@@ -65,6 +68,8 @@ export function derive(s: Save): Derived {
 }
 
 const clamp = (x: number, a: number, b: number) => Math.max(a, Math.min(b, x));
+/** SPD 100 swings once every 1.8 s; double the SPD, half the wait. */
+export const SPD_SECONDS = 180;
 
 /** Combat Power: geometric mean of damage per second and effective HP. A guide, not a rule. */
 export const cpOf = (dps: number, ehp: number): number => Math.round(Math.sqrt(Math.max(0, dps * ehp)));

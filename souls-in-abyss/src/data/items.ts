@@ -1,11 +1,11 @@
 import type { Kind, L, ModKey, Weight } from '../game/types';
 
-/** Weapons: damage range, balance, crit, attack interval. Armor: defense and protection. */
-export interface WeightDef { name: L; min: number; max: number; bal: number; crit: number; interval: number; def: number; prt: number }
+/** Weapons: damage range, balance, crit, attack speed (SPD; 100 = one swing per 1.8 s). Armor: defense and protection. */
+export interface WeightDef { name: L; min: number; max: number; bal: number; crit: number; spd: number; def: number; prt: number }
 export const WEIGHTS: Record<Weight, WeightDef> = {
-  light:  { name: { zh: '輕', en: 'Light' },  min: 0.5, max: 0.8, bal: 0.1,  crit: 0.05, interval: 1.2, def: 0.6, prt: 0 },
-  medium: { name: { zh: '中', en: 'Medium' }, min: 0.6, max: 1.2, bal: 0,    crit: 0.02, interval: 1.8, def: 1.0, prt: 0.01 },
-  heavy:  { name: { zh: '重', en: 'Heavy' },  min: 0.7, max: 2.0, bal: -0.1, crit: 0,    interval: 2.6, def: 1.5, prt: 0.03 },
+  light:  { name: { zh: '輕', en: 'Light' },  min: 0.5, max: 0.8, bal: 0.1,  crit: 0.05, spd: 150, def: 0.6, prt: 0 },
+  medium: { name: { zh: '中', en: 'Medium' }, min: 0.6, max: 1.2, bal: 0,    crit: 0.02, spd: 100, def: 1.0, prt: 0.01 },
+  heavy:  { name: { zh: '重', en: 'Heavy' },  min: 0.7, max: 2.0, bal: -0.1, crit: 0,    spd: 69,  def: 1.5, prt: 0.03 },
 };
 export const WEIGHT_KEYS: Weight[] = ['light', 'medium', 'heavy'];
 /** Share of an armor set's defense carried by each piece. */
@@ -58,7 +58,6 @@ export const AFFIXES: AffixDef[] = [
   { key: 'mp', kind: 'mul', flat: 0.05, per: 0.0006, kinds: ['head', 'acc'] },
   { key: 'xp', kind: 'mul', flat: 0.05, per: 0.0008, kinds: ['acc'] },
   { key: 'gold', kind: 'mul', flat: 0.06, per: 0.001, kinds: ['acc', 'feet'] },
-  { key: 'drop', kind: 'mul', flat: 0.05, per: 0.0008, kinds: ['acc'] },
 ];
 
 /** Blacksmith: +1 to +10. Each plus adds 10% of the base numbers. */

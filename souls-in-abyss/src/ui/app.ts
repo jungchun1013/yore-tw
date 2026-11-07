@@ -249,7 +249,7 @@ export class App {
         <div class="kv"><span class="lbl">${t('crtm')}</span><span>${Math.round(d.critDmg * 100)}</span></div>
         <div class="kv"><span class="lbl">${t('def')}</span><span>${Math.floor(d.def)}</span></div>
         <div class="kv"><span class="lbl">${t('prt')}</span><span>${Math.round(d.prt * 100)}</span></div>
-        <div class="kv"><span class="lbl">${t('spd')}</span><span>${d.interval.toFixed(2)}s</span></div>
+        <div class="kv"><span class="lbl">${t('spd')}</span><span>${Math.round(d.spd)}</span></div>
       </div>`;
   }
 
@@ -295,7 +295,7 @@ export class App {
   private itemHtml(it: Item): string {
     const r = RARITY[it.rarity];
     let base = '';
-    if (it.kind === 'weapon') { const [a, b] = weaponRange(it); base = `${t('atk')} ${Math.floor(a)}~${Math.floor(b)} · ${WEIGHTS[it.weight!].interval}s`; }
+    if (it.kind === 'weapon') { const [a, b] = weaponRange(it); base = `${t('atk')} ${Math.floor(a)}~${Math.floor(b)} · ${t('spd')} ${WEIGHTS[it.weight!].spd}`; }
     else if (it.kind !== 'acc') { base = `${t('def')} ${Math.floor(armorDef(it))}${armorPrt(it) > 0 ? ` · ${t('prt')} ${pct(armorPrt(it), 1)}` : ''}`; }
     const aff = it.affixes.map(modText).join(' · ');
     const wt = it.weight ? `<span class="wt">${tr(WEIGHTS[it.weight].name)}</span>` : '';
