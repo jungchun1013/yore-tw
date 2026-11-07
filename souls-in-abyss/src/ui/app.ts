@@ -443,8 +443,20 @@ const banner = (small = false) => `<div class="banner ${small ? 'small' : ''}"><
 export function creation(root: HTMLElement, done: (name: string, race: string, age: number) => void): void {
   let race = 'elf', age = 13, name = lang === 'zh' ? '勇者' : 'Hero';
   const titleScreen = () => {
-    root.innerHTML = `<div class="title">${banner()}<p class="tagline">${t('tagline')}</p><button class="link play" id="t-play">${t('play')}</button></div>`;
-    root.querySelector<HTMLElement>('#t-play')!.onclick = draw;
+    root.innerHTML = `<div class="title">${banner()}<button class="link play" id="t-play">${t('play')}</button></div>`;
+    root.querySelector<HTMLElement>('#t-play')!.onclick = intro;
+  };
+  /** The tagline as a short interlude: each line fades in, then both fade out. Click to skip. */
+  const intro = () => {
+    const lines = t('tagline').split('<br>');
+    root.innerHTML = `<div class="intro" role="button" tabindex="0" aria-label="${t('play')}">${lines.map((l, i) => `<p class="introline" style="--d:${i * 1.4}s">${l}</p>`).join('')}</div>`;
+    const box = root.querySelector<HTMLElement>('.intro')!;
+    let done = false;
+    const next = () => { if (!done) { done = true; draw(); } };
+    box.onclick = next;
+    box.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') next(); };
+    box.focus();
+    box.addEventListener('animationend', e => { if ((e.target as HTMLElement) === box) next(); });
   };
   const draw = () => {
     root.innerHTML = `<div class="create">${banner(true)}

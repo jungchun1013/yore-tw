@@ -12,6 +12,8 @@ test('title, create a hero, fight, and open every view', async ({ page }, info) 
   await page.goto('/');
   await page.screenshot({ path: `${SHOTS}/${info.project.name}-title.png` });
   await page.click('#t-play');
+  await expect(page.locator('.introline').first()).toBeVisible();
+  await page.click('.intro');
   await page.click('[data-a="cRace"][data-k="elf"]');
   await page.click('[data-a="cAge"][data-k="13"]');
   await expect(page.locator('.sttable tbody tr').nth(1).locator('td').nth(1)).toHaveText('+4');
@@ -51,6 +53,9 @@ test('rebirth with a pact keeps gear and adds legacy', async ({ page }, info) =>
   await page.goto('/');
   await page.screenshot({ path: `${SHOTS}/${info.project.name}-title-en.png` });
   await page.click('#t-play');
+  await page.waitForTimeout(2600);
+  await page.screenshot({ path: `${SHOTS}/${info.project.name}-intro-en.png` });
+  await page.click('.intro');
   await page.screenshot({ path: `${SHOTS}/${info.project.name}-create-en.png` });
   await page.click('#c-go');
   const uid = await page.evaluate(() => {
@@ -80,6 +85,7 @@ test('sanity drains in the abyss, glitches the log, and collapses at zero', asyn
   await page.addInitScript(fresh, 'en');
   await page.goto('/');
   await page.click('#t-play');
+  await page.click('.intro');
   await page.click('#c-go');
   const r = await page.evaluate(() => {
     const g = (window as any).__game;

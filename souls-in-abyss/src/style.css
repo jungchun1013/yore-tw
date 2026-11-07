@@ -133,7 +133,13 @@ small { font-size: 13px; }
 .banner.small .glow { font-size: clamp(32px, 5.5vw, 60px); }
 .subtitle { color: #9a88c8; letter-spacing: .35em; margin-top: 4px; font-size: 18px; line-height: 1.6; }
 .banner.small .subtitle { font-size: 14px; }
-.tagline { max-width: 600px; text-align: center; color: var(--dim); margin: 0; }
+.intro { min-height: 100vh; background: #fff; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; cursor: pointer; outline: none;
+  animation: introOut 1.2s ease-in 4.6s forwards; }
+.introline { margin: 0; font-size: clamp(20px, 3.2vw, 30px); color: #5a4f78; letter-spacing: .12em; text-align: center; opacity: 0;
+  animation: introIn 1.4s ease-out var(--d) forwards; }
+@keyframes introIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes introOut { to { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .introline { animation-duration: .01s; } .intro { animation-delay: 2.5s; animation-duration: .3s; } }
 button.play { font-size: 28px; color: #6b6b6b; letter-spacing: .04em; }
 button.play:hover { color: var(--accent); }
 
