@@ -151,7 +151,7 @@ button.play:hover { color: var(--accent); }
 .rrow.on { color: var(--accent); } .rrow.on .rico { background: var(--accent); }
 .rrow:hover:not(:disabled), .rrow:focus-visible { background: none; border: 0; } .rrow:hover:not(.on) .rico { background: #6b6b6b; }
 .rinfo { color: #6b6b6b; display: flex; flex-direction: column; gap: 10px; }
-.figs { display: flex; align-items: flex-end; gap: 12px; height: 118px; }
+.figs { display: flex; align-items: flex-end; gap: 22px; height: 118px; }
 .fig { position: relative; padding: 0; border: 0; background: none; display: flex; flex-direction: column; align-items: center; gap: 4px; }
 .fig .agev { font-size: 20px; color: var(--accent); min-height: 26px; }
 .fig .pict { fill: #8a8a8a; display: block; transition: fill .15s; }
@@ -164,7 +164,7 @@ button.play:hover { color: var(--accent); }
 .sttable tbody th { text-align: left; color: #8a8a8a; font-size: 16px; padding-left: 0; white-space: nowrap; }
 .sttable td { color: #3e3e3e; font-variant-numeric: tabular-nums; }
 .sttable td.plus { color: var(--accent); }
-.center { text-align: center; } .rdesc { margin: 0; }
+.center { text-align: center; } .rcol { display: flex; flex-direction: column; gap: 16px; min-width: 0; } .rdesc { margin: 0; color: #5a5a5a; }
 .cfoot { display: flex; align-items: center; gap: 40px; margin-top: 6px; }
 .namebox { display: flex; align-items: center; gap: 10px; color: #6b6b6b; font-size: 20px; }
 .namebox input { width: 180px; font-size: 18px; }
@@ -184,8 +184,13 @@ button.play:hover { color: var(--accent); }
   .rlist { flex-direction: row; justify-content: center; gap: 10px; }
   .rrow .rname { display: none; }
   .rrow .rico { width: 48px; height: 48px; }
-  .figs { gap: 4px; justify-content: center; }
-  .sttable { font-size: 16px; width: 100%; } .sttable th, .sttable td { padding: 4px 4px; }
+  .rdesc { text-align: center; }
+  .figs { gap: 12px; justify-content: center; }
+  .sttable { font-size: 15px; width: 100%; table-layout: fixed; }
+  .sttable th, .sttable td { padding: 4px 0; }
+  .sttable thead th:first-child, .sttable tbody th { width: 22%; }
+  .sttable thead th { font-size: 13px; } .sttable tbody th { font-size: 13px; }
+  .sttable thead .gi.sm { width: 22px; height: 22px; }
   .banner { padding: 10px; }
   .cfoot { flex-direction: column; gap: 14px; }
 }

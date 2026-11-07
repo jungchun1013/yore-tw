@@ -427,12 +427,11 @@ export function raceAgePicker(race: string, age: number, raceAction: string, age
       <span class="agev">${a === age ? a : ''}</span>${figure(40 + (a - 10) * 3)}</button>`).join('');
   const head = PRIMARY.map(k => `<th>${icon(k, 'gi sm')}${tr(STAT[k])}</th>`).join('');
   const row = (o: Record<string, number>, plus: boolean) => PRIMARY.map(k => `<td class="${plus ? 'plus' : ''}">${plus ? '+' : ''}${o[k]}</td>`).join('');
-  return `<div class="picker"><div class="rlist">${list}</div><div class="rinfo">
+  return `<div class="picker"><div class="rcol"><div class="rlist">${list}</div><p class="rdesc">${tr(r.name)}：${tr(r.desc)}</p></div><div class="rinfo">
       <div class="figs">${figs}</div>
       <table class="sttable"><thead><tr><th></th>${head}</tr></thead>
         <tbody><tr><th>${t('initStat')}</th>${row(r.base, false)}</tr><tr><th>${t('ageGrowth')}</th>${row(g, true)}</tr></tbody></table>
-      <p class="dim small">${t('levelShare')}</p>
-      <p class="rdesc">${tr(r.name)}：${tr(r.desc)}</p></div></div>`;
+      <p class="dim small center">${t('levelShare')}</p></div></div>`;
 }
 
 /** CJK lines use the pixel font's own metrics so the glow banner does not overlap. */
