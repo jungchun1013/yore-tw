@@ -6,7 +6,7 @@
 }
 :root {
   --bg: #e6e6e6; --box: #ffffff; --line: #cfcfcf; --ink: #555555; --lbl: #3e3e3e; --dim: #9a9a9a;
-  --gold: #e8b33d; --accent: #6e52b8; --accent-soft: #f1ecfa; --glow1: #5b3fa8; --glow2: #8467cf; --glow3: #b6a3e6; --glow4: #e2daf6; --orange: #e8933d; --red: #a8322d; --blue: #2d6ea8; --up: #3fa34d; --down: #d43d3d; --warn: #e0791a;
+  --gold: #e8b33d; --num: 22px; --accent: #6e52b8; --accent-soft: #f1ecfa; --glow1: #5b3fa8; --glow2: #8467cf; --glow3: #b6a3e6; --glow4: #e2daf6; --orange: #e8933d; --red: #a8322d; --blue: #2d6ea8; --up: #3fa34d; --down: #d43d3d; --warn: #e0791a;
   color-scheme: light;
 }
 * { box-sizing: border-box; }
@@ -153,14 +153,15 @@ button.play:hover { color: var(--accent); }
 .rrow.on { color: var(--accent); } .rrow.on .rico { background: var(--accent); }
 .rrow:hover:not(:disabled), .rrow:focus-visible { background: none; border: 0; } .rrow:hover:not(.on) .rico { background: #6b6b6b; }
 .rinfo { color: #6b6b6b; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.figs { display: flex; align-items: flex-end; justify-content: center; gap: 22px; height: 148px; }
-.fig { position: relative; padding: 0; border: 0; background: none; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.fig .agev { font-size: 20px; color: var(--accent); min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; line-height: 1.2; }
+.figs { display: flex; align-items: flex-end; justify-content: center; gap: 22px; height: 120px; }
+.fig { position: relative; padding: 0; border: 0; background: none; display: flex; flex-direction: column; align-items: center; }
+/* floats above the figure so a wider number never shifts the row */
+.fig .agev { position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); font-size: var(--num); color: var(--accent); display: flex; flex-direction: column; align-items: center; line-height: 1.2; white-space: nowrap; pointer-events: none; }
 .fig .agev small { font-size: 13px; color: #8a8a8a; letter-spacing: .08em; }
 .fig .pict { fill: #8a8a8a; display: block; transition: fill .15s; }
 .fig.on .pict { fill: var(--accent); }
 .fig:hover:not(:disabled), .fig:focus-visible { background: none; border: 0; } .fig:hover:not(.on) .pict { fill: #6b6b6b; }
-.sttable { border-collapse: collapse; font-size: 24px; width: auto; margin: 0 auto; }
+.sttable { border-collapse: collapse; font-size: var(--num); width: auto; margin: 0 auto; }
 .sttable th, .sttable td { padding: 5px 15px; text-align: center; font-weight: normal; }
 .sttable thead th { color: #6b6b6b; font-size: 19px; }
 .sttable thead .gi.sm { display: block; width: 30px; height: 30px; margin: 0 auto 3px; opacity: .8; }
@@ -189,7 +190,7 @@ button.play:hover { color: var(--accent); }
   .rrow .rico { width: 48px; height: 48px; padding: 9px; }
   .rdesc { font-size: 16px; }
   .figs { gap: 12px; justify-content: center; }
-  .sttable { font-size: 18px; }
+  :root { --num: 18px; }
   .sttable th, .sttable td { padding: 5px 8px; }
   .sttable tbody th { padding-right: 7px; }
   .sttable thead th { font-size: 15px; } .sttable tbody th { font-size: 15px; }
