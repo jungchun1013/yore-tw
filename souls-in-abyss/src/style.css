@@ -6,7 +6,7 @@
   font-display: swap;
 }
 :root {
-  --bg: #bcc5bd; --box: #f9f7f0; --line: #d7d7cb; --ink: #343842; --lbl: #343842; --dim: #667681;
+  --bg: #dedfd3; --box: #f9f7f0; --line: #d7d7cb; --ink: #343842; --lbl: #343842; --dim: #667681;
   --gold: #c1a775; --num: 22px; --r-box: 12px; --r-item: 8px; --fs-xs: 13px; --fs-m: 16px; --fs-l: 21px; --fs-xl: 25px; --fs-xxl: 30px; --fs-title: 84px; --fs-title-s: 52px; --slot: 34px; --accent: #625575; --accent-soft: #e8e3ea; --glow1: #625575; --glow2: #9586a4; --glow3: #c4bacd; --glow4: #e8e3ea; --orange: #b47f76; --red: #9c4f47; --blue: #5f7d87; --up: #53695e; --down: #9c4f47; --warn: #a88a55;
   color-scheme: light;
 }
