@@ -26,7 +26,7 @@ export type GameEvent =
 export interface MapLoot { sec: number; kills: number; deaths: number; gold: number; xp: number; items: number[] }
 
 const KILL_PAUSE = 0.6, RESPAWN = 5, PET_INTERVAL = 2.2;
-/** Pals: a quarter of the monster's blows land on the pal; a downed pal rests this long; its big hit costs this share of its MP. */
+/** Pals: a quarter of the monster's blows land on the pal; a downed pal rests this long; with full MP it goes all out, spending this share. */
 const PET_TARGET = 0.25, PET_REST = 20, PET_SKILL_COST = 0.3;
 const ATTACKS = SKILLS.filter(s => s.act?.on === 'attack');
 const DEFENDS = SKILLS.filter(s => s.act?.on === 'defend');
@@ -180,8 +180,8 @@ export class Game {
       const amt = Math.min(this.d.hp - this.hp, this.d.hp * this.d.petHeal);
       this.hp += amt; this.emit({ t: 'heal', amt });
     }
-    // with enough MP the pal puts everything into one blow
-    const cost = this.petMaxMp * PET_SKILL_COST, allOut = cost > 0 && this.petMp >= cost;
+    // with a full MP bar the pal puts everything into one blow, then charges back up (~30s)
+    const cost = this.petMaxMp * PET_SKILL_COST, allOut = cost > 0 && this.petMp >= this.petMaxMp - 1e-6;
     if (allOut) { this.petMp -= cost; dmg *= 2; }
     const name: Part = { text: tr(d.stages[stage].name), cls: 'pet' };
     if (allOut) this.say({ zh: '{0} 使出全力一擊，對 {1} 造成 {2} 傷害', en: '{0} goes all out, {2} damage to {1}' }, [name, this.monPart(), this.n(dmg)]);
