@@ -57,7 +57,17 @@ small { font-size: var(--fs-xs); }
 .scene { width: 100%; display: block; image-rendering: pixelated; aspect-ratio: 320 / 120; }
 .petname { color: #a8657a; } .hearts { color: #b47f76; letter-spacing: 1px; font-size: var(--fs-xs); }
 
-.log { overflow-y: auto; font-size: var(--fs-m); line-height: 1.55; }
+/* the box keeps its padding while the list inside scrolls */
+.log { display: flex; flex-direction: column; overflow: hidden; font-size: var(--fs-m); line-height: 1.55; }
+.loglist { flex: 1; min-height: 0; overflow-y: auto; }
+/* pixel scrollbars: flat track, bevelled block thumb, no arrows */
+::-webkit-scrollbar { width: 12px; height: 12px; }
+::-webkit-scrollbar-track { background: #e3ddc9; }
+::-webkit-scrollbar-thumb { background: #9ba39a; border: 2px solid #e3ddc9; box-shadow: inset 2px 2px 0 #b9c0b7, inset -2px -2px 0 #727a72; }
+::-webkit-scrollbar-thumb:hover { background: #8a938a; }
+::-webkit-scrollbar-button { width: 0; height: 0; display: none; }
+::-webkit-scrollbar-corner { background: #e3ddc9; }
+@supports not selector(::-webkit-scrollbar) { * { scrollbar-width: thin; scrollbar-color: #9ba39a #e3ddc9; } }
 .log p { margin: 0; }
 .log .ts { color: var(--dim); margin-right: 2px; }
 .log .num { color: var(--down); } .log .num.big { color: var(--down); }

@@ -67,7 +67,7 @@ export class App {
       <div class="game">
         <div class="colL">
         <section class="box sheet" id="sheet"></section>
-        <section class="box log" id="log"></section>
+        <section class="box log"><div class="loglist" id="log"></div></section>
         </div>
         <div class="colM">
         <section class="box monster">
