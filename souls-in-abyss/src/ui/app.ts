@@ -337,8 +337,8 @@ export class App {
     const s = this.g.s;
     const CELL = 36;
     const cells: [Slot, number, number][] = [
-      ['head', 22, 44], ['body', 22, 90], ['legs', 22, 136], ['feet', 22, 182],
-      ['ring', 258, 44], ['neck', 258, 90], ['off', 66, 113], ['weapon', 214, 113],
+      ['head', 26, 44], ['body', 26, 90], ['legs', 26, 136], ['feet', 26, 182],
+      ['ring', 254, 44], ['neck', 254, 90], ['off', 66, 113], ['weapon', 214, 113],
     ];
     const ico = (name: string, x: number, y: number, sz: number) => `<svg x="${x - sz / 2}" y="${y - sz / 2}" width="${sz}" height="${sz}" viewBox="0 0 16 16" shape-rendering="crispEdges">${pixelMarkup(name)}</svg>`;
     const cellSvg = cells.map(([k, x, y]) => {
@@ -354,7 +354,7 @@ export class App {
     // the hand cells show what is held, so the figure itself goes bare-handed here
     const outfit = { ...s.equip, weapon: undefined, off: undefined };
     return `<svg class="doll" viewBox="0 0 280 240">
-      <text class="cap" x="22" y="16">${t('navEquip')}</text><text class="cap" x="258" y="16">${t('charms')}</text>
+      <text class="cap" x="26" y="16">${t('navEquip')}</text><text class="cap" x="254" y="16">${t('charms')}</text>
       <svg x="92" y="40" width="96" height="144" viewBox="0 0 32 48" shape-rendering="crispEdges" data-avatar="${s.race}">${avatarMarkup(s.race, outfit)}</svg>
       ${cellSvg}${petSvg}</svg>`;
   }
