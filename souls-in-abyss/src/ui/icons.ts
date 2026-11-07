@@ -110,3 +110,9 @@ export function icon(name: string, cls = 'gi'): string {
   return `<svg class="${cls}" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" data-icon="${name}">${pixelMarkup(name)}</svg>`;
 }
 patterns['sk-defense'] = patterns.equip;
+// slots that share a look: the off hand uses the shield, the charms keep the ring and amulet
+patterns['slot-off'] = patterns.equip; patterns['slot-shield'] = patterns.equip;
+patterns['slot-ring'] = patterns['slot-acc1']; patterns['slot-neck'] = patterns['slot-acc2'];
+patterns['slot-legs'] = '.ssssss./.shhhhs./.shhhhs./.shsshs./.shsshs./.shsshs./.ss..ss./........';
+patterns.bag = '...dd.../..d..d../.dddddd./.dttttd./.dtyytd./.dttttd./.dddddd./........';
+patterns.ap = '..pppp../.pwwppp./pwwppppp/pwpppppp/ppppppPp/pppppPPp/.pppPPp./..pppp..';

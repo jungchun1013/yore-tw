@@ -284,6 +284,18 @@ export class Game {
     }
   }
 
+  private lastPetTap = 0;
+  /** Tapping the pal: it answers with a quip; once a minute the tap also deepens the bond a little. */
+  petTap(): boolean {
+    const st = this.s.pets.find(p => p.key === this.s.activePet);
+    if (!st) return false;
+    const d = petOf(st.key)!;
+    this.say(pick(d.quips), [], 'pet');
+    const now = Date.now();
+    if (now - this.lastPetTap > 60_000 && st.bond < BOND_MAX) { st.bondT += 30; this.lastPetTap = now; }
+    return true;
+  }
+
   private petBondTick(dt: number): void {
     const st = this.s.pets.find(p => p.key === this.s.activePet);
     if (!st || st.bond >= BOND_MAX) return;

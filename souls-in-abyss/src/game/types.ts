@@ -15,12 +15,15 @@ export type ModKey =
 export interface Mod { key: ModKey; add?: number; mul?: number }
 
 export type Weight = 'light' | 'medium' | 'heavy';
-/** What an item is. Accessories fit either accessory slot. */
-export type Kind = 'weapon' | 'head' | 'body' | 'hands' | 'feet' | 'acc';
-/** Where it is worn: the seven circles on the paper doll. */
-export type Slot = 'weapon' | 'head' | 'body' | 'hands' | 'feet' | 'acc1' | 'acc2';
-export const SLOTS: Slot[] = ['head', 'weapon', 'body', 'hands', 'acc1', 'feet', 'acc2'];
-export const ARMOR_KINDS: Kind[] = ['head', 'body', 'hands', 'feet'];
+/** What an item is. A shield goes in the off hand; a heavy weapon needs both hands. */
+export type Kind = 'weapon' | 'shield' | 'head' | 'body' | 'legs' | 'feet' | 'ring' | 'neck';
+/** Where it is worn: four armour cells (helmet, armour, leggings, boots), two charm cells, and the two hands. */
+export type Slot = 'head' | 'body' | 'legs' | 'feet' | 'ring' | 'neck' | 'weapon' | 'off';
+export const SLOTS: Slot[] = ['head', 'body', 'legs', 'feet', 'ring', 'neck', 'weapon', 'off'];
+export const ARMOR_KINDS: Kind[] = ['head', 'body', 'legs', 'feet'];
+/** The slot each kind is worn in. */
+export const SLOT_OF: Record<Kind, Slot> = { weapon: 'weapon', shield: 'off', head: 'head', body: 'body', legs: 'legs', feet: 'feet', ring: 'ring', neck: 'neck' };
+export const twoHanded = (it: Item | undefined | null): boolean => !!it && it.kind === 'weapon' && it.weight === 'heavy';
 
 export interface Item {
   uid: number;

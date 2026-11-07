@@ -8,14 +8,15 @@ export function rollRarity(dropMul: number): number {
   return weighted(RARITY.map((r, i) => r.w * Math.pow(f, i * 0.6)));
 }
 
-const KIND_ROLL: Kind[] = ['weapon', 'weapon', 'head', 'body', 'hands', 'feet', 'acc', 'acc'];
+const KIND_ROLL: Kind[] = ['weapon', 'weapon', 'shield', 'head', 'body', 'legs', 'feet', 'ring', 'neck'];
+const isCharm = (k: Kind) => k === 'ring' || k === 'neck';
 
 export function makeItem(s: Save, ilvl: number, rarity: number, kind?: Kind, weight?: Weight): Item {
   const k = kind || pick(KIND_ROLL);
-  const w = k === 'acc' ? undefined : weight || pick(WEIGHT_KEYS);
+  const w = isCharm(k) ? undefined : weight || pick(WEIGHT_KEYS);
   const pool = AFFIXES.filter(a => a.kinds.includes(k));
   const affixes: Mod[] = [];
-  const want = Math.max(RARITY[rarity].affixes, k === 'acc' ? 1 : 0);
+  const want = Math.max(RARITY[rarity].affixes, isCharm(k) ? 1 : 0);
   for (let i = 0; i < want && pool.length; i++) {
     const a = pool.splice(Math.floor(range(0, pool.length)), 1)[0];
     const v = (a.flat + a.per * ilvl) * range(0.6, 1.2) * (1 + 0.15 * rarity);

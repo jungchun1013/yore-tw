@@ -34,7 +34,7 @@ export function derive(s: Save): Derived {
   const w = s.equip.weapon;
   const wd = WEIGHTS[w?.weight || 'medium'];
   const [wMin, wMax] = w ? weaponRange(w) : [1, 3];
-  const pieces = ARMOR_KINDS.map(k => s.equip[k as 'head']).filter(Boolean) as Item[];
+  const pieces = [...ARMOR_KINDS.map(k => s.equip[k as 'head']), s.equip.off].filter(Boolean) as Item[];
 
   const atkMul = mulOf(t, 'atk');
   const atkMin = (wMin + prim.str / 3 + addOf(t, 'atkMin')) * atkMul;

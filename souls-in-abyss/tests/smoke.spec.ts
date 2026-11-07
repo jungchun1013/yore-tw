@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-const SHOTS = '../docs/screenshots/souls-in-abyss';
+const SHOTS = 'docs/screenshots';
 const fresh = (lang: string) => {
   if (!sessionStorage.getItem('boot')) { localStorage.clear(); localStorage.setItem('yore.lang', lang); sessionStorage.setItem('boot', '1'); }
 };

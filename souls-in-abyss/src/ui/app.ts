@@ -1,5 +1,5 @@
 import type { Game, Part } from '../game/engine';
-import { PRIMARY, SLOTS, type Item, type L, type Slot } from '../game/types';
+import { PRIMARY, SLOTS, twoHanded, type Item, type L, type Slot } from '../game/types';
 import { lang, setLang, t, tr, UI } from '../core/i18n';
 import { clock, num, pct } from '../core/fmt';
 import { derive, armorDef, armorPrt, weaponRange, xpNeed } from '../game/stats';
@@ -33,8 +33,8 @@ const STAT: Record<string, L> = {
   petPower: { zh: '夥伴傷害', en: 'Pal damage' }, sanDrain: { zh: 'SAN 流失', en: 'SAN loss' }, dmgTaken: { zh: '受到傷害', en: 'Damage taken' }, guard: { zh: '減傷', en: 'Guard' }, petHeal: { zh: '夥伴治療', en: 'Pal heal' }, heal: { zh: '擊倒回復', en: 'Kill heal' },
 };
 const SLOT_NAME: Record<Slot, L> = {
-  weapon: { zh: '武器', en: 'Weapon' }, head: { zh: '頭', en: 'Head' }, body: { zh: '身體', en: 'Body' }, hands: { zh: '手', en: 'Hands' },
-  feet: { zh: '腳', en: 'Feet' }, acc1: { zh: '飾品 1', en: 'Accessory 1' }, acc2: { zh: '飾品 2', en: 'Accessory 2' },
+  head: { zh: '頭盔', en: 'Helmet' }, body: { zh: '護甲', en: 'Armor' }, legs: { zh: '褲子', en: 'Leggings' }, feet: { zh: '鞋子', en: 'Boots' },
+  ring: { zh: '戒指', en: 'Ring' }, neck: { zh: '項鍊', en: 'Necklace' }, weapon: { zh: '主武器', en: 'Main hand' }, off: { zh: '副武器', en: 'Off hand' },
 };
 const hearts = (n: number) => Array.from({ length: BOND_MAX }, (_, i) => icon('heart', i < n ? 'gi hrt on' : 'gi hrt')).join('');
 const esc = (x: string) => x.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
@@ -121,7 +121,8 @@ export class App {
       case 'slot': this.slot = this.slot === k ? 'all' : (k as Slot); break;
       case 'stab': this.skillTab = k as SkillTab; break;
       case 'lang': setLang(k as 'zh' | 'en'); location.reload(); return;
-      case 'equip': A.equip(g, uid, this.slot === 'acc1' || this.slot === 'acc2' ? this.slot : undefined); break;
+      case 'equip': A.equip(g, uid); break;
+      case 'petTap': if (g.petTap()) setTimeout(() => this.root.querySelectorAll('.petspr').forEach(el => { el.classList.remove('hop'); void (el as HTMLElement).offsetWidth; el.classList.add('hop'); }), 0); break;
       case 'unequip': A.unequip(g, k as Slot); break;
       case 'sell': A.sell(g, uid); break;
       case 'sellAll': A.sellAll(g); break;
@@ -258,10 +259,13 @@ export class App {
     const s = this.g.s, p = s.pets.find(x => x.key === s.activePet);
     if (!p) return `<div class="kv"><span class="lbl">${t('pet')}</span></div><div class="kv"><span class="lbl">${t('lv')}</span></div><div class="kv"><span class="lbl">${t('exp')}</span><div class="line"></div></div>`;
     const d = petOf(p.key)!, st = stageOf(p.lvl);
-    return `<div class="kv"><span class="lbl">${t('pet')}</span><span class="petname">${icon('pet-' + p.key, 'gi sm')}${tr(d.stages[st].name)}</span></div>
+    // the pal sits beside its numbers; tapping it gets a quip (and, once a minute, a little bond)
+    return `<div class="petrow"><div class="petinfo">
+      <div class="kv"><span class="lbl">${t('pet')}</span><span class="petname">${tr(d.stages[st].name)}</span></div>
       <div class="kv"><span class="lbl">${t('lv')}</span><span>${p.lvl}</span></div>
       <div class="kv"><span class="lbl">${t('exp')}</span><div class="line"><div class="grey" style="width:${(p.xp / petXpNeed(p.lvl) * 100).toFixed(0)}%"></div></div></div>
-      <div class="kv"><span class="lbl">${t('bond')}</span><span class="hearts">${hearts(p.bond)}</span></div>`;
+      <div class="kv"><span class="lbl">${t('bond')}</span><span class="hearts">${hearts(p.bond)}</span></div></div>
+      <button class="petspr" data-a="petTap" title="${tr(d.stages[st].name)}">${icon('pet-' + p.key, 'gi')}</button></div>`;
   }
 
   private attHtml(): string {
@@ -300,13 +304,13 @@ export class App {
   private itemHtml(it: Item): string {
     const r = RARITY[it.rarity];
     const wt = it.weight ? `<span class="wt">${tr(WEIGHTS[it.weight].name)}</span>` : '';
-    return `<div class="iname" style="color:${r.color}">${icon('slot-' + (it.kind === 'acc' ? 'acc1' : it.kind), 'gi sm item-icon')}${wt}${tr(nameOf(it))}${it.plus ? ' +' + it.plus : ''}</div>`;
+    return `<div class="iname" style="color:${r.color}">${icon('slot-' + it.kind, 'gi sm item-icon')}${wt}${tr(nameOf(it))}${it.plus ? `<span class="plusn"> +${it.plus}</span>` : ''}</div>`;
   }
   private itemTip(it: Item): string {
     const r = RARITY[it.rarity];
     const lines: string[] = [];
     if (it.kind === 'weapon') { const [a, b] = weaponRange(it); lines.push(`${t('atk')} ${Math.floor(a)}~${Math.floor(b)}`, `${t('spd')} ${WEIGHTS[it.weight!].spd}`); }
-    else if (it.kind !== 'acc') { lines.push(`${t('def')} ${Math.floor(armorDef(it))}`); if (armorPrt(it) > 0) lines.push(`${t('prt')} ${pct(armorPrt(it), 1)}`); }
+    else if (it.weight) { lines.push(`${t('def')} ${Math.floor(armorDef(it))}`); if (armorPrt(it) > 0) lines.push(`${t('prt')} ${pct(armorPrt(it), 1)}`); }
     return `<div class="tname" style="color:${r.color}">${tr(nameOf(it))}${it.plus ? ' +' + it.plus : ''}</div>
       <div class="dim">${tr(r.name)}${it.weight ? ` · ${tr(WEIGHTS[it.weight].name)}` : ''}</div>
       ${lines.length ? `<div class="tsec">${lines.join('<br>')}</div>` : ''}
@@ -323,24 +327,38 @@ export class App {
   }
 
   /** BWE's paper doll: seven circles around a figure. */
+  /**
+   * The equipment board, 200x260: a column of four armour cells on the left (裝備), the two charm
+   * cells top-aligned on the right (加護) with the pal underneath, and the figure in the middle.
+   * Weapons are not cells: the figure holds them, and the hands are the click targets.
+   */
   private dollSvg(): string {
     const s = this.g.s;
-    // [slot x, y, joint x, y] on a 200x260 board.
-    const P: Record<Slot, [number, number, number, number]> = {
-      head: [100, 18, 100, 44], weapon: [26, 96, 64, 118], body: [174, 86, 112, 96], hands: [178, 140, 136, 120],
-      acc1: [24, 156, 90, 84], feet: [100, 242, 100, 214], acc2: [46, 218, 84, 150],
-    };
-    const ico = (name: string, x: number, y: number, s: number) => `<svg x="${x - s / 2}" y="${y - s / 2}" width="${s}" height="${s}" viewBox="0 0 16 16" shape-rendering="crispEdges">${pixelMarkup(name)}</svg>`;
-    const lines = SLOTS.map(k => { const [x, y, tx, ty] = P[k]; return `<line x1="${x}" y1="${y}" x2="${tx}" y2="${ty}"/><circle class="joint" cx="${tx}" cy="${ty}" r="2.5"/>`; }).join('');
-    const circles = SLOTS.map(k => {
-      const [x, y] = P[k], it = s.equip[k], on = this.slot === k;
-      const ring = it ? RARITY[it.rarity].color : 'none';
+    const CELL = 36;
+    const cells: [Slot, number, number][] = [['head', 24, 44], ['body', 24, 90], ['legs', 24, 136], ['feet', 24, 182], ['ring', 176, 44], ['neck', 176, 90]];
+    const ico = (name: string, x: number, y: number, sz: number) => `<svg x="${x - sz / 2}" y="${y - sz / 2}" width="${sz}" height="${sz}" viewBox="0 0 16 16" shape-rendering="crispEdges">${pixelMarkup(name)}</svg>`;
+    const cellSvg = cells.map(([k, x, y]) => {
+      const it = s.equip[k], on = this.slot === k;
       return `<g class="slot ${on ? 'on' : ''} ${it ? 'full' : ''}" data-a="slot" data-k="${k}" ${it ? `data-tip="item:${it.uid}"` : ''}><title>${tr(SLOT_NAME[k])}</title>
-        <circle cx="${x}" cy="${y}" r="17" style="${it && !on ? `fill:${ring}` : ''}"/>${ico('slot-' + k, x, y, 22)}${it && it.plus ? `<text class="plus" x="${x + 15}" y="${y + 18}">+${it.plus}</text>` : ''}</g>`;
+        <rect class="cell" x="${x - CELL / 2}" y="${y - CELL / 2}" width="${CELL}" height="${CELL}"/>${ico('slot-' + k, x, y, 24)}
+        ${it ? `<rect class="rar" x="${x - CELL / 2 + 2}" y="${y + CELL / 2 - 5}" width="${CELL - 4}" height="3" fill="${RARITY[it.rarity].color}"/>` : ''}
+        ${it && it.plus ? `<text class="plus pr" x="${x + CELL / 2 - 3}" y="${y - CELL / 2 + 12}">+${it.plus}</text>` : ''}</g>`;
     }).join('');
-    return `<svg class="doll" viewBox="0 0 200 260">
-      <svg x="52" y="46" width="96" height="144" viewBox="0 0 32 48" shape-rendering="crispEdges" data-avatar="${s.race}">${avatarMarkup(s.race, s.equip)}</svg>
-      <g class="links">${lines}</g>${circles}</svg>`;
+    // hands: invisible hit boxes over the figure; a dashed outline when selected or empty, a cross when both hands hold the weapon
+    const hand = (k: 'weapon' | 'off', x: number, y: number, w: number, h: number) => {
+      const it = s.equip[k], on = this.slot === k, locked = k === 'off' && twoHanded(s.equip.weapon);
+      const label = locked ? `<line x1="${x + 4}" y1="${y + 4}" x2="${x + w - 4}" y2="${y + h - 4}"/><line x1="${x + w - 4}" y1="${y + 4}" x2="${x + 4}" y2="${y + h - 4}"/>` : '';
+      return `<g class="slot hand ${on ? 'on' : ''} ${it ? 'full' : ''} ${locked ? 'locked' : ''}" data-a="slot" data-k="${k}" ${it ? `data-tip="item:${it.uid}"` : ''}><title>${locked ? t('twoHanded') : tr(SLOT_NAME[k])}</title>
+        <rect class="hit" x="${x}" y="${y}" width="${w}" height="${h}"/>${label}
+        ${it && it.plus ? `<text class="plus" x="${x + w / 2}" y="${y + h + 11}">+${it.plus}</text>` : ''}</g>`;
+    };
+    // the pal is not a cell: it stands at its master's feet, bottom left of the figure
+    const pet = s.pets.find(p => p.key === s.activePet);
+    const petSvg = pet ? `<g class="petspr" data-a="petTap"><title>${tr(petOf(pet.key)!.stages[stageOf(pet.lvl)].name)}</title>${ico('pet-' + pet.key, 74, 214, 40)}</g>` : '';
+    return `<svg class="doll" viewBox="0 0 200 240">
+      <text class="cap" x="24" y="16">${t('navEquip')}</text><text class="cap" x="176" y="16">${t('charms')}</text>
+      <svg x="52" y="40" width="96" height="144" viewBox="0 0 32 48" shape-rendering="crispEdges" data-avatar="${s.race}">${avatarMarkup(s.race, s.equip)}</svg>
+      ${cellSvg}${hand('off', 50, 100, 26, 52)}${hand('weapon', 130, 66, 24, 100)}${petSvg}</svg>`;
   }
 
   /** Equipment page: the figure with its slots, and the worn piece of the selected slot. The bag is its own page. */
@@ -393,9 +411,9 @@ export class App {
     this.root.addEventListener('pointerover', e => {
       if ((e as PointerEvent).pointerType === 'touch') return;
       const el = (e.target as HTMLElement).closest('[data-tip]') as HTMLElement | null;
-      if (el && el !== this.tipFor) { this.tipByTap = false; show(el); } else if (!el && this.tipFor) hide();
+      if (el && el !== this.tipFor) { this.tipByTap = false; show(el); } else if (!el && this.tipFor && !this.tipByTap) hide();
     });
-    this.root.addEventListener('pointerleave', e => { if ((e as PointerEvent).pointerType !== 'touch') hide(); }); // a lifted finger 'leaves' too
+    this.root.addEventListener('pointerleave', e => { if ((e as PointerEvent).pointerType !== 'touch' && !this.tipByTap) hide(); }); // a lifted finger 'leaves' too
     this.root.addEventListener('pointerdown', e => { this.lastPointer = (e as PointerEvent).pointerType || 'mouse'; }, true);
     this.root.addEventListener('click', e => {
       const el = (e.target as HTMLElement).closest('[data-tip]') as HTMLElement | null;
@@ -460,16 +478,22 @@ export class App {
     return `<div class="mapboard"><svg class="maproute" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${path}"/></svg>${nodes}</div>${card}${this.lootHtml()}`;
   }
 
+  /** Blacksmith: the rules in three lines, then what is worn and what is carried. */
   private smithHtml(): string {
     const g = this.g, s = g.s;
-    const list = [...SLOTS.map(k => s.equip[k]).filter(Boolean) as Item[], ...s.bag];
-    return `<p class="dim">${lang === 'zh' ? '每 +1 增加基礎數值 10%。' : 'Each +1 adds 10% to base numbers.'} ${icon('hazard', 'gi sm')}${t('failDrop')}</p>` + list.map(it => {
+    const row = (it: Item) => {
       if (it.plus >= SMITH_MAX) return `<div class="item" data-tip="item:${it.uid}"><div class="grow">${this.itemHtml(it)}</div><span class="dim">${t('maxed')}</span></div>`;
       const cost = smithCost(it.ilvl, it.plus), ch = A.smithChance(g, it);
       return `<div class="item" data-tip="item:${it.uid}"><div class="grow">${this.itemHtml(it)}</div><div class="acts">
-        <span class="dim">+${it.plus}→+${it.plus + 1} ${pct(ch)}${it.plus >= SMITH_DROP_FROM ? icon('hazard', 'gi sm') : ''}</span>
+        <span class="dim">${pct(ch)}${it.plus >= SMITH_DROP_FROM ? icon('hazard', 'gi sm') : ''}</span>
         <button data-a="smith" data-uid="${it.uid}" ${s.gold < cost ? 'disabled' : ''}>$${num(cost)}</button></div></div>`;
-    }).join('');
+    };
+    const rule = (k: string, v: string) => `<div class="kv"><span class="lbl">${k}</span><span>${v}</span></div>`;
+    const worn = SLOTS.map(k => s.equip[k]).filter(Boolean) as Item[];
+    const empty = `<p class="dim">${t('empty')}</p>`;
+    return `<div class="rules">${rule('LV +1', t('smithGain'))}${rule(`LV 1–${SMITH_DROP_FROM}`, t('smithKeep'))}${rule(`LV ${SMITH_DROP_FROM}+`, t('smithDrop'))}</div>
+      <h4>${t('smithWorn')}</h4>${worn.map(row).join('') || empty}
+      <h4>${t('bag')}</h4>${s.bag.map(row).join('') || empty}`;
   }
 
   private petsHtml(): string {

@@ -2,7 +2,7 @@ import { PRIMARY, type Save, type StatKey } from './types';
 import { makeItem } from './loot';
 
 export const SAVE_KEY = 'soulsinabyss.save';
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 export const YEAR_SEC = 20 * 60;     // one year of age per 20 real minutes
 export const REBIRTH_AGE = 20;
 export const LEGACY_RATE = 0.1;
@@ -28,6 +28,21 @@ export function newSave(name: string, race: string, age: number): Save {
 /** Each entry upgrades a save from version i to i+1. Add one here whenever Save changes shape. */
 const MIGRATIONS: ((s: any) => void)[] = [];
 MIGRATIONS[2] = s => { s.pact = null; s.offers = null; s.san = 100; }; // v2 -> v3: gifts, curses, sanity
+MIGRATIONS[3] = s => { // v3 -> v4: accessories become rings and necklaces in their own slots, gloves become leggings, shields appear
+  const ACC: [string, number][] = [['ring', 0], ['neck', 1], ['neck', 2], ['ring', 3], ['neck', 4]];
+  const fix = (it: any) => {
+    if (it && it.kind === 'acc') { const [kind, name] = ACC[it.name] || ACC[0]; it.kind = kind; it.name = name; }
+    if (it && it.kind === 'hands') it.kind = 'legs';
+    return it;
+  };
+  s.bag.forEach(fix);
+  if (s.equip.hands) { s.equip.legs = fix(s.equip.hands); delete s.equip.hands; }
+  for (const slot of ['acc1', 'acc2']) {
+    const it = fix(s.equip[slot]); delete s.equip[slot];
+    if (!it) continue;
+    if (s.equip[it.kind]) s.bag.push(it); else s.equip[it.kind] = it;
+  }
+};
 
 export function loadSave(): Save | null {
   try {

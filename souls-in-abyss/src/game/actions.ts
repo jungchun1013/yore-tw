@@ -1,5 +1,5 @@
 import type { Game } from './engine';
-import type { Item, Save, Slot } from './types';
+import { SLOT_OF, twoHanded, type Item, type Save, type Slot } from './types';
 import { BAG_SIZE, SMITH_CHANCE, SMITH_DROP_FROM, SMITH_MAX, smithCost } from '../data/items';
 import { SMITH_BONUS } from '../data/races';
 import { MAX_RANK, rankCost, skillOf } from '../data/skills';
@@ -12,20 +12,29 @@ import { LEGACY_RATE, REBIRTH_AGE, SAN_MAX, zeroStats } from './state';
 import { PRIMARY } from './types';
 import { lang, tr } from '../core/i18n';
 
-/** Where an item would go: its own slot, or for accessories the empty one (else the first). */
-export function targetSlot(s: Save, it: Item): Slot {
-  if (it.kind !== 'acc') return it.kind as Slot;
-  return !s.equip.acc1 ? 'acc1' : !s.equip.acc2 ? 'acc2' : 'acc1';
+/** Where an item would go. */
+export function targetSlot(_s: Save, it: Item): Slot { return SLOT_OF[it.kind]; }
+
+/** Why an item cannot be worn right now, or null. A heavy weapon takes both hands, so no shield beside it. */
+export function equipBlock(s: Save, it: Item): 'twoHanded' | 'bagFull' | null {
+  if (it.kind === 'shield' && twoHanded(s.equip.weapon)) return 'twoHanded';
+  if (twoHanded(it) && s.equip.off && s.bag.length >= BAG_SIZE) return 'bagFull';
+  return null;
 }
 
-export function equip(g: Game, uid: number, slot?: Slot): void {
+export function equip(g: Game, uid: number): void {
   const s = g.s, i = s.bag.findIndex(x => x.uid === uid);
   if (i < 0) return;
-  const it = s.bag.splice(i, 1)[0];
-  const to = slot || targetSlot(s, it);
+  const it = s.bag[i];
+  const block = equipBlock(s, it);
+  if (block === 'twoHanded') { g.say({ zh: '雙手武器空不出手拿盾。', en: 'A two-handed weapon leaves no hand for a shield.' }, [], 'bad'); return; }
+  if (block) return;
+  s.bag.splice(i, 1);
+  const to = targetSlot(s, it);
   const old = s.equip[to];
   s.equip[to] = it;
   if (old) s.bag.splice(i, 0, old);
+  if (twoHanded(it) && s.equip.off) { s.bag.push(s.equip.off); delete s.equip.off; }
   g.refresh();
 }
 

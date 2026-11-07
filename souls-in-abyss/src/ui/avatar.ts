@@ -43,15 +43,22 @@ export function avatarPixels(race: string, equip: Outfit = {}, stride = 0): Pixe
   for (const [x, offset] of [[9, step], [17, -step]]) {
     rect(x, 36 + offset, 5, 9, ink); rect(x + 1, 36 + offset, 3, 7, cloth);
     rect(x - 1, 43 + offset, 6, 3, '#4b4848');
+    gear('legs', x - 1, 35 + offset, 7, 7);
     gear('feet', x - 1, 40 + offset, 6, 6);
   }
   gear('body', 8, 18, 15, 17);
   if (equip.body) { rect(14, 20, 2, 10, metals[equip.body.rarity]); rect(9, 31, 13, 2, PALETTE.d); rect(14, 31, 3, 2, PALETTE.y); }
-  gear('hands', 3, 29, 6, 6); gear('hands', 23, 29, 5, 6);
   gear('head', 8, 2, 15, equip.head?.weight === 'heavy' ? 7 : 6);
   if (equip.head?.weight === 'heavy') { rect(8, 8, 3, 8, ink); rect(21, 8, 2, 8, ink); rect(9, 8, 1, 6, '#94a3a5'); }
-  if (equip.acc1) { rect(14, 19, 1, 6, PALETTE.y); rect(13, 24, 3, 3, metals[equip.acc1.rarity]); rect(14, 24, 1, 1, PALETTE.w); }
-  if (equip.acc2) rect(4, 31, 2, 2, metals[equip.acc2.rarity]);
+  if (equip.neck) { rect(14, 19, 1, 6, PALETTE.y); rect(13, 24, 3, 3, metals[equip.neck.rarity]); rect(14, 24, 1, 1, PALETTE.w); }
+  if (equip.ring) rect(4, 31, 2, 2, metals[equip.ring.rarity]);
+  const shield = equip.off;
+  if (shield) { // held on the left arm; the lighter the shield, the smaller the board
+    const h = shield.weight === 'light' ? 8 : shield.weight === 'medium' ? 11 : 14, w = shield.weight === 'light' ? 5 : 7, x = 1, y = 34 - h;
+    rect(x, y, w, h, ink); rect(x + 1, y + 1, w - 2, h - 2, shield.weight === 'light' ? '#948572' : shield.weight === 'medium' ? '#788b81' : '#8899a0');
+    rect(x + 1, y + 1, w - 3, 1, '#c2c8bc'); rect(x + 2, y + 3, w - 4, 1, metals[shield.rarity]);
+    if (shield.plus > 0) rect(x + 1, y + h - 2, 1, 1, PALETTE.y);
+  }
   const weapon = equip.weapon;
   if (weapon) {
     const heavy = weapon.weight === 'heavy', length = weapon.weight === 'light' ? 12 : 22;
