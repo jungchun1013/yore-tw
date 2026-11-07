@@ -18,3 +18,15 @@
     });
   });
 })();
+
+// display ads: every .ad-slot gets one AdSense unit once <meta name="yore-ad-slot"> holds an ad unit id; empty = nothing shown
+document.addEventListener('DOMContentLoaded', function () {
+  var m = document.querySelector('meta[name="yore-ad-slot"]'), id = m && m.content.trim();
+  if (!id) return;
+  var boxes = document.querySelectorAll('.ad-slot');
+  for (var i = 0; i < boxes.length; i++) {
+    boxes[i].innerHTML = '<ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-2972514108022599" data-ad-slot="' + id + '" data-ad-format="auto" data-full-width-responsive="true"></ins>';
+    boxes[i].classList.add('on');
+    try { (window.adsbygoogle = window.adsbygoogle || []).push({}); } catch (e) {}
+  }
+});
