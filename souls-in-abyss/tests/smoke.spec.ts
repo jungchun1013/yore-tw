@@ -34,6 +34,10 @@ test('title, create a hero, fight, and open every view', async ({ page }, info) 
     await page.click(`.nav [data-k="${k}"]`);
     await expect(page.locator('#view')).not.toBeEmpty();
   }
+  await page.click('.nav [data-k="map"]');
+  await page.click('.node[data-k="forest"]');
+  await page.screenshot({ path: `${SHOTS}/${info.project.name}-map.png` });
+  await page.click('.nav [data-k="equip"]');
   await page.click('.doll [data-k="weapon"]');
   await page.screenshot({ path: `${SHOTS}/${info.project.name}-main.png` });
   await page.click('.nav [data-k="skills"]');
@@ -103,7 +107,7 @@ test('sanity drains in the abyss, glitches the log, and collapses at zero', asyn
   expect(r.mid).toBeLessThan(r.before);
   expect(r.collapses).toBeGreaterThan(0);
   expect(r.titles).toContain('broken');
-  await expect(page.locator('.fight')).toContainText('SAN');
+  await expect(page.locator('#sheet')).toContainText('SAN');
 });
 
 test('the gear on the title screen switches language', async ({ page }) => {
@@ -113,4 +117,13 @@ test('the gear on the title screen switches language', async ({ page }) => {
   await page.click('.cog');
   await page.click('.cogmenu [data-lang="zh"]');
   await expect(page.locator('#t-play')).toHaveText('開始遊戲');
+});
+
+test('a title message in the log stays one line tall', async ({ page }) => {
+  await page.addInitScript(fresh, 'zh');
+  await page.goto('/');
+  await page.click('#t-play'); await page.click('.intro'); await page.click('#c-go');
+  await page.evaluate(() => { const g = (window as any).__game; g.s.counters.kills = 100; g.checkTitles(); });
+  const h = await page.evaluate(() => Math.max(...[...document.querySelectorAll('#log p')].map(p => p.getBoundingClientRect().height)));
+  expect(h).toBeLessThan(80);
 });

@@ -261,7 +261,7 @@ export class Game {
       const g = ageGrowth(raceOf(s.race), s.age);
       for (const k of PRIMARY) s.grown[k] += g[k] * LEVEL_SHARE;
       this.say({ zh: '升級！到達 Lv.{0}！', en: 'Level Up! You reach Lv.{0}!' }, [{ text: String(s.lvl), cls: 'good' }], 'good');
-      this.say({ zh: '獲得 {0} AP！', en: 'You get {0} ap!' }, [{ text: '1', cls: 'ap' }], 'ap');
+      this.say({ zh: '獲得 {0} 技能點！', en: 'You get {0} AP!' }, [{ text: '1', cls: 'ap' }], 'ap');
     }
     if (up) { this.refresh(); this.hp = this.d.hp; this.mp = this.d.mp; this.emit({ t: 'level' }); }
   }
@@ -276,7 +276,7 @@ export class Game {
       s.ap += 5;
       this.refresh();
       this.say({ zh: '你 {0} 歲了！', en: 'You are {0} now!' }, [{ text: String(s.age), cls: 'good' }], 'good');
-      this.say({ zh: '獲得 {0} AP！', en: 'You get {0} ap!' }, [{ text: '5', cls: 'ap' }], 'ap');
+      this.say({ zh: '獲得 {0} 技能點！', en: 'You get {0} AP!' }, [{ text: '5', cls: 'ap' }], 'ap');
       if (s.age === REBIRTH_AGE) this.say({ zh: '深淵在呼喚你的靈魂。（可以轉生了）', en: 'The Abyss calls your soul. (Rebirth is open)' }, [], 'fate');
     }
   }

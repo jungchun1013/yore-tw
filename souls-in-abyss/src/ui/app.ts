@@ -46,6 +46,7 @@ export class App {
   private view: View = 'equip';
   private slot: Slot | 'all' = 'all';
   private skillTab: SkillTab = 'combat';
+  private mapSel: string | null = null;
   private rbRace: string; private rbAge = 17; private rbPact = -1;
   private lastHtml: Record<string, string> = {};
   private logEl!: HTMLElement;
@@ -69,11 +70,12 @@ export class App {
           <div class="stage"></div>
           <div class="fight">
             <div class="side-hero">
-              ${bar('s-hp', 'red', t('hp'))}${bar('s-mp', 'blue', t('mp'))}${bar('s-xp', 'grey', t('exp'))}${bar('s-san', 'purple', t('san'))}
+              <div class="kv cp"><span class="lbl">${t('cp')}</span><span id="s-cp" class="v"></span></div>
+              ${bar('s-hp', 'red', t('hp'))}${bar('s-mp', 'blue', t('mp'))}
             </div>
             <div class="side-mon">
+              <div class="kv cp"><span class="lbl">${t('cp')}</span><span id="m-cp" class="v"></span></div>
               ${bar('m-hp', 'red', t('hp'))}
-              <div class="kv"><span class="lbl">${t('cp')}</span><span id="m-cp" class="v"></span></div>
             </div>
           </div>
         </section>
@@ -120,7 +122,8 @@ export class App {
       case 'sellAll': A.sellAll(g); break;
       case 'smith': A.upgrade(g, uid); break;
       case 'learn': A.learn(g, k); break;
-      case 'go': A.goArea(g, k); break;
+      case 'go': A.goArea(g, k); this.mapSel = null; break;
+      case 'mapsel': this.mapSel = k; break;
       case 'pet': A.setPet(g, k || null); break;
       case 'rbRace': this.rbRace = k; break;
       case 'rbAge': this.rbAge = Number(k); break;
@@ -166,7 +169,7 @@ export class App {
     const dif = difficulty(m.cp, g.d.cp);
     this.text('m-diff', tr(dif.name)); (document.getElementById('m-diff') as HTMLElement).style.color = dif.color;
     this.text('m-name', `${tr(m.def.name)} Lv${m.lvl}`); (document.getElementById('m-name') as HTMLElement).style.color = g.monColor;
-    this.text('m-cp', num(m.cp));
+    this.text('m-cp', num(m.cp)); this.text('s-cp', num(g.d.cp));
     this.width('m-hp', m.hp / m.maxHp);
     this.width('s-san', g.s.san / SAN_MAX);
     const tier = SAN_TIERS[sanTier(g.s.san)];
@@ -209,12 +212,13 @@ export class App {
         <div class="kv"><span class="lbl">${t('race')}</span><span>${tr(r.name)}</span></div>
         <div class="kv"><span class="lbl">${t('age')}</span><span>${s.age} <small class="dim">${clock(YEAR_SEC - s.ageT)}</small></span></div>
         <div class="kv"><span class="lbl">${t('lv')}</span><span>${s.lvl}</span></div>
+        <div class="kv bar"><span class="lbl">${t('exp')}</span><div class="line"><div id="s-xp" class="grey"></div></div><span class="v" id="s-xp-v"></span></div>
+        <div class="kv bar"><span class="lbl">${t('san')}</span><div class="line"><div id="s-san" class="purple"></div></div><span class="v" id="s-san-v"></span></div>
         <div class="kv"><span class="lbl">${t('gold')}</span><span>${num(s.gold)}</span></div>
         ${this.pactLine()}
       </div>
       <div class="col">${PRIMARY.map(stat).join('')}
         <div class="kv"><span class="lbl">${t('ap')}</span><span>${s.ap}</span></div>
-        <div class="kv"><span class="lbl">${t('cp')}</span><span>${num(d.cp)}</span></div>
       </div>
       <div class="col">
         <div class="kv"><span class="lbl">${t('atk')}</span><span>${Math.floor(d.atkMin)}~${Math.floor(d.atkMax)}</span></div>
@@ -336,22 +340,33 @@ export class App {
       return `<div class="skill ${can ? 'can' : ''}"><div class="sico">${icon('sk-' + k.key)}</div>
         <div class="grow"><div class="sname">${tr(k.name)} <b>${r ? RANKS[r] : ''}</b></div>
         <div class="istat">${r ? tr(k.desc(r)) : ''}${max ? '' : `${r ? '<br>' : ''}${icon('arrow', 'gi sm pointup')}${RANKS[r + 1]}: ${tr(k.desc(r + 1))}`}</div></div>
-        ${max ? `<span class="dim">${t('maxed')}</span>` : `<button class="up-btn" data-a="learn" data-k="${k.key}" ${can ? '' : 'disabled'} title="${cost} AP">${icon('arrow', 'gi pointup')}<small>${cost}</small></button>`}</div>`;
+        ${max ? `<span class="dim">${t('maxed')}</span>` : `<button class="up-btn" data-a="learn" data-k="${k.key}" ${can ? '' : 'disabled'} title="${cost} ${t('ap')}">${icon('arrow', 'gi pointup')}<small>${cost}</small></button>`}</div>`;
     }).join('');
-    return `<div class="stabs">${tabs}</div><p class="dim">AP ${s.ap}</p>${rows}`;
+    return `<div class="stabs">${tabs}</div><p class="dim">${t('ap')} ${s.ap}</p>${rows}`;
   }
 
+  /** The map as a descent: icon nodes winding down into the Abyss. Tap a node for details. */
   private mapHtml(): string {
     const { s, d } = this.g;
-    return AREAS.map((a, i) => {
-      const here = s.area === a.key, cp = AREA_CP[i];
-      const cls = d.cp >= cp ? 'up' : d.cp >= cp * 0.6 ? 'warn' : 'down';
-      const pals = PETS.filter(p => p.home === a.key && !p.hidden).map(p => s.pets.some(x => x.key === p.key) ? tr(p.stages[0].name) : t('unknown')).join(' · ');
-      return `<div class="item ${here ? 'here' : ''}"><div class="dot" style="background:${a.bg}">${icon('area-' + a.key)}</div>
-        <div class="grow"><div class="iname">${tr(a.name)} <small class="dim">Lv ${a.min}–${a.max}</small></div>
-        <div class="istat">${t('recArea')} <b class="${cls}">${num(cp)}</b> · ${a.dread ? `<span class="madtxt">${t('dread')} -${(a.dread * willResist(d.prim.will) * d.sanDrain).toFixed(2)}</span>` : `<span class="up">${t('safe')}</span>`} · ${tr(a.flavor)}${pals ? ` · ${t('pet')}: ${pals}` : ''}</div></div>
-        ${here ? `<span class="dim">${t('here')}</span>` : `<button data-a="go" data-k="${a.key}">${t('go')}</button>`}</div>`;
+    const sel = this.mapSel || s.area;
+    // positions in % of the board: a winding path, top = surface, bottom = the Abyss
+    const POS: [number, number][] = [[22, 9], [62, 20], [34, 32], [74, 43], [30, 55], [68, 66], [36, 78], [58, 89]];
+    const path = POS.map(([x, y], i) => `${i ? 'L' : 'M'}${x} ${y}`).join(' ');
+    const nodes = AREAS.map((a, i) => {
+      const [x, y] = POS[i], here = s.area === a.key, cp = AREA_CP[i];
+      const state = here ? 'here' : d.cp >= cp ? 'ok' : d.cp >= cp * 0.6 ? 'risky' : 'far';
+      return `<button class="node ${state} ${sel === a.key ? 'sel' : ''}" style="left:${x}%;top:${y}%" data-a="mapsel" data-k="${a.key}" title="${tr(a.name)}">
+        <span class="nico">${icon('area-' + a.key)}</span><span class="nname">${tr(a.name)}</span></button>`;
     }).join('');
+    const i = AREAS.findIndex(a => a.key === sel), a = AREAS[i], cp = AREA_CP[i], here = s.area === a.key;
+    const cls = d.cp >= cp ? 'up' : d.cp >= cp * 0.6 ? 'warn' : 'down';
+    const pals = PETS.filter(p => p.home === a.key && !p.hidden).map(p => s.pets.some(x => x.key === p.key) ? tr(p.stages[0].name) : t('unknown')).join(' · ');
+    const card = `<div class="item mapcard"><div class="dot" style="background:${a.bg}">${icon('area-' + a.key)}</div>
+      <div class="grow"><div class="iname">${tr(a.name)} <small class="dim">Lv ${a.min}–${a.max}</small></div>
+      <div class="istat">${t('recArea')} <b class="${cls}">${num(cp)}</b> · ${a.dread ? `<span class="madtxt">${t('dread')} -${(a.dread * willResist(d.prim.will) * d.sanDrain).toFixed(2)}</span>` : `<span class="up">${t('safe')}</span>`}${pals ? ` · ${t('pet')}${t('sep')}${pals}` : ''}</div>
+      <p class="lore">${tr(a.flavor)}</p></div>
+      ${here ? `<span class="dim">${t('here')}</span>` : `<button data-a="go" data-k="${a.key}">${t('go')}</button>`}</div>`;
+    return `<div class="mapboard"><svg class="maproute" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${path}"/></svg>${nodes}</div>${card}`;
   }
 
   private smithHtml(): string {
@@ -467,7 +482,7 @@ function bindCog(root: HTMLElement): void {
 export function creation(root: HTMLElement, done: (name: string, race: string, age: number) => void): void {
   let race = 'elf', age = 13, name = lang === 'zh' ? '奧雷里亞諾' : 'Aureliano'; // after One Hundred Years of Solitude
   const titleScreen = () => {
-    root.innerHTML = `<div class="title">${banner()}<button class="link play" id="t-play">${t('play')}</button></div>${cogHtml()}`;
+    root.innerHTML = `<div class="titlescreen">${banner()}<button class="link play" id="t-play">${t('play')}</button></div>${cogHtml()}`;
     root.querySelector<HTMLElement>('#t-play')!.onclick = intro;
     bindCog(root);
   };
