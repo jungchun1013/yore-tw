@@ -37,6 +37,7 @@ small { font-size: var(--fs-xs); }
 }
 .box { background: var(--box); border: 0; border-bottom: 2px solid var(--line); padding: 18px 22px; min-width: 0; min-height: 0; }
 .sheet { grid-area: sheet; display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 0 14px; align-content: start; }
+.sheet .kv.name { grid-column: 1 / -1; } .sheet .kv.name .lbl { min-width: 58px; } .sheet .kv.name > span:last-child { margin-left: 0; }
 .monster { grid-area: monster; } .petbox { grid-area: pet; } .log { grid-area: log; } .att { grid-area: att; overflow-y: auto; }
 .loot { grid-area: loot; } .side { grid-area: side; display: flex; flex-direction: column; padding: 18px 20px; }
 

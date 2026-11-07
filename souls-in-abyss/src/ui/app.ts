@@ -229,8 +229,9 @@ export class App {
       const v = Math.floor(d.prim[k as 'str']), b = Math.floor(base(k));
       return `<div class="kv"><span class="lbl">${icon(k, 'gi sm')}${tr(STAT[k])}</span><span class="val ${v > b ? 'boost' : 'stat'}">${v}</span><span class="dim">(${b})</span></div>`;
     };
-    return `<div class="col">
-        <div class="kv"><span class="lbl">${t('name')}</span><span>${esc(s.name)}</span></div>
+    // the name gets a row of its own: a title will prefix it (「XXXX 的奧雷里亞諾」) and must not squeeze the first column
+    return `<div class="kv name"><span class="lbl">${t('name')}</span><span>${esc(s.name)}</span></div>
+      <div class="col">
         <div class="kv"><span class="lbl">${t('race')}</span><span>${tr(r.name)}</span></div>
         <div class="kv"><span class="lbl">${t('age')}</span><span>${s.age} <small class="dim">${clock(YEAR_SEC - s.ageT)}</small></span></div>
         <div class="kv"><span class="lbl">${t('lv')}</span><span>${s.lvl}</span></div>
