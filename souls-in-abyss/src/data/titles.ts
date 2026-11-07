@@ -13,5 +13,6 @@ export const TITLES: TitleDef[] = [
   { key: 'cycle', name: { zh: '輪迴之人', en: 'Of the Cycle' }, how: { zh: '轉生 5 次', en: 'Rebirth 5 times' }, test: c => c.rebirths >= 5, mods: (['str', 'dex', 'int', 'will', 'luk'] as const).map(k => ({ key: k, mul: 0.08 })) },
   { key: 'tamer', name: { zh: '夥伴們', en: 'Pack Leader' }, how: { zh: '結識 3 位夥伴', en: 'Meet 3 pals' }, test: (_c, s) => s.pets.length >= 3, mods: [{ key: 'petPower', mul: 0.25 }] },
   { key: 'gazer', name: { zh: '凝視深淵', en: 'Abyss Gazer' }, how: { zh: '抵達深淵迴廊', en: 'Reach the Abyssal Hall' }, test: c => c.deepest >= 7, mods: [{ key: 'crit', add: 0.03 }] },
+  { key: 'broken', name: { zh: '見過深淵的人', en: 'Seen the Abyss' }, how: { zh: '理智崩潰 1 次', en: 'Lose your mind once' }, test: c => (c.collapses || 0) >= 1, mods: [{ key: 'will', add: 10 }] },
   { key: 'reader', name: { zh: '讀過結局的人', en: 'Read the Ending' }, how: { zh: '？？？', en: '???' }, secret: true, test: c => c.fateLines >= 3, mods: [{ key: 'luk', add: 7 }] },
 ];

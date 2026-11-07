@@ -10,6 +10,7 @@ export interface Derived {
   def: number; prt: number; magic: number; interval: number;
   xp: number; gold: number; drop: number; heal: number;
   petPower: number; guard: number; petHeal: number;
+  dmgTaken: number; sanDrain: number;
   cp: number;
 }
 
@@ -54,6 +55,8 @@ export function derive(s: Save): Derived {
     petPower: mulOf(t, 'petPower'),
     guard: Math.min(0.6, addOf(t, 'guard')),
     petHeal: addOf(t, 'petHeal'),
+    dmgTaken: mulOf(t, 'dmgTaken'),
+    sanDrain: Math.max(0, mulOf(t, 'sanDrain')),
     cp: 0,
   };
   const avg = atkMin + (atkMax - atkMin) * bal;

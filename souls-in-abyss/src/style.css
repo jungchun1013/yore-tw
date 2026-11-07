@@ -50,7 +50,7 @@ small { font-size: 13px; }
 .val.stat { color: var(--orange); } .val.boost { color: var(--up); }
 .line { flex: 1; height: 3px; background: #eee; position: relative; }
 .line > div { height: 100%; transition: width .12s linear; }
-.line .red { background: var(--red); } .line .blue { background: var(--blue); } .line .grey { background: #9a9a9a; }
+.line .red { background: var(--red); } .line .purple { background: #8e3fd1; } .line .blue { background: var(--blue); } .line .grey { background: #9a9a9a; }
 
 .mhead { margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mhead .lbl { color: var(--lbl); margin-right: 6px; }
@@ -158,3 +158,16 @@ small { font-size: 13px; }
   .rrow { font-size: 16px; }
   .figs { gap: 4px; }
 }
+
+/* ---------- sanity, gifts and curses ---------- */
+.santier { font-size: 13px; white-space: nowrap; }
+.gift { color: #2e8b57; } .curse { color: #8e3fd1; } .madtxt { color: #8e3fd1; }
+.pactline { font-size: 13px; }
+.log p.mad { color: #8e3fd1; letter-spacing: .04em; }
+.log .gift { color: #2e8b57; } .log .curse { color: #8e3fd1; }
+.subtitle { color: var(--dim); letter-spacing: .3em; margin-top: -18px; }
+.pacts { display: grid; grid-template-columns: 1fr; gap: 8px; }
+.pact { text-align: left; white-space: normal; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; background: #fafafa; }
+.pact.on { border-color: var(--gold); background: #fff8e6; box-shadow: 0 0 0 1px var(--gold); }
+.pact small { color: #777; } .pact em { font-style: normal; font-size: 13px; color: var(--dim); margin-bottom: 4px; }
+.pact.refuse { color: var(--dim); align-items: center; }

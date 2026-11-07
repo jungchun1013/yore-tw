@@ -45,7 +45,7 @@ test('title, create a hero, fight, and open every view', async ({ page }, info) 
   expect(errors).toEqual([]);
 });
 
-test('rebirth keeps gear and adds legacy', async ({ page }) => {
+test('rebirth with a pact keeps gear and adds legacy', async ({ page }, info) => {
   await page.addInitScript(fresh, 'en');
   await page.goto('/');
   await page.click('#t-play');
@@ -58,11 +58,39 @@ test('rebirth keeps gear and adds legacy', async ({ page }) => {
   await page.click('.nav [data-k="rebirth"]');
   await page.click('[data-a="rbRace"][data-k="giant"]');
   await page.click('[data-a="rbAge"][data-k="15"]');
+  await expect(page.locator('.pact')).toHaveCount(4);
+  await page.click('[data-a="rbPact"][data-k="1"]');
+  await page.screenshot({ path: `${SHOTS}/${info.project.name}-rebirth.png` });
+  const offer = await page.evaluate(() => (window as any).__game.s.offers[1]);
   await page.click('[data-a="rebirth"]');
   const s = await page.evaluate(() => (window as any).__game.s);
+  expect(s.pact).toEqual(offer);
+  expect(s.offers).toBeNull();
   expect(s.lvl).toBe(1);
   expect(s.race).toBe('giant');
   expect(s.age).toBe(15);
   expect(s.equip.weapon.uid).toBe(uid);
   expect(s.legacy.str).toBeGreaterThan(0);
+});
+
+test('sanity drains in the abyss, glitches the log, and collapses at zero', async ({ page }) => {
+  await page.addInitScript(fresh, 'en');
+  await page.goto('/');
+  await page.click('#t-play');
+  await page.click('#c-go');
+  const r = await page.evaluate(() => {
+    const g = (window as any).__game;
+    g.s.legacy.str = 200000; g.refresh(); g.hp = g.d.hp; // strong enough to survive the abyss
+    g.s.area = 'abyss'; g.newMonster();
+    const before = g.s.san;
+    g.fastForward(120);
+    const mid = g.s.san;
+    g.s.san = 2; g.refresh();
+    g.fastForward(60);
+    return { before, mid, collapses: g.s.counters.collapses || 0, titles: g.s.titles };
+  });
+  expect(r.mid).toBeLessThan(r.before);
+  expect(r.collapses).toBeGreaterThan(0);
+  expect(r.titles).toContain('broken');
+  await expect(page.locator('#sheet')).toContainText('SAN');
 });

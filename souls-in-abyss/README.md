@@ -1,4 +1,4 @@
-# Souls in Abyss
+# Souls in Abyss 輪迴無止盡
 
 A Battle Without End style auto-battle RPG. Fully independent from Meowcaron: own package, config, save key (`soulsinabyss.save`) and build. It only borrows the parent folder's `node_modules`.
 
@@ -18,6 +18,10 @@ npm run site     # build and copy into ../site/souls-in-abyss/
 - Paper doll with seven slots: weapon, head, body, hands, feet, two accessories. Light, medium or heavy weapons and armor. Six rarities (Basic, Magic, Rare, Perfect, Epic, Legendary) with random affixes. Blacksmith +1 to +10 with falling success; failing at +5 or higher drops a level.
 - Skills in COMBAT / MAGIC / PASSIVE tabs, ranked F to 1 with AP.
 - Text uses the Cubic 11 pixel font (OFL, license in public/fonts).
+
+## Beyond BWE (asked for by the user)
+- **Gifts and curses** (`src/data/pacts.ts`): at each rebirth the Abyss offers three gift + curse pairs; take one or refuse. The pact lasts one life. Offers are stored in the save so reloading cannot reroll them.
+- **Sanity** (`src/data/sanity.ts`): each area has a dread value. Kills in dreadful areas drain SAN, softened by WILL and a bonded pal; safe areas restore it; rebirth refills it. Shaken (<50) and Mad (<25) add crit and drops but raise damage taken, and Mad garbles names in the log. At 0 the mind breaks: a short knock-out, then you wake at 40.
 
 ## Pals (the deliberate departure)
 Instead of rats and bears, seven pals with a home area, three growth stages, a bond that grows while they travel with you, a signature ability, lore and quips. The first one joins after 25 kills. One is hidden.

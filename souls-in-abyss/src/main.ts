@@ -7,7 +7,7 @@ import { num } from './core/fmt';
 
 const root = document.getElementById('app')!;
 document.documentElement.lang = lang === 'zh' ? 'zh-TW' : 'en';
-document.title = 'Souls in Abyss';
+document.title = lang === 'zh' ? '輪迴無止盡 Souls in Abyss' : 'Souls in Abyss';
 
 function start(save: ReturnType<typeof newSave>, fresh: boolean): void {
   const g = new Game(save);

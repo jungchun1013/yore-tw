@@ -12,6 +12,8 @@ import { chance, pick, range, rnd } from '../core/rng';
 import { makeItem, nameOf, rollRarity, sellPrice } from './loot';
 import { REBIRTH_AGE, YEAR_SEC } from './state';
 import { tr } from '../core/i18n';
+import { BOND_CALM, COLLAPSE, COLLAPSE_SEC, GLITCH, HALLUCINATIONS, SAN_REGEN, SAN_WAKE, sanTier, willResist } from '../data/sanity';
+import { SAN_MAX } from './state';
 
 /** A log line is a list of parts; styled parts carry a CSS class or a colour. */
 export type Part = string | { text: string; cls?: string; color?: string };
@@ -60,7 +62,11 @@ export class Game {
     });
     this.emit({ t: 'log', parts, cls });
   }
-  private monPart(): Part { return { text: tr(this.mon.def.name), color: this.monColor }; }
+  private monPart(): Part {
+    // when mad, names sometimes come out wrong
+    const name = sanTier(this.s.san) === 2 && chance(0.3) ? tr(pick(GLITCH)) : tr(this.mon.def.name);
+    return { text: name, color: this.monColor };
+  }
   private n(x: number, cls = 'num'): Part { return { text: String(Math.max(0, Math.round(x))), cls }; }
 
   /** Recompute derived stats; call after anything that changes gear, skills, level, pet or titles. */
@@ -89,6 +95,7 @@ export class Game {
     this.ageTick(dt);
     this.petBondTick(dt);
     this.mp = Math.min(this.d.mp, this.mp + this.d.mp * 0.01 * dt);
+    if (areaOf(s.area).dread === 0 && s.san < SAN_MAX) this.setSan(s.san + SAN_REGEN * dt);
     if (this.down > 0) {
       this.down -= dt;
       if (this.down <= 0) { this.hp = this.d.hp; this.mp = this.d.mp; this.newMonster(); }
@@ -180,7 +187,7 @@ export class Game {
       break;
     }
     const raw = this.mon.atk * range(0.85, 1.15);
-    const dmg = Math.max(1, raw - this.d.def) * (1 - this.d.prt) * (1 - this.d.guard) * mult;
+    const dmg = Math.max(1, raw - this.d.def) * (1 - this.d.prt) * (1 - this.d.guard) * this.d.dmgTaken * mult;
     this.hp -= dmg;
     this.emit({ t: 'hit', from: 'mon', dmg, blocked: mult < 1 });
     this.say({ zh: '{0} 對你造成 {1} 傷害', en: '{0} cause {1} damage to You' }, [this.monPart(), this.n(dmg, 'num big')]);
@@ -215,6 +222,34 @@ export class Game {
     if (chance(FATE_CHANCE)) { c.fateLines++; this.say(pick(FATE_LINES), [], 'fate'); }
     if (c.kills % 25 === 0) this.checkTitles();
     this.pause = KILL_PAUSE;
+    this.drainSan();
+  }
+
+  /** Each kill in a dreadful place costs a little sanity. WILL and a bonded pal soften it. */
+  private drainSan(): void {
+    const s = this.s, dread = areaOf(s.area).dread;
+    if (!dread) return;
+    const pet = s.pets.find(p => p.key === s.activePet);
+    const calm = 1 - (pet ? pet.bond * BOND_CALM : 0);
+    this.setSan(s.san - dread * willResist(this.d.prim.will) * this.d.sanDrain * calm);
+    if (sanTier(s.san) === 2 && chance(0.05)) this.say(pick(HALLUCINATIONS), [], 'mad');
+    if (s.san <= 0) {
+      s.san = SAN_WAKE; s.counters.collapses = (s.counters.collapses || 0) + 1;
+      this.down = COLLAPSE_SEC; this.pause = 0; this.hp = Math.max(1, this.hp);
+      this.say(COLLAPSE, [], 'mad');
+      this.refresh(); this.checkTitles();
+    }
+  }
+
+  setSan(v: number): void {
+    const before = sanTier(this.s.san);
+    this.s.san = Math.max(0, Math.min(SAN_MAX, v));
+    const after = sanTier(this.s.san);
+    if (after !== before) {
+      this.refresh();
+      if (after > before) this.say(after === 2 ? { zh: '你開始聽見不該聽見的聲音。（瘋狂）', en: 'You begin to hear what you should not. (Mad)' } : { zh: '你的手在發抖。（動搖）', en: 'Your hands are shaking. (Shaken)' }, [], 'mad');
+      else if (after === 0) this.say({ zh: '腦袋清楚多了。（清醒）', en: 'Your head clears. (Lucid)' }, [], 'good');
+    }
   }
 
   private gainXp(x: number): void {

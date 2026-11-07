@@ -14,6 +14,7 @@ setRandom(mulberry32(7));
 const hours = Number(process.argv[2] || 10), startAge = Number(process.argv[3] || 14);
 const g = new Game(newSave('Sim', process.argv[4] || 'human', startAge));
 const s = g.s;
+let resting = false;
 const PRIORITY = ['mastery', 'smash', 'tough', 'mediumArms', 'firebolt', 'defense', 'meditation', 'insight', 'counter', 'fortune'];
 
 function policy(): void {
@@ -43,13 +44,17 @@ function policy(): void {
   // area: deepest one whose suggested CP we meet
   let best = 0;
   AREAS.forEach((_a, i) => { if (AREA_CP[i] <= g.d.cp * 1.0) best = i; });
+  // sanity: retreat to safe ground when low, go back once recovered
+  if (s.san < 15) resting = true;
+  if (s.san > 85) resting = false;
+  if (resting) best = AREAS.findIndex((a, i) => a.dread === 0 && (i === best || AREAS[i + 1]?.dread !== 0));
   A.goArea(g, AREAS[best].key);
   if (s.pets.length && !s.activePet) A.setPet(g, s.pets[0].key);
-  if (s.age >= 20) A.rebirth(g, s.race, 17);
+  if (s.age >= 20) { A.pactOffers(g); A.rebirth(g, s.race, 17, 0); }
 }
 
 console.log('area CP:', AREAS.map((a, i) => `${a.key}=${AREA_CP[i]}`).join(' '));
-console.log('min  age  lvl  area        cp     kills  deaths  gold     rb pets  ap');
+console.log('min  age  lvl  area        cp     kills  deaths  gold     rb pets  ap  san');
 const dt = 0.25;
 let lastKills = 0, lastDeaths = 0;
 for (let t = 0, nextPol = 0, nextRep = 0; t <= hours * 3600; t += dt) {
@@ -59,12 +64,13 @@ for (let t = 0, nextPol = 0, nextRep = 0; t <= hours * 3600; t += dt) {
     const row = [
       String(Math.round(t / 60)).padStart(4), String(s.age).padStart(4), String(s.lvl).padStart(4), s.area.padEnd(11),
       String(g.d.cp).padStart(6), String(s.counters.kills - lastKills).padStart(6), String(s.counters.deaths - lastDeaths).padStart(6),
-      String(Math.floor(s.gold)).padStart(8), String(s.counters.rebirths).padStart(3), String(s.pets.length).padStart(4), String(s.ap).padStart(4),
+      String(Math.floor(s.gold)).padStart(8), String(s.counters.rebirths).padStart(3), String(s.pets.length).padStart(4), String(s.ap).padStart(4), String(Math.floor(s.san)).padStart(4),
     ];
     console.log(row.join(' '));
     lastKills = s.counters.kills; lastDeaths = s.counters.deaths;
     nextRep += t < 3600 ? 300 : 1800;
   }
 }
+console.log('collapses:', s.counters.collapses || 0, ' pact:', s.pact);
 console.log('titles:', s.titles.join(','), ' skills:', JSON.stringify(s.skills));
 console.log('gear:', SLOTS.map(k => s.equip[k] ? `${k}:i${s.equip[k]!.ilvl}+${s.equip[k]!.plus}r${s.equip[k]!.rarity}` : k + ':-').join(' '));

@@ -21,7 +21,8 @@ export const tr = (x: L): string => x[lang];
 
 /** UI strings. Content strings live next to their data. */
 export const UI = {
-  title: { zh: 'SOULS IN ABYSS', en: 'SOULS IN ABYSS' },
+  title: { zh: '輪迴無止盡', en: 'SOULS IN ABYSS' },
+  subtitle: { zh: 'SOULS IN ABYSS', en: '' },
   tagline: { zh: '世界底下有一道深淵，所有靈魂最後都會落進去。<br>除了你。你總是會回來。', en: 'Beneath the world lies the Abyss. Every soul falls in at last.<br>Except yours. Yours keeps coming back.' },
   play: { zh: '開始遊戲', en: 'Play Game' },
   name: { zh: '名字', en: 'NAME' },
@@ -90,6 +91,15 @@ export const UI = {
   language: { zh: '語言', en: 'Language' },
   reset: { zh: '刪除存檔', en: 'Delete save' },
   resetConfirm: { zh: '確定刪除存檔？無法復原。', en: 'Delete your save? This cannot be undone.' },
+  san: { zh: 'SAN', en: 'SAN' },
+  pact: { zh: '契約', en: 'Pact' },
+  gift: { zh: '餽贈', en: 'Gift' },
+  curse: { zh: '詛咒', en: 'Curse' },
+  refuse: { zh: '拒絕深淵', en: 'Refuse the Abyss' },
+  offerHead: { zh: '深淵願意給你一樣東西，也要拿走一樣東西。選一組，或者拒絕。契約只維持這一世。', en: 'The Abyss will give you one thing and take another. Pick a pair, or refuse. A pact lasts one life.' },
+  noPact: { zh: '這一世沒有契約', en: 'No pact this life' },
+  safe: { zh: '安全：SAN 會恢復', en: 'Safe: SAN recovers' },
+  dread: { zh: 'SAN 每擊倒', en: 'SAN per kill' },
   credits: { zh: '字型：俐方體11號 Cubic 11（OFL）', en: 'Font: Cubic 11 (OFL)' },
 } satisfies Record<string, L>;
 

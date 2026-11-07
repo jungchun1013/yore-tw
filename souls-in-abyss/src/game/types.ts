@@ -8,7 +8,8 @@ export type ModKey =
   | StatKey
   | 'hp' | 'mp' | 'atk' | 'atkMin' | 'atkMax' | 'bal' | 'crit' | 'critDmg' | 'def' | 'prt' | 'speed' | 'magic'
   | 'xp' | 'gold' | 'drop' | 'heal'
-  | 'petPower' | 'guard' | 'petHeal';
+  | 'petPower' | 'guard' | 'petHeal'
+  | 'dmgTaken' | 'sanDrain';
 
 /** add is applied before mul; mul values from every source are summed (0.1 = +10%). */
 export interface Mod { key: ModKey; add?: number; mul?: number }
@@ -36,7 +37,7 @@ export interface PetState { key: string; lvl: number; xp: number; bond: number; 
 
 export interface Counters {
   kills: number; deaths: number; rebirths: number; bestPlus: number;
-  fateLines: number; deepest: number; playSec: number;
+  fateLines: number; deepest: number; playSec: number; collapses?: number;
 }
 
 export interface Save {
@@ -61,6 +62,9 @@ export interface Save {
   titles: string[];
   counters: Counters;
   autoSell: number;       // drops below this rarity are sold on pickup
+  san: number;                        // sanity, 0..SAN_MAX
+  pact: [string, string] | null;      // gift + curse for this life
+  offers: [string, string][] | null;  // what the Abyss offers at the next rebirth
   lastSeen: number;
 }
 

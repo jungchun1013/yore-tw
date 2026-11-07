@@ -14,6 +14,9 @@ import { TITLES } from '../data/titles';
 import { LEGACY_RATE, REBIRTH_AGE, YEAR_SEC, clearSave } from '../game/state';
 import { Scene } from './scene';
 import * as A from '../game/actions';
+import { curseOf, giftOf, type PactDef } from '../data/pacts';
+import { SAN_TIERS, sanTier, willResist } from '../data/sanity';
+import { SAN_MAX } from '../game/state';
 
 type View = 'equip' | 'pets' | 'skills' | 'map' | 'smith' | 'titles' | 'rebirth' | 'settings';
 const NAV: [View, keyof typeof UI, string][] = [
@@ -25,7 +28,7 @@ const STAT: Record<string, L> = {
   hp: { zh: 'HP', en: 'HP' }, mp: { zh: 'MP', en: 'MP' }, atk: { zh: '攻擊', en: 'ATK' }, atkMin: { zh: '最小攻擊', en: 'Min ATK' }, atkMax: { zh: '最大攻擊', en: 'Max ATK' },
   bal: { zh: '平衡', en: 'BAL' }, crit: { zh: '爆擊', en: 'CRT' }, def: { zh: '防禦', en: 'DEF' }, prt: { zh: '保護', en: 'PRT' },
   speed: { zh: '攻速', en: 'Speed' }, magic: { zh: '魔力', en: 'Magic' }, xp: { zh: '經驗', en: 'EXP' }, gold: { zh: '金幣', en: 'Gold' }, drop: { zh: '掉寶', en: 'Drops' },
-  petPower: { zh: '夥伴傷害', en: 'Pal damage' }, guard: { zh: '減傷', en: 'Guard' }, petHeal: { zh: '夥伴治療', en: 'Pal heal' }, heal: { zh: '擊倒回復', en: 'Kill heal' },
+  petPower: { zh: '夥伴傷害', en: 'Pal damage' }, sanDrain: { zh: 'SAN 流失', en: 'SAN loss' }, dmgTaken: { zh: '受到傷害', en: 'Damage taken' }, guard: { zh: '減傷', en: 'Guard' }, petHeal: { zh: '夥伴治療', en: 'Pal heal' }, heal: { zh: '擊倒回復', en: 'Kill heal' },
 };
 const SLOT_NAME: Record<Slot, L> = {
   weapon: { zh: '武器', en: 'Weapon' }, head: { zh: '頭', en: 'Head' }, body: { zh: '身體', en: 'Body' }, hands: { zh: '手', en: 'Hands' },
@@ -41,7 +44,7 @@ export class App {
   private view: View = 'equip';
   private slot: Slot | 'all' = 'all';
   private skillTab: SkillTab = 'combat';
-  private rbRace: string; private rbAge = 17;
+  private rbRace: string; private rbAge = 17; private rbPact = -1;
   private lastHtml: Record<string, string> = {};
   private logEl!: HTMLElement;
   private scene: Scene;
@@ -110,7 +113,8 @@ export class App {
       case 'pet': A.setPet(g, k || null); break;
       case 'rbRace': this.rbRace = k; break;
       case 'rbAge': this.rbAge = Number(k); break;
-      case 'rebirth': A.rebirth(g, this.rbRace, this.rbAge); break;
+      case 'rbPact': this.rbPact = Number(k); break;
+      case 'rebirth': A.rebirth(g, this.rbRace, this.rbAge, this.rbPact); this.rbPact = -1; break;
       case 'reset': if (confirm(t('resetConfirm'))) { clearSave(); (window as any).__noSave = true; location.reload(); } return;
     }
     this.lastHtml = {};
@@ -153,6 +157,7 @@ export class App {
     this.text('m-name', `${tr(m.def.name)} Lv${m.lvl}`); (document.getElementById('m-name') as HTMLElement).style.color = g.monColor;
     this.text('m-cp', num(m.cp));
     this.width('m-hp', m.hp / m.maxHp);
+    this.width('s-san', g.s.san / SAN_MAX);
     this.width('s-hp', g.hp / g.d.hp); this.width('s-mp', g.mp / g.d.mp); this.width('s-xp', g.s.xp / xpNeed(g.s.lvl));
   }
   private text(id: string, v: string) { const el = document.getElementById(id); if (el && el.textContent !== v) el.textContent = v; }
@@ -191,7 +196,9 @@ export class App {
         <div class="kv"><span class="lbl">${t('age')}</span><span>${s.age} <small class="dim">${clock(YEAR_SEC - s.ageT)}</small></span></div>
         <div class="kv"><span class="lbl">${t('lv')}</span><span>${s.lvl}</span></div>
         ${bar('s-hp', 'red', t('hp'))}${bar('s-mp', 'blue', t('mp'))}${bar('s-xp', 'grey', t('exp'))}
+        <div class="kv"><span class="lbl">${t('san')}</span><div class="line"><div id="s-san" class="purple"></div></div><span class="santier" style="color:${SAN_TIERS[sanTier(s.san)].color}">${Math.floor(s.san)} ${tr(SAN_TIERS[sanTier(s.san)].name)}</span></div>
         <div class="kv"><span class="lbl">${t('gold')}</span><span>${num(s.gold)}</span></div>
+        ${this.pactLine()}
       </div>
       <div class="col">${PRIMARY.map(stat).join('')}
         <div class="kv"><span class="lbl">${t('ap')}</span><span>${s.ap}</span></div>
@@ -328,7 +335,7 @@ export class App {
       const pals = PETS.filter(p => p.home === a.key && !p.hidden).map(p => s.pets.some(x => x.key === p.key) ? tr(p.stages[0].name) : '？').join(' · ');
       return `<div class="item ${here ? 'here' : ''}"><div class="swatch" style="background:${a.bg}"></div>
         <div class="grow"><div class="iname">${tr(a.name)} <small class="dim">Lv ${a.min}–${a.max}</small></div>
-        <div class="istat">${t('recArea')} <b class="${cls}">${num(cp)}</b> · ${tr(a.flavor)}${pals ? ` · ${t('pet')}: ${pals}` : ''}</div></div>
+        <div class="istat">${t('recArea')} <b class="${cls}">${num(cp)}</b> · ${a.dread ? `<span class="madtxt">${t('dread')} -${(a.dread * willResist(d.prim.will) * d.sanDrain).toFixed(2)}</span>` : `<span class="up">${t('safe')}</span>`} · ${tr(a.flavor)}${pals ? ` · ${t('pet')}: ${pals}` : ''}</div></div>
         ${here ? `<span class="dim">${t('here')}</span>` : `<button data-a="go" data-k="${a.key}">${t('go')}</button>`}</div>`;
     }).join('');
   }
@@ -374,7 +381,28 @@ export class App {
     const gain = PRIMARY.map(k => `${tr(STAT[k])} +${Math.floor(s.grown[k] * LEGACY_RATE)}`).join(' · ');
     return `<p>${t('rebirthKeep')}</p><p class="dim">${gain}</p>
       ${raceAgePicker(this.rbRace, this.rbAge, 'rbRace', 'rbAge')}
+      ${ok ? this.offersHtml() : ''}
       <p><button class="big" data-a="rebirth" ${ok ? '' : 'disabled'}>${ok ? t('rebirthDo') : t('rebirthNeed') + ` (${s.age})`}</button></p>`;
+  }
+
+  private pactLine(): string {
+    const p = this.g.s.pact;
+    if (!p) return '';
+    const gi = giftOf(p[0]), cu = curseOf(p[1]);
+    return `<div class="kv pactline"><span class="lbl">${t('pact')}</span><span><span class="gift">${gi ? tr(gi.name) : ''}</span> / <span class="curse">${cu ? tr(cu.name) : ''}</span></span></div>`;
+  }
+
+  private offersHtml(): string {
+    const offers = A.pactOffers(this.g);
+    const fx = (d: PactDef) => d.mods.map(modText).join(' · ').replace(/\+-/g, '-');
+    const cards = offers.map(([gk, ck], i) => {
+      const gi = giftOf(gk)!, cu = curseOf(ck)!;
+      return `<button class="pact ${this.rbPact === i ? 'on' : ''}" data-a="rbPact" data-k="${i}">
+        <span class="gift">${tr(gi.name)}</span><small>${fx(gi)}</small><em>${tr(gi.line)}</em>
+        <span class="curse">${tr(cu.name)}</span><small>${fx(cu)}</small><em>${tr(cu.line)}</em></button>`;
+    }).join('');
+    return `<h3>${t('pact')}</h3><p class="dim">${t('offerHead')}</p><div class="pacts">${cards}
+      <button class="pact refuse ${this.rbPact === -1 ? 'on' : ''}" data-a="rbPact" data-k="-1">${t('refuse')}</button></div>`;
   }
 
   private settingsHtml(): string {
@@ -400,7 +428,7 @@ export function raceAgePicker(race: string, age: number, raceAction: string, age
 export function creation(root: HTMLElement, done: (name: string, race: string, age: number) => void): void {
   let race = 'human', age = 13, name = lang === 'zh' ? '勇者' : 'Hero';
   const titleScreen = () => {
-    root.innerHTML = `<div class="title"><h1 class="glow">${t('title')}</h1><p class="tagline">${t('tagline')}</p><button class="link" id="t-play">${t('play')}</button></div>`;
+    root.innerHTML = `<div class="title"><h1 class="glow">${t('title')}</h1>${t('subtitle') ? `<div class="subtitle">${t('subtitle')}</div>` : ''}<p class="tagline">${t('tagline')}</p><button class="link" id="t-play">${t('play')}</button></div>`;
     root.querySelector<HTMLElement>('#t-play')!.onclick = draw;
   };
   const draw = () => {

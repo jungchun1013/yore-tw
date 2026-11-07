@@ -5,11 +5,12 @@ import { SMITH_BONUS } from '../data/races';
 import { MAX_RANK, rankCost, skillOf } from '../data/skills';
 import { AREAS } from '../data/areas';
 import { REBIRTH_LINES } from '../data/fate';
-import { chance, pick } from '../core/rng';
+import { chance, pick, rnd } from '../core/rng';
+import { CURSES, GIFTS, PACT_OFFERS, giftOf, curseOf, type Pact } from '../data/pacts';
 import { sellPrice, nameOf } from './loot';
-import { LEGACY_RATE, REBIRTH_AGE, zeroStats } from './state';
+import { LEGACY_RATE, REBIRTH_AGE, SAN_MAX, zeroStats } from './state';
 import { PRIMARY } from './types';
-import { tr } from '../core/i18n';
+import { lang, tr } from '../core/i18n';
 
 /** Where an item would go: its own slot, or for accessories the empty one (else the first). */
 export function targetSlot(s: Save, it: Item): Slot {
@@ -87,16 +88,41 @@ export function setPet(g: Game, key: string | null): void {
   g.s.activePet = key; g.refresh();
 }
 
-export function rebirth(g: Game, race: string, age: number): boolean {
+/** Roll the Abyss's offers once and keep them in the save, so reloading cannot reroll. */
+export function pactOffers(g: Game): Pact[] {
+  const s = g.s;
+  if (!s.offers) {
+    const gifts = GIFTS.slice(), out: Pact[] = [];
+    for (let i = 0; i < PACT_OFFERS && gifts.length; i++) {
+      const gift = gifts.splice(Math.floor(rnd() * gifts.length), 1)[0];
+      const curses = CURSES.filter(c => c.stat !== gift.stat && !out.some(o => o[1] === c.key));
+      out.push([gift.key, pick(curses).key]);
+    }
+    s.offers = out;
+  }
+  return s.offers;
+}
+
+/** pact: index into the offers, or -1 to refuse the Abyss. */
+export function rebirth(g: Game, race: string, age: number, pact = -1): boolean {
   const s = g.s;
   if (s.age < REBIRTH_AGE) return false;
   for (const k of PRIMARY) s.legacy[k] += s.grown[k] * LEGACY_RATE;
   s.grown = zeroStats();
   s.lvl = 1; s.xp = 0; s.race = race; s.age = Math.max(10, Math.min(17, age)); s.ageT = 0;
   s.counters.rebirths++;
+  const offers = s.offers || [];
+  s.pact = pact >= 0 && offers[pact] ? offers[pact] : null;
+  s.offers = null;
+  s.san = SAN_MAX;
   s.area = 'meadow';
   g.refresh(); g.hp = g.d.hp; g.mp = g.d.mp; g.resetLoot(); g.newMonster();
   g.say({ zh: `${s.name} 的靈魂沉入深淵，又浮了上來。（第 ${s.counters.rebirths} 次）`, en: `${s.name}'s soul sinks into the Abyss and surfaces again. (#${s.counters.rebirths})` }, [], 'fate');
+  if (s.pact) {
+    const gi = giftOf(s.pact[0])!, cu = curseOf(s.pact[1])!;
+    g.say({ zh: '深淵低語：{0}', en: 'The Abyss whispers: {0}' }, [{ text: gi.line[lang], cls: 'gift' }], 'fate');
+    g.say({ zh: '你接受了 {0} 與 {1}。', en: 'You accept {0} and {1}.' }, [{ text: gi.name[lang], cls: 'gift' }, { text: cu.name[lang], cls: 'curse' }], 'fate');
+  } else g.say({ zh: '你拒絕了深淵的交易。深淵似乎覺得很有趣。', en: 'You refuse the Abyss. It seems amused.' }, [], 'fate');
   if (chance(0.5)) g.say(pick(REBIRTH_LINES), [], 'fate');
   g.checkTitles();
   return true;
