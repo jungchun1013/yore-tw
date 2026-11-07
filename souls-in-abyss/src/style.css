@@ -253,6 +253,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .dot.q { background: #cfccbf; }
 .view .skill .sico { padding: 6px; }
 .skill .up-btn .gi { width: 16px; height: 16px; }
+.view .skill .up-btn .gi { position: relative; top: -1px; left: 2px; } /* optical nudge: arrow 1px up, 2px right */
 .gi.hrt { width: 14px; height: 14px; display: inline-block; vertical-align: -1px; color: #d7d7cb; margin-right: 1px; }
 .gi.hrt.on { color: #b47f76; }
 .gi.star { color: #cfccbf; opacity: 1; } .gi.star.on { color: var(--accent); }
