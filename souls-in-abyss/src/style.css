@@ -110,15 +110,14 @@ small { font-size: var(--fs-xs); }
 .dot.q { background: #cfccbf; color: #fff; }
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } .between { justify-content: space-between; margin: 8px 0 2px; }
 
-.doll { width: 100%; max-width: 320px; display: block; margin: 0 auto; }
+.doll { width: 100%; max-width: 320px; display: block; margin: 0 auto; overflow: visible; } /* centred captions may spill past the board's edge */
 
 .doll .slot { cursor: pointer; }
 .doll .cell { fill: #e3e0d5; stroke: none; }
 .doll .slot.on .cell { fill: #ddd3df; }
 .doll .slot:not(.full) > svg { opacity: .45; }
 .doll .slot.locked .cell { fill: #d9d4cc; } .doll .slot.locked line { stroke: #b47f76; stroke-width: 2; }
-.doll .cap { fill: var(--dim); font: var(--fs-xs) Cubic11, monospace; }
-.doll .cap.l { text-anchor: start; } .doll .cap.r { text-anchor: end; }
+.doll .cap { fill: var(--dim); font: var(--fs-xs) Cubic11, monospace; text-anchor: middle; }
 .doll .slot text.pr { text-anchor: end; }
 .doll .slot text.plus { fill: var(--accent); font: var(--fs-xs) Cubic11, monospace; text-anchor: middle; pointer-events: none; }
 
