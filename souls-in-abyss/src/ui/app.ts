@@ -196,7 +196,10 @@ export class App {
     this.put('sheet', this.sheetHtml());
     this.put('petbox', this.petBoxHtml());
     this.put('att', this.attHtml());
-    this.put('view', this.viewHtml());
+    // an open dropdown (auto-sell) must not be replaced under the player's finger: hold the view until it blurs
+    const ae = document.activeElement;
+    const busy = !!ae && ae.tagName === 'SELECT' && document.getElementById('view')!.contains(ae);
+    if (!busy) this.put('view', this.viewHtml());
     if (this.view === 'map') this.text('loot-sec', clock(this.g.loot.sec));
     this.markLatin();
   }
