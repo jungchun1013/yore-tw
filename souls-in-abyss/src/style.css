@@ -32,12 +32,8 @@ small { font-size: var(--fs-xs); }
 .game {
   display: grid; gap: 8px; padding: 8px; height: 100vh; max-width: 1400px; margin: 0 auto;
   grid-template-columns: 1.3fr 0.78fr 0.85fr;
-  grid-template-rows: auto auto 1fr auto;
-  grid-template-areas:
-    "sheet monster side"
-    "sheet pet     side"
-    "log   att     side"
-    "log   loot    side";
+  grid-template-rows: minmax(0, 1fr);
+  grid-template-areas: "colL colM side";
 }
 .box { background: var(--box); border: 0; padding: 10px 14px; min-width: 0; min-height: 0; }
 .sheet { grid-area: sheet; display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 0 14px; align-content: start; }
@@ -179,8 +175,16 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .namebox input { width: 180px; font-size: var(--fs-l); }
 
 /* ---------- narrow screens: stack ---------- */
+/* left and middle columns size their boxes independently: the sheet takes what it needs, the log the rest */
+.colL, .colM { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
+.colL { grid-area: colL; } .colM { grid-area: colM; }
+.colL .sheet, .colM .monster, .colM .petbox, .colM .loot { flex: none; }
+.colL .log { flex: 1; min-height: 0; }
+.colM .att { flex: 1; min-height: 0; }
+
 @media (max-width: 900px) {
   html, body { font-size: var(--fs-m); }
+  .colL, .colM { display: contents; }
   .game { height: auto; grid-template-columns: 1fr 1fr;
     grid-template-areas: "sheet sheet" "monster monster" "pet pet" "side side" "log log" "att loot"; }
   .sheet { grid-template-columns: 1fr 1fr; }
@@ -266,3 +270,5 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 
 .rblead { margin: 4px 0 8px; color: var(--lbl); }
 .kv.left > span:last-child:not(.lbl) { margin-left: 0; }
+.sheet .line > div { transition: none; }
+.lat { padding-left: 0.17em; }

@@ -65,7 +65,11 @@ export class App {
       `<div class="kv bar"><span class="lbl">${lbl}</span><div class="line"><div id="${id}" class="${cls}"></div></div></div>`;
     this.root.innerHTML = `
       <div class="game">
+        <div class="colL">
         <section class="box sheet" id="sheet"></section>
+        <section class="box log" id="log"></section>
+        </div>
+        <div class="colM">
         <section class="box monster">
           <div class="mhead"><span class="lbl">${t('monster')}</span> <b id="m-diff"></b> <span id="m-name"></span></div>
           <div class="stage"></div>
@@ -81,9 +85,9 @@ export class App {
           </div>
         </section>
         <section class="box petbox" id="petbox"></section>
-        <section class="box log" id="log"></section>
         <section class="box att" id="att"></section>
         <section class="box loot" id="loot"></section>
+        </div>
         <section class="box side">
           <nav class="nav">${NAV.map(([k, l]) => `<button class="ico" data-a="view" data-k="${k}" title="${t(l)}" aria-label="${t(l)}"><span>${icon(k)}</span></button>`).join('')}</nav>
           <div class="vtitle" id="vtitle"></div>
@@ -172,10 +176,16 @@ export class App {
     this.text('m-name', `${tr(m.def.name)} Lv${m.lvl}`); (document.getElementById('m-name') as HTMLElement).style.color = g.monColor;
     this.text('m-cp', num(m.cp)); this.text('s-cp', num(g.d.cp));
     this.width('m-hp', m.hp / m.maxHp);
-    this.width('s-san', g.s.san / SAN_MAX);
-    const tier = SAN_TIERS[sanTier(g.s.san)];
-    this.text('s-san-v', tr(tier.name)); (document.getElementById('s-san-v') as HTMLElement).style.color = tier.color;
-    this.width('s-hp', g.hp / g.d.hp); this.width('s-mp', g.mp / g.d.mp); this.width('s-xp', g.s.xp / xpNeed(g.s.lvl));
+    this.width('s-hp', g.hp / g.d.hp); this.width('s-mp', g.mp / g.d.mp);
+    this.syncSheetBars();
+  }
+  /** EXP and SAN live in the sheet, which is rebuilt when its text changes; fill them right away so they never flash empty. */
+  private syncSheetBars(): void {
+    const s = this.g.s, tier = SAN_TIERS[sanTier(s.san)];
+    this.width('s-xp', s.xp / xpNeed(s.lvl));
+    this.width('s-san', s.san / SAN_MAX);
+    this.text('s-san-v', tr(tier.name));
+    const el = document.getElementById('s-san-v'); if (el) el.style.color = tier.color;
   }
   private text(id: string, v: string) { const el = document.getElementById(id); if (el && el.textContent !== v) el.textContent = v; }
   private width(id: string, f: number) { const el = document.getElementById(id); if (el) el.style.width = (Math.max(0, Math.min(1, f)) * 100).toFixed(1) + '%'; }
@@ -187,6 +197,18 @@ export class App {
     this.put('att', this.attHtml());
     this.put('loot', this.lootHtml());
     this.put('view', this.viewHtml());
+    this.markLatin();
+  }
+  /**
+   * In Chinese, a label that starts with a Latin letter or "$" sits a little left of the
+   * Chinese labels above and below it (Cubic 11 gives CJK glyphs a wider left bearing).
+   * Nudge those labels so every label column lines up.
+   */
+  private markLatin(): void {
+    if (lang !== 'zh') return;
+    this.root.querySelectorAll<HTMLElement>('.lbl, .loot .kv > span:first-child').forEach(el => {
+      el.classList.toggle('lat', /^[A-Za-z$]/.test((el.textContent || '').trim()));
+    });
   }
   private put(id: string, html: string): void {
     if (this.lastHtml[id] === html) return;
@@ -195,6 +217,7 @@ export class App {
     const st = el.scrollTop;
     el.innerHTML = html;
     el.scrollTop = st;
+    if (id === 'sheet') this.syncSheetBars();
   }
 
   // ---------- fixed panels ----------

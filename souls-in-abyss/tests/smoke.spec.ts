@@ -137,3 +137,23 @@ test('skill names in the log stay inline', async ({ page }) => {
   const display = await page.evaluate(() => getComputedStyle(document.querySelector('#log .skname')!).display);
   expect(display).toBe('inline');
 });
+
+test('EXP and SAN bars never flash empty when the sheet refreshes', async ({ page }) => {
+  await page.addInitScript(fresh, 'zh');
+  await page.goto('/');
+  await page.click('#t-play'); await page.click('.intro'); await page.click('#c-go');
+  await page.evaluate(() => { const g = (window as any).__game; g.s.xp = Math.floor(g.s.lvl * 10); g.s.san = 60; });
+  await page.waitForTimeout(500);
+  // sample the bars every frame for 2.5 s, across several sheet rebuilds (the age clock ticks each second)
+  const minWidths = await page.evaluate(() => new Promise<number[]>(res => {
+    let mx = Infinity, ms = Infinity; const end = performance.now() + 2500;
+    const tick = () => {
+      const x = document.getElementById('s-xp'), s = document.getElementById('s-san');
+      if (x && s) { mx = Math.min(mx, parseFloat(x.style.width || '0')); ms = Math.min(ms, parseFloat(s.style.width || '0')); }
+      if (performance.now() < end) requestAnimationFrame(tick); else res([mx, ms]);
+    };
+    requestAnimationFrame(tick);
+  }));
+  expect(minWidths[0]).toBeGreaterThan(0);
+  expect(minWidths[1]).toBeGreaterThan(50);
+});

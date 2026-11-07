@@ -210,13 +210,16 @@ export class Game {
     s.gold += gold;
     this.loot.gold += gold; this.loot.xp += xp;
     this.emit({ t: 'kill' });
-    this.say({ zh: '獲得 {0} EXP。', en: 'You get {0} EXP.' }, [this.n(xp, 'xp')]);
-    this.say({ zh: '獲得 {0}。', en: 'You earn {0}.' }, [{ text: '$' + Math.floor(gold), cls: 'gold' }]);
+    // one line per kill: EXP, gold and any drop together
+    const drop = chance(DROP_CHANCE * this.d.drop) ? this.dropItem(m.lvl) : null;
+    const goldPart: Part = { text: '$' + Math.floor(gold), cls: 'gold' };
+    if (!drop) this.say({ zh: '獲得 {0} EXP、{1}', en: 'You get {0} EXP, {1}' }, [this.n(xp, 'xp'), goldPart]);
+    else if (drop.sold === undefined) this.say({ zh: '獲得 {0} EXP、{1}、{2}', en: 'You get {0} EXP, {1}, {2}' }, [this.n(xp, 'xp'), goldPart, drop.label]);
+    else this.say({ zh: '獲得 {0} EXP、{1}、{2}（自動賣出 {3}）', en: 'You get {0} EXP, {1}, {2} (sold for {3})' }, [this.n(xp, 'xp'), goldPart, drop.label, { text: '$' + drop.sold, cls: 'gold' }]);
     this.gainXp(xp);
     this.hp = Math.min(this.d.hp, this.hp + this.d.hp * this.d.heal);
     this.mp = Math.min(this.d.mp, this.mp + this.d.mp * this.d.heal);
 
-    if (chance(DROP_CHANCE * this.d.drop)) this.dropItem(m.lvl);
     this.petKill(m.lvl);
     this.tryBefriend();
     if (chance(FATE_CHANCE)) { c.fateLines++; this.say(pick(FATE_LINES), [], 'fate'); }
@@ -329,18 +332,18 @@ export class Game {
     this.checkTitles();
   }
 
-  private dropItem(lvl: number): void {
+  /** Rolls a drop and stores or auto-sells it; the kill line reports it. */
+  private dropItem(lvl: number): { label: Part; sold?: number } {
     const s = this.s;
     const it = makeItem(s, lvl, rollRarity(this.d.drop));
     this.loot.items[it.rarity]++;
     const label: Part = { text: `${tr(RARITY[it.rarity].name)} ${tr(nameOf(it))}`, color: RARITY[it.rarity].color };
     if (it.rarity < s.autoSell || s.bag.length >= BAG_SIZE) {
       const g = sellPrice(it); s.gold += g;
-      this.say({ zh: '撿到 {0}，自動賣出 {1}', en: 'You find {0}, sold for {1}' }, [label, { text: '$' + g, cls: 'gold' }]);
-      return;
+      return { label, sold: g };
     }
     s.bag.push(it);
-    this.say({ zh: '撿到 {0}！', en: 'You find {0}!' }, [label]);
+    return { label };
   }
 
   checkTitles(): void {
