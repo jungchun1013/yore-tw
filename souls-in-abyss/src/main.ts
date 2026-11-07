@@ -5,6 +5,7 @@ import { OFFLINE_CAP, loadSave, newSave, writeSave } from './game/state';
 import { App, creation } from './ui/app';
 import { lang, t } from './core/i18n';
 import { num } from './core/fmt';
+import { preloadArt } from './ui/sprites';
 
 installFontSnapping();
 const root = document.getElementById('app')!;
@@ -15,6 +16,7 @@ function start(save: ReturnType<typeof newSave>, fresh: boolean): void {
   const g = new Game(save);
   const app = new App(g, root);
   (window as any).__game = g; // handy for tests and the console
+  preloadArt('bg.' + save.area);
 
   if (!fresh) {
     const away = Math.min(OFFLINE_CAP, (Date.now() - save.lastSeen) / 1000);

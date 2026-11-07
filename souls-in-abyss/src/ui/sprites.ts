@@ -24,3 +24,9 @@ export function sprite(key: string): HTMLImageElement | null {
   if (!cache[key]) { const im = new Image(); im.src = url; cache[key] = im; }
   return cache[key].complete && cache[key].naturalWidth ? cache[key] : null;
 }
+
+/** Fetch every painted background up front (the current area first) so switching areas never shows a blank frame. */
+export function preloadArt(first?: string): void {
+  if (first) sprite(first);
+  for (const key of Object.keys(ART)) sprite(key);
+}
