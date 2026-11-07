@@ -438,12 +438,27 @@ export function raceAgePicker(race: string, age: number, raceAction: string, age
 const cjk = (s: string) => (/[\u3400-\u9fff]/.test(s) ? ' cjk' : '');
 const banner = (small = false) => `<div class="banner ${small ? 'small' : ''}"><h1 class="glow${cjk(t('title'))}">${t('title')}</h1>${t('subtitle') ? `<div class="subtitle${cjk(t('subtitle'))}">${t('subtitle')}</div>` : ''}</div>`;
 
+/** Gear in the bottom-right corner of the entry screens: opens a language menu. */
+const cogHtml = () => `<div class="cogwrap"><div class="cogmenu" hidden>
+    <button data-lang="zh" ${lang === 'zh' ? 'class="on"' : ''}>中文</button><button data-lang="en" ${lang === 'en' ? 'class="on"' : ''}>English</button></div>
+  <button class="cog" aria-label="${t('language')}" title="${t('language')}">${icon('settings')}</button></div>`;
+function bindCog(root: HTMLElement): void {
+  const menu = root.querySelector<HTMLElement>('.cogmenu')!;
+  root.querySelector<HTMLElement>('.cog')!.onclick = e => { e.stopPropagation(); menu.hidden = !menu.hidden; };
+  menu.querySelectorAll<HTMLElement>('[data-lang]').forEach(b => b.onclick = e => {
+    e.stopPropagation();
+    const l = b.dataset.lang as 'zh' | 'en';
+    if (l !== lang) { setLang(l); location.reload(); } else menu.hidden = true;
+  });
+}
+
 /** Title banner, then creation. */
 export function creation(root: HTMLElement, done: (name: string, race: string, age: number) => void): void {
   let race = 'elf', age = 13, name = lang === 'zh' ? '奧雷里亞諾' : 'Aureliano'; // after One Hundred Years of Solitude
   const titleScreen = () => {
-    root.innerHTML = `<div class="title">${banner()}<button class="link play" id="t-play">${t('play')}</button></div>`;
+    root.innerHTML = `<div class="title">${banner()}<button class="link play" id="t-play">${t('play')}</button></div>${cogHtml()}`;
     root.querySelector<HTMLElement>('#t-play')!.onclick = intro;
+    bindCog(root);
   };
   /** The tagline as a short interlude: each line fades in, then both fade out. Click to skip. */
   const intro = () => {
@@ -461,7 +476,8 @@ export function creation(root: HTMLElement, done: (name: string, race: string, a
     root.innerHTML = `<div class="create">${banner(true)}
       ${raceAgePicker(race, age, 'cRace', 'cAge')}
       <div class="cfoot"><label class="namebox"><span>${t('name')}</span><input id="c-name" maxlength="12" value="${esc(name)}" /></label>
-      <button class="link play" id="c-go">${t('ok')}</button></div></div>`;
+      <button class="link play" id="c-go">${t('ok')}</button></div></div>${cogHtml()}`;
+    bindCog(root);
     root.querySelectorAll<HTMLElement>('[data-a="cRace"]').forEach(b => b.onclick = () => { keep(); race = b.dataset.k!; draw(); });
     root.querySelectorAll<HTMLElement>('[data-a="cAge"]').forEach(b => b.onclick = () => { keep(); age = Number(b.dataset.k); draw(); });
     root.querySelector<HTMLElement>('#c-go')!.onclick = () => { keep(); done((name.trim() || (lang === 'zh' ? '奧雷里亞諾' : 'Aureliano')).slice(0, 12), race, age); };

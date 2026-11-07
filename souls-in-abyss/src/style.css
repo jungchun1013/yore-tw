@@ -6,7 +6,7 @@
 }
 :root {
   --bg: #e6e6e6; --box: #ffffff; --line: #cfcfcf; --ink: #555555; --lbl: #3e3e3e; --dim: #9a9a9a;
-  --gold: #e8b33d; --num: 22px; --accent: #6e52b8; --accent-soft: #f1ecfa; --glow1: #5b3fa8; --glow2: #8467cf; --glow3: #b6a3e6; --glow4: #e2daf6; --orange: #e8933d; --red: #a8322d; --blue: #2d6ea8; --up: #3fa34d; --down: #d43d3d; --warn: #e0791a;
+  --gold: #e8b33d; --num: 22px; --slot: 34px; --accent: #6e52b8; --accent-soft: #f1ecfa; --glow1: #5b3fa8; --glow2: #8467cf; --glow3: #b6a3e6; --glow4: #e2daf6; --orange: #e8933d; --red: #a8322d; --blue: #2d6ea8; --up: #3fa34d; --down: #d43d3d; --warn: #e0791a;
   color-scheme: light;
 }
 * { box-sizing: border-box; }
@@ -141,7 +141,9 @@ small { font-size: 13px; }
 @keyframes introOut { to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .introline { animation-duration: .01s; } .intro { animation-delay: 2.5s; animation-duration: .3s; } }
 button.play { font-size: 28px; color: #6b6b6b; letter-spacing: .04em; }
-button.play:hover { color: var(--accent); }
+button.play { transition: color .2s, text-shadow .2s; }
+button.play:hover, button.play:focus-visible { color: #fff; background: none; border: 0;
+  text-shadow: 0 0 3px var(--glow1), 0 0 10px var(--glow2), 0 0 22px var(--glow3), 0 0 40px var(--glow4); }
 
 /* one centred column at every width: races, description, ages, stats */
 .picker { display: flex; flex-direction: column; align-items: center; gap: 22px; width: 100%; max-width: 760px; }
@@ -153,8 +155,9 @@ button.play:hover { color: var(--accent); }
 .rrow.on { color: var(--accent); } .rrow.on .rico { background: var(--accent); }
 .rrow:hover:not(:disabled), .rrow:focus-visible { background: none; border: 0; } .rrow:hover:not(.on) .rico { background: #6b6b6b; }
 .rinfo { color: #6b6b6b; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.figs { display: flex; align-items: flex-end; justify-content: center; gap: 22px; height: 120px; }
-.fig { position: relative; padding: 0; border: 0; background: none; display: flex; flex-direction: column; align-items: center; }
+.figs { display: grid; grid-template-columns: repeat(8, var(--slot)); align-items: end; justify-content: center; column-gap: 14px; height: 120px; }
+/* every figure gets the same slot, so spacing is even and never depends on the selection */
+.fig { position: relative; width: var(--slot); padding: 0; border: 0; background: none; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
 /* floats above the figure so a wider number never shifts the row */
 .fig .agev { position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); font-size: var(--num); color: var(--accent); display: flex; flex-direction: column; align-items: center; line-height: 1.2; white-space: nowrap; pointer-events: none; }
 .fig .agev small { font-size: 13px; color: #8a8a8a; letter-spacing: .08em; }
@@ -189,7 +192,7 @@ button.play:hover { color: var(--accent); }
   .rrow .rname { display: none; }
   .rrow .rico { width: 48px; height: 48px; padding: 9px; }
   .rdesc { font-size: 16px; }
-  .figs { gap: 12px; justify-content: center; }
+  .figs { column-gap: 8px; }
   :root { --num: 18px; }
   .sttable th, .sttable td { padding: 5px 8px; }
   .sttable tbody th { padding-right: 7px; }
@@ -210,3 +213,12 @@ button.play:hover { color: var(--accent); }
 .pact.on { border-color: var(--accent); background: var(--accent-soft); box-shadow: 0 0 0 1px var(--accent); }
 .pact small { color: #777; } .pact em { font-style: normal; font-size: 13px; color: var(--dim); margin-bottom: 4px; }
 .pact.refuse { color: var(--dim); align-items: center; }
+
+/* ---------- language gear on the entry screens ---------- */
+.cogwrap { position: fixed; right: calc(16px + env(safe-area-inset-right, 0px)); bottom: calc(16px + env(safe-area-inset-bottom, 0px)); display: flex; flex-direction: column; align-items: flex-end; gap: 8px; z-index: 5; }
+.cog { width: 44px; height: 44px; border-radius: 50%; border: 0; padding: 9px; background: #8a8a8a; color: #fff; }
+.cog:hover:not(:disabled) { background: var(--accent); border: 0; }
+.cogmenu { display: flex; flex-direction: column; background: #fff; border: 1px solid var(--line); }
+.cogmenu[hidden] { display: none; }
+.cogmenu button { border: 0; background: none; padding: 8px 18px; text-align: right; font-size: 17px; color: #6b6b6b; }
+.cogmenu button.on { color: var(--accent); }

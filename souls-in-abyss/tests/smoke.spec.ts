@@ -18,6 +18,8 @@ test('title, create a hero, fight, and open every view', async ({ page }, info) 
   await page.click('[data-a="cAge"][data-k="13"]');
   await expect(page.locator('.sttable tbody tr').nth(1).locator('td').nth(1)).toHaveText('+4');
   await expect(page.locator('.fig.on .agev')).toHaveText('年齡13');
+  await page.hover('#c-go');
+  await page.waitForTimeout(300);
   await page.screenshot({ path: `${SHOTS}/${info.project.name}-create.png` });
   await page.click('#c-go');
   await expect(page.locator('#sheet')).toContainText('精靈');
@@ -102,4 +104,13 @@ test('sanity drains in the abyss, glitches the log, and collapses at zero', asyn
   expect(r.collapses).toBeGreaterThan(0);
   expect(r.titles).toContain('broken');
   await expect(page.locator('#sheet')).toContainText('SAN');
+});
+
+test('the gear on the title screen switches language', async ({ page }) => {
+  await page.addInitScript(fresh, 'en');
+  await page.goto('/');
+  await expect(page.locator('#t-play')).toHaveText('Play Game');
+  await page.click('.cog');
+  await page.click('.cogmenu [data-lang="zh"]');
+  await expect(page.locator('#t-play')).toHaveText('開始遊戲');
 });
