@@ -77,7 +77,7 @@ export const UI = {
   rebirthDo: { zh: '沉入深淵', en: 'Sink into the Abyss' },
   initStat: { zh: '初始能力', en: 'Base' },
   ageGrowth: { zh: '年齡成長', en: 'Age growth' },
-  levelShare: { zh: '每升一級，能力獲得 1/4 年齡成長加成', en: 'Each level-up adds 1/4 of the age growth to your stats' },
+  levelShare: { zh: '每長一歲，獲得 1x 年齡成長加成<br>每升一級，獲得 0.25x 年齡成長加成', en: 'Each birthday grants 1x age growth<br>Each level-up grants 0.25x age growth' },
   ok: { zh: '確定', en: 'OK' },
   active: { zh: '同行中', en: 'With you' },
   call: { zh: '同行', en: 'Bring' },
