@@ -1,5 +1,5 @@
 import type { Game, Part } from '../game/engine';
-import { PRIMARY, SLOTS, type Item, type Kind, type L, type Slot } from '../game/types';
+import { PRIMARY, SLOTS, type Item, type L, type Slot } from '../game/types';
 import { lang, setLang, t, tr, UI } from '../core/i18n';
 import { clock, num, pct } from '../core/fmt';
 import { derive, armorDef, armorPrt, weaponRange, xpNeed } from '../game/stats';
@@ -19,9 +19,9 @@ import { curseOf, giftOf, type PactDef } from '../data/pacts';
 import { SAN_TIERS, sanTier, willResist } from '../data/sanity';
 import { SAN_MAX } from '../game/state';
 
-type View = 'equip' | 'pets' | 'skills' | 'map' | 'smith' | 'titles' | 'rebirth' | 'settings';
+type View = 'equip' | 'bag' | 'pets' | 'skills' | 'map' | 'smith' | 'titles' | 'rebirth' | 'settings';
 const NAV: [View, keyof typeof UI][] = [
-  ['equip', 'navEquip'], ['pets', 'navPets'], ['skills', 'navSkills'], ['map', 'navMap'],
+  ['equip', 'navEquip'], ['bag', 'navBag'], ['pets', 'navPets'], ['skills', 'navSkills'], ['map', 'navMap'],
   ['smith', 'navSmith'], ['titles', 'navTitles'], ['rebirth', 'navRebirth'], ['settings', 'navSettings'],
 ];
 const STAT: Record<string, L> = {
@@ -35,7 +35,6 @@ const SLOT_NAME: Record<Slot, L> = {
   weapon: { zh: '武器', en: 'Weapon' }, head: { zh: '頭', en: 'Head' }, body: { zh: '身體', en: 'Body' }, hands: { zh: '手', en: 'Hands' },
   feet: { zh: '腳', en: 'Feet' }, acc1: { zh: '飾品 1', en: 'Accessory 1' }, acc2: { zh: '飾品 2', en: 'Accessory 2' },
 };
-const KIND_OF: Record<Slot, Kind> = { weapon: 'weapon', head: 'head', body: 'body', hands: 'hands', feet: 'feet', acc1: 'acc', acc2: 'acc' };
 const hearts = (n: number) => Array.from({ length: BOND_MAX }, (_, i) => icon('heart', i < n ? 'gi hrt on' : 'gi hrt')).join('');
 const esc = (x: string) => x.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!));
 const PCT_KEYS = new Set(['bal', 'crit', 'prt']);
@@ -241,7 +240,7 @@ export class App {
         ${this.pactLine()}
       </div>
       <div class="col">${PRIMARY.map(stat).join('')}
-        <div class="kv"><span class="lbl">${t('ap')}</span><span>${s.ap}</span></div>
+        <div class="kv"><span class="lbl">${icon('ap', 'gi sm')}${t('ap')}</span><span>${s.ap}</span></div>
       </div>
       <div class="col">
         <div class="kv"><span class="lbl">${t('atk')}</span><span>${Math.floor(d.atkMin)}~${Math.floor(d.atkMax)}</span></div>
@@ -276,7 +275,7 @@ export class App {
     const kv = (k: string, v: string, cls = '') => `<div class="kv"><span${cls ? ` class="${cls}"` : ''}>${k}</span><span>${v}</span></div>`;
     return `<div class="loot"><h3>${t('mapStats')}</h3><div class="lootcols">
       <div class="lcol">${kv(t('stay'), '<span id="loot-sec"></span>')}${kv(t('kills'), num(l.kills))}${kv(t('deaths'), num(l.deaths))}${kv('$', num(l.gold), 'gold')}${kv(t('exp'), num(l.xp), 'xp')}</div>
-      <div class="lcol">${kv(t('loot'), num(l.items.reduce((a, b) => a + b, 0)))}${RARITY.map((r, i) => `<div class="kv"><span style="color:${r.color}">${tr(r.name)}</span><span>${l.items[i]}</span></div>`).join('')}</div>
+      <div class="lcol">${kv(t('loot'), num(l.items.reduce((a, b) => a + b, 0)))}${RARITY.map((r, i) => `<div class="kv sub"><span style="color:${r.color}">${tr(r.name)}</span><span>${l.items[i]}</span></div>`).join('')}</div>
     </div></div>`;
   }
 
@@ -285,6 +284,7 @@ export class App {
   private viewHtml(): string {
     switch (this.view) {
       case 'equip': return this.equipHtml();
+      case 'bag': return this.bagHtml();
       case 'pets': return this.petsHtml();
       case 'skills': return this.skillsHtml();
       case 'map': return this.mapHtml();
@@ -342,24 +342,28 @@ export class App {
       <g class="links">${lines}</g>${circles}</svg>`;
   }
 
+  /** Equipment page: the figure with its slots, and the worn piece of the selected slot. The bag is its own page. */
   private equipHtml(): string {
     const s = this.g.s, sel = this.slot;
-    const kind = sel === 'all' ? null : KIND_OF[sel];
     const worn = sel === 'all' ? '' : (() => {
       const it = s.equip[sel];
       return `<div class="item worn" ${it ? `data-tip="item:${it.uid}"` : ''}><div class="grow"><div class="dim">${tr(SLOT_NAME[sel])}</div>${it ? this.itemHtml(it) : t('empty')}</div>${it ? `<button data-a="unequip" data-k="${sel}">${t('unequip')}</button>` : ''}</div>`;
     })();
-    const bag = s.bag.filter(it => !kind || it.kind === kind).map(it => {
-      const slot = sel !== 'all' && KIND_OF[sel] === it.kind ? sel : A.targetSlot(s, it);
-      const dcp = this.cpDelta(it, slot);
+    return `${this.dollSvg()}${worn}`;
+  }
+
+  /** Bag page: every carried item with its CP change, equip and sell, plus auto-sell and sell-all. */
+  private bagHtml(): string {
+    const s = this.g.s;
+    const bag = s.bag.map(it => {
+      const dcp = this.cpDelta(it, A.targetSlot(s, it));
       return `<div class="item" data-tip="item:${it.uid}"><div class="grow">${this.itemHtml(it)}</div><div class="acts">
         <span class="${dcp > 0 ? 'up' : dcp < 0 ? 'down' : 'dim'}">${dcp ? icon('arrow', dcp > 0 ? 'gi sm pointup' : 'gi sm') : ''}${num(Math.abs(dcp))}</span>
         <button data-a="equip" data-uid="${it.uid}">${t('equip')}</button>
         <button class="ghost" data-a="sell" data-uid="${it.uid}">$${num(sellPrice(it))}</button></div></div>`;
     }).join('') || `<p class="dim">${t('empty')}</p>`;
     const opts = RARITY.map((r, i) => `<option value="${i}" ${s.autoSell === i ? 'selected' : ''}>${i === 0 ? '-' : tr(r.name)}</option>`).join('');
-    return `${this.dollSvg()}${worn}
-      <div class="row between"><b>${t('bag')} ${s.bag.length}/${BAG_SIZE}${kind ? ` · ${tr(SLOT_NAME[sel as Slot])}` : ''}</b>
+    return `<div class="row between"><b>${t('bag')} ${s.bag.length}/${BAG_SIZE}</b>
         <span class="row"><label class="dim">${t('autoSell')} <select data-a="autoSell">${opts}</select></label><button class="ghost" data-a="sellAll">${t('sellAll')}</button></span></div>
       ${bag}`;
   }

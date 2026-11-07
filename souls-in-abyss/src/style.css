@@ -79,12 +79,12 @@ small { font-size: var(--fs-xs); }
 .log .good { color: var(--down); } .log p.bad { color: var(--down); }
 .log .skname { color: #625575; } .log .pet { color: #a8657a; } .log .title { color: var(--gold); }
 .log p.fate { color: #7d6f8f; } .log p.pet { color: #a8657a; }
-.loot { margin-top: 14px; } .lootcols { display: flex; gap: 20px; } .lootcols .lcol { flex: 1; min-width: 0; } .loot .kv { min-height: 22px; } .loot .gold { color: var(--gold); } .loot .xp { color: var(--blue); }
+.loot { margin-top: 14px; } .lootcols { display: flex; gap: 20px; } .lootcols .lcol { flex: 1; min-width: 0; } .loot .kv { min-height: 22px; } .loot .kv.sub { padding-left: .5em; } .loot .gold { color: var(--gold); } .loot .xp { color: var(--blue); }
 
 /* ---------- side panel ---------- */
-.nav { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; }
+.nav { display: grid; grid-template-columns: repeat(9, 1fr); gap: 2px; }
 .ico { border: 0; background: none; padding: 0; display: grid; place-items: center; }
-.ico span { width: 38px; height: 38px; border-radius: 50%; background: #5d6b66; color: #fff; display: grid; place-items: center; font-size: var(--fs-m); }
+.ico span { width: 32px; height: 32px; border-radius: 50%; background: #5d6b66; color: #fff; display: grid; place-items: center; font-size: var(--fs-m); }
 .ico.on span { background: var(--accent); }
 .ico:hover:not(.on) span { background: #9ba39a; }
 .ico:hover { background: none; }
@@ -131,7 +131,7 @@ small { font-size: var(--fs-xs); }
 /* ---------- icons ---------- */
 .gi { width: 100%; height: 100%; fill: currentColor; display: block; }
 .gi.sm { width: 14px; height: 14px; display: inline-block; vertical-align: -2px; margin-right: 4px; opacity: .75; }
-.ico span .gi { width: 24px; height: 24px; }
+.ico span .gi { width: 20px; height: 20px; }
 
 /* ---------- title banner, creation, race/age picker (after BWE) ---------- */
 .titlescreen, .create { min-height: 100vh; background: var(--bg); display: flex; flex-direction: column; align-items: center; padding: 20px; }
@@ -206,7 +206,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
   .side { min-height: 70vh; }
   .log { height: 240px; }
   .nav { grid-template-columns: repeat(8, 1fr); }
-  .ico span { width: 34px; height: 34px; font-size: var(--fs-m); }
+  .ico span { width: 30px; height: 30px; font-size: var(--fs-m); }
   .picker { gap: 16px; }
   .rlist { gap: 10px; }
   .rrow .rname { display: none; }
