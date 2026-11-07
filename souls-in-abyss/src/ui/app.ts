@@ -16,6 +16,7 @@ import { Scene } from './scene';
 import * as A from '../game/actions';
 import { icon, pixelMarkup } from './icons';
 import { heroMarkup } from './hero';
+import { WORLD_MAP_POSITIONS } from './world-map';
 import { curseOf, giftOf, type PactDef } from '../data/pacts';
 import { SAN_TIERS, sanTier, willResist } from '../data/sanity';
 import { SAN_MAX } from '../game/state';
@@ -488,7 +489,7 @@ export class App {
     const { s, d } = this.g;
     const sel = this.mapSel || s.area;
     // positions in % of the board: a winding path, top = surface, bottom = the Abyss
-    const POS: [number, number][] = [[22, 9], [62, 20], [34, 32], [74, 43], [30, 55], [68, 66], [36, 78], [58, 89]];
+    const POS = WORLD_MAP_POSITIONS;
     const path = POS.map(([x, y], i) => `${i ? 'L' : 'M'}${x} ${y}`).join(' ');
     const nodes = AREAS.map((a, i) => {
       const [x, y] = POS[i], here = s.area === a.key, cp = AREA_CP[i];
@@ -501,7 +502,8 @@ export class App {
     const card = `<div class="item mapcard"><div class="dot" style="background:${a.bg}" data-tip="area:${a.key}">${icon('area-' + a.key)}</div>
       <div class="grow"></div>
       ${here ? `<span class="dim">${t('here')}</span>` : `<button data-a="go" data-k="${a.key}">${t('go')}</button>`}</div>`;
-    return `<div class="mapboard"><svg class="maproute" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${path}"/></svg>${nodes}</div>${card}${this.lootHtml()}`;
+    // .mapinner keeps the illustration's 2:3 shape inside a board of any size, so the nodes stay on their landmarks
+    return `<div class="mapboard"><div class="mapinner"><img class="map-art" src="./sprites/abyss-world-map.png" width="1024" height="1536" alt="" draggable="false"><svg class="maproute" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${path}"/></svg>${nodes}</div></div>${card}${this.lootHtml()}`;
   }
 
   /** Blacksmith: the rules in three lines, then what is worn and what is carried. */
@@ -514,10 +516,11 @@ export class App {
         <span class="dim">${it.plus >= SMITH_BREAK_FROM ? icon('warn-hard', 'gi sm') : it.plus >= SMITH_DROP_FROM ? icon('warn-soft', 'gi sm') : ''}${pct(ch)}</span>
         <button data-a="smith" data-uid="${it.uid}" ${s.gold < cost ? 'disabled' : ''}>$${num(cost)}</button></div></div>`;
     };
-    const rule = (k: string, v: string) => `<div class="kv"><span class="lbl">${k}</span><span>${v}</span></div>`;
+    // the warning mark sits in its own fixed-width column so both marks line up
+    const rule = (k: string, v: string, mark = '') => `<div class="kv"><span class="lbl">${k}</span><span class="mk">${mark}</span><span>${v}</span></div>`;
     const worn = SLOTS.map(k => s.equip[k]).filter(Boolean) as Item[];
     const empty = `<p class="dim">${t('empty')}</p>`;
-    return `<div class="rules">${rule('LV +1', t('smithGain'))}${rule(`LV 1–${SMITH_DROP_FROM}`, t('smithKeep'))}${rule(`LV ${SMITH_DROP_FROM}–${SMITH_BREAK_FROM - 1} ${icon('warn-soft', 'gi sm')}`, t('smithDrop'))}${rule(`LV ${SMITH_BREAK_FROM}+ ${icon('warn-hard', 'gi sm')}`, t('smithBreak'))}</div>
+    return `<div class="rules">${rule('LV +1', t('smithGain'))}${rule(`LV 1–${SMITH_DROP_FROM}`, t('smithKeep'))}${rule(`LV ${SMITH_DROP_FROM}–${SMITH_BREAK_FROM - 1}`, t('smithDrop'), icon('warn-soft', 'gi sm'))}${rule(`LV ${SMITH_BREAK_FROM}+`, t('smithBreak'), icon('warn-hard', 'gi sm'))}</div>
       <h4>${t('smithWorn')}</h4>${worn.map(row).join('') || empty}
       <h4>${t('bag')}</h4>${s.bag.map(row).join('') || empty}`;
   }

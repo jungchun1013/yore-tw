@@ -61,7 +61,7 @@ small { font-size: var(--fs-xs); }
 .petname { color: #a8657a; } .hearts { color: #b47f76; letter-spacing: 1px; font-size: var(--fs-xs); }
 
 /* blacksmith rules and section headings; pal sprite beside its numbers */
-.rules { margin-bottom: 10px; font-size: var(--fs-xs); line-height: 20px; } .rules .kv { min-height: 20px; } .rules .kv .lbl { min-width: 64px; color: var(--dim); } .rules .kv > span:last-child { margin-left: 0; }
+.rules { margin-bottom: 10px; font-size: var(--fs-xs); line-height: 20px; } .rules .kv { min-height: 20px; } .rules .kv .lbl { min-width: 64px; color: var(--dim); } .rules .kv > span:last-child { margin-left: 0; } .rules .kv .mk { width: 16px; flex: none; display: inline-flex; justify-content: center; }
 .view h4 { margin: 14px 0 4px; font-weight: normal; font-size: var(--fs-l); color: var(--lbl); }
 .petspr.hop { animation: hop .35s ease-out; } .doll .petspr { cursor: pointer; transform-box: fill-box; transform-origin: center bottom; }
 @keyframes hop { 0% { transform: translateY(0); } 40% { transform: translateY(-8px); } 100% { transform: translateY(0); } }
@@ -268,8 +268,8 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .sheet .col .kv.bar .line { min-width: 60px; }
 
 /* ---------- map: a winding descent into the Abyss ---------- */
-.mapboard { position: relative; height: 460px; margin: 4px 0 8px;
-  background: linear-gradient(#f9f7f0 0%, #e8e3ea 45%, #b9aec4 75%, #3d3350 100%); }
+.mapboard { position: relative; aspect-ratio: 2 / 3; height: auto; margin: 4px 0 8px; background: #343842; isolation: isolate; }
+.map-art { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; image-rendering: pixelated; pointer-events: none; }
 .maproute { position: absolute; inset: 0; width: 100%; height: 100%; }
 .maproute path { fill: none; stroke: #b1a7bd; stroke-width: 0.6; stroke-dasharray: 1.6 1.2; vector-effect: non-scaling-stroke; stroke-width: 2px; }
 .node { position: absolute; transform: translate(-50%, -50%); display: flex; flex-direction: column; align-items: center; gap: 3px;
@@ -287,11 +287,13 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .node:hover .nico { background: var(--accent); }
 .mapcard .dot { cursor: help; }
 .tip .lore { margin-top: 6px; }
-@media (max-width: 900px) { .mapboard { height: 420px; } }
+@media (max-width: 900px) { .mapboard { height: auto; } }
 /* the map and its stats share the column without scrolling: the board shrinks first, down to 240px */
 .view.v-map { display: flex; flex-direction: column; }
 .view.v-map .mapboard { flex: 1 1 auto; min-height: 240px; max-height: 520px; }
 .view.v-map .mapcard, .view.v-map .loot { flex: none; }
+.mapboard { container-type: size; }
+.mapinner { position: absolute; left: 50%; top: 50%; height: min(100cqh, 150cqw); aspect-ratio: 2 / 3; transform: translate(-50%, -50%); }
 
 .rblead { margin: 4px 0 8px; color: var(--lbl); }
 .create .rbtext { width: 100%; max-width: 520px; }
@@ -311,6 +313,15 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .tip { position: fixed; z-index: 20; width: 270px; padding: 14px 18px; background: #f9f7f0; color: var(--ink);
   border: 2px solid #cfccbf; pointer-events: none; font-size: 14px; line-height: 21px; }
 .tip[hidden] { display: none; }
+/* framed pixel boxes: the box is filled with the frame colour and a 2px-inset copy of the same staircase
+   carries the background, so the frame follows the stepped corners instead of being clipped away */
+.tip, .ddmenu { border: 0 !important; isolation: isolate; }
+.tip { background: #cfccbf; }
+.ddmenu { background: var(--line); }
+.tip::before, .ddmenu::before { content: ''; position: absolute; inset: 2px; z-index: -1; clip-path: var(--px2); }
+.tip::before { background: #f9f7f0; }
+.ddmenu::before { background: var(--box); }
+.ddmenu { padding: 4px 2px; }
 .tip .tname { font-size: var(--fs-m); color: var(--lbl); margin-bottom: 4px; }
 .tip .tnext { margin-top: 8px; color: var(--accent); }
 .tip .tsec.next { color: var(--accent); }
@@ -338,3 +349,13 @@ button:not(.ico):not(.cog):not(.rrow):not(.fig):not(.node):not(.link):not(.up-bt
 .node.risky .nico { background:#dfd1b8 }
 .item-icon { width:22px !important; height:22px !important; vertical-align:-5px !important }
 .cog { background:#dddcd0 }
+
+/* Readable landmarks above the continuous world-map illustration. */
+.mapboard .maproute { pointer-events: none; }
+.mapboard .maproute path { stroke: #e3ddc9; opacity: .65; stroke-width: 1.5px; stroke-dasharray: 2 4; filter: drop-shadow(0 1px 1px #343842); }
+.mapboard .node .nico { width: 40px; height: 40px; padding: 4px; background: #e3ddc9; box-shadow: 0 2px 0 #34384266; }
+.mapboard .node .nname { color: #343842; background: #e3ddc9eb; padding: 1px 5px; font-size: var(--fs-xs); }
+.mapboard .node.far .nico { background: #bcc5bdd9; filter: grayscale(.35); }
+.mapboard .node.here .nico, .mapboard .node.sel .nico { transform: none; outline: 2px solid #c1a775; outline-offset: 2px; background: #e3ddc9; }
+.mapboard .node.here .nname, .mapboard .node.sel .nname { background: #e3ddc9; color: #625575; }
+.mapboard .node:focus-visible .nico { outline: 3px solid #e3ddc9; }
