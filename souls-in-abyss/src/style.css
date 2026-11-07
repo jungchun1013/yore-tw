@@ -151,17 +151,18 @@ button.play:hover { color: var(--accent); }
 .rrow.on { color: var(--accent); } .rrow.on .rico { background: var(--accent); }
 .rrow:hover:not(:disabled), .rrow:focus-visible { background: none; border: 0; } .rrow:hover:not(.on) .rico { background: #6b6b6b; }
 .rinfo { color: #6b6b6b; display: flex; flex-direction: column; gap: 10px; }
-.figs { display: flex; align-items: flex-end; gap: 22px; height: 118px; }
+.figs { display: flex; align-items: flex-end; justify-content: center; gap: 22px; height: 148px; }
 .fig { position: relative; padding: 0; border: 0; background: none; display: flex; flex-direction: column; align-items: center; gap: 4px; }
-.fig .agev { font-size: 20px; color: var(--accent); min-height: 26px; }
+.fig .agev { font-size: 20px; color: var(--accent); min-height: 52px; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; line-height: 1.2; }
+.fig .agev small { font-size: 13px; color: #8a8a8a; letter-spacing: .08em; }
 .fig .pict { fill: #8a8a8a; display: block; transition: fill .15s; }
 .fig.on .pict { fill: var(--accent); }
 .fig:hover:not(:disabled), .fig:focus-visible { background: none; border: 0; } .fig:hover:not(.on) .pict { fill: #6b6b6b; }
-.sttable { border-collapse: collapse; font-size: 20px; width: auto; margin: 0 auto; }
-.sttable th, .sttable td { padding: 4px 12px; text-align: center; font-weight: normal; }
-.sttable thead th { color: #6b6b6b; font-size: 16px; }
-.sttable thead .gi.sm { display: block; width: 26px; height: 26px; margin: 0 auto 2px; opacity: .8; }
-.sttable tbody th { text-align: right; color: #8a8a8a; font-size: 16px; padding: 4px 10px 4px 0; white-space: nowrap; }
+.sttable { border-collapse: collapse; font-size: 24px; width: auto; margin: 0 auto; }
+.sttable th, .sttable td { padding: 5px 15px; text-align: center; font-weight: normal; }
+.sttable thead th { color: #6b6b6b; font-size: 19px; }
+.sttable thead .gi.sm { display: block; width: 30px; height: 30px; margin: 0 auto 3px; opacity: .8; }
+.sttable tbody th { text-align: right; color: #8a8a8a; font-size: 19px; padding: 5px 12px 5px 0; white-space: nowrap; }
 .sttable td { color: #3e3e3e; font-variant-numeric: tabular-nums; }
 .sttable td.plus { color: var(--accent); }
 .center { text-align: center; } .rcol { display: flex; flex-direction: column; gap: 16px; min-width: 0; } .rdesc { margin: 0; color: #5a5a5a; }
@@ -186,10 +187,10 @@ button.play:hover { color: var(--accent); }
   .rrow .rico { width: 48px; height: 48px; }
   .rdesc { text-align: center; }
   .figs { gap: 12px; justify-content: center; }
-  .sttable { font-size: 15px; }
-  .sttable th, .sttable td { padding: 4px 7px; }
-  .sttable tbody th { padding-right: 6px; }
-  .sttable thead th { font-size: 13px; } .sttable tbody th { font-size: 13px; }
+  .sttable { font-size: 18px; }
+  .sttable th, .sttable td { padding: 5px 8px; }
+  .sttable tbody th { padding-right: 7px; }
+  .sttable thead th { font-size: 15px; } .sttable tbody th { font-size: 15px; }
   .sttable thead .gi.sm { width: 22px; height: 22px; }
   .banner { padding: 10px; }
   .cfoot { flex-direction: column; gap: 14px; }

@@ -424,7 +424,7 @@ export function raceAgePicker(race: string, age: number, raceAction: string, age
   const list = RACES.map(x => `<button class="rrow ${x.key === race ? 'on' : ''}" data-a="${raceAction}" data-k="${x.key}" title="${tr(x.name)}" aria-pressed="${x.key === race}">
       <span class="rico">${icon(x.key)}</span><span class="rname">${tr(x.name)}</span></button>`).join('');
   const figs = START_AGES.map(a => `<button class="fig ${a === age ? 'on' : ''}" data-a="${ageAction}" data-k="${a}" title="${t('age')} ${a}" aria-pressed="${a === age}">
-      <span class="agev">${a === age ? a : ''}</span>${figure(40 + (a - 10) * 3)}</button>`).join('');
+      <span class="agev">${a === age ? `<small>${t('age')}</small>${a}` : ''}</span>${figure(40 + (a - 10) * 3)}</button>`).join('');
   const head = PRIMARY.map(k => `<th>${icon(k, 'gi sm')}${tr(STAT[k])}</th>`).join('');
   const row = (o: Record<string, number>, plus: boolean) => PRIMARY.map(k => `<td class="${plus ? 'plus' : ''}">${plus ? '+' : ''}${o[k]}</td>`).join('');
   return `<div class="picker"><div class="rcol"><div class="rlist">${list}</div><p class="rdesc">${tr(r.name)}：${tr(r.desc)}</p></div><div class="rinfo">

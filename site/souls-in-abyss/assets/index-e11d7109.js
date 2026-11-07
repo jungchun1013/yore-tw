@@ -78,7 +78,7 @@
   <circle cx="15" cy="7" r="6"/><rect x="7" y="15" width="16" height="22" rx="2"/><rect x="1" y="16" width="5" height="18" rx="2"/>
   <rect x="24" y="16" width="5" height="18" rx="2"/><rect x="8" y="38" width="6" height="24" rx="1"/><rect x="16" y="38" width="6" height="24" rx="1"/></svg>`;function r1(t,e,s,n){const a=F(t),i=me(a,e),o=de.map(d=>`<button class="rrow ${d.key===t?"on":""}" data-a="${s}" data-k="${d.key}" title="${m(d.name)}" aria-pressed="${d.key===t}">
       <span class="rico">${ne(d.key)}</span><span class="rname">${m(d.name)}</span></button>`).join(""),l=u1.map(d=>`<button class="fig ${d===e?"on":""}" data-a="${n}" data-k="${d}" title="${c("age")} ${d}" aria-pressed="${d===e}">
-      <span class="agev">${d===e?d:""}</span>${yt(40+(d-10)*3)}</button>`).join(""),h=E.map(d=>`<th>${ne(d,"gi sm")}${m(ae[d])}</th>`).join(""),r=(d,u)=>E.map(k=>`<td class="${u?"plus":""}">${u?"+":""}${d[k]}</td>`).join("");return`<div class="picker"><div class="rcol"><div class="rlist">${o}</div><p class="rdesc">${m(a.name)}：${m(a.desc)}</p></div><div class="rinfo">
+      <span class="agev">${d===e?`<small>${c("age")}</small>${d}`:""}</span>${yt(40+(d-10)*3)}</button>`).join(""),h=E.map(d=>`<th>${ne(d,"gi sm")}${m(ae[d])}</th>`).join(""),r=(d,u)=>E.map(k=>`<td class="${u?"plus":""}">${u?"+":""}${d[k]}</td>`).join("");return`<div class="picker"><div class="rcol"><div class="rlist">${o}</div><p class="rdesc">${m(a.name)}：${m(a.desc)}</p></div><div class="rinfo">
       <div class="figs">${l}</div>
       <table class="sttable"><thead><tr><th></th>${h}</tr></thead>
         <tbody><tr><th>${c("initStat")}</th>${r(a.base,!1)}</tr><tr><th>${c("ageGrowth")}</th>${r(i,!0)}</tr></tbody></table>
