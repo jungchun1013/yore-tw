@@ -297,12 +297,15 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .mapshade { position: absolute; inset: 0; pointer-events: none;
   background: linear-gradient(rgba(249,247,240,0) 0%, rgba(232,227,234,0) 35%, rgba(185,174,196,.32) 70%, rgba(61,51,80,.72) 100%); }
 /* never been: grey · been, not here: dark · here: lit */
-.view .mapboard .node.unseen .nico { background: #bcc5bd; filter: grayscale(1); opacity: .8; }
-.view .mapboard .node.seen .nico { background: #9ba39a; filter: brightness(.68); }
+/* the illustration steps back, the landmarks step forward: a dimmer map, brighter tiles, each on a dark pixel mat */
+.view .mapboard .map-art { filter: brightness(.72) saturate(.85); }
+.view .mapboard .node::before { content: ''; position: absolute; left: 50%; top: 50%; width: 48px; height: 48px; transform: translate(-50%, -50%);
+  background: rgba(52,56,66,.7); clip-path: var(--px2); z-index: -1; }
+.view .mapboard .node.unseen .nico { background: #e3e1da; filter: grayscale(1) brightness(1.05); opacity: 1; }
+.view .mapboard .node.seen .nico { background: #bcc5bd; filter: brightness(.86); }
 .view .mapboard .node.here .nico { background: #f9f7f0; outline: 0; box-shadow: none; }
 /* the icon is clipped to pixel corners, so its frame is a gold staircase square behind it */
-.view .mapboard .node.here::before { content: ''; position: absolute; left: 50%; top: 50%; width: 52px; height: 52px; transform: translate(-50%, -50%);
-  background: #c1a775; clip-path: var(--px2); z-index: -1; box-shadow: none; }
+.view .mapboard .node.here::before { width: 52px; height: 52px; background: #c1a775; }
 .view .mapboard .node:not(.here):hover .nico { filter: none; opacity: 1; background: #e3ddc9; }
 
 .rblead { margin: 4px 0 8px; color: var(--lbl); }
