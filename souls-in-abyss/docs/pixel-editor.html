@@ -1,0 +1,201 @@
+<title>Souls Pixel Editor</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+  /* layout: three panes (sprite list · canvas · palette) on a paper ground; stacks on phones */
+  :root { --bg:#eeece3; --card:#f9f7f0; --line:#d7d7cb; --ink:#343842; --muted:#667681; --accent:#625575; --accent-soft:#e8e3ea; --sel:#e3ddc9; --ok:#53695e; --warn:#b47f76;
+    --font: "Avenir Next","Segoe UI","PingFang TC","Noto Sans TC",system-ui,sans-serif; --mono: ui-monospace,"SF Mono",Menlo,Consolas,monospace; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#23242a; --card:#2d2f36; --line:#44464f; --ink:#e6e3da; --muted:#a3a7b3; --accent:#b5a4c9; --accent-soft:#3a3344; --sel:#4a4556; color-scheme:dark; } }
+  :root[data-theme="dark"] { --bg:#23242a; --card:#2d2f36; --line:#44464f; --ink:#e6e3da; --muted:#a3a7b3; --accent:#b5a4c9; --accent-soft:#3a3344; --sel:#4a4556; color-scheme:dark; }
+  * { box-sizing:border-box; } html, body { margin:0; height:100%; background:var(--bg); color:var(--ink); font-family:var(--font); }
+  body { display:grid; grid-template-columns:250px 1fr 250px; grid-template-rows:56px 1fr; height:100%; font-size:15px;
+    padding-left:max(0px, env(safe-area-inset-left, 0px)); padding-right:max(0px, env(safe-area-inset-right, 0px)); }
+  header { grid-column:1/-1; display:flex; align-items:center; gap:8px; padding-inline:max(16px, env(safe-area-inset-left, 0px)) max(16px, env(safe-area-inset-right, 0px)); border-bottom:2px solid var(--line); background:var(--card); overflow-x:auto; }
+  header b { font-size:17px; white-space:nowrap; } header .status { margin-left:auto; color:var(--muted); font-weight:700; white-space:nowrap; font-size:13px; }
+  .btn { border:2px solid var(--line); background:var(--card); color:var(--ink); padding:6px 12px; font-weight:800; font-size:14px; cursor:pointer; white-space:nowrap; font-family:inherit; }
+  .btn:focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .btn.primary { background:var(--accent); color:#fff; border-color:var(--accent); } .btn.on { background:var(--accent-soft); border-color:var(--accent); color:var(--accent); }
+  aside { border-right:2px solid var(--line); overflow:auto; padding:8px; min-width:0; } aside.right { border-right:0; border-left:2px solid var(--line); }
+  .group { font-weight:800; color:var(--muted); margin:10px 6px 4px; font-size:12px; letter-spacing:.06em; text-transform:uppercase; }
+  .item { display:flex; align-items:center; gap:10px; padding:5px 8px; cursor:pointer; font-weight:700; font-size:13px; font-family:var(--mono); }
+  .item:hover { background:var(--sel); } .item.on { background:var(--accent-soft); color:var(--accent); }
+  .item canvas { image-rendering:pixelated; width:32px; height:32px; background:repeating-conic-gradient(var(--line) 0 25%, var(--card) 0 50%) 0 0 / 8px 8px; flex:none; }
+  .item.tall canvas { height:48px; }
+  .item.edited::after { content:'●'; color:var(--warn); margin-left:auto; }
+  main { display:flex; flex-direction:column; min-width:0; min-height:0; }
+  .tools { display:flex; flex-wrap:wrap; gap:6px; padding:8px 12px; border-bottom:2px solid var(--line); align-items:center; }
+  .tools .sep { width:2px; height:26px; background:var(--line); }
+  .stage { flex:1; min-height:0; display:grid; place-items:center; padding:12px; overflow:auto; }
+  #grid { image-rendering:pixelated; touch-action:none; cursor:crosshair; border:2px solid var(--line);
+    background:repeating-conic-gradient(var(--sel) 0 25%, var(--card) 0 50%) 0 0 / 16px 16px; }
+  .previews { display:flex; gap:14px; align-items:flex-end; padding:8px 12px 12px; border-top:2px solid var(--line); flex-wrap:wrap; }
+  .previews canvas { image-rendering:pixelated; background:var(--card); border:1px solid var(--line); }
+  .previews .lbl { display:flex; flex-direction:column; gap:4px; align-items:center; font-size:11px; color:var(--muted); }
+  .sw { display:flex; align-items:center; gap:8px; padding:4px 6px; cursor:pointer; font-weight:700; font-family:var(--mono); font-size:13px; }
+  .sw.on { background:var(--accent-soft); color:var(--accent); } .sw i { width:24px; height:24px; border:2px solid var(--line); display:inline-block; flex:none; }
+  .sw .nm { color:var(--muted); font-family:var(--font); font-weight:600; font-size:12px; }
+  .sw input[type=color] { width:32px; height:26px; border:0; background:none; padding:0; margin-left:auto; }
+  .sw.eraser i { background:repeating-conic-gradient(var(--line) 0 25%, var(--card) 0 50%) 0 0 / 8px 8px; }
+  .muted { color:var(--muted); font-size:13px; padding:6px 8px; line-height:1.5; }
+  @media (max-width: 900px) {
+    body { grid-template-columns:1fr; grid-template-rows:56px auto 1fr auto; }
+    aside { max-height:150px; border:0; border-bottom:2px solid var(--line); display:flex; gap:4px; overflow:auto; }
+    aside.right { display:block; max-height:220px; border-top:2px solid var(--line); border-bottom:0; }
+    .group { display:none; } .item span { display:none; } .item.edited::after { margin-left:0; }
+  }
+</style>
+<header>
+  <b>輪迴無止盡 像素編輯器</b>
+  <button class="btn" id="undo">↶ 復原</button>
+  <button class="btn" id="reset">還原原圖</button>
+  <button class="btn" id="export">複製 JSON</button>
+  <button class="btn primary" id="save">儲存到雲端</button>
+  <span class="status" id="status">載入中…</span>
+</header>
+<aside id="list"></aside>
+<main>
+  <div class="tools">
+    <button class="btn on" data-tool="pen">✏️ 畫筆</button>
+    <button class="btn" data-tool="eraser">⌫ 橡皮</button>
+    <button class="btn" data-tool="fill">🪣 填滿</button>
+    <button class="btn" data-tool="pick">💉 吸色</button>
+    <span class="sep"></span>
+    <button class="btn" id="mirror">↔ 左右對稱</button>
+    <span class="muted" id="dims"></span>
+  </div>
+  <div class="stage"><canvas id="grid"></canvas></div>
+  <div class="previews">
+    <span class="lbl">原格<canvas id="p1"></canvas></span>
+    <span class="lbl">3×<canvas id="p3"></canvas></span>
+    <span class="lbl">6×<canvas id="p6"></canvas></span>
+    <span class="lbl" id="refwrap">遊戲內 16×16<canvas id="pref"></canvas></span>
+  </div>
+</main>
+<aside class="right">
+  <div class="group">調色盤</div>
+  <div id="palette"></div>
+  <button class="btn" id="addColor" style="margin:8px">＋ 新增顏色</button>
+  <div class="muted">圖示是 8×8 的輪廓，遊戲會自己加邊光做成 16×16；角色是 32×48 的裸身，裝備由遊戲疊上去。畫完按「儲存到雲端」，我這邊就讀得到。</div>
+</aside>
+<script>
+const CATALOG = {"palette":{"o":"#343842","s":"#667681","h":"#bcc5bd","w":"#e3ddc9","g":"#82947b","G":"#53695e","b":"#839da5","p":"#9586a4","P":"#625575","y":"#c1a775","r":"#b47f76","t":"#ac917b","d":"#725e53","k":"#343842"},"icons":{"human":["..oooo..",".otttto.",".twwwwt.",".twkwkw.","..twwt..","..gggg..",".ggyygg.","..g..g.."],"elf":["..gggg..",".gggggg.","twwwwwt.",".wkwkw..","..www...","..GGG...",".GGyGG..","..G.G..."],"dwarf":["..ssss..",".shhhhs.","ssyyyyss",".twkwkt.",".tddddt.","..dddd..",".ssyyss.","..s..s.."],"giant":["..oooo..",".otttto.",".twkwkt.","..twwt..",".GGGGGG.","GGGyyGGG",".GGGGGG.",".GG..GG."],"undead":["..oooo..",".owwwwo.",".wkkwkw.",".wwwwww.","..wkw...",".PPPPP..","..P.P...",".PP.PP.."],"str":["...ttt..","..tttto.",".ttwtto.",".ttttto.","tttttto.","ttttto..",".oooo...","........"],"dex":["......g.",".....gg.",".g..gg..",".gggg...","..ggg...","...gg...","..gg....",".gg....."],"int":[".oooooo.",".wwohhwo",".wwowwwo",".wwowwwo",".wwowwwo",".wwowwwo",".oooooo.","...oo..."],"will":["...pp...","..pwwp..",".pwbbwp.",".pwwwwp.","..pwwp..","...pp...","...yy...","..yyyy.."],"luk":[".gg..gg.","gwwggwwg","gggggggg",".gggggg.","..gggg..","...gg...","...g....","..gg...."],"equip":["..ssss..",".shhhhs.","sshhhhss","sshhhhss",".shhhhs.","..shhs..","...ss...","........"],"pets":[".ww..ww.",".ww..ww.","..wwww..",".wwwwww.",".wkwkw..","..wrw...","...w....","........"],"skills":["...p....","...pp...","..pypp..",".ppyypp.","ppywyppp",".pyyyp..","..ppp...","...p...."],"map":[".oo..oo.","owwoowwo","owwggwwo","owgggwwo","owwgwwwo","owwwgwwo",".oowwoo.","...oo..."],"smith":["...ss...",".ssssss.",".hhhhhh.","..ssss..","...ss...","..ssss..",".ssssss.","........"],"titles":[".y....y.",".yy..yy.",".yyyyyy.","..yyyy..","...yy...","..yyyy..",".yyyyyy.","........"],"rebirth":["..pppp..",".pp..pp.","pp....p.","p...pppp","p....pp.","pp......",".pp..pp.","..pppp.."],"settings":["...ss...",".s.sss.s",".ssssss.","sssoosss","sssoosss",".ssssss.",".s.sss.s","...ss..."],"slot-head":["..ssss..",".shhhhs.","sshhhhss","sshhhhss","ssokkoss",".s....s.","........","........"],"slot-weapon":["......hh",".....hwh","....hwh.","...hwh..","y.hwh...",".yyh....","..yd....",".dd....."],"slot-body":[".ss..ss.","shhsshhs","shhhhhhs",".shhhhs.",".shyyhs.",".shhhhs.",".ssssss.","........"],"slot-hands":[".ss..ss.",".hs..hs.",".hs..hs.","shhsshhs","shhsshhs",".ss..ss.","........","........"],"slot-feet":["..ss.ss.","..hs.hs.","..hs.hs.","..hs.hs.",".hhsshhs",".hhsshhs",".ss..ss.","........"],"slot-acc1":["...yy...","..ywwy..",".yyyyyy.","yy....yy","yy....yy",".yy..yy.","..yyyy..","........"],"slot-acc2":["..yyyy..","..yppy..","...pp...","..pwwp..",".pwbbwp.","..pwwp..","...pp...","........"],"sk-smash":[".....rr.",".s..rr..","shsrr...",".shs....","..shs...",".rrshs..","rr..s...","r......."],"sk-counter":["..ss....",".shs..r.","..shsrr.","...ssr..","..rrrr..","...rrs..","....shs.",".....ss."],"sk-firebolt":["....r...","..r.rr..","..rryr..",".rryyr..","rrywyrr.","rywwwyr.",".ryyyr..","..rrr..."],"sk-icebolt":["...b....",".b.b.b..","..bbb...","bbbbbbbb","..bwb...",".bbbbb..","b..b..b.","...b...."],"sk-lightning":["....yy..","...yy...","..yy....",".yyyyyy.","....yy..","...yy...","..yy....","..y....."],"sk-mastery":[".y....y.","..y..y..","...ss...","..shhs..","...ss...","..y..y..",".y....y.","........"],"sk-lightArms":["...h...h","..hw..hw",".hw..hw.","hw..hw..","yy..yy..","d...d...","........","........"],"sk-mediumArms":["......hh",".....hwh","....hwh.","...hwh..","..hwh...",".yyh....","..d.....",".d......"],"sk-heavyArms":["..ssss..",".shhss..","shhhss..",".shhss..","..dd....","..dd....","..dd....","..dd...."],"sk-tough":[".ss..ss.","shhsshhs","shhhhhhs",".shhhhs.",".shhhhs.","..shhs..","...ss...","........"],"sk-meditation":["...pp...","..pwwp..","...pp...","..pppp..",".pppppp.","...pp...",".pppppp.","pppppppp"],"sk-fortune":["..yyyy..",".ywwyyy.","yywyyyy.","yywyyyyy","yyyyyyyy",".yyyyyy.","..yyyy..","........"],"sk-insight":["...pp...",".ppwwpp.","ppwkkwpp","pwwkkwwp",".ppwwpp.","...pp...","...p....","........"],"arrow":["...ss...","...ss...","...ss...","ss.ss.ss",".ssssss.","..ssss..","...ss...","........"],"pet-pudding":["..dddd..",".dyyyyd.",".yyyyyy.","yywyyyyy","yykyykyy","yyyyyyyy",".yyyyyy.","..yyyy.."],"pet-potcat":["..ssss..",".shhhhs.","ssssssss",".twttwt.",".wkwkwt.","..twwt..",".tttttt.","..t..t.."],"pet-mosskin":["....g...","..ggg...",".GGggG..","GGggggGG","GgwggwgG",".GkkkkG.","..GggG..","..g..g.."],"pet-mimipup":[".d....d.",".dddddd.","dyyyyydd","dwwwwwwd","dwkwkwdd","dwwrrwwd",".dddddd.","..d..d.."],"pet-ember":[".....rr.","....ryr.","..rrrr..",".rwrrwr.",".rkrrkr.","..rrrrrr",".rr..rrr","rrr...r."],"pet-griffy":["..y..y..",".yyyyyy.",".ywyywy.",".ykyyky.","..yyyy..","whyyyyhw",".hhyyhh.","..y..y.."],"pet-nameless":["..P..P..",".PPPPPP.","PPppppPP","PpwppwpP","PppppppP",".PPppPP.","..P..P..",".P....P."],"unknown":["..pppp..",".pwwwpp.","....wpp.","...wpp..","...pp...","........","...pp...","........"],"area-meadow":["......y.",".g......",".gg..g..","..g..gg.","g.g.g.g.",".gggggg.","GGGGGGGG",".GGGGGG."],"area-forest":["...g....","..ggg...",".ggggg..","..GGG...",".GGGGG..","GGGGGGG.","...dd...","..dddd.."],"area-labyrinth":["ssssssss","swwwwwws","swssssws","swswwsws","swsswsws","swwwssws","sssswwws","ssssssss"],"area-mine":["..ssss..",".sskkss.","sskkkkss","skkyykks","skkykkks","skkkkkks","ddkkkkdd","dddddddd"],"area-fen":[".g....g.",".gg...g.","..g..gg.","..g...g.","bbbbbbbb",".bbGGbb.","bbGGGGbb",".bbbbbb."],"area-ruins":[".ss..ss.",".hh..hh.",".hhsshh.",".hhhhhh.",".hh..hh.",".hh..hh.","sshhhhss","ssssssss"],"area-nest":["......w.","....www.",".d..ww..","..dddd..",".dyyyyd.","ddyyyydd",".dddddd.","..dddd.."],"area-abyss":["..PPPP..",".PppppP.","PppPPppP","PpPwwPpP","PpPwwPpP","PppPPppP",".PppppP.","..PPPP.."],"star":["...yy...","...yy...","yyyyyyyy",".yyyyyy.","..yyyy..",".yyyyyy.",".yy..yy.","........"],"heart":[".rr..rr.","rrrrrrrr","rwrrrrrr","rrrrrrrr",".rrrrrr.","..rrrr..","...rr...","........"],"hazard":["...yy...","..yyyy..","..ykky..",".yykkyy.",".yykkyy.","yyyyyyyy","yyykkyyy","........"]},"avatars":{"human":{"rows":["................................","................................","................................",".........abbbbbbbbbbba..........",".........abccccccccbba..........",".........abbbbbbbbbbba..........",".........abbbbbbbbbbba..........",".........abbdddddddbba..........",".........abbdddddddbba..........",".........abbddddddddda..........",".........addeaddddeada..........",".........addaaddddaada..........",".........addaaddddaada..........",".........adddddfddddda..........",".........addddddddddda..........",".........addddggggddda..........",".........aaaaaaaaaaaaa..........","................................","........aaaaaaaaaaaaaaa.........","........ahhhhhhhhhhhhha.........","....aaaaahiihhhhhhhhhhaaaaa.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....aaaaahhhhhhhhhhhjjaaaaa.....","....aaaaakkkkklllkkkkkaaaaa.....","........akkkkklllkkkkka.........",".........kkkkkkkkkkkkk..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........","........mmmmmm..mmmmmm..........","........mmmmmm..mmmmmm..........","........mmmmmm..mmmmmm..........","................................","................................"],"colors":{"a":"#343842","b":"#625953","c":"#897564","d":"#c8ad92","e":"#e3ddc9","f":"#aa8879","g":"#ead0af","h":"#697b80","i":"#85958c","j":"#4c5b60","k":"#725e53","l":"#c1a775","m":"#4b4848"}},"elf":{"rows":["................................","................................","................................",".........abbbbbbbbbbba..........",".........abccccccccbba..........",".........abbbbbbbbbbba..........",".........abbbbbbbbbbba..........",".........addeeeeeeedda..........",".........addeeeeeeedda..........",".......eeeddeeeeeeeeeeee........",".......eeeeefaeeeefaeeee........",".........aeeaaeeeeaaea..........",".........aeeaaeeeeaaea..........",".........aeeeeegeeeeea..........",".........aeeeeeeeeeeea..........",".........aeeeehhhheeea..........",".........aaaaaaaaaaaaa..........","................................","........aaaaaaaaaaaaaaa.........","........aiiiiiiiiiiiiia.........","....aaaaaijjiiiiiiiiiiaaaaa.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aaaaaiiiiiiiiiiikkaaaaa.....","....aaaaalllllmmmlllllaaaaa.....","........alllllmmmllllla.........",".........lllllllllllll..........",".........aiiia...aiiia..........",".........aiiia...aiiia..........",".........aiiia...aiiia..........",".........aiiia...aiiia..........",".........aiiia...aiiia..........",".........aiiia...aiiia..........",".........aiiia...aiiia..........","........nnnnnn..nnnnnn..........","........nnnnnn..nnnnnn..........","........nnnnnn..nnnnnn..........","................................","................................"],"colors":{"a":"#343842","b":"#b6ac88","c":"#d1c7a2","d":"#625953","e":"#c8ad92","f":"#e3ddc9","g":"#aa8879","h":"#ead0af","i":"#53695e","j":"#85958c","k":"#4c5b60","l":"#725e53","m":"#c1a775","n":"#4b4848"}},"dwarf":{"rows":["................................","................................","................................",".........abbbbbbbbbbba..........",".........abccccccccbba..........",".........abbbbbbbbbbba..........",".........abbbbbbbbbbba..........",".........abbdddddddbba..........",".........abbdddddddbba..........",".........abbddddddddda..........",".........addeaddddeada..........",".........addaaddddaada..........",".........addaaddddaada..........",".........adfffffffffda..........",".........adfffffffffda..........",".........adffgfffgffda..........",".........aaffgfffgffaa..........","...........ffgfffgff............","........aaaaaaaaaaaaaaa.........","........ahhhhhhhhhhhhha.........","....aaaaahiihhhhhhhhhhaaaaa.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....aaaaahhhhhhhhhhhjjaaaaa.....","....aaaaakkkkklllkkkkkaaaaa.....","........akkkkklllkkkkka.........",".........kkkkkkkkkkkkk..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........","........mmmmmm..mmmmmm..........","........mmmmmm..mmmmmm..........","........mmmmmm..mmmmmm..........","................................","................................"],"colors":{"a":"#343842","b":"#625953","c":"#897564","d":"#c8ad92","e":"#e3ddc9","f":"#827260","g":"#b09b7b","h":"#697b80","i":"#85958c","j":"#4c5b60","k":"#725e53","l":"#c1a775","m":"#4b4848"}},"giant":{"rows":["................................","................................","................................",".........abbbbbbbbbbba..........",".........abccccccccbba..........",".........abbbbbbbbbbba..........",".........abbbbbbbbbbba..........",".........abbdddddddbba..........",".........abbdddddddbba..........",".........abbddddddddda..........",".........addeaddddeada..........",".........addaaddddaada..........",".........addaaddddaada..........",".........adddddfddddda..........",".........addddddddddda..........",".........addddggggddda..........",".........aaaaaaaaaaaaa..........","................................","........aaaaaaaaaaaaaaa.........","........ahhhhhhhhhhhhha.........","....aaaaahiihhhhhhhhhhaaaaa.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....aaaaahhhhhhhhhhhjjaaaaa.....","....aaaaakkkkklllkkkkkaaaaa.....","........akkkkklllkkkkka.........",".........kkkkkkkkkkkkk..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........","........mmmmmm..mmmmmm..........","........mmmmmm..mmmmmm..........","........mmmmmm..mmmmmm..........","................................","................................"],"colors":{"a":"#343842","b":"#625953","c":"#897564","d":"#c8ad92","e":"#e3ddc9","f":"#aa8879","g":"#ead0af","h":"#697b80","i":"#85958c","j":"#4c5b60","k":"#725e53","l":"#c1a775","m":"#4b4848"}},"undead":{"rows":["................................","................................","................................",".........abbbbbbbbbbba..........",".........abccccccccbba..........",".........abbbbbbbbbbba..........",".........abbbbbbbbbbba..........",".........abbdddddddbba..........",".........abbdddddddbba..........",".........abbddddddddda..........",".........addeaddddeada..........",".........addaaddddaada..........",".........addaaddddaada..........",".........adddddfddddda..........",".........addddddddddda..........",".........addddggggddda..........",".........aaaaaaaaaaaaa..........","................................","........aaaaaaaaaaaaaaa.........","........ahhhhhhhhhhhhha.........","....aaaaahiihhhhhhhhhhaaaaa.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....aaaaahhhhhhhhhhhjjaaaaa.....","....aaaaakkkkklllkkkkkaaaaa.....","........akkkkklllkkkkka.........",".........kkkkkkkkkkkkk..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........","........mmmmmm..mmmmmm..........","........mmmmmm..mmmmmm..........","........mmmmmm..mmmmmm..........","................................","................................"],"colors":{"a":"#343842","b":"#625953","c":"#897564","d":"#c7c4ae","e":"#e3ddc9","f":"#aa8879","g":"#ead0af","h":"#625575","i":"#85958c","j":"#4c5b60","k":"#725e53","l":"#c1a775","m":"#4b4848"}}}};
+const PALETTE = CATALOG.palette;
+const PAL_NAME = { o: '墨', s: '石', h: '霧', w: '紙', g: '苔', G: '深苔', b: '鋼藍', p: '灰紫', P: '深紫', y: '金', r: '陶', t: '麥', d: '褐', k: '墨' };
+const SPRITES = {};
+const groupOf = (n) => /^(human|elf|dwarf|giant|undead)$/.test(n) ? 'races' : /^(str|dex|int|will|luk)$/.test(n) ? 'stats'
+  : /^(equip|pets|skills|map|smith|titles|rebirth|settings|bag|ap)$/.test(n) ? 'nav' : n.startsWith('slot-') ? 'slots' : n.startsWith('sk-') ? 'skills'
+  : n.startsWith('pet-') ? 'pets' : n.startsWith('area-') ? 'areas' : 'misc';
+for (const [n, rows] of Object.entries(CATALOG.icons)) SPRITES['icon:' + n] = { rows, colors: { ...PALETTE }, group: groupOf(n), refine: true };
+for (const [r, d] of Object.entries(CATALOG.avatars)) SPRITES['avatar:' + r] = { rows: d.rows, colors: d.colors, group: 'avatars', refine: false };
+const GROUP_ORDER = ['races', 'stats', 'nav', 'slots', 'skills', 'pets', 'areas', 'misc', 'avatars'];
+const GROUP_NAME = { races: '種族', stats: '能力', nav: '介面', slots: '裝備欄', skills: '技能', pets: '夥伴', areas: '地區', misc: '其他', avatars: '角色（裸身）' };
+const groups = {}; for (const k of Object.keys(SPRITES)) (groups[SPRITES[k].group] = groups[SPRITES[k].group] || []).push(k);
+
+const state = { key: null, rows: [], colors: {}, tool: 'pen', letter: 'o', mirror: false, undo: [], cloud: {} };
+let db = null;
+const $ = (s) => document.querySelector(s);
+const status = (t) => { $('#status').textContent = t; };
+
+function draw(rows, colors, cv, scale) {
+  const w = rows[0].length, h = rows.length; cv.width = w * scale; cv.height = h * scale; const x = cv.getContext('2d'); x.clearRect(0, 0, cv.width, cv.height);
+  for (let y = 0; y < h; y++) for (let i = 0; i < w; i++) { const ch = rows[y][i]; if (ch === '.') continue; x.fillStyle = colors[ch] || '#ff00ff'; x.fillRect(i * scale, y * scale, scale, scale); }
+}
+/* the game's refinement of an 8×8 pattern into 16×16: edge light top-left, shadow bottom-right, pal faces */
+const shade = (c, a) => '#' + [1, 3, 5].map(i => Math.max(0, Math.min(255, parseInt(c.slice(i, i + 2), 16) + a)).toString(16).padStart(2, '0')).join('');
+function refined(name, rows, colors) {
+  const cells = new Map(); const put = (x, y, c) => { if (x >= 0 && x < 16 && y >= 0 && y < 16) cells.set(x + ',' + y, { x, y, c }); };
+  const R = rows.map(r => r.padEnd(8, '.'));
+  R.forEach((row, y) => [...row].forEach((v, x) => { const color = colors[v]; if (!color) return;
+    const top = R[y - 1]?.[x] !== v, left = row[x - 1] !== v, bottom = R[y + 1]?.[x] !== v, right = row[x + 1] !== v;
+    put(x * 2, y * 2, shade(color, top || left ? 17 : 0)); put(x * 2 + 1, y * 2, shade(color, top ? 12 : 0)); put(x * 2, y * 2 + 1, color); put(x * 2 + 1, y * 2 + 1, shade(color, bottom || right ? -19 : -5)); }));
+  if (name.startsWith('pet-')) {
+    const eyes = { pudding: [4, 10, 8], potcat: [4, 8, 8], mosskin: [4, 10, 8], mimipup: [4, 8, 8], ember: [4, 8, 8], griffy: [4, 8, 6], nameless: [4, 10, 6] }[name.slice(4)];
+    if (eyes) { const [l, r, y] = eyes; for (const x of [l, r]) { put(x, y, PALETTE.o); put(x, y + 1, PALETTE.o); put(x + 1, y, PALETTE.w); } put(l + 2, y + 3, PALETTE.r); put(l + 3, y + 3, PALETTE.d); }
+    if (name === 'pet-pudding') { put(4, 5, PALETTE.w); put(5, 5, PALETTE.w); put(3, 6, PALETTE.w); }
+    if (name === 'pet-mimipup') { put(7, 5, PALETTE.y); put(7, 6, PALETTE.o); put(7, 7, PALETTE.y); }
+    if (name === 'pet-mosskin') { put(7, 2, PALETTE.y); put(8, 3, PALETTE.g); }
+  }
+  return [...cells.values()];
+}
+function drawRefined(name, rows, colors, cv, scale) {
+  cv.width = 16 * scale; cv.height = 16 * scale; const x = cv.getContext('2d'); x.clearRect(0, 0, cv.width, cv.height);
+  for (const p of refined(name, rows, colors)) { x.fillStyle = p.c; x.fillRect(p.x * scale, p.y * scale, scale, scale); }
+}
+function buildList() {
+  const list = $('#list'); list.innerHTML = '';
+  for (const g of GROUP_ORDER) { if (!groups[g]) continue;
+    const head = document.createElement('div'); head.className = 'group'; head.textContent = GROUP_NAME[g] || g; list.append(head);
+    for (const k of groups[g]) {
+      const d = state.cloud[k] || SPRITES[k];
+      const el = document.createElement('div'); el.className = 'item' + (k === state.key ? ' on' : '') + (state.cloud[k] ? ' edited' : '') + (g === 'avatars' ? ' tall' : ''); el.dataset.key = k;
+      const c = document.createElement('canvas'); draw(d.rows, d.colors, c, 2);
+      el.append(c, Object.assign(document.createElement('span'), { textContent: k.split(':').slice(1).join(' ') }));
+      el.onclick = () => load(k); list.append(el);
+    }
+  }
+}
+function load(k) {
+  state.key = k; const d = state.cloud[k] || SPRITES[k];
+  state.rows = d.rows.slice(); state.colors = { ...d.colors }; state.undo = [];
+  if (!(state.letter in state.colors)) state.letter = Object.keys(state.colors)[0];
+  render(); buildList(); buildPalette();
+}
+function cell() { const stage = $('.stage'); const w = state.rows[0].length, h = state.rows.length; return Math.max(6, Math.floor(Math.min((stage.clientWidth - 32) / w, (stage.clientHeight - 32) / h))); }
+function render() {
+  const cv = $('#grid'); const s = cell(); draw(state.rows, state.colors, cv, s);
+  const x = cv.getContext('2d'); x.strokeStyle = 'rgba(52,56,66,0.18)'; x.lineWidth = 1;
+  for (let i = 0; i <= state.rows[0].length; i++) { x.beginPath(); x.moveTo(i * s + .5, 0); x.lineTo(i * s + .5, cv.height); x.stroke(); }
+  for (let j = 0; j <= state.rows.length; j++) { x.beginPath(); x.moveTo(0, j * s + .5); x.lineTo(cv.width, j * s + .5); x.stroke(); }
+  draw(state.rows, state.colors, $('#p1'), 1); draw(state.rows, state.colors, $('#p3'), 3); draw(state.rows, state.colors, $('#p6'), 6);
+  const isIcon = SPRITES[state.key].refine; $('#refwrap').hidden = !isIcon;
+  if (isIcon) drawRefined(state.key.slice(5), state.rows, state.colors, $('#pref'), 4);
+  $('#dims').textContent = `${state.rows[0].length} × ${state.rows.length} px · ${state.key}`;
+}
+function buildPalette() {
+  const pal = $('#palette'); pal.innerHTML = '';
+  const mk = (letter, hex, label, name) => { const el = document.createElement('div'); el.className = 'sw' + (state.letter === letter ? ' on' : '') + (letter === '.' ? ' eraser' : '');
+    const i = document.createElement('i'); if (hex) i.style.background = hex; el.append(i, Object.assign(document.createElement('span'), { textContent: label }));
+    if (name) el.append(Object.assign(document.createElement('span'), { className: 'nm', textContent: name }));
+    if (hex) { const inp = document.createElement('input'); inp.type = 'color'; inp.value = hex; inp.setAttribute('aria-label', '顏色 ' + letter);
+      inp.oninput = () => { state.colors[letter] = inp.value.toLowerCase(); i.style.background = inp.value; render(); }; inp.onclick = (e) => e.stopPropagation(); el.append(inp); }
+    el.onclick = () => { state.letter = letter; buildPalette(); }; pal.append(el); };
+  for (const [L, hex] of Object.entries(state.colors)) mk(L, hex, L, SPRITES[state.key].refine ? PAL_NAME[L] : '');
+}
+function setPx(i, y, ch) { if (y < 0 || y >= state.rows.length || i < 0 || i >= state.rows[0].length) return; const r = state.rows[y].split(''); r[i] = ch; state.rows[y] = r.join('');
+  if (state.mirror) { const m = state.rows[0].length - 1 - i; if (m !== i) { const rr = state.rows[y].split(''); rr[m] = ch; state.rows[y] = rr.join(''); } } }
+function fill(i, y, ch) { const target = state.rows[y]?.[i]; if (target === undefined || target === ch) return; const W = state.rows[0].length, H = state.rows.length; const st = [[i, y]]; const seen = new Set();
+  while (st.length) { const [a, b] = st.pop(); const id = a + ',' + b; if (a < 0 || b < 0 || a >= W || b >= H || seen.has(id) || state.rows[b][a] !== target) continue; seen.add(id); const r = state.rows[b].split(''); r[a] = ch; state.rows[b] = r.join(''); st.push([a + 1, b], [a - 1, b], [a, b + 1], [a, b - 1]); } }
+function pushUndo() { state.undo.push(state.rows.slice()); if (state.undo.length > 80) state.undo.shift(); }
+let painting = false;
+const grid = $('#grid');
+function pos(e) { const r = grid.getBoundingClientRect(); const s = cell(); return [Math.floor((e.clientX - r.left) / s), Math.floor((e.clientY - r.top) / s)]; }
+grid.addEventListener('pointerdown', (e) => { e.preventDefault(); grid.setPointerCapture(e.pointerId); const [i, y] = pos(e);
+  if (state.tool === 'pick') { const ch = state.rows[y]?.[i]; if (ch && ch !== '.') { state.letter = ch; buildPalette(); } return; }
+  pushUndo(); painting = true; if (state.tool === 'fill') { fill(i, y, state.letter); render(); painting = false; return; } setPx(i, y, state.tool === 'eraser' ? '.' : state.letter); render(); });
+grid.addEventListener('pointermove', (e) => { if (!painting) return; const [i, y] = pos(e); setPx(i, y, state.tool === 'eraser' ? '.' : state.letter); render(); });
+grid.addEventListener('pointerup', () => { painting = false; }); grid.addEventListener('pointercancel', () => { painting = false; });
+document.querySelectorAll('[data-tool]').forEach((b) => b.onclick = () => { state.tool = b.dataset.tool; document.querySelectorAll('[data-tool]').forEach((x) => x.classList.toggle('on', x === b)); });
+$('#mirror').onclick = (e) => { state.mirror = !state.mirror; e.currentTarget.classList.toggle('on', state.mirror); };
+$('#undo').onclick = () => { const r = state.undo.pop(); if (r) { state.rows = r; render(); } };
+$('#reset').onclick = () => { pushUndo(); const d = SPRITES[state.key]; state.rows = d.rows.slice(); state.colors = { ...d.colors }; render(); buildPalette(); };
+$('#addColor').onclick = () => { const letters = 'abcefijlmnquvxzABCDEFHIJKLMNOQRSTUVWXYZ0123456789'; const L = [...letters].find((c) => !(c in state.colors)); if (!L) return; state.colors[L] = '#b47f76'; state.letter = L; buildPalette(); };
+$('#export').onclick = async () => { const txt = JSON.stringify({ key: state.key, rows: state.rows, colors: state.colors });
+  try { await navigator.clipboard.writeText(txt); status('JSON 已複製'); } catch { const ta = document.createElement('textarea'); ta.value = txt; document.body.append(ta); ta.select(); status('已選取 JSON，請按 Ctrl/⌘+C'); } };
+$('#save').onclick = async () => {
+  if (!db) { status('沒有雲端連線，請用「複製 JSON」'); return; }
+  try { const doc = { key: state.key, rows: state.rows, colors: state.colors, updatedAt: Date.now() }; await db.doc('sprites/' + state.key.replace(/[:\/]/g, '_')).set(doc); state.cloud[state.key] = doc; buildList(); status('已儲存 ✓ ' + state.key); }
+  catch (e) { status('儲存失敗：' + (e && e.code ? e.code : e)); }
+};
+window.addEventListener('resize', () => { if (state.key) render(); });
+(async () => {
+  buildList(); load('icon:human');
+  const timer = setTimeout(() => status('離線模式（可用複製 JSON）'), 10000);
+  try {
+    db = window.claude && window.claude.use ? await claude.use('db') : null;
+    if (db) {
+      const snap = await db.collection('sprites').get();
+      snap.docs.forEach((d) => { const v = d.data(); if (v && v.key && v.rows && SPRITES[v.key]) state.cloud[v.key] = { rows: v.rows, colors: v.colors || {}, updatedAt: v.updatedAt }; });
+      clearTimeout(timer); status(`已連線 · 雲端有 ${Object.keys(state.cloud).length} 張修改`); buildList(); if (state.cloud[state.key]) load(state.key);
+    } else { clearTimeout(timer); status('離線模式（可用複製 JSON）'); }
+  } catch (e) { clearTimeout(timer); status('雲端讀取失敗，仍可編輯與複製 JSON'); }
+})();
+</script>
