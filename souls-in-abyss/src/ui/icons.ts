@@ -71,6 +71,8 @@ export interface Pixel { x: number; y: number; color: string }
 const shade = (color: string, amount: number) => '#' + [1, 3, 5].map(i =>
   Math.max(0, Math.min(255, parseInt(color.slice(i, i + 2), 16) + amount)).toString(16).padStart(2, '0')).join('');
 const refined = new Map<string, Pixel[]>();
+/** The user chose the plain 8×8 look (2026-11-08): flat cells, no edge lighting, no 16×16 extras. Flip to get the refined look back. */
+export const PLAIN_8X8 = true;
 export function pixels(name: string): Pixel[] {
   if (refined.has(name)) return refined.get(name)!;
   const rows = (patterns[name] || patterns.unknown).split('/').map(row => row.replace(/ /g, '').padEnd(8, '.'));
@@ -78,6 +80,13 @@ export function pixels(name: string): Pixel[] {
   const put = (x: number, y: number, color: string) => {
     if (x >= 0 && x < 16 && y >= 0 && y < 16) cells.set(`${x},${y}`, { x, y, color });
   };
+  if (PLAIN_8X8) {
+    rows.forEach((row, y) => [...row].forEach((v, x) => {
+      const color = PALETTE[v]; if (!color) return;
+      put(x * 2, y * 2, color); put(x * 2 + 1, y * 2, color); put(x * 2, y * 2 + 1, color); put(x * 2 + 1, y * 2 + 1, color);
+    }));
+    const flat = [...cells.values()]; refined.set(name, flat); return flat;
+  }
   rows.forEach((row, y) => [...row].forEach((v, x) => {
     const color = PALETTE[v]; if (!color) return;
     const top = rows[y - 1]?.[x] !== v, left = row[x - 1] !== v;
