@@ -438,6 +438,14 @@ export class App {
       if (this.tipFor && !this.tipByTap && (tgt === document || (tgt as Element).contains?.(this.tipFor))) hide();
     }, true);
   }
+  private petTip(key: string): string {
+    const p = this.g.s.pets.find(x => x.key === key), d = petOf(key);
+    if (!p || !d) return '';
+    const st = stageOf(p.lvl);
+    return `<div class="tname">${tr(d.stages[st].name)} <small class="dim">Lv ${p.lvl}</small></div>
+      <div class="tsec">${tr(d.ability)}</div>
+      <p class="lore">${tr(d.lore)}</p>`;
+  }
   private areaTip(key: string): string {
     const { s, d } = this.g;
     const i = AREAS.findIndex(a => a.key === key); if (i < 0) return '';
@@ -452,6 +460,7 @@ export class App {
     const [kind, id] = key.split(':');
     if (kind === 'item') { const it = this.g.itemOf(Number(id)); return it ? this.itemTip(it) : ''; }
     if (kind === 'area') return this.areaTip(id);
+    if (kind === 'pet') return this.petTip(id);
     if (kind !== 'skill') return '';
     const k = SKILLS.find(x => x.key === id); if (!k) return '';
     const r = this.g.s.skills[k.key] || 0, max = r >= MAX_RANK;
@@ -517,10 +526,10 @@ export class App {
     const s = this.g.s;
     const owned = s.pets.map(p => {
       const d = petOf(p.key)!, st = stageOf(p.lvl), on = s.activePet === p.key, next = STAGE_LV[st + 1];
-      return `<div class="item ${on ? 'here' : ''}"><div class="dot" style="background:${d.stages[st].color}">${icon('pet-' + p.key)}</div>
+      // the pal's story lives in the icon's tooltip
+      return `<div class="item ${on ? 'here' : ''}"><div class="dot" style="background:${d.stages[st].color}" data-tip="pet:${p.key}">${icon('pet-' + p.key)}</div>
         <div class="grow"><div class="iname">${tr(d.stages[st].name)} <small class="dim">Lv ${p.lvl}${next ? ` → Lv ${next}` : ''}</small></div>
-        <div class="istat">${tr(d.ability)}<br><span class="hearts">${hearts(p.bond)}</span></div>
-        <p class="lore">${tr(d.lore)}</p></div>
+        <div class="istat">${tr(d.ability)}<br><span class="hearts">${hearts(p.bond)}</span></div></div>
         ${on ? `<span class="dim">${t('active')}</span>` : `<button data-a="pet" data-k="${p.key}">${t('call')}</button>`}</div>`;
     }).join('');
     const unknown = PETS.filter(p => !p.hidden && !s.pets.some(x => x.key === p.key)).map(p =>
