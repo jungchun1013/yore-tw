@@ -303,8 +303,8 @@ export class App {
   /** One-line item name; the stats live in the tooltip (data-tip="item:<uid>"). */
   private itemHtml(it: Item): string {
     const r = RARITY[it.rarity];
-    const wt = it.weight ? `<span class="wt">${tr(WEIGHTS[it.weight].name)}</span>` : '';
-    return `<div class="iname" style="color:${r.color}">${icon('slot-' + it.kind, 'gi sm item-icon')}${wt}${tr(nameOf(it))}${it.plus ? `<span class="plusn"> +${it.plus}</span>` : ''}</div>`;
+    // weight lives in the tooltip (rarity · weight), not in front of the name
+    return `<div class="iname" style="color:${r.color}">${icon('slot-' + it.kind, 'gi sm item-icon')}${tr(nameOf(it))}${it.plus ? `<span class="plusn"> +${it.plus}</span>` : ''}</div>`;
   }
   private itemTip(it: Item): string {
     const r = RARITY[it.rarity];
