@@ -113,7 +113,7 @@ small { font-size: var(--fs-xs); }
 .dot.q { background: #cfccbf; color: #fff; }
 .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; } .between { justify-content: space-between; margin: 8px 0 2px; }
 
-.doll { width: 100%; max-width: 260px; display: block; margin: 0 auto; }
+.doll { width: 100%; max-width: 320px; display: block; margin: 0 auto; }
 
 .doll .slot { cursor: pointer; }
 .doll .cell { fill: #e3e0d5; stroke: none; }
