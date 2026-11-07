@@ -418,19 +418,21 @@ const figure = (h: number) => `<svg class="pict" viewBox="0 0 30 64" style="heig
   <circle cx="15" cy="7" r="6"/><rect x="7" y="15" width="16" height="22" rx="2"/><rect x="1" y="16" width="5" height="18" rx="2"/>
   <rect x="24" y="16" width="5" height="18" rx="2"/><rect x="8" y="38" width="6" height="24" rx="1"/><rect x="16" y="38" width="6" height="24" rx="1"/></svg>`;
 
-/** Race list (left) + age figures (right) + stats below. Shared by creation and rebirth. */
+/** Race icons (left), age figures (right), and a stat table below. Shared by creation and rebirth. */
 export function raceAgePicker(race: string, age: number, raceAction: string, ageAction: string): string {
   const r = raceOf(race), g = ageGrowth(r, age);
-  const list = RACES.map(x => `<button class="rrow ${x.key === race ? 'on' : ''}" data-a="${raceAction}" data-k="${x.key}" title="${tr(x.name)}">
+  const list = RACES.map(x => `<button class="rrow ${x.key === race ? 'on' : ''}" data-a="${raceAction}" data-k="${x.key}" title="${tr(x.name)}" aria-pressed="${x.key === race}">
       <span class="rico">${icon(x.key)}</span><span class="rname">${tr(x.name)}</span></button>`).join('');
-  const figs = START_AGES.map(a => `<button class="fig ${a === age ? 'on' : ''}" data-a="${ageAction}" data-k="${a}" title="${a}">${figure(40 + (a - 10) * 3)}</button>`).join('');
-  const line = (o: Record<string, number>, plus: boolean) => PRIMARY.map(k => `<span class="st">${icon(k, 'gi sm')}${tr(STAT[k])}<b>${plus ? '+' : ''}${o[k]}</b></span>`).join('');
+  const figs = START_AGES.map(a => `<button class="fig ${a === age ? 'on' : ''}" data-a="${ageAction}" data-k="${a}" title="${t('age')} ${a}" aria-pressed="${a === age}">
+      <span class="agev">${a === age ? a : ''}</span>${figure(40 + (a - 10) * 3)}</button>`).join('');
+  const head = PRIMARY.map(k => `<th>${icon(k, 'gi sm')}${tr(STAT[k])}</th>`).join('');
+  const row = (o: Record<string, number>, plus: boolean) => PRIMARY.map(k => `<td class="${plus ? 'plus' : ''}">${plus ? '+' : ''}${o[k]}</td>`).join('');
   return `<div class="picker"><div class="rlist">${list}</div><div class="rinfo">
-      <div class="agehead">${t('age')}:${age}</div><div class="figs">${figs}</div>
-      <div class="stline"><span class="stlbl">${t('initStat')}</span>${line(r.base, false)}</div>
-      <div class="stline"><span class="stlbl">${t('ageGrowth')}</span>${line(g, true)}</div>
-      <p class="dim small center">${t('levelShare')}</p>
-      <p class="rdesc">${tr(r.desc)}</p></div></div>`;
+      <div class="figs">${figs}</div>
+      <table class="sttable"><thead><tr><th></th>${head}</tr></thead>
+        <tbody><tr><th>${t('initStat')}</th>${row(r.base, false)}</tr><tr><th>${t('ageGrowth')}</th>${row(g, true)}</tr></tbody></table>
+      <p class="dim small">${t('levelShare')}</p>
+      <p class="rdesc">${tr(r.name)}：${tr(r.desc)}</p></div></div>`;
 }
 
 /** CJK lines use the pixel font's own metrics so the glow banner does not overlap. */

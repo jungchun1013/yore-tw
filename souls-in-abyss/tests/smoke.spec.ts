@@ -14,7 +14,8 @@ test('title, create a hero, fight, and open every view', async ({ page }, info) 
   await page.click('#t-play');
   await page.click('[data-a="cRace"][data-k="elf"]');
   await page.click('[data-a="cAge"][data-k="13"]');
-  await expect(page.locator('.rinfo')).toContainText('靈巧+4');
+  await expect(page.locator('.sttable tbody tr').nth(1).locator('td').nth(1)).toHaveText('+4');
+  await expect(page.locator('.fig.on .agev')).toHaveText('13');
   await page.screenshot({ path: `${SHOTS}/${info.project.name}-create.png` });
   await page.click('#c-go');
   await expect(page.locator('#sheet')).toContainText('精靈');
