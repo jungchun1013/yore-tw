@@ -262,13 +262,15 @@ export class App {
     const s = this.g.s, p = s.pets.find(x => x.key === s.activePet);
     if (!p) return `<div class="kv"><span class="lbl">${t('pet')}</span></div><div class="kv"><span class="lbl">${t('lv')}</span></div><div class="kv"><span class="lbl">${t('exp')}</span><div class="line"></div></div>`;
     const d = petOf(p.key)!, st = stageOf(p.lvl);
-    // text only: the pal itself stands on the equipment board, where it can be tapped. HP and MP share one row.
+    // text only: the pal itself stands on the equipment board, where it can be tapped.
+    // Two columns in the middle, as the user sketched: HP / MP on the left, level / EXP on the right.
     const bar = (id: string, cls: string, lbl: string) => `<div class="kv bar"><span class="lbl">${lbl}</span><div class="line"><div id="${id}" class="${cls}"></div></div></div>`;
     const rest = this.g.petDownFor > 0 ? ` <small class="dim">${t('petRest')}</small>` : '';
     return `<div class="kv"><span class="lbl">${t('pet')}</span><span class="petname">${tr(d.stages[st].name)}${rest}</span></div>
-      <div class="kv"><span class="lbl">${t('lv')}</span><span>${p.lvl}</span></div>
-      <div class="petbars">${bar('p-hp', 'red', t('hp'))}${bar('p-mp', 'blue', t('mp'))}</div>
-      <div class="kv"><span class="lbl">${t('exp')}</span><div class="line"><div class="grey" style="width:${(p.xp / petXpNeed(p.lvl) * 100).toFixed(0)}%"></div></div></div>
+      <div class="petgrid">
+        ${bar('p-hp', 'red', t('hp'))}<div class="kv"><span class="lbl">${t('lv')}</span><span>${p.lvl}</span></div>
+        ${bar('p-mp', 'blue', t('mp'))}<div class="kv"><span class="lbl">${t('exp')}</span><div class="line"><div class="grey" style="width:${(p.xp / petXpNeed(p.lvl) * 100).toFixed(0)}%"></div></div></div>
+      </div>
       <div class="kv"><span class="lbl">${t('bond')}</span><span class="hearts">${hearts(p.bond)}</span></div>`;
   }
 
