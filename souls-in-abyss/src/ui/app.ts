@@ -440,7 +440,7 @@ const banner = (small = false) => `<div class="banner ${small ? 'small' : ''}"><
 
 /** Title banner, then creation. */
 export function creation(root: HTMLElement, done: (name: string, race: string, age: number) => void): void {
-  let race = 'elf', age = 13, name = lang === 'zh' ? '勇者' : 'Hero';
+  let race = 'elf', age = 13, name = lang === 'zh' ? '奧雷里亞諾' : 'Aureliano'; // after One Hundred Years of Solitude
   const titleScreen = () => {
     root.innerHTML = `<div class="title">${banner()}<button class="link play" id="t-play">${t('play')}</button></div>`;
     root.querySelector<HTMLElement>('#t-play')!.onclick = intro;
@@ -464,7 +464,7 @@ export function creation(root: HTMLElement, done: (name: string, race: string, a
       <button class="link play" id="c-go">${t('ok')}</button></div></div>`;
     root.querySelectorAll<HTMLElement>('[data-a="cRace"]').forEach(b => b.onclick = () => { keep(); race = b.dataset.k!; draw(); });
     root.querySelectorAll<HTMLElement>('[data-a="cAge"]').forEach(b => b.onclick = () => { keep(); age = Number(b.dataset.k); draw(); });
-    root.querySelector<HTMLElement>('#c-go')!.onclick = () => { keep(); done((name.trim() || 'Hero').slice(0, 12), race, age); };
+    root.querySelector<HTMLElement>('#c-go')!.onclick = () => { keep(); done((name.trim() || (lang === 'zh' ? '奧雷里亞諾' : 'Aureliano')).slice(0, 12), race, age); };
   };
   const keep = () => { name = (root.querySelector('#c-name') as HTMLInputElement).value; };
   titleScreen();
