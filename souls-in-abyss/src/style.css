@@ -180,7 +180,8 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .colL { grid-area: colL; } .colM { grid-area: colM; }
 .colL .sheet, .colM .monster, .colM .petbox, .colM .loot { flex: none; }
 .colL .log { flex: 1; min-height: 0; }
-.colM .att { flex: 1; min-height: 0; }
+.colM { overflow-y: auto; }
+.colM .att { flex: 1 0 auto; min-height: 96px; }
 
 @media (max-width: 900px) {
   html, body { font-size: var(--fs-m); }
