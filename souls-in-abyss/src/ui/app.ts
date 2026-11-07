@@ -16,7 +16,7 @@ import { Scene } from './scene';
 import * as A from '../game/actions';
 import { icon, pixelMarkup } from './icons';
 import { heroMarkup } from './hero';
-import { WORLD_MAP_POSITIONS } from './world-map';
+import { WORLD_MAP_POSITIONS, worldMapRoute } from './world-map';
 import { curseOf, giftOf, type PactDef } from '../data/pacts';
 import { SAN_TIERS, sanTier, willResist } from '../data/sanity';
 import { SAN_MAX } from '../game/state';
@@ -493,7 +493,7 @@ export class App {
     const seen = s.visited || [s.area];
     // positions in % of the board: a winding path, top = surface, bottom = the Abyss
     const POS = WORLD_MAP_POSITIONS;
-    const path = POS.map(([x, y], i) => `${i ? 'L' : 'M'}${x} ${y}`).join(' ');
+    const path = worldMapRoute(); // a curve through the landmarks
     const nodes = AREAS.map((a, i) => {
       // never been: grey · been, but not here: dark · here: lit
       const [x, y] = POS[i], here = s.area === a.key;
