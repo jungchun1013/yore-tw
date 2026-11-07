@@ -56,7 +56,7 @@ small { font-size: var(--fs-xs); }
 .mhead { margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mhead .lbl { color: var(--lbl); margin-right: 6px; }
 .mhead b { font-weight: normal; margin-right: 6px; }
-.stage { margin: 4px 0 6px; }
+.stage { margin: 4px 0 14px; }
 .scene { width: 100%; display: block; image-rendering: pixelated; aspect-ratio: 320 / 120; }
 .petname { color: #a8657a; } .hearts { color: #b47f76; letter-spacing: 1px; font-size: var(--fs-xs); }
 
@@ -93,7 +93,7 @@ small { font-size: var(--fs-xs); }
 .ico.on span { background: #83957b; }
 .ico:hover:not(.on) span { background: #9ba39a; }
 .ico:hover { background: none; }
-.vtitle { font-size: var(--fs-xl); color: var(--lbl); margin: 8px 2px 4px; }
+.vtitle { font-size: var(--fs-xl); color: var(--lbl); margin: 16px 2px 12px; }
 .view { flex: 1; overflow-y: auto; padding-right: 4px; }
 
 .item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin: 8px 0; border: 0; background: #efece3; }
@@ -293,7 +293,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 /* pixel dropdown: the button shows the choice, the menu hangs under it with the panel's corners */
 .dd { position: relative; display: inline-block; vertical-align: middle; }
 .ddbtn { background: #efece2; border: 0; height: 28px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; line-height: 1; }
-.ddbtn .ddarrow { margin: 0; width: 12px; height: 12px; transform: rotate(180deg); opacity: .75; }
+.ddbtn .ddarrow { margin: 0; width: 12px; height: 12px; opacity: .75; }
 .ddmenu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 100%; background: var(--box); border: 2px solid var(--line); clip-path: var(--px2); display: flex; flex-direction: column; padding: 2px 0; }
 .ddopt { background: none; border: 0; text-align: left; padding: 0 12px; height: 28px; white-space: nowrap; }
 .ddopt:hover, .ddopt.on { background: var(--accent-soft); }
