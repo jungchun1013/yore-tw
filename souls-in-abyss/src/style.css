@@ -68,7 +68,7 @@ small { font-size: var(--fs-xs); }
 .log .num.crit { font-size: var(--fs-l); }
 .log .xp { color: var(--blue); } .log .gold { color: var(--gold); } .log .ap { color: var(--down); }
 .log .good { color: var(--down); } .log p.bad { color: var(--down); }
-.log .skill { color: #7a3dbf; } .log .pet { color: #c24f8c; } .log .title { color: var(--gold); }
+.log .skname { color: #7a3dbf; } .log .pet { color: #c24f8c; } .log .title { color: var(--gold); }
 .log p.fate { color: #7a68b8; } .log p.pet { color: #c24f8c; }
 .loot .kv { min-height: 22px; } .loot .gold { color: var(--gold); } .loot .xp { color: var(--blue); }
 
@@ -110,14 +110,14 @@ small { font-size: var(--fs-xs); }
 .stabs { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
 .stab { border: 0; background: none; font-size: var(--fs-m); padding: 4px 0; color: var(--lbl); }
 .stab.on { color: #fff; background: var(--accent); }
-.skill { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin: 4px 0; background: #6b6b6b; color: #fff; }
-.skill.can { background: var(--accent); }
-.skill .sico { width: 34px; height: 34px; border-radius: 50%; background: #fff; color: #6b6b6b; display: grid; place-items: center; flex: none; }
-.skill.can .sico { color: var(--accent); }
-.skill .sname { font-size: var(--fs-l); } .skill .istat { color: rgba(255,255,255,.85); }
-.skill .up-btn { flex: none; background: #fff; color: #6b6b6b; border: 0; border-radius: 50%; width: 34px; height: 34px; padding: 0; display: grid; place-items: center; line-height: 1; font-size: var(--fs-xs); }
-.skill .up-btn small { font-size: var(--fs-xs); }
-.skill.can .up-btn { color: var(--accent); }
+.view .skill { display: flex; align-items: center; gap: 10px; padding: 8px 10px; margin: 4px 0; background: #6b6b6b; color: #fff; }
+.view .skill.can { background: var(--accent); }
+.view .skill .sico { width: 34px; height: 34px; border-radius: 50%; background: #fff; color: #6b6b6b; display: grid; place-items: center; flex: none; }
+.view .skill.can .sico { color: var(--accent); }
+.view .skill .sname { font-size: var(--fs-l); } .skill .istat { color: rgba(255,255,255,.85); }
+.view .skill .up-btn { flex: none; background: #fff; color: #6b6b6b; border: 0; border-radius: 50%; width: 34px; height: 34px; padding: 0; display: grid; place-items: center; line-height: 1; font-size: var(--fs-xs); }
+.view .skill .up-btn small { font-size: var(--fs-xs); }
+.view .skill.can .up-btn { color: var(--accent); }
 
 /* ---------- icons ---------- */
 .gi { width: 100%; height: 100%; fill: currentColor; display: block; }
@@ -228,8 +228,8 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .gi.pointup { transform: rotate(180deg); }
 .dot { color: #fff; padding: 4px; } .dot .gi { width: 100%; height: 100%; }
 .dot.q { background: #bdbdbd; }
-.skill .sico { padding: 6px; }
-.skill .up-btn { flex-direction: column; } .skill .up-btn .gi { width: 13px; height: 13px; }
+.view .skill .sico { padding: 6px; }
+.view .skill .up-btn { flex-direction: column; } .skill .up-btn .gi { width: 13px; height: 13px; }
 .gi.hrt { width: 14px; height: 14px; display: inline-block; vertical-align: -1px; color: #d6d6d6; margin-right: 1px; }
 .gi.hrt.on { color: #e05a8a; }
 .gi.star { color: #c9c9c9; opacity: 1; } .gi.star.on { color: var(--accent); }
@@ -263,3 +263,5 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .node:hover .nico { background: var(--accent); }
 .mapcard .lore { margin-top: 2px; }
 @media (max-width: 900px) { .mapboard { height: 420px; } }
+
+.rblead { margin: 4px 0 8px; color: var(--lbl); }

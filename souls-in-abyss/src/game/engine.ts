@@ -139,7 +139,7 @@ export class Game {
       if (crit) dmg *= this.d.critDmg;
       dmg *= range(0.95, 1.05);
       if (a.effect === 'slow') this.monT -= this.mon.interval * 0.5;
-      this.say({ zh: '你使用 {0}，對 {1} 造成 {2} 傷害', en: 'You use {0}, cause {1} {2} damage.' }, [{ text: tr(sk.name), cls: 'skill' }, this.monPart(), this.n(dmg, crit ? 'num crit' : 'num')]);
+      this.say({ zh: '你使用 {0}，對 {1} 造成 {2} 傷害', en: 'You use {0}, cause {1} {2} damage.' }, [{ text: tr(sk.name), cls: 'skname' }, this.monPart(), this.n(dmg, crit ? 'num crit' : 'num')]);
       this.damageMon(dmg, 'hero', crit, sk.key);
       return;
     }
@@ -177,13 +177,13 @@ export class Game {
       if (!r || !chance(a.chance(r))) continue;
       if (a.effect === 'counter') {
         const dmg = this.vsArmor(this.roll() * a.power(r));
-        this.say({ zh: '你使用 {0}，對 {1} 造成 {2} 傷害', en: 'You use {0}, cause {1} {2} damage.' }, [{ text: tr(sk.name), cls: 'skill' }, this.monPart(), this.n(dmg)]);
+        this.say({ zh: '你使用 {0}，對 {1} 造成 {2} 傷害', en: 'You use {0}, cause {1} {2} damage.' }, [{ text: tr(sk.name), cls: 'skname' }, this.monPart(), this.n(dmg)]);
         this.emit({ t: 'hit', from: 'mon', dmg: 0, blocked: true });
         this.damageMon(dmg, 'hero', false, sk.key);
         return;
       }
       mult = a.power(r);
-      this.say({ zh: '你使用 {0}', en: 'You use {0}' }, [{ text: tr(sk.name), cls: 'skill' }]);
+      this.say({ zh: '你使用 {0}', en: 'You use {0}' }, [{ text: tr(sk.name), cls: 'skname' }]);
       break;
     }
     const raw = this.mon.atk * range(0.85, 1.15);
@@ -193,7 +193,7 @@ export class Game {
     this.say({ zh: '{0} 對你造成 {1} 傷害', en: '{0} cause {1} damage to You' }, [this.monPart(), this.n(dmg, 'num big')]);
     if (this.hp <= 0) {
       this.hp = 0; this.down = RESPAWN; this.s.counters.deaths++;
-      this.say({ zh: '你倒下了！深淵把你推了回來。', en: 'You die! The Abyss sends you back.' }, [], 'bad');
+      this.say({ zh: '你倒下了！深淵賜予你重生', en: 'You die! The Abyss grants you rebirth' }, [], 'bad');
       this.emit({ t: 'death' });
       this.checkTitles();
     }

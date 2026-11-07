@@ -127,3 +127,13 @@ test('a title message in the log stays one line tall', async ({ page }) => {
   const h = await page.evaluate(() => Math.max(...[...document.querySelectorAll('#log p')].map(p => p.getBoundingClientRect().height)));
   expect(h).toBeLessThan(80);
 });
+
+test('skill names in the log stay inline', async ({ page }) => {
+  await page.addInitScript(fresh, 'zh');
+  await page.goto('/');
+  await page.click('#t-play'); await page.click('.intro'); await page.click('#c-go');
+  await page.evaluate(() => { const g = (window as any).__game; g.s.skills.defense = 15; g.s.skills.smash = 15; g.refresh(); g.fastForward(0); });
+  await page.waitForFunction(() => document.querySelector('#log .skname'), null, { timeout: 30000 });
+  const display = await page.evaluate(() => getComputedStyle(document.querySelector('#log .skname')!).display);
+  expect(display).toBe('inline');
+});
