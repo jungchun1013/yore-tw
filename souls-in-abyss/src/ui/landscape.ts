@@ -101,3 +101,22 @@ export function drawLandscape(c: CanvasRenderingContext2D, key: string, offset: 
   });
   if (key === 'fen') { c.globalAlpha = .14; tile(.1, 140, x => { r(x, 64, 95, 5, light); r(x + 24, 75, 110, 3, light); }); c.globalAlpha = 1; }
 }
+
+/** Two scroll speeds. Alternating mirrored tiles meet at identical edge pixels,
+ * so a generated painting need not be destructively edited to make it repeat. */
+export function drawPaintedBattle(c: CanvasRenderingContext2D, image: HTMLImageElement, travel: number): void {
+  const width = 320, height = 120, floor = 88;
+  const band = (y: number, h: number, speed: number) => {
+    const offset = Math.max(0, travel * speed), first = Math.floor(offset / width), shift = offset % width;
+    const sy = image.naturalHeight * y / height, sh = image.naturalHeight * h / height;
+    for (let tile = 0; tile < 2; tile++) {
+      const x = Math.round(tile * width - shift);
+      c.save();
+      if ((first + tile) % 2) { c.translate(x + width, 0); c.scale(-1, 1); }
+      else c.translate(x, 0);
+      c.drawImage(image, 0, sy, image.naturalWidth, sh, 0, y, width, h);
+      c.restore();
+    }
+  };
+  band(0, floor, .22); band(floor, height - floor, 1);
+}

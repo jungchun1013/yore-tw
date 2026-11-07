@@ -7,7 +7,14 @@
  *   bg.<area key>
  */
 export const ART: Record<string, string> = {
-  // 'hero.human': './sprites/hero.human.png',
+  'bg.meadow': './sprites/battle/bg-meadow.png',
+  'bg.forest': './sprites/battle/bg-forest.png',
+  'bg.labyrinth': './sprites/battle/bg-labyrinth.png',
+  'bg.mine': './sprites/battle/bg-mine.png',
+  'bg.fen': './sprites/battle/bg-fen.png',
+  'bg.ruins': './sprites/battle/bg-ruins.png',
+  'bg.nest': './sprites/battle/bg-nest.png',
+  'bg.abyss': './sprites/battle/bg-abyss.png',
 };
 
 const cache: Record<string, HTMLImageElement> = {};

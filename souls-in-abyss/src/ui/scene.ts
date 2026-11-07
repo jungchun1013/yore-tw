@@ -5,7 +5,7 @@ import { heroPixels } from './hero';
 import { stageOf } from '../data/pets';
 import { sprite } from './sprites';
 import { num } from '../core/fmt';
-import { drawLandscape } from './landscape';
+import { drawLandscape, drawPaintedBattle } from './landscape';
 import { BattleMotion } from './motion';
 
 /**
@@ -74,7 +74,8 @@ export class Scene {
     c.setTransform(S, 0, 0, S, 0, 0);
     const area = areaOf(s.area);
     const bg = sprite('bg.' + area.key);
-    if (bg) c.drawImage(bg, 0, 0, W, H);
+    this.cv.dataset.background = bg ? 'painted' : 'loading';
+    if (bg) drawPaintedBattle(c, bg, reduced ? 0 : motion.travel);
     else drawLandscape(c, area.key, reduced ? 0 : motion.travel, this.t);
 
     const walking = motion.phase === 'advance' && motion.killAge > .12;
