@@ -276,7 +276,7 @@ export class App {
     else if (it.kind !== 'acc') { base = `${t('def')} ${Math.floor(armorDef(it))}${armorPrt(it) > 0 ? ` · ${t('prt')} ${pct(armorPrt(it), 1)}` : ''}`; }
     const aff = it.affixes.map(modText).join(' · ');
     const wt = it.weight ? `<span class="wt">${tr(WEIGHTS[it.weight].name)}</span>` : '';
-    return `<div class="iname" style="color:${r.color}">${wt}${tr(nameOf(it))}${it.plus ? ' +' + it.plus : ''} <small class="dim">iLv ${it.ilvl}</small></div>
+    return `<div class="iname" style="color:${r.color}">${wt}${tr(nameOf(it))}${it.plus ? ' +' + it.plus : ''}</div>
       <div class="istat">${base}${base && aff ? ' · ' : ''}${aff}</div>`;
   }
 
