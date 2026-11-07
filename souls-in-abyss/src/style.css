@@ -51,7 +51,7 @@ small { font-size: var(--fs-xs); }
 .val.stat { color: var(--orange); } .val.boost { color: var(--up); }
 .line { flex: 1; height: 3px; background: #e3ddc9; position: relative; }
 .line > div { height: 100%; transition: width .12s linear; }
-.line .red { background: var(--red); } .line .purple { background: #625575; } .line .blue { background: var(--blue); } .line .grey { background: #8f978f; }
+.line .red { background: var(--red); } .line .purple { background: #625575; } .line .blue { background: #839da5; } .line .grey { background: #8f978f; }
 
 .mhead { margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mhead .lbl { color: var(--lbl); margin-right: 6px; }
