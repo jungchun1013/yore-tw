@@ -306,3 +306,18 @@ button:not(.ico):not(.cog):not(.rrow):not(.fig):not(.node):not(.link):not(.up-bt
 .iname .wt { clip-path: var(--px1); }
 .stage, .scene { border-radius: var(--r-item); overflow: hidden; }
 .line, .line > div { border-radius: 2px; }
+
+.gi, .pict, .doll, .scene { image-rendering:pixelated; shape-rendering:crispEdges }
+.gi.sm { opacity:1 }
+.gi.hrt:not(.on), .gi.star:not(.on) { filter:grayscale(1); opacity:.35 }
+.doll .slot circle { fill:#e3e0d5; stroke:#a6aa9c !important; stroke-width:1 }
+.doll .slot.full circle { fill:#d2d7cd }
+.doll .slot.on circle { fill:#ddd3df; stroke:#81728e !important; stroke-width:2 }
+.dot { background-color:#e1dfd3 !important; border-radius:2px }
+.node .nico { border-radius:2px; background:#dddcd0; padding:5px }
+.node.ok .nico { background:#d1d7ca }
+.node.here .nico, .node.sel .nico { background:#d0c4d4; box-shadow:0 0 0 2px #8b7b98 }
+.node.far .nico { background:#e1dfd8; filter:grayscale(.65) }
+.node.risky .nico { background:#dfd1b8 }
+.item-icon { width:22px !important; height:22px !important; vertical-align:-5px !important }
+.cog { border-radius:2px; background:#dddcd0 }

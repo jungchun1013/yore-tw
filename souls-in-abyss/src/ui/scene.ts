@@ -1,12 +1,15 @@
 import type { Game, GameEvent } from '../game/engine';
 import { areaOf } from '../data/areas';
-import { raceOf } from '../data/races';
-import { petOf, stageOf } from '../data/pets';
+import { avatarPixels } from './avatar';
+import { pixels } from './icons';
+import { stageOf } from '../data/pets';
 import { sprite } from './sprites';
 import { num } from '../core/fmt';
+import { drawLandscape } from './landscape';
+import { BattleMotion } from './motion';
 
 /**
- * Battle strip. Placeholder shapes until real sprites are registered in sprites.ts.
+ * Battle strip with shared pixel avatars and companion artwork.
  * Logical size 320x120, drawn at 2x for crisp edges.
  */
 const W = 320, H = 120, S = 2;
@@ -16,13 +19,17 @@ export class Scene {
   cv: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private floats: Floater[] = [];
-  private heroLunge = 0; private monLunge = 0; private petLunge = 0; private monFlash = 0; private monFade = 0;
+  private heroLunge = 0; private monLunge = 0; private petLunge = 0; private monFlash = 0;
   private t = 0;
+  private motion = new BattleMotion();
+  private reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   constructor(private g: Game) {
     this.cv = document.createElement('canvas');
     this.cv.width = W * S; this.cv.height = H * S;
     this.cv.className = 'scene';
+    this.cv.setAttribute('role', 'img');
+    this.cv.setAttribute('aria-label', 'Pixel battle landscape');
     this.ctx = this.cv.getContext('2d')!;
     this.ctx.imageSmoothingEnabled = false;
     g.on(e => this.onEvent(e));
@@ -40,8 +47,9 @@ export class Scene {
         this.float(238 + (e.from === 'pet' ? -10 : 0), 46, num(e.dmg) + (e.crit ? '!' : ''), col);
       }
     } else if (e.t === 'heal') this.float(70, 40, '+' + num(e.amt), '#7ee081');
-    else if (e.t === 'kill') this.monFade = 1;
-    else if (e.t === 'spawn') this.monFade = 0;
+    else if (e.t === 'kill') this.motion.kill();
+    else if (e.t === 'spawn') this.motion.spawn();
+    else if (e.t === 'death') this.motion.death();
     else if (e.t === 'level') this.float(70, 30, 'LEVEL UP', '#ffd166');
   }
 
@@ -52,7 +60,13 @@ export class Scene {
 
   draw(dt: number): void {
     const c = this.ctx, g = this.g, s = g.s;
+    dt = Math.max(0, Math.min(dt, .1));
     this.t += dt;
+    this.motion.update(dt, g.downFor);
+    const motion = this.motion, reduced = this.reducedMotion;
+    this.cv.dataset.phase = motion.phase;
+    this.cv.dataset.travel = motion.travel.toFixed(2);
+    this.cv.dataset.area = s.area;
     const decay = (v: number) => Math.max(0, v - dt * 5);
     this.heroLunge = decay(this.heroLunge); this.monLunge = decay(this.monLunge); this.petLunge = decay(this.petLunge);
     this.monFlash = decay(this.monFlash);
@@ -61,43 +75,44 @@ export class Scene {
     const area = areaOf(s.area);
     const bg = sprite('bg.' + area.key);
     if (bg) c.drawImage(bg, 0, 0, W, H);
-    else {
-      c.fillStyle = area.bg; c.fillRect(0, 0, W, H);
-      c.fillStyle = 'rgba(0,0,0,0.25)'; c.fillRect(0, 88, W, H - 88);
-      c.fillStyle = 'rgba(255,255,255,0.06)'; for (let x = 0; x < W; x += 16) c.fillRect(x, 88, 8, 2);
-    }
+    else drawLandscape(c, area.key, reduced ? 0 : motion.travel, this.t);
 
-    const bob = Math.sin(this.t * 4) * 1.5;
+    const walking = motion.phase === 'advance' && motion.killAge > .12;
+    const stride = walking && !reduced ? Math.sin(motion.killAge * 36) : 0;
+    const bob = reduced ? 0 : Math.round(Math.sin(this.t * 4));
     // hero
     const down = g.downFor > 0;
-    const hx = 70 + this.heroLunge * 14, hy = 88;
+    const hx = 70 + (reduced ? 0 : this.heroLunge * 14 + stride * 2), hy = 88;
+    c.fillStyle = '#30383c'; c.globalAlpha = .25; c.fillRect(hx - 12, hy - 1, 26, 3);
+    c.globalAlpha = 1;
     const hs = sprite('hero.' + s.race);
-    c.globalAlpha = down ? 0.35 : 1;
-    if (hs) c.drawImage(hs, hx - 16, hy - 32 + bob, 32, 32);
-    else {
-      c.fillStyle = raceOf(s.race).color; c.fillRect(hx - 7, hy - 20 + bob, 14, 18);
-      c.fillStyle = '#f3d9b1'; c.fillRect(hx - 6, hy - 30 + bob, 12, 10);
-      c.fillStyle = '#e8e3d3'; c.fillRect(hx + 7, hy - 24 + bob, 3, 16);
+    c.globalAlpha = down ? Math.max(0, 1 - motion.deathAge / .65) : Math.min(1, motion.reviveAge / .65);
+    if (hs) c.drawImage(hs, hx - 16, hy - 48 + bob, 32, 48);
+    else for (const p of avatarPixels(s.race, s.equip, stride)) {
+      c.fillStyle = p.color; c.fillRect(Math.round(hx - 16 + p.x), Math.round(hy - 48 + bob) + p.y, 1, 1);
     }
     c.globalAlpha = 1;
 
     // pet
     const ps = s.pets.find(p => p.key === s.activePet);
     if (ps) {
-      const d = petOf(ps.key)!, st = stageOf(ps.lvl);
-      const px = 40 + this.petLunge * 20, py = 88, r = 5 + st * 1.5;
+      const st = stageOf(ps.lvl);
+      const px = 40 + (reduced ? 0 : this.petLunge * 20 + stride), py = 88;
       const img = sprite(`pet.${ps.key}.${st}`);
       if (img) c.drawImage(img, px - 12, py - 24, 24, 24);
-      else { c.fillStyle = d.stages[st].color; c.beginPath(); c.arc(px, py - r - Math.abs(Math.sin(this.t * 5)) * 3, r, 0, Math.PI * 2); c.fill(); }
+      else for (const p of pixels('pet-' + ps.key)) {
+        c.fillStyle = p.color;
+        const scale = st === 2 ? 2 : 1;
+        c.fillRect(Math.round(px - 8 * scale + p.x * scale), Math.round(py - 16 * scale - (reduced ? 0 : Math.round(Math.abs(Math.sin(this.t * 5)) * 3)) + p.y * scale), Math.ceil(scale), Math.ceil(scale));
+      }
     }
 
     // monster
     const m = g.mon;
     if (m) {
-      const alpha = m.hp > 0 ? 1 : Math.max(0, 1 - this.monFade);
-      this.monFade = Math.min(1, this.monFade + dt * 2);
+      const alpha = m.hp > 0 ? Math.min(1, motion.spawnAge / .2) : Math.max(0, 1 - motion.killAge / .25);
       c.globalAlpha = alpha;
-      const sz = 22 * m.def.size, mx = 245 - this.monLunge * 14, my = 88;
+      const sz = 22 * m.def.size, mx = 245 - (reduced ? 0 : this.monLunge * 14) + (reduced ? 0 : Math.max(0, 1 - motion.spawnAge / .3) * 20), my = 88;
       const img = sprite('mon.' + m.def.key);
       if (img) c.drawImage(img, mx - sz, my - sz * 2, sz * 2, sz * 2);
       else {
@@ -106,6 +121,33 @@ export class Scene {
         c.fillStyle = '#111'; c.fillRect(mx - sz / 4 - 2, my - sz * 0.7, 3, 3);
       }
       c.globalAlpha = 1;
+    }
+
+    // Death: body dissolves, soul rises, then returns before the engine revives.
+    if (down || motion.reviveAge < .8) {
+      const darkness = down ? Math.min(.78, motion.deathAge * .65) : .78 * Math.max(0, 1 - motion.reviveAge / .8);
+      c.globalAlpha = darkness; c.fillStyle = '#202332'; c.fillRect(0, 0, W, H); c.globalAlpha = 1;
+      if (down) {
+        const returning = g.downFor < 1;
+        const rise = reduced ? 0 : returning ? g.downFor * 27 : Math.min(27, motion.deathAge * 12);
+        const sy = Math.round(56 - rise), sx = Math.round(hx);
+        c.globalAlpha = Math.min(1, motion.deathAge * 2);
+        c.fillStyle = '#839da5'; c.fillRect(sx - 5, sy - 2, 10, 10); c.fillRect(sx - 3, sy - 4, 6, 2);
+        c.fillStyle = '#d9ded0'; c.fillRect(sx - 3, sy - 1, 6, 6); c.fillRect(sx - 2, sy - 3, 4, 2);
+        c.fillRect(sx - 3, sy + 5, 2, 3); c.fillRect(sx + 1, sy + 5, 2, 2);
+        c.fillStyle = '#536773'; c.fillRect(sx - 2, sy + 1, 1, 2); c.fillRect(sx + 1, sy + 1, 1, 2);
+        if (!reduced) for (let i = 0; i < 5; i++) {
+          c.globalAlpha = .45 * (1 - i / 5);
+          c.fillStyle = '#bcc5bd'; c.fillRect(sx + Math.round(Math.sin(this.t * 3 + i) * 7), sy + 11 + i * 3, 1, 2);
+        }
+        c.globalAlpha = 1;
+      } else {
+        // A contracting ring anchors the returned soul to the feet.
+        c.globalAlpha = Math.max(0, 1 - motion.reviveAge / .8);
+        const width = Math.round(34 * (1 - motion.reviveAge / .8));
+        c.fillStyle = '#bcc5bd'; c.fillRect(hx - width / 2, 89, width, 1);
+        c.globalAlpha = 1;
+      }
     }
 
     // floaters

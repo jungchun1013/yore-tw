@@ -14,7 +14,8 @@ import { TITLES } from '../data/titles';
 import { REBIRTH_AGE, YEAR_SEC, clearSave } from '../game/state';
 import { Scene } from './scene';
 import * as A from '../game/actions';
-import { icon, ICONS } from './icons';
+import { icon, pixelMarkup } from './icons';
+import { avatarMarkup } from './avatar';
 import { curseOf, giftOf, type PactDef } from '../data/pacts';
 import { SAN_TIERS, sanTier, willResist } from '../data/sanity';
 import { SAN_MAX } from '../game/state';
@@ -257,7 +258,7 @@ export class App {
     const s = this.g.s, p = s.pets.find(x => x.key === s.activePet);
     if (!p) return `<div class="kv"><span class="lbl">${t('pet')}</span></div><div class="kv"><span class="lbl">${t('lv')}</span></div><div class="kv"><span class="lbl">${t('exp')}</span><div class="line"></div></div>`;
     const d = petOf(p.key)!, st = stageOf(p.lvl);
-    return `<div class="kv"><span class="lbl">${t('pet')}</span><span class="petname">${tr(d.stages[st].name)}</span></div>
+    return `<div class="kv"><span class="lbl">${t('pet')}</span><span class="petname">${icon('pet-' + p.key, 'gi sm')}${tr(d.stages[st].name)}</span></div>
       <div class="kv"><span class="lbl">${t('lv')}</span><span>${p.lvl}</span></div>
       <div class="kv"><span class="lbl">${t('exp')}</span><div class="line"><div class="grey" style="width:${(p.xp / petXpNeed(p.lvl) * 100).toFixed(0)}%"></div></div></div>
       <div class="kv"><span class="lbl">${t('bond')}</span><span class="hearts">${hearts(p.bond)}</span></div>`;
@@ -299,7 +300,7 @@ export class App {
   private itemHtml(it: Item): string {
     const r = RARITY[it.rarity];
     const wt = it.weight ? `<span class="wt">${tr(WEIGHTS[it.weight].name)}</span>` : '';
-    return `<div class="iname" style="color:${r.color}">${wt}${tr(nameOf(it))}${it.plus ? ' +' + it.plus : ''}</div>`;
+    return `<div class="iname" style="color:${r.color}">${icon('slot-' + (it.kind === 'acc' ? 'acc1' : it.kind), 'gi sm item-icon')}${wt}${tr(nameOf(it))}${it.plus ? ' +' + it.plus : ''}</div>`;
   }
   private itemTip(it: Item): string {
     const r = RARITY[it.rarity];
@@ -324,12 +325,12 @@ export class App {
   /** BWE's paper doll: seven circles around a figure. */
   private dollSvg(): string {
     const s = this.g.s;
-    // [circle x, y, joint x, y] on a 200x260 board; the figure is game-icons' "person"
+    // [slot x, y, joint x, y] on a 200x260 board.
     const P: Record<Slot, [number, number, number, number]> = {
       head: [100, 18, 100, 44], weapon: [26, 96, 64, 118], body: [174, 86, 112, 96], hands: [178, 140, 136, 120],
       acc1: [24, 156, 90, 84], feet: [100, 242, 100, 214], acc2: [46, 218, 84, 150],
     };
-    const ico = (name: string, x: number, y: number, s: number) => `<svg x="${x - s / 2}" y="${y - s / 2}" width="${s}" height="${s}" viewBox="0 0 512 512"><path d="${ICONS[name]}"/></svg>`;
+    const ico = (name: string, x: number, y: number, s: number) => `<svg x="${x - s / 2}" y="${y - s / 2}" width="${s}" height="${s}" viewBox="0 0 16 16" shape-rendering="crispEdges">${pixelMarkup(name)}</svg>`;
     const lines = SLOTS.map(k => { const [x, y, tx, ty] = P[k]; return `<line x1="${x}" y1="${y}" x2="${tx}" y2="${ty}"/><circle class="joint" cx="${tx}" cy="${ty}" r="2.5"/>`; }).join('');
     const circles = SLOTS.map(k => {
       const [x, y] = P[k], it = s.equip[k], on = this.slot === k;
@@ -338,7 +339,7 @@ export class App {
         <circle cx="${x}" cy="${y}" r="17" style="${it && !on ? `fill:${ring}` : ''}"/>${ico('slot-' + k, x, y, 22)}${it && it.plus ? `<text class="plus" x="${x + 15}" y="${y + 18}">+${it.plus}</text>` : ''}</g>`;
     }).join('');
     return `<svg class="doll" viewBox="0 0 200 260">
-      <g class="fig">${ico('figure', 100, 128, 200)}</g>
+      <svg x="52" y="46" width="96" height="144" viewBox="0 0 32 48" shape-rendering="crispEdges" data-avatar="${s.race}">${avatarMarkup(s.race, s.equip)}</svg>
       <g class="links">${lines}</g>${circles}</svg>`;
   }
 
@@ -529,12 +530,12 @@ export class App {
   private settingsHtml(): string {
     return `<div class="row"><b>${t('language')}</b><button data-a="lang" data-k="zh" ${lang === 'zh' ? 'disabled' : ''}>中文</button><button data-a="lang" data-k="en" ${lang === 'en' ? 'disabled' : ''}>English</button></div>
       <p><button class="ghost" data-a="reset">${t('reset')}</button></p>
-      <p class="dim">${t('credits')}</p><p class="dim">Icons: Lorc, Delapouite, Skoll / game-icons.net (CC BY 3.0)</p>`;
+      <p class="dim">${t('credits')}</p><p class="dim">Original pixel artwork · Souls in Abyss</p>`;
   }
 }
 
-/** game-icons' "person", cropped to its body and scaled taller for older ages. */
-const figure = (h: number) => `<svg class="pict" viewBox="136 16 240 480" style="height:${h}px;width:${h / 2}px" aria-hidden="true"><path d="${ICONS.figure}"/></svg>`;
+/** Age preview uses the same pixel character as the equipment and battle views. */
+const figure = (h: number) => `<svg class="pict" viewBox="0 0 32 48" style="height:${h}px;width:${h / 2}px" shape-rendering="crispEdges" aria-hidden="true">${avatarMarkup('human')}</svg>`;
 
 /** Race icons (left), age figures (right), and a stat table below. Shared by creation and rebirth. */
 export function raceAgePicker(race: string, age: number, raceAction: string, ageAction: string): string {

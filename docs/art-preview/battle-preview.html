@@ -1,0 +1,979 @@
+<!doctype html><meta charset="utf-8"><title>Souls in Abyss · 戰鬥美術預覽</title><style>@font-face{font-family:Cubic;src:url('../../souls-in-abyss/src/assets/Cubic_11.woff2')}*{box-sizing:border-box}body{margin:0;padding:32px;background:#eeece3;color:#343842;font-family:Cubic,monospace}h1{font-size:28px;margin:0 0 10px}p{font-size:15px;color:#667681;margin:0 0 20px}#maps{display:grid;grid-template-columns:1fr 1fr;gap:20px}article{background:#f9f7f0;padding:12px}h2{font-size:18px;margin:0 0 10px;font-weight:normal}canvas{width:100%;display:block;image-rendering:pixelated}#demo{max-width:960px;margin:0 auto 16px}nav{display:flex;justify-content:center;gap:12px;align-items:center;margin-bottom:24px;flex-wrap:wrap}button,select{font:inherit;padding:8px;background:#d7dacc;color:#343842;border:1px solid #9da69b}#phase{display:block;text-align:center;margin:12px;font-size:18px}footer{margin-top:20px;font-size:13px;color:#667681}@media(max-width:700px){#maps{grid-template-columns:1fr}body{padding:16px}}</style><h1>SOULS IN ABYSS · 戰鬥美術預覽</h1><p>16×16 圖示 · 32×48 換裝角色 · 八張像素地景 · 下方動畫使用遊戲實際 Scene 繪製器，事件由示範流程觸發。</p><section id="motion"><div id="demo"></div><span id="phase"></span><nav><select aria-label="地圖"></select><button id="kill">擊敗並前進</button><button id="death">死亡與重生</button><button id="auto">自動示範</button></nav></section><div id="maps"></div><footer>交接入口：src/ui/landscape.ts（背景）· motion.ts（過場時序）· scene.ts（事件與繪製）· avatar.ts（換裝角色）</footer><script>(() => {
+  // souls-in-abyss/src/data/areas.ts
+  var m = (key, zh, en, hp, atk, def, spd, prt, color, size = 1) => ({ key, name: { zh, en }, hp, atk, def, spd, prt, color, size });
+  var AREAS = [
+    {
+      key: "meadow",
+      name: { zh: "\u555F\u7A0B\u8349\u539F", en: "Dawn Meadow" },
+      flavor: { zh: "\u8349\u539F\u4E2D\u592E\u6709\u4E00\u53E3\u4E95\uFF0C\u6C92\u6709\u4EBA\u6562\u5F80\u4E0B\u770B\u3002", en: "There is a well in the middle of the meadow. No one looks down it." },
+      min: 1,
+      max: 6,
+      dread: 0,
+      bg: "#5d8a4a",
+      mons: [m("slime", "\u53F2\u840A\u59C6", "Slime", 0.8, 0.8, 0.5, 1.1, 0, "#7fd1ae", 0.8), m("hornrabbit", "\u89D2\u5154", "Horned Hare", 0.7, 1, 0.6, 0.8, 0.08, "#e8dcc8", 0.7), m("walkshroom", "\u8D70\u8DEF\u83C7", "Walking Mushroom", 1.2, 0.9, 0.8, 1.2, 0, "#d46a5a", 0.9)]
+    },
+    {
+      key: "forest",
+      name: { zh: "\u4F4E\u8A9E\u68EE\u6797", en: "Whispering Wood" },
+      flavor: { zh: "\u6A39\u6839\u5168\u5F80\u540C\u4E00\u500B\u65B9\u5411\u9577\u2014\u2014\u5F80\u4E0B\u3002", en: "Every root grows the same way: down." },
+      min: 5,
+      max: 14,
+      dread: 0,
+      bg: "#2f5a3a",
+      mons: [m("wolf", "\u7070\u72FC", "Grey Wolf", 0.9, 1.1, 0.8, 0.8, 0.06, "#8a8f99"), m("goblin", "\u54E5\u5E03\u6797", "Goblin", 1, 1, 1, 1, 0.03, "#7aa04a"), m("treant", "\u5C0F\u6A39\u4EBA", "Sapling Treant", 1.6, 0.8, 1.4, 1.4, 0, "#6b4f2f", 1.2)]
+    },
+    {
+      key: "labyrinth",
+      name: { zh: "\u5730\u4E0B\u8FF7\u5BAE \u4E00\u5C64", en: "Labyrinth B1" },
+      flavor: { zh: "\u7246\u4E0A\u5BEB\u8457\uFF1A\u300C\u83DC\u55AE\u5728\u4E0B\u4E00\u5C64\u3002\u518D\u4E0B\u4E00\u5C64\u662F\u6DF1\u6DF5\u3002\u300D", en: 'Written on the wall: "The menu is one floor down. The Abyss is the floor after."' },
+      min: 12,
+      max: 24,
+      dread: 0.15,
+      bg: "#3a3550",
+      mons: [m("livingarmor", "\u52D5\u7532\u5191", "Living Armor", 1.3, 1, 2, 1.2, 0, "#9aa3b5", 1.1), m("scorpion", "\u5927\u880D", "Giant Scorpion", 1, 1.2, 1.2, 1, 0.04, "#b5683a"), m("mimic", "\u5BF6\u7BB1\u602A", "Mimic", 1.2, 1.3, 1.2, 1.3, 0, "#c99a3d")]
+    },
+    {
+      key: "mine",
+      name: { zh: "\u7194\u5CA9\u7926\u5751", en: "Ember Mine" },
+      flavor: { zh: "\u7926\u5DE5\u6316\u5F97\u592A\u6DF1\uFF0C\u807D\u898B\u4E0B\u9762\u4E5F\u6709\u4EBA\u5728\u5F80\u4E0A\u6316\u3002", en: "The miners dug too deep and heard someone digging up." },
+      min: 22,
+      max: 36,
+      dread: 0.25,
+      bg: "#5a2e22",
+      mons: [m("salamander", "\u706B\u8725\u8734", "Salamander", 1, 1.2, 1, 0.9, 0.05, "#e0562f"), m("rockturtle", "\u5CA9\u7532\u9F9C", "Rockshell Tortoise", 1.8, 0.8, 2.2, 1.5, 0, "#776b5d", 1.2), m("beetle", "\u9435\u7532\u87F2", "Ironback Beetle", 1.1, 1, 1.6, 1, 0.02, "#4b5563")]
+    },
+    {
+      key: "fen",
+      name: { zh: "\u9727\u4E4B\u6CBC", en: "Mistfen" },
+      flavor: { zh: "\u9727\u88E1\u7684\u9418\u8072\uFF0C\u662F\u5F9E\u6C34\u5E95\u50B3\u4E0A\u4F86\u7684\u3002", en: "The bell in the mist rings from under the water." },
+      min: 34,
+      max: 52,
+      dread: 0.4,
+      bg: "#3d5552",
+      mons: [m("basilisk", "\u5DF4\u897F\u5229\u65AF\u514B", "Basilisk", 1.3, 1.2, 1.2, 1.1, 0.03, "#6f8f4f", 1.1), m("wisp", "\u9B3C\u706B", "Will-o-wisp", 0.7, 1.4, 0.6, 0.7, 0.15, "#a0e8ff", 0.6), m("bogfrog", "\u6CBC\u5730\u5DE8\u86D9", "Bog Toad", 1.6, 1, 1, 1.2, 0.02, "#5b7a3a", 1.2)]
+    },
+    {
+      key: "ruins",
+      name: { zh: "\u5929\u7A7A\u907A\u8DE1", en: "Sky Ruins" },
+      flavor: { zh: "\u96F2\u4E0A\u7684\u57CE\u6C92\u6709\u5F71\u5B50\u3002\u5B83\u7684\u5F71\u5B50\u843D\u5728\u6DF1\u6DF5\u5E95\u3002", en: "The city above the clouds casts no shadow. Its shadow lies at the bottom of the Abyss." },
+      min: 50,
+      max: 72,
+      dread: 0.55,
+      bg: "#6f8fb5",
+      mons: [m("griffon", "\u7345\u9DF2", "Griffon", 1.1, 1.3, 1, 0.8, 0.08, "#d9b26f", 1.1), m("gargoyle", "\u77F3\u50CF\u9B3C", "Gargoyle", 1.3, 1.1, 1.8, 1.1, 0.02, "#8d8d8d"), m("golem", "\u5B88\u8B77\u9B54\u50CF", "Warden Golem", 2.2, 1.1, 2, 1.6, 0, "#a89a7c", 1.3)]
+    },
+    {
+      key: "nest",
+      name: { zh: "\u53E4\u9F8D\u4E4B\u5DE2", en: "Elder Nest" },
+      flavor: { zh: "\u53E4\u9F8D\u4E0D\u662F\u4F86\u9019\u88E1\u7B49\u6B7B\uFF0C\u662F\u4F86\u9019\u88E1\u5B88\u9580\u7684\u3002", en: "The elder dragons did not come here to die. They came to guard the gate." },
+      min: 70,
+      max: 96,
+      dread: 0.7,
+      bg: "#4a2f3a",
+      mons: [m("wyvern", "\u98DB\u9F8D", "Wyvern", 1.4, 1.3, 1.3, 1, 0.05, "#7d3c3c", 1.2), m("thunderwolf", "\u96F7\u72FC", "Thunder Wolf", 1.2, 1.5, 1.1, 0.8, 0.06, "#5f7fd9", 1.1), m("dragonkin", "\u9F8D\u4EBA", "Dragonkin", 1.5, 1.3, 1.5, 1, 0.03, "#3f7d5c", 1.1)]
+    },
+    {
+      key: "abyss",
+      name: { zh: "\u6DF1\u6DF5\u8FF4\u5ECA", en: "Abyssal Hall" },
+      flavor: { zh: "\u7246\u4E0A\u7684\u773C\u775B\u5728\u6578\u4F60\u8D70\u4E86\u5E7E\u6B65\u3002\u9019\u4E0D\u662F\u4F60\u7B2C\u4E00\u6B21\u4F86\u3002", en: "The eyes in the walls count your steps. This is not your first visit." },
+      min: 94,
+      max: 130,
+      dread: 1.2,
+      bg: "#1d1a2e",
+      mons: [m("deepone", "\u6DF1\u6F5B\u8005", "Deep One", 1.5, 1.4, 1.3, 1, 0.04, "#3e6b6b", 1.1), m("faceless", "\u7121\u8C8C\u8005", "Faceless", 1.2, 1.6, 1, 0.9, 0.1, "#2b2b2b"), m("starspawn", "\u661F\u4E4B\u843D\u5B50", "Star-fallen", 2.4, 1.5, 1.6, 1.4, 0, "#5a3d7a", 1.4)]
+    }
+  ];
+  var areaOf = (k) => AREAS.find((a) => a.key === k) || AREAS[0];
+
+  // souls-in-abyss/src/ui/icons.ts
+  var PALETTE = {
+    o: "#343842",
+    s: "#667681",
+    h: "#bcc5bd",
+    w: "#e3ddc9",
+    g: "#82947b",
+    G: "#53695e",
+    b: "#839da5",
+    p: "#9586a4",
+    P: "#625575",
+    y: "#c1a775",
+    r: "#b47f76",
+    t: "#ac917b",
+    d: "#725e53",
+    k: "#343842"
+  };
+  var patterns = {
+    human: "..oooo../.otttto./.twwwwt./.twkwkw./..tw wt../..gggg../.ggyygg./..g..g..",
+    elf: "..gggg../.gggggg./twwwwwt./.wkwkw../..www.../..GGG.../.GGyGG../..G.G...",
+    dwarf: "..ssss../.shhhhs./ssyyyyss/.twkwkt./.tddddt./..dddd../.ssyyss./..s..s..",
+    giant: "..oooo../.otttto./.twkwkt./..twwt../.GGGGGG./GGGyyGGG/.GGGGGG./.GG..GG.",
+    undead: "..oooo../.owwwwo./.wkkwkw./.wwwwww./..wkw.../.PPPPP../..P.P.../.PP.PP..",
+    str: "...ttt../..tttto./.ttwtto./.ttttto./tttttto./ttttto../.oooo.../........",
+    dex: "......g./.....gg./.g..gg../.gggg.../..ggg.../...gg.../..gg..../.gg.....",
+    int: ".oooooo./.wwohhwo/.wwowwwo/.wwowwwo/.wwowwwo/.wwowwwo/.oooooo./...oo...",
+    will: "...pp.../..pwwp../.pwb bwp./.pwwwwp./..pwwp../...pp.../...yy.../..yyyy..",
+    luk: ".gg..gg./gwwggwwg/gggggggg/.gggggg./..gggg../...gg.../...g..../..gg....",
+    equip: "..ssss../.shhhhs./sshhh hss/sshhhhss/.shhhhs./..shhs../...ss.../........",
+    pets: ".ww..ww./.ww..ww./..wwww../.wwwwww./.wkwkw../..wrw.../...w..../........",
+    skills: "...p..../...pp.../..pypp../.ppyypp./ppywyppp/.pyyyp../..ppp.../...p....",
+    map: ".oo..oo./owwoowwo/owwggwwo/owgggwwo/owwgwwwo/owwwgwwo/.oowwoo./...oo...",
+    smith: "...ss.../.ssssss./.hhhhhh./..ssss../...ss.../..ssss../.ssssss./........",
+    titles: ".y....y./.yy..yy./.yyyyyy./..yyyy../...yy.../..yyyy../.yyyyyy./........",
+    rebirth: "..pppp../.pp..pp./pp....p./p...pppp/p....pp./pp....../.pp..pp./..pppp..",
+    settings: "...ss.../.s.sss.s/.ssssss./sssoosss/sssoosss/.ssssss./.s.sss.s/...ss...",
+    "slot-head": "..ssss../.shhhhs./sshhh hss/sshhhhss/ssok koss/.s....s./........ /........",
+    "slot-weapon": "......hh/.....hwh/....hwh./...hwh../y.hwh.../.yyh..../..yd..../.dd.....",
+    "slot-body": ".ss..ss./shhss hhs/shhhhhhs/.shhhhs./.shyyhs./.shhhhs./.ssssss./........",
+    "slot-hands": ".ss..ss./.hs..hs./.hs..hs./shhss hhs/shhss hhs/.ss..ss./........ /........",
+    "slot-feet": "..ss.ss./..hs.hs./..hs.hs./..hs.hs./.hhss hhs/.hhss hhs/.ss..ss./........",
+    "slot-acc1": "...yy.../..ywwy../.yyyyyy./yy....yy/yy....yy/.yy..yy./..yyyy../........",
+    "slot-acc2": "..yyyy../..yppy../...pp.../..pwwp../.pwb bwp./..pwwp../...pp.../........",
+    "sk-smash": ".....rr./.s..rr../shsrr.../.shs..../..shs.../.rrshs../rr..s.../r.......",
+    "sk-counter": "..ss..../.shs..r./..shsrr./...ssr../..rrrr../...rrs../....shs./.....ss.",
+    "sk-firebolt": "....r.../..r.rr../..rryr../.rryyr../rrywyrr./rywwwyr./.ryyyr../..rrr...",
+    "sk-icebolt": "...b..../.b.b.b../..bb b.../bbbbbbbb/..bwb.../.bbbbb../b..b..b./...b....",
+    "sk-lightning": "....yy../...yy.../..yy..../.yyyyyy./....yy../...yy.../..yy..../..y.....",
+    "sk-mastery": ".y....y./..y..y../...ss.../..shhs../...ss.../..y..y../.y....y./........",
+    "sk-lightArms": "...h...h/..hw..hw/.hw..hw./hw..hw../yy..yy../d...d.../........ /........",
+    "sk-mediumArms": "......hh/.....hwh/....hwh./...hwh../..hwh.../.yyh..../..d...../.d......",
+    "sk-heavyArms": "..ssss../.shhss../shhhss../.shhss../..dd..../..dd..../..dd..../..dd....",
+    "sk-tough": ".ss..ss./shhss hhs/shhhhhhs/.shhhhs./.shhhhs./..shhs../...ss.../........",
+    "sk-meditation": "...pp.../..pwwp../...pp.../..pppp../.pppppp./...pp.../.pppppp./pppppppp",
+    "sk-fortune": "..yyyy../.ywwyyy./yywy yyy/yywyyyyy/yyyyyyyy/.yyyyyy./..yyyy../........",
+    "sk-insight": "...pp.../.ppwwpp./ppwkkwpp/pwwkkwwp/.ppwwpp./...pp.../...p..../........",
+    arrow: "...ss.../...ss.../...ss.../ss.s s.ss/.ssssss./..ssss../...ss.../........",
+    "pet-pudding": "..dddd../.dyyyyd./.yyyyyy./yywyyyyy/yykyykyy/yyyyyyyy/.yyyyyy./..yyyy..",
+    "pet-potcat": "..ssss../.shhhhs./ssssssss/.twttwt./.wkwkwt./..twwt../.tttttt./..t..t..",
+    "pet-mosskin": "....g.../..ggg.../.GGggG../GGggggGG/GgwggwgG/.GkkkkG./..GggG../..g..g..",
+    "pet-mimipup": ".d....d./.dddddd./dy yyyydd/dwwwwwwd/dwkwkwdd/dwwrrwwd/.dddddd./..d..d..",
+    "pet-ember": ".....rr./....ryr./..rrrr../.rwrrwr./.rkrrkr./..rrrrrr/.rr..rrr/rrr...r.",
+    "pet-griffy": "..y..y../.yyyyyy./.ywyywy./.ykyyky./..yyyy../whyyyyhw/.hhyyhh./..y..y..",
+    "pet-nameless": "..P..P../.PPPPPP./PPppppPP/PpwppwpP/PppppppP/.PPppPP./..P..P../.P....P.",
+    unknown: "..pppp../.pwwwpp./....wpp./...wpp../...pp.../......../...pp.../........",
+    "area-meadow": "......y./.g....../.gg..g../..g..gg./g.g.g.g./.gggggg./GGGGGGGG/.GGGGGG.",
+    "area-forest": "...g..../..ggg.../.ggggg../..GGG.../.GGGGG../GGGGGGG./...dd.../..dddd..",
+    "area-labyrinth": "ssssssss/swwwwwws/swssssws/swswwsws/swsswsws/swwwssws/sssswwws/ssssssss",
+    "area-mine": "..ssss../.sskkss./sskkkkss/skkyykks/skkykkks/skkkkkks/ddkkkkdd/dddddddd",
+    "area-fen": ".g....g./.gg...g./..g..gg./..g...g./bbbbbbbb/.bbGGbb./bbGGGGbb/.bbbbbb.",
+    "area-ruins": ".ss..ss./.hh..hh./.hhsshh./.hhhhhh./.hh..hh./.hh..hh./sshhhhss/ssssssss",
+    "area-nest": "......w./....www./.d..ww../..dddd../.dyyyy d./ddyyyydd/.dddddd./..dddd..",
+    "area-abyss": "..PPPP../.PppppP./PppPPppP/PpPwwPpP/PpPwwPpP/PppPPppP/.PppppP./..PPPP..",
+    star: "...yy.../...yy.../yyyyyyyy/.yyyyyy./..yyyy../.yyyyyy./.yy..yy./........",
+    heart: ".rr..rr./rrrrrrrr/rwrrrrrr/rrrrrrrr/.rrrrrr./..rrrr../...rr.../........",
+    hazard: "...yy.../..yyyy../..ykky../.yykkyy./.yykkyy./yyyyyyyy/yyykk yyy/........"
+  };
+  var shade = (color, amount) => "#" + [1, 3, 5].map((i) => Math.max(0, Math.min(255, parseInt(color.slice(i, i + 2), 16) + amount)).toString(16).padStart(2, "0")).join("");
+  var refined = /* @__PURE__ */ new Map();
+  function pixels(name) {
+    if (refined.has(name))
+      return refined.get(name);
+    const rows = (patterns[name] || patterns.unknown).split("/").map((row) => row.replace(/ /g, "").padEnd(8, "."));
+    const cells = /* @__PURE__ */ new Map();
+    const put = (x, y, color) => {
+      if (x >= 0 && x < 16 && y >= 0 && y < 16)
+        cells.set(`${x},${y}`, { x, y, color });
+    };
+    rows.forEach((row, y) => [...row].forEach((v, x) => {
+      const color = PALETTE[v];
+      if (!color)
+        return;
+      const top = rows[y - 1]?.[x] !== v, left = row[x - 1] !== v;
+      const bottom = rows[y + 1]?.[x] !== v, right = row[x + 1] !== v;
+      put(x * 2, y * 2, shade(color, top || left ? 17 : 0));
+      put(x * 2 + 1, y * 2, shade(color, top ? 12 : 0));
+      put(x * 2, y * 2 + 1, color);
+      put(x * 2 + 1, y * 2 + 1, shade(color, bottom || right ? -19 : -5));
+    }));
+    if (name.startsWith("pet-")) {
+      const eyes = {
+        pudding: [4, 10, 8],
+        potcat: [4, 8, 8],
+        mosskin: [4, 10, 8],
+        mimipup: [4, 8, 8],
+        ember: [4, 8, 8],
+        griffy: [4, 8, 6],
+        nameless: [4, 10, 6]
+      };
+      const face = eyes[name.slice(4)];
+      if (face) {
+        const [l, r, y] = face;
+        for (const x of [l, r]) {
+          put(x, y, PALETTE.o);
+          put(x, y + 1, PALETTE.o);
+          put(x + 1, y, PALETTE.w);
+        }
+        put(l + 2, y + 3, PALETTE.r);
+        put(l + 3, y + 3, PALETTE.d);
+      }
+      if (name === "pet-pudding") {
+        put(4, 5, PALETTE.w);
+        put(5, 5, PALETTE.w);
+        put(3, 6, PALETTE.w);
+      }
+      if (name === "pet-mimipup") {
+        put(7, 5, PALETTE.y);
+        put(7, 6, PALETTE.o);
+        put(7, 7, PALETTE.y);
+      }
+      if (name === "pet-mosskin") {
+        put(7, 2, PALETTE.y);
+        put(8, 3, PALETTE.g);
+      }
+    }
+    const result = [...cells.values()];
+    refined.set(name, result);
+    return result;
+  }
+  patterns["sk-defense"] = patterns.equip;
+
+  // souls-in-abyss/src/ui/avatar.ts
+  var metals = ["#83939a", "#82947b", "#839da5", "#c1ad83", "#b18c79", "#9586a4"];
+  function avatarPixels(race, equip = {}, stride = 0) {
+    const out = /* @__PURE__ */ new Map();
+    const rect = (x, y, w, h, color) => {
+      for (let yy = y; yy < y + h; yy++)
+        for (let xx = x; xx < x + w; xx++)
+          if (xx >= 0 && xx < 32 && yy >= 0 && yy < 48)
+            out.set(`${xx},${yy}`, { x: xx, y: yy, color });
+    };
+    const ink = PALETTE.o, skin = race === "undead" ? "#c7c4ae" : "#c8ad92";
+    const cloth = race === "elf" ? PALETTE.G : race === "undead" ? PALETTE.P : "#697b80";
+    const gear = (slot, x, y, w, h) => {
+      const it = equip[slot];
+      if (!it)
+        return;
+      const color = it.weight === "light" ? "#948572" : it.weight === "medium" ? "#788b81" : "#8899a0";
+      rect(x, y, w, h, ink);
+      rect(x + 1, y + 1, w - 2, h - 2, color);
+      rect(x + 1, y + 1, w - 3, 1, "#c2c8bc");
+      rect(x + w - 2, y + 2, 1, h - 3, "#59656a");
+      rect(x + 2, y + h - 3, w - 4, 1, metals[it.rarity]);
+      if (it.weight === "medium")
+        for (let yy = y + 3; yy < y + h - 3; yy += 3)
+          for (let xx = x + 2; xx < x + w - 2; xx += 3)
+            rect(xx + yy % 2, yy, 1, 1, "#a1afa2");
+      if (it.weight === "heavy") {
+        rect(x + 2, y + 3, 1, h - 6, "#c2c8bc");
+        rect(x + w - 4, y + 3, 1, 1, PALETTE.w);
+      }
+      if (it.plus > 0)
+        rect(x + 2, y + h - 2, 1, 1, PALETTE.y);
+    };
+    rect(9, 3, 13, 14, ink);
+    rect(10, 5, 11, 11, skin);
+    rect(10, 3, 11, 4, race === "elf" ? "#b6ac88" : "#625953");
+    rect(11, 4, 8, 1, race === "elf" ? "#d1c7a2" : "#897564");
+    rect(10, 7, 2, 3, "#625953");
+    rect(19, 7, 2, 2, "#625953");
+    if (race === "elf") {
+      rect(7, 9, 3, 2, skin);
+      rect(21, 9, 3, 2, skin);
+    }
+    rect(12, 10, 2, 3, ink);
+    rect(18, 10, 2, 3, ink);
+    rect(12, 10, 1, 1, PALETTE.w);
+    rect(18, 10, 1, 1, PALETTE.w);
+    rect(15, 13, 1, 1, "#aa8879");
+    rect(14, 15, 4, 1, "#ead0af");
+    if (race === "dwarf") {
+      rect(11, 13, 9, 6, "#827260");
+      rect(13, 15, 1, 3, "#b09b7b");
+      rect(17, 15, 1, 3, "#b09b7b");
+    }
+    rect(8, 18, 15, 17, ink);
+    rect(9, 19, 13, 15, cloth);
+    rect(10, 20, 2, 12, "#85958c");
+    rect(20, 21, 2, 12, "#4c5b60");
+    rect(4, 20, 4, 14, ink);
+    rect(5, 21, 2, 11, skin);
+    rect(23, 20, 4, 14, ink);
+    rect(24, 21, 2, 11, skin);
+    rect(9, 33, 13, 3, PALETTE.d);
+    rect(14, 33, 3, 2, PALETTE.y);
+    const step = Math.round(stride * 2);
+    for (const [x, offset] of [[9, step], [17, -step]]) {
+      rect(x, 36 + offset, 5, 9, ink);
+      rect(x + 1, 36 + offset, 3, 7, cloth);
+      rect(x - 1, 43 + offset, 6, 3, "#4b4848");
+      gear("feet", x - 1, 40 + offset, 6, 6);
+    }
+    gear("body", 8, 18, 15, 17);
+    if (equip.body) {
+      rect(14, 20, 2, 10, metals[equip.body.rarity]);
+      rect(9, 31, 13, 2, PALETTE.d);
+      rect(14, 31, 3, 2, PALETTE.y);
+    }
+    gear("hands", 3, 29, 6, 6);
+    gear("hands", 23, 29, 5, 6);
+    gear("head", 8, 2, 15, equip.head?.weight === "heavy" ? 7 : 6);
+    if (equip.head?.weight === "heavy") {
+      rect(8, 8, 3, 8, ink);
+      rect(21, 8, 2, 8, ink);
+      rect(9, 8, 1, 6, "#94a3a5");
+    }
+    if (equip.acc1) {
+      rect(14, 19, 1, 6, PALETTE.y);
+      rect(13, 24, 3, 3, metals[equip.acc1.rarity]);
+      rect(14, 24, 1, 1, PALETTE.w);
+    }
+    if (equip.acc2)
+      rect(4, 31, 2, 2, metals[equip.acc2.rarity]);
+    const weapon = equip.weapon;
+    if (weapon) {
+      const heavy = weapon.weight === "heavy", length = weapon.weight === "light" ? 12 : 22;
+      rect(28, 32 - length, 3, length, ink);
+      rect(28, 33 - length, 1, length - 2, "#d6d9c9");
+      rect(29, 33 - length, 1, length - 2, metals[weapon.rarity]);
+      if (heavy) {
+        rect(25, 32 - length, 7, 7, ink);
+        rect(26, 33 - length, 6, 5, "#a7b2ac");
+        rect(26, 33 - length, 1, 5, PALETTE.w);
+      }
+      rect(26, 31, 6, 2, PALETTE.y);
+      rect(28, 33, 2, 6, PALETTE.d);
+      rect(28, 38, 2, 1, PALETTE.y);
+      if (weapon.plus)
+        rect(28, 33 - length, 1, 3, PALETTE.w);
+    }
+    return [...out.values()];
+  }
+
+  // souls-in-abyss/src/data/pets.ts
+  var STAGE_LV = [0, 10, 30];
+  var PETS = [
+    {
+      key: "pudding",
+      home: "meadow",
+      chance: 1 / 120,
+      stages: [{ name: { zh: "\u5E03\u4E01\u53F2\u840A\u59C6", en: "Pudding Slime" }, color: "#f2d27a" }, { name: { zh: "\u7126\u7CD6\u53F2\u840A\u59C6", en: "Caramel Slime" }, color: "#d9963f" }, { name: { zh: "\u5E03\u4E01\u738B", en: "Pudding King" }, color: "#f0b33f" }],
+      ability: { zh: "\u66FF\u4F60\u64CB\u4E0B\u90E8\u5206\u50B7\u5BB3", en: "Soaks part of the damage you take" },
+      mods: (st, b) => [{ key: "guard", add: 0.05 + st * 0.05 + b * 0.01 }],
+      lore: { zh: "\u539F\u672C\u662F\u5192\u96AA\u8005\u6389\u5728\u8349\u539F\u4E0A\u7684\u9EDE\u5FC3\uFF0C\u5438\u6536\u4E86\u6668\u9732\u4E4B\u5F8C\u9192\u4E86\u904E\u4F86\u3002\u81F3\u4ECA\u4ECD\u7136\u5F88\u751C\u3002", en: "A snack a hero dropped in the meadow. It drank the dawn dew and woke up. Still sweet." },
+      quips: [{ zh: "\u5E03\u4E01\u53F2\u840A\u59C6\u6296\u4E86\u6296\u3002", en: "The slime wobbles." }, { zh: "\u5E03\u4E01\u53F2\u840A\u59C6\u5077\u5077\u628A\u6389\u4E0B\u4F86\u7684\u7126\u7CD6\u5403\u56DE\u53BB\u4E86\u3002", en: "The slime quietly re-absorbs its caramel." }]
+    },
+    {
+      key: "potcat",
+      home: "forest",
+      chance: 1 / 260,
+      stages: [{ name: { zh: "\u934B\u76D4\u8C93", en: "Pot-helm Cat" }, color: "#c7c7c7" }, { name: { zh: "\u5EDA\u5E2B\u934B\u76D4\u8C93", en: "Chef Cat" }, color: "#e8e8e8" }, { name: { zh: "\u4F19\u623F\u5927\u8C93\u5C07", en: "Grand Mess Cat" }, color: "#ffffff" }],
+      ability: { zh: "\u6230\u9B25\u4E2D\u505A\u98EF\uFF0C\u66FF\u4F60\u56DE\u8840", en: "Cooks mid-fight and heals you" },
+      mods: (st, b) => [{ key: "petHeal", add: 0.02 + st * 0.015 + b * 3e-3 }],
+      lore: { zh: "\u982D\u4E0A\u90A3\u53E3\u934B\u5F9E\u4E0D\u62FF\u4E0B\u4F86\u3002\u7260\u8AAA\u7B49\u627E\u5230\u6700\u597D\u5403\u7684\u9B54\u7269\uFF0C\u5C31\u8981\u7528\u9019\u53E3\u934B\u716E\u3002", en: "Never takes off the pot. Says it is saving it for the tastiest monster in the world." },
+      quips: [{ zh: "\u934B\u76D4\u8C93\u76EF\u8457\u5C0D\u624B\uFF0C\u4F3C\u4E4E\u5728\u60F3\u8981\u600E\u9EBC\u6599\u7406\u3002", en: "The cat eyes the monster like an ingredient." }, { zh: "\u934B\u76D4\u8C93\uFF1A\u300C\u9019\u500B\u8981\u5148\u53BB\u6BD2\u3002\u300D", en: 'Cat: "This one needs de-venoming first."' }]
+    },
+    {
+      key: "mosskin",
+      home: "forest",
+      chance: 1 / 300,
+      stages: [{ name: { zh: "\u82D4\u7403\u7CBE", en: "Mossling" }, color: "#7cbf5a" }, { name: { zh: "\u8449\u7B1B\u7CBE", en: "Leafpiper" }, color: "#5ea63f" }, { name: { zh: "\u68EE\u4E4B\u8001\u723A", en: "Old Grove" }, color: "#3f8a2f" }],
+      ability: { zh: "\u627E\u5230\u66F4\u591A\u5BF6\u7269", en: "Finds more treasure" },
+      mods: (st, b) => [{ key: "drop", mul: 0.1 + st * 0.1 + b * 0.03 }, { key: "gold", mul: 0.05 + b * 0.01 }],
+      lore: { zh: "\u8EB2\u5728\u77F3\u982D\u5E95\u4E0B\uFF0C\u88AB\u7FFB\u51FA\u4F86\u6642\u6703\u5927\u558A\u4E00\u8072\u7136\u5F8C\u9001\u4F60\u4E00\u9846\u7A2E\u5B50\u3002\u7A2E\u5B50\u6709\u4EC0\u9EBC\u7528\uFF1F\u7260\u4E5F\u4E0D\u77E5\u9053\u3002", en: "Hides under rocks. When found, it shouts and hands you a seed. What is the seed for? It does not know either." },
+      quips: [{ zh: "\u82D4\u7403\u7CBE\uFF1A\u300C\u5440\u54C8\u54C8\uFF01\u300D", en: 'Mossling: "Ya-ha-ha!"' }, { zh: "\u82D4\u7403\u7CBE\u53C8\u585E\u7D66\u4F60\u4E00\u9846\u7A2E\u5B50\u3002", en: "The mossling hands you another seed." }]
+    },
+    {
+      key: "mimipup",
+      home: "labyrinth",
+      chance: 1 / 320,
+      stages: [{ name: { zh: "\u5BF6\u7BB1\u6C6A", en: "Mimic Pup" }, color: "#c99a3d" }, { name: { zh: "\u91D1\u6263\u5BF6\u7BB1\u6C6A", en: "Gilded Pup" }, color: "#e6b84a" }, { name: { zh: "\u570B\u5EAB\u72AC", en: "Treasury Hound" }, color: "#ffd166" }],
+      ability: { zh: "\u91D1\u5E63\u5927\u5E45\u589E\u52A0", en: "Much more gold" },
+      mods: (st, b) => [{ key: "gold", mul: 0.2 + st * 0.2 + b * 0.04 }],
+      lore: { zh: "\u5BF6\u7BB1\u602A\u7684\u5E7C\u9AD4\uFF0C\u9084\u4E0D\u6703\u5047\u88DD\u6210\u5BF6\u7BB1\uFF0C\u53EA\u6703\u5047\u88DD\u6210\u5C0F\u72D7\u3002\u5F88\u6210\u529F\u3002", en: "A baby mimic. It cannot pass as a chest yet, only as a puppy. It works." },
+      quips: [{ zh: "\u5BF6\u7BB1\u6C6A\u628A\u4E00\u679A\u91D1\u5E63\u5410\u5728\u4F60\u8173\u908A\u3002", en: "The pup spits a coin at your feet." }]
+    },
+    {
+      key: "ember",
+      home: "mine",
+      chance: 1 / 360,
+      stages: [{ name: { zh: "\u706B\u8725\u5BF6\u5BF6", en: "Ember Newt" }, color: "#ff7a3d" }, { name: { zh: "\u708E\u9C57\u9F8D", en: "Flamescale" }, color: "#ff5a2a" }, { name: { zh: "\u7210\u5FC3\u9F8D", en: "Hearthcore Drake" }, color: "#ffb02e" }],
+      ability: { zh: "\u81EA\u5DF1\u4E5F\u6703\u5674\u706B\uFF0C\u5925\u4F34\u50B7\u5BB3\u5927\u589E", en: "Breathes fire: big pal damage" },
+      mods: (st, b) => [{ key: "petPower", mul: 0.6 + st * 0.5 + b * 0.08 }],
+      lore: { zh: "\u5728\u7926\u5DE5\u7684\u4FBF\u7576\u76D2\u88E1\u5B75\u5316\uFF0C\u6240\u4EE5\u5C0D\u70B8\u8C6C\u6392\u7279\u5225\u6709\u597D\u611F\u3002", en: "Hatched inside a miner's lunchbox, so it is fond of fried cutlets." },
+      quips: [{ zh: "\u706B\u8725\u5BF6\u5BF6\u6253\u4E86\u4E00\u500B\u5C0F\u5C0F\u7684\u5674\u568F\uFF0C\u8349\u71D2\u8D77\u4F86\u4E86\u3002", en: "The newt sneezes. The grass catches fire." }]
+    },
+    {
+      key: "griffy",
+      home: "ruins",
+      chance: 1 / 400,
+      stages: [{ name: { zh: "\u7345\u9DF2\u96DB", en: "Griffon Chick" }, color: "#e3c27f" }, { name: { zh: "\u98A8\u7FFC\u7345\u9DF2", en: "Windwing" }, color: "#d9a94f" }, { name: { zh: "\u5929\u7A7A\u4E4B\u738B", en: "Sky Sovereign" }, color: "#ffe08a" }],
+      ability: { zh: "\u5E36\u8D77\u9806\u98A8\uFF0C\u653B\u64CA\u901F\u5EA6\u63D0\u5347", en: "Tailwind: faster attacks" },
+      mods: (st, b) => [{ key: "speed", mul: 0.06 + st * 0.05 + b * 0.012 }, { key: "bal", add: 0.02 + st * 0.01 }],
+      lore: { zh: "\u5F9E\u907A\u8DE1\u7684\u5DE2\u88E1\u6389\u4E0B\u4F86\uFF0C\u4F60\u63A5\u4F4F\u4E86\u7260\u3002\u7260\u8A8D\u5B9A\u4F60\u662F\u5ABD\u5ABD\u3002", en: "Fell out of a ruin nest and you caught it. It decided you are its mother." },
+      quips: [{ zh: "\u7345\u9DF2\u96DB\u8A66\u8457\u98DB\uFF0C\u5931\u6557\uFF0C\u5750\u5728\u4F60\u982D\u4E0A\u3002", en: "The chick tries to fly, fails, sits on your head." }]
+    },
+    {
+      key: "nameless",
+      home: "abyss",
+      chance: 1 / 2500,
+      needRebirths: 1,
+      hidden: true,
+      stages: [{ name: { zh: "\u7121\u540D\u4E4B\u4ED4", en: "The Nameless" }, color: "#4b3a6b" }, { name: { zh: "\u7121\u540D\u4E4B\u4ED4", en: "The Nameless" }, color: "#5a3d8a" }, { name: { zh: "\u7121\u540D\u4E4B\u4ED4", en: "The Nameless" }, color: "#7a4dbf" }],
+      ability: { zh: "\u6BCF\u8F49\u751F\u4E00\u6B21\uFF0C\u5C31\u66F4\u8A18\u5F97\u4F60", en: "Remembers you a little more each rebirth" },
+      mods: (st, b, rb) => {
+        const x = 0.02 * rb * (1 + st * 0.5) * (1 + b * 0.05);
+        return ["str", "dex", "int", "will", "luk"].map((k) => ({ key: k, mul: x }));
+      },
+      lore: { zh: "\u7260\u6C92\u6709\u540D\u5B57\uFF0C\u4F46\u7260\u77E5\u9053\u4F60\u7684\u3002\u7260\u8AAA\u4F60\u4E0A\u4E00\u6B21\u4E5F\u9078\u4E86\u9019\u689D\u8DEF\u3002", en: "It has no name, but it knows yours. It says you took this road last time, too." },
+      quips: [{ zh: "\u7121\u540D\u4E4B\u4ED4\u770B\u8457\u4F60\uFF0C\u50CF\u5728\u6838\u5C0D\u4EC0\u9EBC\u3002", en: "The Nameless watches you, as if checking a list." }, { zh: "\u2026\u2026\u4F60\u525B\u624D\u597D\u50CF\u807D\u898B\u7FFB\u9801\u7684\u8072\u97F3\u3002", en: "...You think you heard a page turn." }]
+    }
+  ];
+  var stageOf = (lvl) => lvl >= STAGE_LV[2] ? 2 : lvl >= STAGE_LV[1] ? 1 : 0;
+
+  // souls-in-abyss/src/ui/sprites.ts
+  var ART = {
+    // 'hero.human': './sprites/hero.human.png',
+  };
+  var cache = {};
+  function sprite(key) {
+    const url = ART[key];
+    if (!url)
+      return null;
+    if (!cache[key]) {
+      const im = new Image();
+      im.src = url;
+      cache[key] = im;
+    }
+    return cache[key].complete && cache[key].naturalWidth ? cache[key] : null;
+  }
+
+  // souls-in-abyss/src/core/i18n.ts
+  var KEY = "yore.lang";
+  function detect() {
+    try {
+      const s = localStorage.getItem(KEY);
+      if (s === "zh" || s === "en")
+        return s;
+    } catch (e) {
+    }
+    if (typeof navigator !== "undefined" && (navigator.language || "").toLowerCase().startsWith("zh"))
+      return "zh";
+    return "en";
+  }
+  var lang = typeof window === "undefined" ? "zh" : detect();
+
+  // souls-in-abyss/src/core/fmt.ts
+  function num(n) {
+    const a = Math.abs(n);
+    if (a < 1e4)
+      return String(Math.floor(n));
+    if (lang === "zh") {
+      const u2 = [[1e16, "\u4EAC"], [1e12, "\u5146"], [1e8, "\u5104"], [1e4, "\u842C"]];
+      for (const [v, s] of u2)
+        if (a >= v)
+          return (n / v).toFixed(n / v < 100 ? 2 : 0).replace(/\.?0+$/, "") + s;
+    }
+    const u = [[1e12, "T"], [1e9, "B"], [1e6, "M"], [1e3, "K"]];
+    for (const [v, s] of u)
+      if (a >= v)
+        return (n / v).toFixed(n / v < 100 ? 2 : 0).replace(/\.?0+$/, "") + s;
+    return String(Math.floor(n));
+  }
+
+  // souls-in-abyss/src/ui/landscape.ts
+  var themes = {
+    meadow: ["#b5bfae", "#939f91", "#758575", "#526856", "#70785e", "#a0a081"],
+    forest: ["#657d78", "#536b66", "#405a51", "#2e443e", "#4c5c48", "#7a8a66"],
+    labyrinth: ["#41414e", "#4c4b58", "#595866", "#313440", "#575460", "#93877a"],
+    mine: ["#483e42", "#65524d", "#7d6556", "#39373b", "#65584f", "#b1846b"],
+    fen: ["#8b9e99", "#708c86", "#56746e", "#3b5752", "#66766a", "#a7b4a0"],
+    ruins: ["#b6c3bd", "#9eafa9", "#839c97", "#5c7674", "#9ca795", "#dbd8bb"],
+    nest: ["#897f89", "#716876", "#605666", "#403c4a", "#756460", "#b8a389"],
+    abyss: ["#252936", "#353448", "#4a425b", "#202a34", "#414151", "#8c829f"]
+  };
+  var LANDSCAPE_KEYS = Object.keys(themes);
+  function drawLandscape(c, key, offset, time = 0) {
+    const [sky, far, mid, dark, ground, light] = themes[key] || themes.meadow;
+    const r = (x, y, w, h, color) => {
+      c.fillStyle = color;
+      c.fillRect(Math.round(x), Math.round(y), w, h);
+    };
+    const poly = (points, color) => {
+      const min = Math.min(...points.map((p) => p[1])), max = Math.max(...points.map((p) => p[1]));
+      for (let y = min; y < max; y += 2) {
+        const hits = [];
+        points.forEach(([ax, ay], i) => {
+          const [bx, by] = points[(i + 1) % points.length];
+          if (ay <= y && by > y || by <= y && ay > y)
+            hits.push(ax + (y - ay) * (bx - ax) / (by - ay));
+        });
+        hits.sort((a, b) => a - b);
+        for (let i = 0; i + 1 < hits.length; i += 2) {
+          const x = Math.floor(hits[i] / 2) * 2;
+          r(x, y, Math.max(2, Math.ceil(hits[i + 1] / 2) * 2 - x), Math.min(2, max - y), color);
+        }
+      }
+    };
+    r(0, 0, 320, 120, sky);
+    const tile = (speed, width, paint) => {
+      const start = Math.floor(offset * speed / width);
+      for (let i = -1; i < Math.ceil(320 / width) + 1; i++)
+        paint(i * width - offset * speed % width, start + i);
+    };
+    if (["labyrinth", "mine", "abyss"].includes(key)) {
+      tile(0.15, 64, (x) => {
+        r(x, 0, 62, 88, far);
+        for (let y = 4; y < 88; y += 13) {
+          r(x, y, 62, 1, sky);
+          r(x + (y % 2 ? 14 : 38), y, 1, 13, sky);
+        }
+        r(x + 13, 26, 36, 54, sky);
+        r(x + 17, 20, 28, 6, sky);
+        r(x + 23, 16, 16, 4, sky);
+        r(x + 8, 18, 4, 64, mid);
+        r(x + 50, 18, 4, 64, mid);
+      });
+      if (key === "mine")
+        tile(0.38, 104, (x) => {
+          poly([[x, 0], [x + 13, 0], [x + 9, 20], [x + 6, 32], [x + 3, 12]], dark);
+          r(x + 36, 22, 6, 63, dark);
+          r(x + 75, 22, 6, 63, dark);
+          r(x + 32, 20, 53, 6, ground);
+          r(x + 51, 63, 4, 12, "#9d8c9a");
+          r(x + 55, 59, 3, 16, "#beb4bb");
+          r(x + 58, 68, 5, 7, "#77758c");
+        });
+      if (key === "labyrinth")
+        tile(0.38, 120, (x) => {
+          r(x + 24, 32, 3, 19, dark);
+          r(x + 22, 32, 7, 3, light);
+          r(x + 24, 25, 4, 8, "#b59479");
+          r(x + 25, 23 + Math.floor(Math.sin(time * 7)), 2, 6, "#d3b996");
+          r(x + 70, 76, 21, 10, mid);
+          r(x + 75, 73, 11, 3, mid);
+        });
+      if (key === "abyss")
+        tile(0.35, 120, (x) => {
+          r(x + 20, 0, 12, 86, dark);
+          r(x + 17, 6, 18, 5, mid);
+          r(x + 17, 76, 18, 7, mid);
+          r(x + 64, 43, 20, 6, mid);
+          r(x + 68, 40, 12, 12, mid);
+          r(x + 68, 44, 12, 4, light);
+          r(x + 73, 42, 3, 8, dark);
+          for (let n = 0; n < 4; n++)
+            r(x + 90 + n * 3, 12 + n * 16, 1, 1, light);
+        });
+    } else {
+      tile(0.08, 180, (x) => {
+        r(x + 14, 15, 51, 5, light);
+        r(x + 25, 11, 26, 4, light);
+      });
+      tile(0.15, 128, (x, i) => {
+        const peak = 26 + (i % 3 + 3) % 3 * 7;
+        poly([[x - 20, 87], [x + 20, peak + 16], [x + 28, peak + 16], [x + 44, peak], [x + 57, peak + 20], [x + 68, peak + 20], [x + 128, 87]], far);
+        poly([[x + 44, peak], [x + 58, peak + 26], [x + 47, peak + 22], [x + 39, peak + 29]], mid);
+      });
+      if (key === "meadow")
+        tile(0.35, 128, (x) => {
+          poly([[x - 15, 87], [x + 10, 65], [x + 34, 65], [x + 55, 57], [x + 76, 63], [x + 100, 63], [x + 140, 87]], mid);
+          r(x + 83, 61, 4, 23, dark);
+          r(x + 72, 54, 26, 11, dark);
+          r(x + 77, 49, 16, 5, dark);
+          r(x + 17, 77, 18, 9, ground);
+          r(x + 15, 76, 22, 3, light);
+          r(x + 22, 68, 2, 8, dark);
+          r(x + 30, 68, 2, 8, dark);
+          r(x + 20, 66, 14, 2, dark);
+        });
+      if (key === "forest" || key === "fen")
+        tile(0.4, 76, (x, i) => {
+          const h = 40 + Math.abs(i) % 3 * 7;
+          r(x + 32, 85 - h, 8, h, dark);
+          r(x + 34, 84 - h, 2, h, mid);
+          if (key === "forest") {
+            for (let n = 0; n < 3; n++) {
+              r(x + 9 + n * 3, 17 + n * 10, 54 - n * 5, 12, dark);
+              r(x + 16 + n * 3, 14 + n * 10, 36 - n * 4, 4, mid);
+            }
+            r(x + 27, 79, 18, 5, dark);
+            r(x + 15, 81, 45, 4, dark);
+          } else {
+            r(x + 23, 31, 33, 4, dark);
+            r(x + 26, 29, 3, 20, mid);
+            r(x + 50, 34, 2, 18, mid);
+          }
+        });
+      if (key === "ruins")
+        tile(0.4, 104, (x) => {
+          r(x + 15, 36, 12, 48, mid);
+          r(x + 16, 37, 3, 46, light);
+          r(x + 11, 31, 20, 6, light);
+          r(x + 11, 80, 20, 5, light);
+          r(x + 61, 47, 13, 37, mid);
+          r(x + 62, 48, 3, 34, light);
+          r(x + 58, 42, 19, 6, light);
+          r(x + 26, 33, 36, 5, mid);
+          r(x + 32, 30, 23, 3, light);
+          r(x + 68, 55, 3, 12, ground);
+        });
+      if (key === "nest")
+        tile(0.4, 118, (x) => {
+          poly([[x, 88], [x + 17, 40], [x + 25, 31], [x + 33, 65], [x + 48, 88]], dark);
+          poly([[x + 20, 88], [x + 51, 61], [x + 70, 57], [x + 92, 88]], mid);
+          r(x + 73, 79, 31, 5, light);
+          r(x + 79, 75, 22, 4, light);
+          r(x + 87, 70, 7, 10, light);
+          r(x + 83, 82, 4, 4, dark);
+          r(x + 98, 81, 4, 4, dark);
+        });
+    }
+    r(0, 88, 320, 32, ground);
+    r(0, 88, 320, 2, dark);
+    tile(1, 48, (x, i) => {
+      r(x + 4, 94 + Math.abs(i % 3) * 3, 11, 1, light);
+      r(x + 27, 108, 7, 2, dark);
+      r(x + 31, 107, 3, 1, light);
+      if (["meadow", "forest", "fen"].includes(key)) {
+        r(x + 19, 85, 1, 5, dark);
+        r(x + 17, 87, 5, 2, dark);
+        r(x + 20, 83, 1, 2, light);
+      } else {
+        r(x + 18, 91, 1, 14, dark);
+        r(x + 18, 105, 12, 1, dark);
+      }
+      if (key === "mine") {
+        r(x + 5, 116, 23, 2, "#b1846b");
+        r(x + 12, 117, 17, 1, "#dac09b");
+      }
+      if (key === "fen") {
+        r(x + 7, 98, 28, 2, "#809b95");
+        r(x + 12, 102, 16, 1, "#a4b6ad");
+      }
+    });
+    if (key === "fen") {
+      c.globalAlpha = 0.14;
+      tile(0.1, 140, (x) => {
+        r(x, 64, 95, 5, light);
+        r(x + 24, 75, 110, 3, light);
+      });
+      c.globalAlpha = 1;
+    }
+  }
+
+  // souls-in-abyss/src/ui/motion.ts
+  var BattleMotion = class {
+    constructor() {
+      this.travel = 0;
+      this.killAge = Infinity;
+      this.spawnAge = 1;
+      this.deathAge = 0;
+      this.reviveAge = 1;
+      this.wasDown = false;
+      this.phase = "fight";
+    }
+    kill() {
+      this.killAge = 0;
+    }
+    spawn() {
+      this.spawnAge = 0;
+    }
+    death() {
+      this.deathAge = 0;
+      this.killAge = Infinity;
+      this.wasDown = true;
+    }
+    update(dt, downFor) {
+      dt = Math.max(0, Math.min(dt, 0.1));
+      this.spawnAge += dt;
+      this.reviveAge += dt;
+      if (downFor > 0) {
+        if (!this.wasDown)
+          this.death();
+        this.deathAge += dt;
+        this.phase = this.deathAge < 0.7 ? "death" : "soul";
+      } else if (this.wasDown) {
+        this.wasDown = false;
+        this.reviveAge = 0;
+        this.deathAge = 0;
+        this.phase = "rebirth";
+      } else if (this.reviveAge < 0.8)
+        this.phase = "rebirth";
+      else {
+        const previous = this.killAge;
+        this.killAge += dt;
+        const moving = Math.max(0, Math.min(0.6, this.killAge) - Math.max(0.12, Math.min(0.6, previous)));
+        this.travel += moving * 75;
+        this.phase = this.killAge < 0.6 ? "advance" : "fight";
+      }
+    }
+  };
+
+  // souls-in-abyss/src/ui/scene.ts
+  var W = 320;
+  var H = 120;
+  var S = 2;
+  var Scene = class {
+    constructor(g2) {
+      this.g = g2;
+      this.floats = [];
+      this.heroLunge = 0;
+      this.monLunge = 0;
+      this.petLunge = 0;
+      this.monFlash = 0;
+      this.t = 0;
+      this.motion = new BattleMotion();
+      this.reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      this.cv = document.createElement("canvas");
+      this.cv.width = W * S;
+      this.cv.height = H * S;
+      this.cv.className = "scene";
+      this.cv.setAttribute("role", "img");
+      this.cv.setAttribute("aria-label", "Pixel battle landscape");
+      this.ctx = this.cv.getContext("2d");
+      this.ctx.imageSmoothingEnabled = false;
+      g2.on((e) => this.onEvent(e));
+    }
+    onEvent(e) {
+      if (e.t === "hit") {
+        if (e.from === "mon") {
+          this.monLunge = 1;
+          this.float(78, 52, e.blocked && !e.dmg ? "BLOCK" : num(e.dmg), e.blocked ? "#9fb3c8" : "#ff6b6b");
+        } else {
+          if (e.from === "hero")
+            this.heroLunge = 1;
+          else
+            this.petLunge = 1;
+          this.monFlash = 1;
+          const col = e.skill === "firebolt" ? "#ff9f43" : e.skill === "icebolt" ? "#8fd3ff" : e.skill === "lightning" ? "#fff27a" : e.crit ? "#ffd166" : e.from === "pet" ? "#b8f2a0" : "#ffffff";
+          this.float(238 + (e.from === "pet" ? -10 : 0), 46, num(e.dmg) + (e.crit ? "!" : ""), col);
+        }
+      } else if (e.t === "heal")
+        this.float(70, 40, "+" + num(e.amt), "#7ee081");
+      else if (e.t === "kill")
+        this.motion.kill();
+      else if (e.t === "spawn")
+        this.motion.spawn();
+      else if (e.t === "death")
+        this.motion.death();
+      else if (e.t === "level")
+        this.float(70, 30, "LEVEL UP", "#ffd166");
+    }
+    float(x, y, text, color) {
+      this.floats.push({ x: x + (Math.random() * 10 - 5), y, text, color, age: 0 });
+      if (this.floats.length > 24)
+        this.floats.shift();
+    }
+    draw(dt) {
+      const c = this.ctx, g2 = this.g, s = g2.s;
+      dt = Math.max(0, Math.min(dt, 0.1));
+      this.t += dt;
+      this.motion.update(dt, g2.downFor);
+      const motion = this.motion, reduced = this.reducedMotion;
+      this.cv.dataset.phase = motion.phase;
+      this.cv.dataset.travel = motion.travel.toFixed(2);
+      this.cv.dataset.area = s.area;
+      const decay = (v) => Math.max(0, v - dt * 5);
+      this.heroLunge = decay(this.heroLunge);
+      this.monLunge = decay(this.monLunge);
+      this.petLunge = decay(this.petLunge);
+      this.monFlash = decay(this.monFlash);
+      c.setTransform(S, 0, 0, S, 0, 0);
+      const area = areaOf(s.area);
+      const bg = sprite("bg." + area.key);
+      if (bg)
+        c.drawImage(bg, 0, 0, W, H);
+      else
+        drawLandscape(c, area.key, reduced ? 0 : motion.travel, this.t);
+      const walking = motion.phase === "advance" && motion.killAge > 0.12;
+      const stride = walking && !reduced ? Math.sin(motion.killAge * 36) : 0;
+      const bob = reduced ? 0 : Math.round(Math.sin(this.t * 4));
+      const down = g2.downFor > 0;
+      const hx = 70 + (reduced ? 0 : this.heroLunge * 14 + stride * 2), hy = 88;
+      c.fillStyle = "#30383c";
+      c.globalAlpha = 0.25;
+      c.fillRect(hx - 12, hy - 1, 26, 3);
+      c.globalAlpha = 1;
+      const hs = sprite("hero." + s.race);
+      c.globalAlpha = down ? Math.max(0, 1 - motion.deathAge / 0.65) : Math.min(1, motion.reviveAge / 0.65);
+      if (hs)
+        c.drawImage(hs, hx - 16, hy - 48 + bob, 32, 48);
+      else
+        for (const p of avatarPixels(s.race, s.equip, stride)) {
+          c.fillStyle = p.color;
+          c.fillRect(Math.round(hx - 16 + p.x), Math.round(hy - 48 + bob) + p.y, 1, 1);
+        }
+      c.globalAlpha = 1;
+      const ps = s.pets.find((p) => p.key === s.activePet);
+      if (ps) {
+        const st = stageOf(ps.lvl);
+        const px = 40 + (reduced ? 0 : this.petLunge * 20 + stride), py = 88;
+        const img = sprite(`pet.${ps.key}.${st}`);
+        if (img)
+          c.drawImage(img, px - 12, py - 24, 24, 24);
+        else
+          for (const p of pixels("pet-" + ps.key)) {
+            c.fillStyle = p.color;
+            const scale = st === 2 ? 2 : 1;
+            c.fillRect(Math.round(px - 8 * scale + p.x * scale), Math.round(py - 16 * scale - (reduced ? 0 : Math.round(Math.abs(Math.sin(this.t * 5)) * 3)) + p.y * scale), Math.ceil(scale), Math.ceil(scale));
+          }
+      }
+      const m2 = g2.mon;
+      if (m2) {
+        const alpha = m2.hp > 0 ? Math.min(1, motion.spawnAge / 0.2) : Math.max(0, 1 - motion.killAge / 0.25);
+        c.globalAlpha = alpha;
+        const sz = 22 * m2.def.size, mx = 245 - (reduced ? 0 : this.monLunge * 14) + (reduced ? 0 : Math.max(0, 1 - motion.spawnAge / 0.3) * 20), my = 88;
+        const img = sprite("mon." + m2.def.key);
+        if (img)
+          c.drawImage(img, mx - sz, my - sz * 2, sz * 2, sz * 2);
+        else {
+          c.fillStyle = this.monFlash > 0.5 ? "#ffffff" : m2.def.color;
+          c.fillRect(mx - sz / 2, my - sz + bob * 0.5, sz, sz);
+          c.fillStyle = "#111";
+          c.fillRect(mx - sz / 4 - 2, my - sz * 0.7, 3, 3);
+        }
+        c.globalAlpha = 1;
+      }
+      if (down || motion.reviveAge < 0.8) {
+        const darkness = down ? Math.min(0.78, motion.deathAge * 0.65) : 0.78 * Math.max(0, 1 - motion.reviveAge / 0.8);
+        c.globalAlpha = darkness;
+        c.fillStyle = "#202332";
+        c.fillRect(0, 0, W, H);
+        c.globalAlpha = 1;
+        if (down) {
+          const returning = g2.downFor < 1;
+          const rise = reduced ? 0 : returning ? g2.downFor * 27 : Math.min(27, motion.deathAge * 12);
+          const sy = Math.round(56 - rise), sx = Math.round(hx);
+          c.globalAlpha = Math.min(1, motion.deathAge * 2);
+          c.fillStyle = "#839da5";
+          c.fillRect(sx - 5, sy - 2, 10, 10);
+          c.fillRect(sx - 3, sy - 4, 6, 2);
+          c.fillStyle = "#d9ded0";
+          c.fillRect(sx - 3, sy - 1, 6, 6);
+          c.fillRect(sx - 2, sy - 3, 4, 2);
+          c.fillRect(sx - 3, sy + 5, 2, 3);
+          c.fillRect(sx + 1, sy + 5, 2, 2);
+          c.fillStyle = "#536773";
+          c.fillRect(sx - 2, sy + 1, 1, 2);
+          c.fillRect(sx + 1, sy + 1, 1, 2);
+          if (!reduced)
+            for (let i = 0; i < 5; i++) {
+              c.globalAlpha = 0.45 * (1 - i / 5);
+              c.fillStyle = "#bcc5bd";
+              c.fillRect(sx + Math.round(Math.sin(this.t * 3 + i) * 7), sy + 11 + i * 3, 1, 2);
+            }
+          c.globalAlpha = 1;
+        } else {
+          c.globalAlpha = Math.max(0, 1 - motion.reviveAge / 0.8);
+          const width = Math.round(34 * (1 - motion.reviveAge / 0.8));
+          c.fillStyle = "#bcc5bd";
+          c.fillRect(hx - width / 2, 89, width, 1);
+          c.globalAlpha = 1;
+        }
+      }
+      c.textAlign = "center";
+      c.font = "11px Cubic11, monospace";
+      for (const f of this.floats) {
+        f.age += dt;
+        c.globalAlpha = Math.max(0, 1 - f.age / 1.1);
+        c.fillStyle = "#000";
+        c.fillText(f.text, f.x + 1, f.y - f.age * 22 + 1);
+        c.fillStyle = f.color;
+        c.fillText(f.text, f.x, f.y - f.age * 22);
+      }
+      c.globalAlpha = 1;
+      this.floats = this.floats.filter((f) => f.age < 1.1);
+    }
+  };
+
+  // <stdin>
+  var maps = [["meadow", "\u555F\u7A0B\u8349\u539F"], ["forest", "\u4F4E\u8A9E\u68EE\u6797"], ["labyrinth", "\u5730\u4E0B\u8FF7\u5BAE"], ["mine", "\u7194\u5CA9\u7926\u5751"], ["fen", "\u9727\u4E4B\u6CBC"], ["ruins", "\u5929\u7A7A\u907A\u8DE1"], ["nest", "\u53E4\u9F8D\u4E4B\u5DE2"], ["abyss", "\u6DF1\u6DF5\u8FF4\u5ECA"]];
+  var equipment = Object.fromEntries(["head", "body", "hands", "feet", "weapon"].map((kind) => [kind, { kind, weight: "medium", rarity: 2, plus: 3 }]));
+  for (const [key, label] of maps) {
+    const card = document.createElement("article");
+    const title = document.createElement("h2");
+    title.textContent = label;
+    card.append(title);
+    const cv = document.createElement("canvas");
+    cv.width = 640;
+    cv.height = 240;
+    card.append(cv);
+    document.querySelector("#maps").append(card);
+    const c = cv.getContext("2d");
+    c.scale(2, 2);
+    drawLandscape(c, key, 18, 0);
+    for (const p of avatarPixels("human", equipment)) {
+      c.fillStyle = p.color;
+      c.fillRect(54 + p.x, 40 + p.y, 1, 1);
+    }
+  }
+  var listeners = [];
+  var g = { s: { area: "meadow", race: "human", equip: equipment, pets: [{ key: "pudding", lvl: 1 }], activePet: "pudding" }, downFor: 0, mon: { hp: 100, def: { key: "slime", size: 0.8, color: "#82947b" } }, on: (f) => listeners.push(f) };
+  var scene = new Scene(g);
+  document.querySelector("#demo").append(scene.cv);
+  var emit = (t) => listeners.forEach((f) => f({ t }));
+  var encounter = 0;
+  var cycle = 0;
+  var auto = true;
+  var spawn = () => {
+    g.mon.hp = 100;
+    emit("spawn");
+  };
+  var kill = () => {
+    if (g.downFor > 0 || g.mon.hp <= 0)
+      return;
+    g.mon.hp = 0;
+    encounter = 0.6;
+    emit("kill");
+  };
+  var death = () => {
+    if (g.downFor > 0)
+      return;
+    g.downFor = 5;
+    encounter = 0;
+    g.mon.hp = 100;
+    emit("death");
+  };
+  var select = document.querySelector("select");
+  for (const [key, label] of maps) {
+    const o = document.createElement("option");
+    o.value = key;
+    o.textContent = label;
+    select.append(o);
+  }
+  select.onchange = () => {
+    g.s.area = select.value;
+  };
+  document.querySelector("#kill").onclick = () => {
+    auto = false;
+    kill();
+  };
+  document.querySelector("#death").onclick = () => {
+    auto = false;
+    death();
+  };
+  document.querySelector("#auto").onclick = () => {
+    auto = true;
+    cycle = 0;
+  };
+  var last = performance.now();
+  var frame = (now) => {
+    const dt = Math.min(0.05, (now - last) / 1e3);
+    last = now;
+    if (g.downFor > 0) {
+      g.downFor = Math.max(0, g.downFor - dt);
+      if (!g.downFor)
+        spawn();
+    }
+    if (encounter > 0) {
+      encounter -= dt;
+      if (encounter <= 0)
+        spawn();
+    }
+    if (auto) {
+      const previous = cycle;
+      cycle += dt;
+      if (previous < 0.8 && cycle >= 0.8)
+        kill();
+      if (previous < 2.4 && cycle >= 2.4)
+        death();
+      if (cycle > 9) {
+        cycle = 0;
+      }
+    }
+    scene.draw(dt);
+    document.querySelector("#phase").textContent = { fight: "\u4EA4\u6230", advance: "\u64CA\u6557 \u2192 \u8E0F\u6B65\u524D\u9032", death: "\u5012\u4E0B \u2192 \u6DE1\u51FA", soul: "\u9748\u9B42\u96E2\u9AD4 \u2192 \u56DE\u6B78", rebirth: "\u9748\u9B42\u91CD\u751F \u2192 \u6DE1\u5165" }[scene.cv.dataset.phase];
+    requestAnimationFrame(frame);
+  };
+  requestAnimationFrame(frame);
+})();
+</script>

@@ -5,3 +5,6 @@ test-results
 playwright-report
 .DS_Store
 .sim
+
+# Local review hosting workspace
+.review-sites/
