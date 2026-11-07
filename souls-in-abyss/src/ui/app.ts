@@ -409,7 +409,7 @@ export class App {
   private settingsHtml(): string {
     return `<div class="row"><b>${t('language')}</b><button data-a="lang" data-k="zh" ${lang === 'zh' ? 'disabled' : ''}>中文</button><button data-a="lang" data-k="en" ${lang === 'en' ? 'disabled' : ''}>English</button></div>
       <p><button class="ghost" data-a="reset">${t('reset')}</button></p>
-      <p class="dim">${t('credits')}</p><p class="dim">Saira Extra Condensed (OFL) · Icons: Lorc, Delapouite / game-icons.net (CC BY 3.0)</p>`;
+      <p class="dim">${t('credits')}</p><p class="dim">Icons: Lorc, Delapouite / game-icons.net (CC BY 3.0)</p>`;
   }
 }
 

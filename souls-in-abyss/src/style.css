@@ -1,6 +1,4 @@
-/* Latin: Saira Extra Condensed (SAO-like, OFL). CJK falls through to Cubic 11 (pixel, OFL). */
-@font-face { font-family: 'SairaEC'; src: url('./assets/saira-300.woff2') format('woff2'); font-weight: 300; font-display: swap; size-adjust: 128%; }
-@font-face { font-family: 'SairaEC'; src: url('./assets/saira-500.woff2') format('woff2'); font-weight: 400 700; font-display: swap; size-adjust: 128%; }
+/* All text, Chinese and Latin, uses the Cubic 11 pixel font (OFL). */
 @font-face {
   font-family: 'Cubic11';
   src: url('./assets/Cubic_11.woff2') format('woff2');
@@ -13,7 +11,7 @@
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
-  font: 16px/1.5 SairaEC, Cubic11, "PingFang TC", "Noto Sans TC", sans-serif;
+  font: 16px/1.5 Cubic11, "PingFang TC", "Noto Sans TC", sans-serif;
   -webkit-font-smoothing: none; font-smooth: never; text-rendering: optimizeSpeed; }
 button, input, select { font: inherit; color: inherit; }
 button { background: #f2f2f2; border: 1px solid var(--line); padding: 3px 10px; cursor: pointer; white-space: nowrap; }
@@ -105,7 +103,7 @@ small { font-size: 13px; }
 .doll .slot circle { fill: #7a7a7a; stroke-width: 3; }
 .doll .slot.full circle { fill: #5a5a5a; }
 .doll .slot.on circle { fill: var(--gold); }
-.doll .slot text { fill: #fff; font: 13px SairaEC, Cubic11, monospace; text-anchor: middle; pointer-events: none; }
+.doll .slot text { fill: #fff; font: 13px Cubic11, monospace; text-anchor: middle; pointer-events: none; }
 
 .stabs { display: grid; grid-template-columns: repeat(3, 1fr); border-bottom: 1px solid var(--line); }
 .stab { border: 0; background: none; font-size: 17px; padding: 4px 0; color: var(--lbl); }
@@ -129,9 +127,9 @@ small { font-size: 13px; }
 .title { justify-content: center; gap: 28px; }
 .create { gap: 18px; padding-top: 24px; }
 .banner { text-align: center; padding: 18px 60px; }
-.glow { margin: 0; font-weight: 300; font-size: clamp(44px, 9vw, 104px); line-height: 1.5; color: #fff; letter-spacing: .03em;
+.glow { margin: 0; font-weight: normal; font-size: clamp(44px, 9vw, 104px); line-height: 1.5; color: #fff; letter-spacing: .03em;
   text-shadow: 0 0 4px #b85c5c, 0 0 14px #c97878, 0 0 30px #e0aaaa, 0 0 60px #f0d0d0; }
-.glow.cjk, .subtitle.cjk { font-family: Cubic11, sans-serif; line-height: 1.25; }
+.glow.cjk, .subtitle.cjk { line-height: 1.25; }
 .banner.small .glow { font-size: clamp(32px, 5.5vw, 60px); }
 .subtitle { color: #c9a0a0; letter-spacing: .35em; margin-top: 4px; font-size: 18px; line-height: 1.6; }
 .banner.small .subtitle { font-size: 14px; }
