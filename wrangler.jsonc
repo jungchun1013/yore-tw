@@ -2,6 +2,8 @@
   // Cloudflare Workers project "yore-tw": serves dist-site/, assembled by `npm run site` from site/ plus both game builds (no Worker code).
   "name": "yore-tw",
   "compatibility_date": "2026-11-01",
+  // dist-site/ is gitignored, so `wrangler deploy` builds it first (Cloudflare Workers Builds runs that deploy)
+  "build": { "command": "npm run site" },
   "assets": { "directory": "./dist-site", "not_found_handling": "404-page" },
   // custom domains are attached on deploy (the zone yore-tw.com lives in the same Cloudflare account)
   "routes": [
