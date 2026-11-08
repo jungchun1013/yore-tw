@@ -11,7 +11,7 @@
   color-scheme: light;
 }
 * { box-sizing: border-box; }
-html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink);
+html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); transition: background-color .6s;
   font: var(--fs-m)/28px Cubic11, "PingFang TC", "Noto Sans TC", sans-serif; }
 button, input, select { font: inherit; color: inherit; }
 button { background: #e3ddc9; border: 0; padding: 6px 14px; cursor: pointer; white-space: nowrap; }
@@ -296,7 +296,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .view.v-map .mapwrap { position: relative; flex: 0 1 auto; aspect-ratio: 2 / 3; min-height: 240px; container-type: size; margin: 4px 0 8px; }
 .view.v-map .mapboard { position: absolute; left: 50%; top: 0; transform: translateX(-50%); height: min(100cqh, 150cqw); width: auto; margin: 0; }
 .mapshade { position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(rgba(249,247,240,0) 0%, rgba(232,227,234,0) 35%, rgba(185,174,196,.32) 70%, rgba(61,51,80,.72) 100%); }
+  /* background is set inline from MAP_SHADE in world-map.ts, the same ramp that tints the battle strip and the page */ }
 /* never been: grey · been, not here: dark · here: lit */
 /* the illustration steps back, the landmarks step forward: a dimmer map, brighter tiles, each on a dark pixel mat */
 .view .mapboard .map-art { filter: brightness(.72) saturate(.85); }

@@ -16,7 +16,7 @@ import { Scene } from './scene';
 import * as A from '../game/actions';
 import { icon, pixelMarkup } from './icons';
 import { heroMarkup } from './hero';
-import { WORLD_MAP_POSITIONS, worldMapRoute } from './world-map';
+import { WORLD_MAP_POSITIONS, areaPageBg, mapShadeCss, worldMapRoute } from './world-map';
 import { curseOf, giftOf, type PactDef } from '../data/pacts';
 import { SAN_TIERS, sanTier, willResist } from '../data/sanity';
 import { SAN_MAX } from '../game/state';
@@ -198,8 +198,17 @@ export class App {
   private width(id: string, f: number) { const el = document.getElementById(id); if (el) el.style.width = (Math.max(0, Math.min(1, f)) * 100).toFixed(1) + '%'; }
 
   /** A few times a second: panels whose HTML changed get replaced. */
+  /** The page background takes the map's shade for the area the hero is in, like the battle strip does. */
+  private shadedFor = '';
+  private shadePage(): void {
+    const area = this.g.s.area;
+    if (area === this.shadedFor) return;
+    this.shadedFor = area;
+    document.documentElement.style.setProperty('--bg', areaPageBg(area));
+  }
   render(): void {
     if (this.overlay) return;
+    this.shadePage();
     this.put('sheet', this.sheetHtml());
     this.put('petbox', this.petBoxHtml());
     this.put('att', this.attHtml());
@@ -503,7 +512,7 @@ export class App {
     }).join('');
     // .mapwrap takes whatever height the column has left; the board inside keeps the illustration's 2:3 shape,
     // so the nodes stay on their landmarks. .mapshade darkens toward violet: the deeper, the heavier.
-    return `<div class="mapwrap"><div class="mapboard"><img class="map-art" src="./sprites/abyss-world-map.png" width="1024" height="1536" alt="" draggable="false"><div class="mapshade"></div><svg class="maproute" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${path}"/></svg>${nodes}</div></div>${this.lootHtml()}`;
+    return `<div class="mapwrap"><div class="mapboard"><img class="map-art" src="./sprites/abyss-world-map.png" width="1024" height="1536" alt="" draggable="false"><div class="mapshade" style="background:${mapShadeCss()}"></div><svg class="maproute" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path d="${path}"/></svg>${nodes}</div></div>${this.lootHtml()}`;
   }
 
   /** Blacksmith: the rules in three lines, then what is worn and what is carried. */

@@ -6,6 +6,7 @@ import { stageOf } from '../data/pets';
 import { sprite } from './sprites';
 import { num } from '../core/fmt';
 import { drawLandscape, drawPaintedBattle } from './landscape';
+import { areaShade, rgba } from './world-map';
 import { BattleMotion } from './motion';
 
 /**
@@ -77,6 +78,9 @@ export class Scene {
     this.cv.dataset.background = bg ? 'painted' : 'loading';
     if (bg) drawPaintedBattle(c, bg, reduced ? 0 : motion.travel);
     else drawLandscape(c, area.key, reduced ? 0 : motion.travel, this.t);
+    // the same layer of shade the map lays over this area: the deeper, the heavier
+    const shade = areaShade(area.key);
+    if (shade[3] > 0) { c.fillStyle = rgba(shade); c.fillRect(0, 0, W, H); }
 
     const walking = motion.phase === 'advance' && motion.killAge > .12;
     const stride = walking && !reduced ? Math.sin(motion.killAge * 36) : 0;
