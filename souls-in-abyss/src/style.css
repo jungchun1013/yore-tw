@@ -32,16 +32,16 @@ small { font-size: var(--fs-xs); }
 
 /* ---------- main layout: BWE's three columns ---------- */
 .game {
-  display: grid; gap: 14px; padding: 14px; height: 100vh; max-width: 1400px; margin: 0 auto;
+  display: grid; gap: 16px; padding: 14px; height: 100vh; max-width: 1400px; margin: 0 auto;
   grid-template-columns: 1.3fr 0.78fr 0.85fr;
   grid-template-rows: minmax(0, 1fr);
   grid-template-areas: "colL colM side";
 }
-.box { background: var(--box); border: 0; border-bottom: 2px solid var(--line); padding: 18px 22px; min-width: 0; min-height: 0; }
+.box { background: var(--box); border: 0; border-bottom: 4px solid var(--line); padding: 20px 24px; min-width: 0; min-height: 0; }
 .sheet { grid-area: sheet; display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 0 14px; align-content: start; }
 .sheet .kv.name { grid-column: 1 / -1; } .sheet .kv.name .lbl { min-width: 58px; } .sheet .kv.name > span:last-child { margin-left: 0; }
 .monster { grid-area: monster; } .petbox { grid-area: pet; } .log { grid-area: log; } .att { grid-area: att; overflow-y: auto; }
-.loot { grid-area: loot; } .side { grid-area: side; display: flex; flex-direction: column; padding: 18px 20px; }
+.loot { grid-area: loot; } .side { grid-area: side; display: flex; flex-direction: column; padding: 20px 24px; }
 
 .kv { display: flex; align-items: center; gap: 10px; min-height: 28px; }
 .kv .lbl { color: var(--lbl); min-width: 48px; }
@@ -194,7 +194,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 
 /* ---------- narrow screens: stack ---------- */
 /* left and middle columns size their boxes independently: the sheet takes what it needs, the log the rest */
-.colL, .colM { display: flex; flex-direction: column; gap: 14px; min-height: 0; min-width: 0; }
+.colL, .colM { display: flex; flex-direction: column; gap: 16px; min-height: 0; min-width: 0; }
 .colL { grid-area: colL; } .colM { grid-area: colM; }
 .colL .sheet, .colM .monster, .colM .petbox, .colM .loot { flex: none; }
 .colL .log { flex: 1; min-height: 0; }
