@@ -22,7 +22,7 @@ export const meadow: SceneDef = {
     ],
   },
   props: [
-    { type: 'house', at: [19, 2], yaw: 180 },
+    { type: 'house', at: [19, 2], yaw: 215 },
     { type: 'fence', at: [14, -6], params: { to: [24, -9.5], posts: 7 } },
     { type: 'tree', at: [31, -20], yaw: 0, params: { scale: 1.15, leaf: PAL.leafA, leaf2: PAL.leafB } },
     { type: 'tree', at: [27, -27], yaw: 70, params: { scale: 0.85, leaf: PAL.leafC, leaf2: PAL.leafA } },

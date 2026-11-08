@@ -3,7 +3,7 @@ import { PAL } from '../render/palette';
 import { waterMaterial } from '../render/materials';
 import { dirAt, orient } from '../world/planet';
 import { at, blob, cyl, mesh, param, type PropModule } from './kit';
-import { lumpy, merge, paint, stoneBlock, xf } from './geo';
+import { crag, facetColors, lumpy, merge, paint, stoneBlock, xf } from './geo';
 
 /** A hollow in the ground with water, lily pads, a ring of rocks and some reeds. */
 export const pond: PropModule = {
@@ -41,49 +41,53 @@ export const pond: PropModule = {
     const t = new THREE.Vector3();
     const axis = new THREE.Vector3();
     const k = units / 1.5;
-    // Bedrock along the far bank: one rock body cut by joints. Blocks share a strike
-    // and dip, step down toward the water in two or three tiers, and are half buried,
-    // so the bank reads as stone the water wore through, not stones carried in.
+    // Crags on the far bank: two or three tall, peaked rock masses with big flat
+    // fracture faces, their feet standing in the water, like stone a stream has cut
+    // its way past. Smaller blocks crowd around their bases.
     const obstacles: { dir: THREE.Vector3; radius: number }[] = [{ dir, radius: units * 0.95 }];
     const rockParts: THREE.BufferGeometry[] = [];
     const mossParts: THREE.BufferGeometry[] = [];
-    const greys = [PAL.boulder, PAL.boulderDark, 0xb4b8b6, 0x9aa1a3];
-    const arcFrom = 3.25;
-    const arcTo = 6.1;
-    const cols = Math.round(9 * k);
-    for (let c = 0; c < cols; c++) {
-      const a = arcFrom + ((arcTo - arcFrom) * (c + 0.5)) / cols + (rand() - 0.5) * 0.08;
-      axis.copy(tangent).applyAxisAngle(dir, a);
-      const bank = dir.clone().applyAxisAngle(axis, ang * 1.02);
-      const n = bank.clone();
-      const outward = bank.clone().sub(dir.clone().multiplyScalar(bank.dot(dir))).normalize();
-      const along = new THREE.Vector3().crossVectors(n, outward).normalize();
-      const frame = new THREE.Matrix4().makeBasis(along, n, outward);
-      const origin = planet.surfacePoint(bank, -0.12);
-      const colW = ((arcTo - arcFrom) / cols) * units * 1.02;
-      // Tiers: 0 at the waterline, 1 and 2 stepping up and back from the water.
-      const tiers = c % 4 === 0 ? 2 : 3;
-      for (let tier = 0; tier < tiers; tier++) {
-        const h = (0.22 + rand() * 0.16) * k;
-        const w = colW * (0.82 + rand() * 0.12);
-        const d = (0.38 + rand() * 0.22) * k;
-        const top = (tier === 0 ? 0.02 : tier === 1 ? 0.3 : 0.52) * k + rand() * 0.06;
-        const z = (tier - 0.6) * 0.38 * k;
-        const g0 = stoneBlock(w, h, d, rand, 0.55);
-        // Shared dip: the strata lean the same way along the whole bank.
-        xf(g0, { x: (rand() - 0.5) * 0.05, y: top - h / 2, z }, { x: 0.16, y: (rand() - 0.5) * 0.06, z: 0.05 });
-        g0.applyMatrix4(frame);
-        g0.translate(origin.x, origin.y, origin.z);
-        rockParts.push(paint(g0, greys[Math.floor(rand() * greys.length)], 0.05, rand));
-        if (tier > 0 && rand() < 0.45) {
-          const m = lumpy(0.13 * k, 1, 0.2, rand() * 10);
-          xf(m, { x: (rand() - 0.5) * w * 0.5, y: top + 0.01, z: z + (rand() - 0.5) * d * 0.4 }, { x: 0, y: 0, z: 0 }, { x: 1.4, y: 0.3, z: 1.1 });
-          m.applyMatrix4(frame);
-          m.translate(origin.x, origin.y, origin.z);
-          mossParts.push(paint(m, PAL.moss, 0.08, rand));
-        }
+    const greys = [0x9ea4a8, 0x8a9096, 0xb3b8ba, 0x7d8597, 0xa6a9a6, 0x6f778c];
+    const arcFrom = 3.6;
+    const arcTo = 5.6;
+    const masses: [angle: number, h: number, w: number, out: number][] = [
+      [4.55, 1.55, 1.7, 1.05],
+      [3.95, 1.0, 1.25, 1.08],
+      [5.15, 0.8, 1.1, 1.0],
+      [5.5, 0.42, 0.7, 0.9],
+      [3.7, 0.45, 0.7, 0.92],
+    ];
+    for (const [a0, h0, w0, out] of masses) {
+      axis.copy(tangent).applyAxisAngle(dir, a0 + (rand() - 0.5) * 0.1);
+      const at = dir.clone().applyAxisAngle(axis, ang * out);
+      const h = h0 * k * (0.9 + rand() * 0.2);
+      const w = w0 * k * (0.9 + rand() * 0.2);
+      const o = new THREE.Object3D();
+      planet.place(o, at, rand() * 360, 0.2 * k);
+      o.updateMatrix();
+      const gc = crag(h, w, w * (0.75 + rand() * 0.3), rand);
+      gc.applyMatrix4(o.matrix);
+      rockParts.push(facetColors(gc, greys, rand));
+      // A tuft of moss on a ledge of the bigger masses.
+      if (h0 > 0.9) {
+        const m = lumpy(0.14 * k, 1, 0.25, rand() * 10);
+        xf(m, { x: (rand() - 0.5) * w * 0.3, y: h * (0.35 + rand() * 0.2), z: w * 0.32 }, { x: 0, y: 0, z: 0 }, { x: 1.3, y: 0.35, z: 1 });
+        m.applyMatrix4(o.matrix);
+        mossParts.push(paint(m, PAL.moss, 0.08, rand));
       }
-      obstacles.push({ dir: bank, radius: colW * 0.6 + 0.1 });
+      obstacles.push({ dir: at, radius: w * 0.5 });
+    }
+    // Chipped blocks crowding the foot of the crags.
+    for (let i = 0; i < 9; i++) {
+      axis.copy(tangent).applyAxisAngle(dir, arcFrom + rand() * (arcTo - arcFrom));
+      const at = dir.clone().applyAxisAngle(axis, ang * (0.9 + rand() * 0.25));
+      const o = new THREE.Object3D();
+      planet.place(o, at, rand() * 360, 0.08 * k);
+      o.updateMatrix();
+      const s = (0.18 + rand() * 0.2) * k;
+      const gb = crag(s * 1.1, s * 1.4, s * 1.2, rand);
+      gb.applyMatrix4(o.matrix);
+      rockParts.push(facetColors(gb, greys, rand));
     }
     // A few fallen slabs lying in the shallows below the outcrop.
     for (let i = 0; i < 4; i++) {

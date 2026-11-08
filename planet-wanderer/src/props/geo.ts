@@ -86,3 +86,55 @@ export function lumpy(r: number, detail: number, amount: number, seed: number): 
   merged.computeVertexNormals();
   return merged;
 }
+
+/**
+ * A crag: a tall, peaked rock mass with big flat fracture faces, like a boulder the
+ * stream has cut. Rings of points narrow toward a leaning peak, hulled into facets.
+ */
+export function crag(h: number, w: number, d: number, rand: () => number): THREE.BufferGeometry {
+  const pts: THREE.Vector3[] = [];
+  const peak = new THREE.Vector3((rand() - 0.5) * w * 0.35, h, (rand() - 0.5) * d * 0.3);
+  const levels = [-0.25, 0.05, 0.32, 0.6, 0.82];
+  for (const lv of levels) {
+    const y = lv * h;
+    const shrink = 1 - Math.max(0, lv) * 0.62;
+    const count = 5 + Math.floor(rand() * 2);
+    const start = rand() * Math.PI * 2;
+    for (let i = 0; i < count; i++) {
+      const a = start + (i / count) * Math.PI * 2 + (rand() - 0.5) * 0.7;
+      const k = shrink * (0.72 + rand() * 0.36);
+      const p = new THREE.Vector3(Math.cos(a) * (w / 2) * k, y + (rand() - 0.5) * h * 0.08, Math.sin(a) * (d / 2) * k);
+      // Lean the upper rings toward the peak so the mass lists to one side.
+      p.x += peak.x * Math.max(0, lv);
+      p.z += peak.z * Math.max(0, lv);
+      pts.push(p);
+    }
+  }
+  pts.push(peak);
+  return new ConvexGeometry(pts);
+}
+
+/** Colour each flat face of a hulled rock its own grey, darker where it faces down. */
+export function facetColors(geo: THREE.BufferGeometry, palette: number[], rand: () => number): THREE.BufferGeometry {
+  const g = geo.index ? geo.toNonIndexed() : geo;
+  if (!g.attributes.normal) g.computeVertexNormals();
+  const n = g.attributes.normal as THREE.BufferAttribute;
+  const count = g.attributes.position.count;
+  const arr = new Float32Array(count * 3);
+  const byFace = new Map<string, THREE.Color>();
+  const c = new THREE.Color();
+  for (let t = 0; t < count; t += 3) {
+    const nx = n.getX(t), ny = n.getY(t), nz = n.getZ(t);
+    const key = `${nx.toFixed(2)},${ny.toFixed(2)},${nz.toFixed(2)}`;
+    let col = byFace.get(key);
+    if (!col) {
+      col = new THREE.Color(palette[Math.floor(rand() * palette.length)]);
+      col.multiplyScalar((0.9 + rand() * 0.16) * (ny < -0.2 ? 0.8 : 1));
+      byFace.set(key, col);
+    }
+    c.copy(col);
+    for (let v = 0; v < 3; v++) arr.set([c.r, c.g, c.b], (t + v) * 3);
+  }
+  g.setAttribute('color', new THREE.BufferAttribute(arr, 3));
+  return g;
+}
