@@ -9,10 +9,10 @@ export function groundCover({ planet, rand, root }: PropCtx, obstacles: Obstacle
   const blocked = (d: THREE.Vector3) =>
     obstacles.some((o) => d.angleTo(o.dir) < o.radius * 1.15) ||
     planet.ponds.some((p) => d.angleTo(p.dir) < p.radius * 1.35) ||
-    planet.paths.some(([a, b]) => {
-      const n = new THREE.Vector3().crossVectors(a, b).normalize();
-      return Math.abs(d.dot(n)) < 0.03 && d.angleTo(a) + d.angleTo(b) < a.angleTo(b) + 0.03;
-    });
+    (() => {
+      const p = planet.pathDistance(d);
+      return p.dist < p.half * 1.1;
+    })();
   const parts = [0, 1, 2].map((i) => {
     const c = new THREE.ConeGeometry(0.05, 0.22, 3);
     c.translate(0, 0.11, 0);

@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { terrainMaterial } from '../render/materials';
-import type { LatLon, Mood } from '../scenes/types';
+import type { LatLon, Mood, PathDef } from '../scenes/types';
 
 /** Latitude/longitude in degrees → unit direction. lon 0 / lat 0 faces +Z. */
 export function dirOf(lat: number, lon: number): THREE.Vector3 {
@@ -29,7 +29,7 @@ function vnoise(x: number, y: number, z: number) {
 }
 
 /** Ground that must be level (buildings) — radius in radians. */
-export interface Flat { dir: THREE.Vector3; radius: number; height?: number }
+export interface Flat { dir: THREE.Vector3; radius: number; height?: number; /** lift the level ground (raised plazas) */ raise?: number }
 /** A hollow for water — radius in radians, depth in world units. */
 export interface Pond { dir: THREE.Vector3; radius: number; depth: number }
 
@@ -41,12 +41,44 @@ const _r = new THREE.Vector3();
 export class Planet {
   readonly flats: Flat[] = [];
   readonly ponds: Pond[] = [];
+  /** Dense centre lines of each winding path (unit directions). */
+  readonly pathCurves: THREE.Vector3[][];
+  /** Half-width of each path, radians. */
+  readonly pathHalf: number[];
+  /** The curves cut into short arcs for the ground shader and collision tests. */
   readonly paths: [THREE.Vector3, THREE.Vector3][];
+  readonly pathSegHalf: number[];
   private readonly off: number;
 
-  constructor(readonly radius: number, readonly seed: number, paths: [LatLon, LatLon][]) {
-    this.paths = paths.map(([a, b]) => [dirAt(a), dirAt(b)]);
+  constructor(readonly radius: number, readonly seed: number, paths: PathDef[]) {
     this.off = seed * 13.17;
+    this.pathCurves = paths.map((p, i) => windingCurve(p, radius, seed * 7 + i * 3.1));
+    this.pathHalf = paths.map((p) => (p.width ?? 0.6) / 2 / radius);
+    this.paths = [];
+    this.pathSegHalf = [];
+    this.pathCurves.forEach((c, i) => {
+      for (let k = 0; k + 3 < c.length; k += 3) {
+        this.paths.push([c[k], c[Math.min(c.length - 1, k + 3)]]);
+        this.pathSegHalf.push(this.pathHalf[i]);
+      }
+      const last = c.length - 1 - ((c.length - 1) % 3);
+      if (last < c.length - 1) {
+        this.paths.push([c[last], c[c.length - 1]]);
+        this.pathSegHalf.push(this.pathHalf[i]);
+      }
+    });
+  }
+
+  /** Angular distance from a direction to the nearest path centre, and that path's half-width. */
+  pathDistance(d: THREE.Vector3): { dist: number; half: number } {
+    let best = { dist: Infinity, half: 0 };
+    this.pathCurves.forEach((c, i) => {
+      for (const p of c) {
+        const a = d.angleTo(p);
+        if (a < best.dist) best = { dist: a, half: this.pathHalf[i] };
+      }
+    });
+    return best;
   }
 
   /** Convert a size in world units to an angle on this planet. */
@@ -65,7 +97,7 @@ export class Planet {
     for (const f of this.flats) {
       const a = d.angleTo(f.dir);
       if (a < f.radius * 1.6) {
-        const target = f.height ?? this.rawHeight(f.dir);
+        const target = (f.height ?? this.rawHeight(f.dir)) + (f.raise ?? 0);
         const w = THREE.MathUtils.smoothstep(f.radius * 1.6 - a, 0, f.radius * 0.6);
         h = THREE.MathUtils.lerp(h, target, w);
       }
@@ -102,12 +134,37 @@ export class Planet {
       pos.setXYZ(i, v.x, v.y, v.z);
     }
     geo.computeVertexNormals();
-    const mesh = new THREE.Mesh(geo, terrainMaterial({ ponds: this.ponds, paths: this.paths, mood }));
+    const mesh = new THREE.Mesh(geo, terrainMaterial({ ponds: this.ponds, paths: this.paths, pathHalf: this.pathSegHalf, mood }));
     mesh.receiveShadow = true;
     mesh.castShadow = true;
     mesh.name = 'planet';
     return mesh;
   }
+}
+
+/** Points along a path through its waypoints, wandering sideways like a trodden track. */
+function windingCurve(p: PathDef, radius: number, seed: number): THREE.Vector3[] {
+  const pts = p.points.map(dirAt);
+  const amp = (p.wind ?? 0.35) / radius;
+  const out: THREE.Vector3[] = [];
+  const step = 0.12 / radius; // a sample every 12 cm of ground
+  for (let s = 0; s < pts.length - 1; s++) {
+    const a = pts[s];
+    const b = pts[s + 1];
+    const span = a.angleTo(b);
+    const n = Math.max(2, Math.ceil(span / step));
+    const axis = new THREE.Vector3().crossVectors(a, b).normalize();
+    for (let i = s === 0 ? 0 : 1; i <= n; i++) {
+      const t = i / n;
+      const q = a.clone().applyAxisAngle(axis, span * t);
+      // Two waves, faded to zero at every waypoint so the path still meets them.
+      const wob = (Math.sin(t * Math.PI * 2 + seed + s) * 0.7 + Math.sin(t * Math.PI * 5.3 + seed * 1.9) * 0.3) * Math.sin(t * Math.PI);
+      const side = new THREE.Vector3().crossVectors(axis, q).normalize();
+      const sideAxis = new THREE.Vector3().crossVectors(q, side).normalize();
+      out.push(q.applyAxisAngle(sideAxis, amp * wob).normalize());
+    }
+  }
+  return out;
 }
 
 export function orient(obj: THREE.Object3D, n: THREE.Vector3, yawDeg = 0) {

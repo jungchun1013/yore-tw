@@ -16,7 +16,7 @@ export const roseMoon: SceneDef = {
   planet: {
     radius: 6,
     seed: 3,
-    paths: [[[6, 14], [18, -8]]],
+    paths: [{ points: [[6, 14], [12, 2], [18, -8]], width: 0.5 }],
   },
   props: [
     { type: 'ship', id: 'ship', at: [4, 18], yaw: 200 },

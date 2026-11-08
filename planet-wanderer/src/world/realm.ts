@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { isSharedMaterial } from '../render/materials';
 import { PROPS } from '../props';
 import { groundCover } from '../props/groundCover';
+import { cobbles } from '../props/cobbles';
 import { blob, makeRand, mesh, type Obstacle, type PropCtx } from '../props/kit';
 import { SCENES, DECOR_BODIES } from '../scenes';
 import type { ExitDef, SceneDef, SkyBody } from '../scenes/types';
@@ -67,6 +68,7 @@ export function buildRealm(def: SceneDef): Realm {
     if (built.glowAnchor) glowAnchors.push(built.glowAnchor);
     if (p.id) byId.set(p.id, built.object);
   }
+  root.add(cobbles(ctx, def.planet.seed * 13 + 5));
   groundCover(ctx, obstacles, def.groundCover.tufts, def.groundCover.flowers);
 
   // 3. The other scenes hang in the sky: you can always see where you could go next.

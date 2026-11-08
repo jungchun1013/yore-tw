@@ -6,6 +6,7 @@ import { at, blob, box, cyl, mesh, type PropModule } from './kit';
 /** Broken stone tablet with glowing runes, fallen pieces and column stumps. */
 export const stele: PropModule = {
   prepare(planet, p) {
+    if (p.params?.flat === false) return; // standing on something else's level ground
     planet.flats.push({ dir: dirAt(p.at), radius: planet.ang(0.8) });
   },
   build({ planet, rand }, p) {
@@ -29,22 +30,25 @@ export const stele: PropModule = {
     slab.rotation.set(-0.06, 0, 0.08);
     slab.position.y = 0.24;
     g.add(slab);
-    const frag = mesh(box(0.4, 0.2, 0.18), PAL.stone);
-    frag.rotation.set(0.1, 0.7, 0.25);
-    g.add(at(frag, 0.75, 0.1, 0.35));
-    g.add(at(mesh(cyl(0.13, 0.15, 0.55, 8), PAL.stoneDark), -0.78, 0.27, -0.25));
-    g.add(at(mesh(cyl(0.13, 0.15, 0.3, 8), PAL.stone), 0.78, 0.15, -0.3));
-    const fallen = mesh(cyl(0.12, 0.12, 0.62, 8), PAL.stone);
-    fallen.rotation.set(0, 0.4, Math.PI / 2);
-    g.add(at(fallen, -0.55, 0.12, 0.55));
-    for (let i = 0; i < 5; i++) {
-      const s = 0.05 + rand() * 0.06;
-      const c = mesh(box(s, s, s), PAL.stoneDark);
-      c.rotation.set(rand(), rand(), rand());
-      g.add(at(c, (rand() - 0.5) * 1.6, s / 2, (rand() - 0.5) * 1.3));
+    const bare = p.params?.bare === true; // standing inside a ruin: no rubble of its own
+    if (!bare) {
+      const frag = mesh(box(0.4, 0.2, 0.18), PAL.stone);
+      frag.rotation.set(0.1, 0.7, 0.25);
+      g.add(at(frag, 0.75, 0.1, 0.35));
+      g.add(at(mesh(cyl(0.13, 0.15, 0.55, 8), PAL.stoneDark), -0.78, 0.27, -0.25));
+      g.add(at(mesh(cyl(0.13, 0.15, 0.3, 8), PAL.stone), 0.78, 0.15, -0.3));
+      const fallen = mesh(cyl(0.12, 0.12, 0.62, 8), PAL.stone);
+      fallen.rotation.set(0, 0.4, Math.PI / 2);
+      g.add(at(fallen, -0.55, 0.12, 0.55));
+      for (let i = 0; i < 5; i++) {
+        const s = 0.05 + rand() * 0.06;
+        const c = mesh(box(s, s, s), PAL.stoneDark);
+        c.rotation.set(rand(), rand(), rand());
+        g.add(at(c, (rand() - 0.5) * 1.6, s / 2, (rand() - 0.5) * 1.3));
+      }
     }
     const d = dirAt(p.at);
     planet.place(g, d, p.yaw ?? 0, 0.03);
-    return { object: g, obstacles: [{ dir: d, radius: 0.7 }] };
+    return { object: g, obstacles: [{ dir: d, radius: 0.55 }] };
   },
 };

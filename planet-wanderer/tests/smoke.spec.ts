@@ -19,22 +19,31 @@ test('planet renders in both views without errors', async ({ page }, info) => {
   expect(errors).toEqual([]);
 });
 
-// Close-ups of each landmark, for eyeballing the art (desktop only).
-const SPOTS: [string, number, number, number][] = [
-  ['house', 9, 2, 180],
-  ['pond', -16, -24, 0],
-  ['stele', -22, 22, 0],
-  ['ship', 4, 38, 0],
-  ['trees', 22, -20, 0],
+// Close-ups of each landmark, for eyeballing the art (desktop only). The traveller
+// stands just south of the landmark; the camera looks north past him at it.
+export const SPOTS: [name: string, lat: number, lon: number, zoom: number][] = [
+  ['cabin', 11, 4, 0.92],
+  ['fence', 12, -10, 0.95],
+  ['trees', 21, -22, 0.9],
+  ['pond-rocks', -17, -27, 0.85],
+  ['ruin', -24, 25, 0.84],
+  ['ruin-inside', -18, 24, 0.95],
+  ['marker-path', 0, 8, 0.95],
+  ['cobble-path', 2, -10, 0.95],
+  ['ship', 5, 41, 0.92],
 ];
 test('landmark close-ups', async ({ page }, info) => {
   test.skip(info.project.name !== 'desktop');
   await page.goto('/');
   await page.waitForFunction(() => window.__pw?.frames() > 20, null, { timeout: 30_000 });
-  for (const [name, lat, lon, h] of SPOTS) {
-    await page.evaluate(([a, b, c]) => { window.__pw.teleport(a, b, c); window.__pw.zoom(1); }, [lat, lon, h]);
-    await page.waitForTimeout(1500);
-    await page.screenshot({ path: `docs/screenshots/spot-${name}.png` });
+  await page.waitForTimeout(2600);
+  for (const style of ['soft', 'pixel'] as const) {
+    await page.evaluate((s) => window.__pw.look(s, 'tint'), style);
+    for (const [name, lat, lon, zoom] of SPOTS) {
+      await page.evaluate(([a, b, z]) => { window.__pw.teleport(a, b, 0); window.__pw.zoom(z); }, [lat, lon, zoom]);
+      await page.waitForTimeout(1300);
+      await page.screenshot({ path: `docs/screenshots/spot-${style}-${name}.png` });
+    }
   }
 });
 

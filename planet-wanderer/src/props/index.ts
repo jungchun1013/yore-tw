@@ -7,6 +7,7 @@ import { stele } from './stele';
 import { wisp } from './wisp';
 import { ship } from './ship';
 import { boulder, rose, sprout, volcano } from './small';
+import { marker, ruin } from './ruin';
 
 /** Every prop type a scene file may place, by name. */
-export const PROPS: Record<string, PropModule> = { house, fence, tree, pond, stele, wisp, ship, rose, volcano, sprout, boulder };
+export const PROPS: Record<string, PropModule> = { house, fence, tree, pond, stele, wisp, ship, rose, volcano, sprout, boulder, ruin, marker };

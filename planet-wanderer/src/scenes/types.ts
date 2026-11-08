@@ -9,6 +9,14 @@ export interface Mood {
   grass: number; grassDark: number; grassLight: number; sand: number; path: number;
 }
 
+/** A winding path through waypoints; `width` in world units (default 0.6). */
+export interface PathDef {
+  points: LatLon[];
+  width?: number;
+  /** How far the path wanders sideways, world units (default 0.35). */
+  wind?: number;
+}
+
 export interface PropPlacement {
   type: string;
   at: LatLon;
@@ -38,7 +46,7 @@ export interface SceneDef {
   kind: 'planet';
   name: { zh: string; en: string };
   mood: Mood;
-  planet: { radius: number; seed: number; paths: [LatLon, LatLon][] };
+  planet: { radius: number; seed: number; paths: PathDef[] };
   /** Built in order; the order also fixes the seeded random sequence. */
   props: PropPlacement[];
   groundCover: { tufts: number; flowers: number };

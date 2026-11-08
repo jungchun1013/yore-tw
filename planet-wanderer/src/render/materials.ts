@@ -59,7 +59,7 @@ uniform float uGrad;
 #ifdef TERRAIN
 uniform vec3 uGrassDark; uniform vec3 uGrassLight; uniform vec3 uSand; uniform vec3 uPath;
 uniform vec3 uPondDir[MAX_PONDS]; uniform float uPondR[MAX_PONDS]; uniform int uPondCount;
-uniform vec3 uPathA[MAX_PATHS]; uniform vec3 uPathB[MAX_PATHS]; uniform int uPathCount;
+uniform vec3 uPathA[MAX_PATHS]; uniform vec3 uPathB[MAX_PATHS]; uniform float uPathW[MAX_PATHS]; uniform int uPathCount;
 #endif
 #include <common>
 #include <packing>
@@ -113,9 +113,10 @@ void main() {
     for (int i = 0; i < MAX_PATHS; i++) {
       if (i >= uPathCount) break;
       float d = arcDist(dir, uPathA[i], uPathB[i]);
-      float wob = (fbm3(dir * 18.0) - 0.5) * 0.012;
-      if (uStyle > 0.5) base = mix(base, mix(uPath, uSand, fbm3(vPosW * 3.0) * 0.6), 1.0 - smoothstep(0.016, 0.026, d + wob));
-      else if (d + wob < 0.022) base = mix(uPath, uSand, step(0.6, hash13(cell * 1.7)) * 0.5);
+      float wob = (fbm3(dir * 18.0) - 0.5) * 0.008;
+      float w = uPathW[i];
+      if (uStyle > 0.5) base = mix(base, mix(uPath, uSand, fbm3(vPosW * 3.0) * 0.6), 1.0 - smoothstep(w * 0.8, w * 1.15, d + wob));
+      else if (d + wob < w) base = mix(uPath, uSand, step(0.6, hash13(cell * 1.7)) * 0.5);
     }
     if (uStyle > 0.5) base = mix(base, mix(uSand, uPath, fbm3(vPosW * 4.0) * 0.5), 1.0 - smoothstep(1.26, 1.4, pd));
     else if (pd < 1.32) base = mix(uSand, uPath, step(0.75, hash13(cell)));
@@ -219,11 +220,12 @@ export function toon(color: number, opts: ToonOpts = {}): THREE.ShaderMaterial {
 }
 
 export const MAX_PONDS = 4;
-export const MAX_PATHS = 8;
+export const MAX_PATHS = 96;
 
 export interface TerrainZones {
   ponds: { dir: THREE.Vector3; radius: number }[];
   paths: [THREE.Vector3, THREE.Vector3][];
+  pathHalf: number[];
   mood: Mood;
 }
 
@@ -253,6 +255,7 @@ export function terrainMaterial(z: TerrainZones): THREE.ShaderMaterial {
         uPondCount: { value: Math.min(z.ponds.length, MAX_PONDS) },
         uPathA: { value: pad(z.paths.map((p) => p[0].clone()), MAX_PATHS, up) },
         uPathB: { value: pad(z.paths.map((p) => p[1].clone()), MAX_PATHS, up) },
+        uPathW: { value: pad(z.pathHalf, MAX_PATHS, 0) },
         uPathCount: { value: Math.min(z.paths.length, MAX_PATHS) },
       },
     ]),
