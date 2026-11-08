@@ -47,3 +47,38 @@ footer a { color: var(--muted); font-weight: 800; }
 @media (max-width: 760px) { .hero { grid-template-columns: 1fr; } .hero h1 { font-size: 32px; } nav a { margin-left: 10px; } body { font-size: 16px; } }
 .ad-slot { display: none; } .ad-slot.on { display: block; margin: 28px auto 0; max-width: 728px; min-height: 0; }
 ins.adsbygoogle[data-ad-status="unfilled"] { display: none !important; }
+/* ---- AdSense-review layout (2026-11-08): game detail pages, richer home; see docs/site-adsense-layout.md ---- */
+.welcome { padding: 18px 0 8px; }
+.welcome h1 { font-size: 40px; line-height: 1.15; margin: 0 0 12px; }
+.welcome p.lede { font-size: 19px; margin: 0 0 18px; max-width: 46em; }
+.welcome .actions { display: flex; gap: 12px; flex-wrap: wrap; }
+.card p.blurb { color: var(--ink); font-size: 15px; }
+.card .more { margin-top: auto; font-weight: 900; color: var(--accent-ink); font-size: 15px; }
+.crumbs { font-size: 14px; color: var(--muted); margin: 4px 0 10px; }
+.crumbs a { color: var(--muted); font-weight: 800; text-decoration: none; }
+.game-head h1 { font-size: 36px; margin: 0 0 6px; line-height: 1.2; }
+.game-head p.lede { font-size: 19px; margin: 0 0 18px; color: var(--muted); }
+.play-cover { position: relative; display: block; border-radius: 18px; overflow: hidden; border: 3px solid var(--line); box-shadow: 0 10px 30px rgba(90,64,56,0.15); }
+.play-cover img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; image-rendering: pixelated; }
+.play-cover .btn { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); white-space: nowrap; }
+.game-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 24px; align-items: start; margin-top: 22px; }
+.facts { background: var(--card); border: 2px solid var(--line); border-radius: 14px; padding: 6px 16px; box-shadow: var(--shadow); }
+.facts dl { display: grid; grid-template-columns: auto 1fr; gap: 0 14px; margin: 0; }
+.facts dt, .facts dd { margin: 0; padding: 9px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+.facts dt { font-weight: 900; color: var(--muted); }
+.facts dl > :nth-last-child(-n+2) { border-bottom: 0; }
+.prose h2 { font-size: 22px; margin: 26px 0 8px; }
+.prose p, .prose li { max-width: 44em; }
+.prose ol li, .prose ul li { margin: 4px 0; }
+.gallery { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; margin-top: 8px; }
+.gallery figure { margin: 0; background: var(--card); border: 2px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--shadow); }
+.gallery img { display: block; width: 100%; height: 220px; object-fit: cover; object-position: top; }
+.gallery figcaption { padding: 8px 12px 10px; font-size: 14px; color: var(--muted); }
+.cta { text-align: center; margin: 30px 0 6px; }
+.dev { display: grid; grid-template-columns: 96px 1fr; gap: 18px; align-items: center; background: var(--card); border: 2px solid var(--line); border-radius: 18px; padding: 18px 20px; box-shadow: var(--shadow); }
+.dev img { width: 96px; height: 96px; image-rendering: pixelated; }
+.dev p { margin: 0 0 8px; }
+@media (max-width: 760px) { .welcome h1, .game-head h1 { font-size: 30px; } .game-grid { grid-template-columns: 1fr; } .dev { grid-template-columns: 64px 1fr; } .dev img { width: 64px; height: 64px; } header.top nav a { margin-left: 8px; font-size: 15px; } }
+header.top nav { display: flex; align-items: center; flex-wrap: nowrap; }
+header.top nav .lang-btn { margin-left: 14px; }
+@media (max-width: 440px) { .brand { font-size: 18px; gap: 7px; } .brand img { width: 28px; height: 28px; } header.top nav a { margin-left: 7px; font-size: 14px; } header.top nav .lang-btn { margin-left: 8px; padding: 4px 9px; font-size: 13px; } }

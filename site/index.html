@@ -3,16 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>yore.tw</title>
+  <title>yore.tw｜來自台灣的像素遊戲工作室 · Pixel games from Taiwan</title>
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-2972514108022599" crossorigin="anonymous"></script>
   <!-- AdSense display ad unit id for the .ad-slot boxes; empty = no ad box -->
   <meta name="yore-ad-slot" content="" />
-  <meta name="description" content="yore.tw — small pixel games, free in your browser: Meowcaron, a cat macaron bakery idle game, and Souls in Abyss, an endless auto-battle RPG." />
-  <meta property="og:title" content="yore.tw" />
+  <meta name="description" content="yore.tw is a small game studio from Taiwan making free pixel games you can play in your browser: Meowcaron, a cat macaron bakery idle game, and Souls in Abyss, an idle RPG about rebirth." />
+  <meta property="og:title" content="yore.tw｜來自台灣的像素遊戲工作室 · Pixel games from Taiwan" />
+  <meta property="og:description" content="yore.tw is a small game studio from Taiwan making free pixel games you can play in your browser: Meowcaron, a cat macaron bakery idle game, and Souls in Abyss, an idle RPG about rebirth." />
   <meta property="og:image" content="https://yore-tw.com/assets/meowcaron-cover.png" />
-  <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="./style.css" />
-  <script src="./_shared.js"></script>
+  <link rel="icon" href="favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="style.css" />
+  <script src="_shared.js"></script>
   <style>
     .pet { display: flex; flex-direction: column; align-items: center; gap: 6px; margin: 56px 0 18px; user-select: none; -webkit-user-select: none; }
     .pet-stage { position: relative; width: 192px; height: 192px; display: grid; place-items: end center; cursor: pointer; touch-action: manipulation; }
@@ -28,29 +29,56 @@
 <body>
   <div class="wrap">
     <header class="top">
-      <a class="brand" href="./"><img src="./favicon.svg" alt="" />yore.tw</a>
-      <nav><button id="lang" class="lang-btn" type="button">EN</button></nav>
+      <a class="brand" href="./"><img src="favicon.svg" alt="" />yore.tw</a>
+      <nav><a href="./#games"><span lang="zh">遊戲</span><span lang="en">Games</span></a><a href="about.html"><span lang="zh">關於</span><span lang="en">About</span></a><a href="contact.html"><span lang="zh">聯絡</span><span lang="en">Contact</span></a><button id="lang" class="lang-btn" type="button">EN</button></nav>
     </header>
+    <section class="welcome">
+      <h1 lang="zh">歡迎來到 yore.tw！</h1><h1 lang="en">Welcome to yore.tw!</h1>
+      <p lang="zh" class="lede">yore.tw 是一間來自台灣的小型遊戲工作室。這裡的像素遊戲都能直接在瀏覽器裡玩，不用下載、不用註冊帳號，手機和電腦都能免費遊玩。每款遊戲都有自己的介紹頁，寫著怎麼玩、有哪些特色，以及最近的更新。</p><p lang="en" class="lede">yore.tw is a small game studio from Taiwan. The pixel games here run right in your browser: no download, no account, and free to play on a phone or a computer. Every game has its own page that explains how to play, what makes it special, and what changed recently.</p>
+      <div class="actions"><a class="btn" href="#games"><span lang="zh">瀏覽遊戲</span><span lang="en">Browse games</span></a><a class="btn ghost" href="about.html"><span lang="zh">認識開發者</span><span lang="en">Meet the developer</span></a></div>
+    </section>
 
-    <h2 class="section" id="games" style="margin-top:8px"><span lang="zh">遊戲</span><span lang="en">Games</span></h2>
+    <h2 lang="zh" class="section" id="games">遊戲</h2><h2 lang="en" class="section">Games</h2>
     <div class="cards">
-      <a class="card" href="./meowcaron/" style="text-decoration:none;color:inherit">
-        <img src="./assets/meowcaron-cover.png" alt="" />
+      <a class="card" href="games/meowcaron.html" style="text-decoration:none;color:inherit">
+        <img src="assets/meowcaron-cover.png" alt="Meowcaron" />
         <div class="body">
           <h3>Meowcaron <span lang="zh">喵卡龍</span></h3>
-          <div class="tags"><span class="tag"><span lang="zh">經營</span><span lang="en">Management</span></span><span class="tag pink"><span lang="zh">養成</span><span lang="en">Raising</span></span></div>
+          <div class="tags"><span class="tag"><span lang="zh">經營</span><span lang="en">Management</span></span><span class="tag pink"><span lang="zh">放置</span><span lang="en">Idle</span></span><span class="tag sky"><span lang="zh">公開測試</span><span lang="en">Beta</span></span></div>
+          <p lang="zh" class="blurb">一間由貓咪經營的馬卡龍店。雇用貓咪、升級廚房，還要叫醒上班偷睡的貓。</p><p lang="en" class="blurb">A macaron bakery run by cats. Hire cats, upgrade the kitchen, and wake up the ones who nap on the job.</p>
+          <span class="more"><span lang="zh">遊戲介紹 →</span><span lang="en">Read more →</span></span>
         </div>
       </a>
-      <a class="card" href="./souls-in-abyss/" style="text-decoration:none;color:inherit">
-        <img src="./assets/souls-cover.png" alt="Souls in Abyss 輪迴無止盡" />
+      <a class="card" href="games/souls-in-abyss.html" style="text-decoration:none;color:inherit">
+        <img src="assets/souls-cover.png" alt="Souls in Abyss 輪迴無止盡" />
         <div class="body">
           <h3>Souls in Abyss <span lang="zh">輪迴無止盡</span></h3>
           <div class="tags"><span class="tag"><span lang="zh">放置 RPG</span><span lang="en">Idle RPG</span></span><span class="tag pink"><span lang="zh">原型</span><span lang="en">Prototype</span></span></div>
+          <p lang="zh" class="blurb">關於輪迴的自動戰鬥 RPG。角色會長大、戰鬥、落入深淵，然後變得更強再回來。</p><p lang="en" class="blurb">An auto-battle RPG about rebirth. Your hero grows up, fights, falls into the Abyss, and comes back stronger.</p>
+          <span class="more"><span lang="zh">遊戲介紹 →</span><span lang="en">Read more →</span></span>
         </div>
       </a>
       <div class="card soon">
         <div class="cover"><span lang="zh">製作中</span><span lang="en">In the oven</span></div>
-        <div class="body"><h3 lang="zh">下一款</h3><h3 lang="en">Next</h3></div>
+        <div class="body"><h3 lang="zh">下一款</h3><h3 lang="en">Next</h3><p lang="zh" class="blurb">新遊戲正在製作中，完成後會出現在這裡。</p><p lang="en" class="blurb">A new game is in the works. It will show up here when it is ready.</p></div>
+      </div>
+    </div>
+
+    <h2 lang="zh" class="section">在這裡玩遊戲</h2><h2 lang="en" class="section">Playing here</h2>
+    <div class="features"><div class="feature"><b><span lang="zh">免費、免下載</span><span lang="en">Free, no download</span></b><span lang="zh">打開網頁就能玩，不需要安裝任何東西。</span><span lang="en">Open the page and play. There is nothing to install.</span></div><div class="feature"><b><span lang="zh">手機也好玩</span><span lang="en">Made for phones too</span></b><span lang="zh">每款遊戲都會在手機上測試，字夠大，用一隻手就能操作。</span><span lang="en">Every game is tested on phones, with text large enough to read and controls you can use with one hand.</span></div><div class="feature"><b><span lang="zh">存檔留在你身邊</span><span lang="en">Your save stays with you</span></b><span lang="zh">進度會自動存在你的瀏覽器裡，不需要帳號，我們也看不到。</span><span lang="en">Progress is saved in your browser automatically. No account is needed, and we never see it.</span></div><div class="feature"><b><span lang="zh">不打斷遊戲</span><span lang="en">No interruptions</span></b><span lang="zh">如果遊戲有廣告，只會在自然的停頓點出現，或是由你自己選擇要不要看。</span><span lang="en">If a game shows ads, they appear only at natural breaks or when you choose to watch one.</span></div></div>
+
+    <h2 lang="zh" class="section">最新消息</h2><h2 lang="en" class="section">Latest news</h2>
+    <article class="doc prose" style="margin-top:0">
+      <ul><li lang="zh"><b>2026 年 11 月</b>：Meowcaron 公開測試版上線，支援繁體中文與英文，加入新手教學、家具和離線烘焙。</li><li lang="en"><b>November 2026</b>: Meowcaron enters public beta, in Traditional Chinese and English, with a short tutorial, furniture and offline baking.</li><li lang="zh"><b>2026 年 11 月</b>：Souls in Abyss 原型版上線，可以選擇五個種族，在八個地區冒險。</li><li lang="en"><b>November 2026</b>: the first Souls in Abyss prototype is out, with five races and eight areas to explore.</li><li lang="zh"><b>2026 年 11 月</b>：yore.tw 網站開張。</li><li lang="en"><b>November 2026</b>: yore.tw opens.</li></ul>
+    </article>
+
+    <h2 lang="zh" class="section">關於開發者</h2><h2 lang="en" class="section">About the developer</h2>
+    <div class="dev">
+      <img src="assets/pet-happy.png" alt="" />
+      <div>
+        <p lang="zh">嗨，我是 Joan，來自台灣台南的獨立遊戲開發者。我喜歡畫畫、聽台灣的獨立音樂，也喜歡做自己會想玩的那種小小的、溫暖的遊戲。</p>
+      <p lang="en">Hi, I am Joan, an indie game developer from Tainan, Taiwan. I like drawing, listening to Taiwanese indie music, and making the kind of small, warm games I would want to play myself.</p>
+        <a href="about.html"><span lang="zh">更多關於我 →</span><span lang="en">More about me →</span></a>
       </div>
     </div>
 
@@ -59,14 +87,12 @@
       <div class="pet-shadow"></div>
       <div class="pet-count" id="pet-count"></div>
     </section>
-
     <div class="ad-slot" aria-label="ad"></div>
-
-    <footer class="mini">
-      <div><a href="./about.html"><span lang="zh">關於</span><span lang="en">About</span></a> · <a href="./privacy.html"><span lang="zh">隱私</span><span lang="en">Privacy</span></a></div>
+    <footer>
+      <div>© 2026 yore.tw · <span lang="zh">來自台灣的小型遊戲工作室</span><span lang="en">A small game studio from Taiwan</span></div>
+      <div><a href="games/meowcaron.html">Meowcaron</a> · <a href="games/souls-in-abyss.html">Souls in Abyss</a> · <a href="about.html"><span lang="zh">關於</span><span lang="en">About</span></a> · <a href="contact.html"><span lang="zh">聯絡</span><span lang="en">Contact</span></a> · <a href="privacy.html"><span lang="zh">隱私權政策</span><span lang="en">Privacy</span></a></div>
     </footer>
   </div>
-
   <script>
   (function () {
     var stage = document.getElementById('pet'), img = document.getElementById('pet-img'), count = document.getElementById('pet-count');

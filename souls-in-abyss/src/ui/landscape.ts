@@ -1,13 +1,14 @@
+import { PALETTE as C } from './icons';
 /** Hand-drawn, repeatable pixel scenery. Offset is world travel, never wall time. */
 const themes: Record<string, string[]> = {
-  meadow: ['#b5bfae', '#939f91', '#758575', '#526856', '#70785e', '#a0a081'],
-  forest: ['#657d78', '#536b66', '#405a51', '#2e443e', '#4c5c48', '#7a8a66'],
-  labyrinth: ['#41414e', '#4c4b58', '#595866', '#313440', '#575460', '#93877a'],
-  mine: ['#483e42', '#65524d', '#7d6556', '#39373b', '#65584f', '#b1846b'],
-  fen: ['#8b9e99', '#708c86', '#56746e', '#3b5752', '#66766a', '#a7b4a0'],
-  ruins: ['#b6c3bd', '#9eafa9', '#839c97', '#5c7674', '#9ca795', '#dbd8bb'],
-  nest: ['#897f89', '#716876', '#605666', '#403c4a', '#756460', '#b8a389'],
-  abyss: ['#252936', '#353448', '#4a425b', '#202a34', '#414151', '#8c829f'],
+  meadow: [C.h, C.l, C.g, C.G, C.g, C.Y],
+  forest: [C.b, C.g, C.G, C.G, C.G, C.l],
+  labyrinth: [C.o, C.P, C.s, C.o, C.s, C.y],
+  mine: [C.o, C.d, C.t, C.o, C.d, C.y],
+  fen: [C.h, C.b, C.G, C.G, C.g, C.h],
+  ruins: [C.h, C.b, C.g, C.s, C.g, C.w],
+  nest: [C.p, C.P, C.d, C.P, C.d, C.Y],
+  abyss: [C.o, C.P, C.p, C.o, C.P, C.L],
 };
 export const LANDSCAPE_KEYS = Object.keys(themes);
 export function drawLandscape(c: CanvasRenderingContext2D, key: string, offset: number, time = 0): void {
@@ -44,12 +45,12 @@ export function drawLandscape(c: CanvasRenderingContext2D, key: string, offset: 
     if (key === 'mine') tile(.38, 104, x => {
       poly([[x, 0], [x + 13, 0], [x + 9, 20], [x + 6, 32], [x + 3, 12]], dark);
       r(x + 36, 22, 6, 63, dark); r(x + 75, 22, 6, 63, dark); r(x + 32, 20, 53, 6, ground);
-      r(x + 51, 63, 4, 12, '#9d8c9a'); r(x + 55, 59, 3, 16, '#beb4bb');
-      r(x + 58, 68, 5, 7, '#77758c');
+      r(x + 51, 63, 4, 12, C.p); r(x + 55, 59, 3, 16, C.L);
+      r(x + 58, 68, 5, 7, C.P);
     });
     if (key === 'labyrinth') tile(.38, 120, x => {
       r(x + 24, 32, 3, 19, dark); r(x + 22, 32, 7, 3, light);
-      r(x + 24, 25, 4, 8, '#b59479'); r(x + 25, 23 + Math.floor(Math.sin(time * 7)), 2, 6, '#d3b996');
+      r(x + 24, 25, 4, 8, C.y); r(x + 25, 23 + Math.floor(Math.sin(time * 7)), 2, 6, C.Y);
       r(x + 70, 76, 21, 10, mid); r(x + 75, 73, 11, 3, mid);
     });
     if (key === 'abyss') tile(.35, 120, x => {
@@ -96,11 +97,12 @@ export function drawLandscape(c: CanvasRenderingContext2D, key: string, offset: 
     r(x + 4, 94 + Math.abs(i % 3) * 3, 11, 1, light); r(x + 27, 108, 7, 2, dark); r(x + 31, 107, 3, 1, light);
     if (['meadow', 'forest', 'fen'].includes(key)) { r(x + 19, 85, 1, 5, dark); r(x + 17, 87, 5, 2, dark); r(x + 20, 83, 1, 2, light); }
     else { r(x + 18, 91, 1, 14, dark); r(x + 18, 105, 12, 1, dark); }
-    if (key === 'mine') { r(x + 5, 116, 23, 2, '#b1846b'); r(x + 12, 117, 17, 1, '#dac09b'); }
-    if (key === 'fen') { r(x + 7, 98, 28, 2, '#809b95'); r(x + 12, 102, 16, 1, '#a4b6ad'); }
+    if (key === 'mine') { r(x + 5, 116, 23, 2, C.t); r(x + 12, 117, 17, 1, C.Y); }
+    if (key === 'fen') { r(x + 7, 98, 28, 2, C.b); r(x + 12, 102, 16, 1, C.h); }
   });
   if (key === 'fen') { c.globalAlpha = .14; tile(.1, 140, x => { r(x, 64, 95, 5, light); r(x + 24, 75, 110, 3, light); }); c.globalAlpha = 1; }
 }
+
 
 /** Two scroll speeds. Alternating mirrored tiles meet at identical edge pixels,
  * so a generated painting need not be destructively edited to make it repeat. */

@@ -3,7 +3,7 @@ import { derive, xpNeed, type Derived } from './stats';
 import { difficulty, spawn, type Monster } from './monsters';
 import { AREAS, areaOf } from '../data/areas';
 import { LEVEL_SHARE, ageGrowth, raceOf } from '../data/races';
-import { SKILLS, type SkillDef, activeRank } from '../data/skills';
+import { SKILLS, type SkillDef } from '../data/skills';
 import { PETS, BOND_MAX, BOND_SEC, petOf, petXpNeed, stageOf } from '../data/pets';
 import { TITLES } from '../data/titles';
 import { FATE_CHANCE, FATE_LINES } from '../data/fate';
@@ -148,7 +148,7 @@ export class Game {
     return d.atkMin + (d.atkMax - d.atkMin) * r;
   }
   private vsArmor(x: number): number { return Math.max(1, x - this.mon.armor) * (1 - this.mon.prt); }
-  private rank(sk: SkillDef): number { return activeRank(this.s, sk.key); }
+  private rank(sk: SkillDef): number { return this.s.skills[sk.key] || 0; }
 
   private heroAttack(): void {
     for (const sk of ATTACKS) {

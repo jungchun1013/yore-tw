@@ -7,12 +7,6 @@ import type { L, Mod, Save } from '../game/types';
 export const RANKS = ['-', 'F', 'E', 'D', 'C', 'B', 'A', '9', '8', '7', '6', '5', '4', '3', '2', '1'];
 export const MAX_RANK = RANKS.length - 1;
 export const rankCost = (r: number): number => 1 + r; // F costs 1, rank 1 costs 15: 120 AP per skill
-/** A learned combat or magic skill can be taken off; it keeps its rank but does nothing until it is put back on.
- * Passives are always on. */
-export const canToggle = (key: string): boolean => SKILLS.some(d => d.key === key && d.tab !== 'passive');
-export const isOff = (s: Save, key: string): boolean => canToggle(key) && !!s.skillsOff?.includes(key);
-/** The rank a skill acts with: 0 when not learned or taken off. */
-export const activeRank = (s: Save, key: string): number => (isOff(s, key) ? 0 : s.skills[key] || 0);
 
 export type Tab = 'combat' | 'magic' | 'passive';
 export type Trigger = 'attack' | 'defend';

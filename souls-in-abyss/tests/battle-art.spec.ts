@@ -40,6 +40,7 @@ test('all maps have distinct scenery; victories advance and death returns the so
   for (const key of LANDSCAPE_KEYS) {
     await page.evaluate(key => { (window as any).__game.s.area = key; }, key);
     await expect(canvas).toHaveAttribute('data-area', key);
+    await expect(canvas).toHaveAttribute('data-background', 'painted');
     scenes.push(await canvas.evaluate(e => (e as HTMLCanvasElement).toDataURL()));
     if (info.project.name === 'desktop') {
       fs.mkdirSync(ART, { recursive: true });
@@ -63,4 +64,21 @@ test('all maps have distinct scenery; victories advance and death returns the so
   if (info.project.name === 'desktop') fs.writeFileSync(`${ART}/battle-soul.png`, Buffer.from((await canvas.evaluate(e => (e as HTMLCanvasElement).toDataURL())).split(',')[1], 'base64'));
   await expect.poll(() => page.evaluate(() => (window as any).__game.hp), { timeout: 7000, intervals: [100] }).toBeGreaterThan(0);
   expect(await page.evaluate(() => (window as any).__phases)).toContain('rebirth');
+});
+
+test('illustrated map replaces the gradient and keeps every destination selectable', async ({ page }, info) => {
+ await page.addInitScript(() => { localStorage.clear(); localStorage.setItem('yore.lang', 'zh'); });
+ await page.goto('/');await page.click('#t-play');await page.click('.intro');await page.click('#c-go');
+ await page.click('.nav [data-k="map"]');
+ const map=page.locator('.mapboard'), art=map.locator('.map-art');
+ await expect(art).toBeVisible();
+ await expect.poll(()=>art.evaluate(e=>(e as HTMLImageElement).naturalWidth)).toBe(1024);
+ expect(await map.evaluate(e=>getComputedStyle(e).backgroundImage)).toBe('none');
+ const box=await map.boundingBox();expect(box!.width/box!.height).toBeCloseTo(2/3,2);
+ await expect(map.locator('.node')).toHaveCount(8);
+ for(const key of ['forest','mine','abyss','meadow']){
+  await map.locator(`[data-k="${key}"]`).click();
+  await expect(map.locator(`[data-k="${key}"]`)).toHaveClass(/(?:sel|here)/);
+ }
+ await map.screenshot({path:path.resolve(ART,`abyss-map-${info.project.name}.png`)});
 });
