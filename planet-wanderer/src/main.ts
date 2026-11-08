@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import './style.css';
-import { PixelPipeline } from './render/pipeline';
+import { PixelPipeline, type OutlineMode, type RenderStyle } from './render/pipeline';
 import { shared } from './render/materials';
 import { dirOf } from './world/planet';
 import { Prince } from './world/prince';
@@ -113,10 +113,19 @@ const hud = new Hud(document.getElementById('hud')!, {
     resize();
     return pipe.pxSize === 1 ? '像素 關（原解析度）' : `像素 ×${pipe.pxSize}`;
   },
-  toggleOutline: () => (pipe.outlines = !pipe.outlines),
+  setStyle: (s) => {
+    pipe.setStyle(s);
+    resize();
+  },
+  setOutline: (o) => (pipe.outline = o),
   toggleDither: () => !!(shared.uDither.value = shared.uDither.value ? 0 : 1),
   interact,
 });
+function resize() {
+  pipe.resize(innerWidth, innerHeight, Math.min(devicePixelRatio || 1, 2));
+  camera.aspect = pipe.lowW / pipe.lowH;
+  camera.updateProjectionMatrix();
+}
 scenes.onArrive = (realm) => {
   goal = null;
   hud.arrive(realm.def.name.zh);
@@ -125,11 +134,6 @@ scenes.load(state.sceneId);
 
 /* ------------------------------------------------------------------ loop */
 
-function resize() {
-  pipe.resize(innerWidth, innerHeight, Math.min(devicePixelRatio || 1, 2));
-  camera.aspect = pipe.lowW / pipe.lowH;
-  camera.updateProjectionMatrix();
-}
 addEventListener('resize', resize);
 resize();
 
@@ -155,6 +159,7 @@ function frame() {
   realm.update(t, dt);
   scenes.update(dt);
   rig.update(dt, planet, prince);
+  pipe.focus = rig.focusDist;
   shared.uLightDir.value.copy(rig.light);
   sun.position.copy(rig.light).multiplyScalar(planet.radius * 4);
   hud.setView(rig.zoomGoal > 0.5);
@@ -206,6 +211,7 @@ declare global {
       geometries: () => number;
       nearExit: () => string | null;
       interact: () => void;
+      look: (style: RenderStyle, outline: OutlineMode) => void;
     };
   }
 }
@@ -225,4 +231,5 @@ window.__pw = {
   geometries: () => renderer.info.memory.geometries,
   nearExit: () => nearbyExit()?.exit.to ?? null,
   interact,
+  look: (style, outline) => hud.setLook(style, outline),
 };

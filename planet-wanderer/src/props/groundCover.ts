@@ -29,7 +29,7 @@ export function groundCover({ planet, rand, root }: PropCtx, obstacles: Obstacle
   tuftGeo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
   tuftGeo.computeVertexNormals();
 
-  const tufts = new THREE.InstancedMesh(tuftGeo, toon(0xffffff, { noOutline: true, rim: 0 }), Math.max(1, tuftCount));
+  const tufts = new THREE.InstancedMesh(tuftGeo, toon(0xffffff, { noOutline: true, rim: 0, gradient: true }), Math.max(1, tuftCount));
   const flowers = new THREE.InstancedMesh(blob(0.045, 1), toon(0xffffff, { noOutline: true }), Math.max(1, flowerCount));
   tufts.receiveShadow = flowers.receiveShadow = true;
   const o = new THREE.Object3D();

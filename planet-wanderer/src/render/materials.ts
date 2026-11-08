@@ -8,6 +8,8 @@ export const shared = {
   uLightDir: { value: new THREE.Vector3(0, 1, 0) },
   uTime: { value: 0 },
   uDither: { value: 1 },
+  /** 1 = soft Zelda/Sky shading (default), 0 = pixel-art bands. Pipeline keeps it in sync. */
+  uStyle: { value: 1 },
   uShadowTint: { value: new THREE.Color(PAL.shadowTint) },
   uSunTint: { value: new THREE.Color(PAL.sun) },
   uRimTint: { value: new THREE.Color(PAL.rim) },
@@ -52,6 +54,8 @@ uniform float uRim;
 uniform float uDither;
 uniform float uTime;
 uniform float uMark;
+uniform float uStyle;
+uniform float uGrad;
 #ifdef TERRAIN
 uniform vec3 uGrassDark; uniform vec3 uGrassLight; uniform vec3 uSand; uniform vec3 uPath;
 uniform vec3 uPondDir[MAX_PONDS]; uniform float uPondR[MAX_PONDS]; uniform int uPondCount;
@@ -88,12 +92,19 @@ void main() {
     vec3 dir = normalize(vPosW);
     // Patchy meadow in three discrete tones, anchored to the world so it never swims.
     float n = fbm3(dir * 4.2);
-    base = n < 0.4 ? uGrassDark : (n > 0.62 ? uGrassLight : base);
-    // A scatter of single lighter blades: one cell per art pixel at close range.
     vec3 cell = floor(vPosW * 9.0);
     float h = hash13(cell);
-    if (h > 0.93) base = mix(base, uGrassLight, 0.6);
-    else if (h < 0.05) base = mix(base, uGrassDark, 0.7);
+    if (uStyle > 0.5) {
+      // Soft: broad watercolour patches that blend into each other.
+      base = mix(uGrassDark, base, smoothstep(0.3, 0.48, n));
+      base = mix(base, uGrassLight, smoothstep(0.54, 0.74, n));
+      base *= 0.97 + 0.06 * fbm3(vPosW * 2.5);
+    } else {
+      base = n < 0.4 ? uGrassDark : (n > 0.62 ? uGrassLight : base);
+      // A scatter of single lighter blades: one cell per art pixel at close range.
+      if (h > 0.93) base = mix(base, uGrassLight, 0.6);
+      else if (h < 0.05) base = mix(base, uGrassDark, 0.7);
+    }
     float pd = 1e3;
     for (int i = 0; i < MAX_PONDS; i++) {
       if (i >= uPondCount) break;
@@ -103,10 +114,15 @@ void main() {
       if (i >= uPathCount) break;
       float d = arcDist(dir, uPathA[i], uPathB[i]);
       float wob = (fbm3(dir * 18.0) - 0.5) * 0.012;
-      if (d + wob < 0.022) base = mix(uPath, uSand, step(0.6, hash13(cell * 1.7)) * 0.5);
+      if (uStyle > 0.5) base = mix(base, mix(uPath, uSand, fbm3(vPosW * 3.0) * 0.6), 1.0 - smoothstep(0.016, 0.026, d + wob));
+      else if (d + wob < 0.022) base = mix(uPath, uSand, step(0.6, hash13(cell * 1.7)) * 0.5);
     }
-    if (pd < 1.32) base = mix(uSand, uPath, step(0.75, hash13(cell)));
+    if (uStyle > 0.5) base = mix(base, mix(uSand, uPath, fbm3(vPosW * 4.0) * 0.5), 1.0 - smoothstep(1.26, 1.4, pd));
+    else if (pd < 1.32) base = mix(uSand, uPath, step(0.75, hash13(cell)));
   #endif
+
+  // Grass blades: dark at the root, bright at the tip.
+  if (uGrad > 0.5) base *= mix(0.68, 1.14, clamp(vLocal.y / 0.22, 0.0, 1.0));
 
   vec3 N = normalize(vNormalW);
   if (!gl_FrontFacing) N = -N;
@@ -118,18 +134,38 @@ void main() {
   l += th * 0.09 * uDither;
 
   vec3 shadowCol = mix(base * 0.66, base * uShadowTint * 1.25, 0.45);
-  vec3 midCol = mix(shadowCol, base, 0.58);
   vec3 hiCol = mix(base, uSunTint, 0.38);
-  vec3 col = l < 0.2 ? shadowCol : (l < 0.5 ? midCol : (l < 0.94 ? base : hiCol));
-
-  // Sky bounce on the rims: the atmosphere reads cyan where surfaces turn away.
   float fr = 1.0 - max(dot(N, V), 0.0);
-  float rim = step(0.78 - th * 0.08 * uDither, fr) * uRim;
-  col = mix(col, uRimTint, rim * 0.42);
-
-  col = mix(col, base, uEmissive);
-  // Alpha carries a mark for the composite pass: 1 = outline me, 0.75 = glow, no outline.
-  gl_FragColor = vec4(col, uMark);
+  vec3 col;
+  float alpha;
+  if (uStyle > 0.5) {
+    // Soft cel: two tones joined by a short smooth ramp, cool shadows, warm light.
+    float lr = clamp(ndl * 1.25 + 0.1, 0.0, 1.0) * mix(0.12, 1.0, sh);
+    float lit = smoothstep(0.14, 0.34, lr);
+    vec3 softShadow = mix(base * 0.7, base * uShadowTint * 1.35, 0.5);
+    col = mix(softShadow, base, lit);
+    col = mix(col, hiCol, smoothstep(0.88, 1.0, lr) * 0.45);
+    // Sky fill on surfaces facing up, so shadows stay airy rather than muddy.
+    float up = clamp(dot(N, normalize(vPosW)), 0.0, 1.0);
+    col += uRimTint * 0.06 * up * (1.0 - lit);
+    // Backlit rim glow (Sky): a soft bright fringe where surfaces turn away.
+    float rim = smoothstep(0.55, 0.95, fr) * uRim;
+    col = mix(col, mix(uRimTint, uSunTint, 0.5), rim * (0.25 + 0.3 * lit));
+    // Emissive goes above 1 so the bloom pass picks it up.
+    col = mix(col, base * (1.0 + 0.7 * uEmissive * uEmissive), uEmissive);
+    // Alpha = MSAA coverage; a value off the quarter steps marks "no outline".
+    alpha = uMark < 0.9 ? 0.99 : 1.0;
+  } else {
+    vec3 midCol = mix(shadowCol, base, 0.58);
+    col = l < 0.2 ? shadowCol : (l < 0.5 ? midCol : (l < 0.94 ? base : hiCol));
+    // Sky bounce on the rims: the atmosphere reads cyan where surfaces turn away.
+    float rim = step(0.78 - th * 0.08 * uDither, fr) * uRim;
+    col = mix(col, uRimTint, rim * 0.42);
+    col = mix(col, base, uEmissive);
+    // Alpha carries a mark for the composite pass: 1 = outline me, below 0.9 = no outline.
+    alpha = uMark;
+  }
+  gl_FragColor = vec4(col, alpha);
 }
 `;
 
@@ -152,10 +188,12 @@ export interface ToonOpts {
   glow?: boolean;
   /** Skip the composite outline (thin things that would turn into dark specks). */
   noOutline?: boolean;
+  /** Darken toward the base of the mesh (grass blades). */
+  gradient?: boolean;
 }
 
 export function toon(color: number, opts: ToonOpts = {}): THREE.ShaderMaterial {
-  const key = `${color}|${opts.emissive ?? 0}|${opts.rim ?? 1}|${opts.side ?? 0}|${opts.vertexColors ? 1 : 0}|${opts.glow ? 1 : 0}|${opts.noOutline ? 1 : 0}`;
+  const key = `${color}|${opts.emissive ?? 0}|${opts.rim ?? 1}|${opts.side ?? 0}|${opts.vertexColors ? 1 : 0}|${opts.glow ? 1 : 0}|${opts.noOutline ? 1 : 0}|${opts.gradient ? 1 : 0}`;
   const hit = cache.get(key);
   if (hit) return hit;
   const m = new THREE.ShaderMaterial({
@@ -171,6 +209,7 @@ export function toon(color: number, opts: ToonOpts = {}): THREE.ShaderMaterial {
         uEmissive: { value: opts.emissive ?? 0 },
         uRim: { value: opts.rim ?? 1 },
         uMark: { value: opts.glow ? 0.75 : opts.noOutline ? 0.8 : 1 },
+        uGrad: { value: opts.gradient ? 1 : 0 },
       },
     ]),
   });
@@ -204,6 +243,7 @@ export function terrainMaterial(z: TerrainZones): THREE.ShaderMaterial {
         uEmissive: { value: 0 },
         uRim: { value: 1 },
         uMark: { value: 1 },
+        uGrad: { value: 0 },
         uGrassDark: { value: new THREE.Color(z.mood.grassDark) },
         uGrassLight: { value: new THREE.Color(z.mood.grassLight) },
         uSand: { value: new THREE.Color(z.mood.sand) },
@@ -231,13 +271,14 @@ export function waterMaterial(radius: number): THREE.ShaderMaterial {
       uLight: { value: new THREE.Color(PAL.waterLight) },
       uTime: shared.uTime,
       uDither: shared.uDither,
+      uStyle: shared.uStyle,
     },
     vertexShader: /* glsl */ `
       varying vec3 vLocal; varying vec3 vPosW;
       void main() { vLocal = position; vec4 w = modelMatrix * vec4(position, 1.0); vPosW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }
     `,
     fragmentShader: /* glsl */ `
-      uniform float uRadius; uniform vec3 uDeep; uniform vec3 uMid; uniform vec3 uLight; uniform float uTime; uniform float uDither;
+      uniform float uRadius; uniform vec3 uDeep; uniform vec3 uMid; uniform vec3 uLight; uniform float uTime; uniform float uDither; uniform float uStyle;
       varying vec3 vLocal; varying vec3 vPosW;
       ${NOISE}
       void main() {
@@ -245,12 +286,19 @@ export function waterMaterial(radius: number): THREE.ShaderMaterial {
         vec3 p = vPosW * 1.8;
         float w = vnoise3(p + vec3(uTime * 0.25, 0.0, uTime * 0.18)) * 0.65 + vnoise3(p * 2.3 - vec3(0.0, uTime * 0.3, 0.0)) * 0.35;
         w += (1.0 - r) * 0.25 + (bayer4(gl_FragCoord.xy) - 0.5) * 0.12 * uDither;
-        vec3 col = w < 0.52 ? uMid : uDeep;
-        if (w < 0.36) col = mix(uMid, uLight, 0.45);
-        if (r > 0.86) col = uLight;
+        vec3 col;
+        if (uStyle > 0.5) {
+          col = mix(mix(uMid, uLight, 0.45), uMid, smoothstep(0.3, 0.42, w));
+          col = mix(col, uDeep, smoothstep(0.48, 0.6, w));
+          col = mix(col, uLight, smoothstep(0.82, 0.92, r));
+        } else {
+          col = w < 0.52 ? uMid : uDeep;
+          if (w < 0.36) col = mix(uMid, uLight, 0.45);
+          if (r > 0.86) col = uLight;
+        }
         vec3 cell = floor(vPosW * 12.0);
         float g = fract(hash13(cell) + uTime * 0.18);
-        if (g > 0.992 && r < 0.8) col = vec3(1.0, 0.99, 0.94);
+        if (g > 0.992 && r < 0.8) col = uStyle > 0.5 ? vec3(1.4, 1.38, 1.3) : vec3(1.0, 0.99, 0.94);
         gl_FragColor = vec4(col, 1.0);
       }
     `,

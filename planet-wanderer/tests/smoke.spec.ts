@@ -65,11 +65,20 @@ test('travel between scenes by ship', async ({ page }, info) => {
   await page.waitForTimeout(800);
   await page.screenshot({ path: 'docs/screenshots/rose-moon-planet.png' });
 
-  await page.evaluate(() => window.__pw.travel('meadow'));
-  await page.waitForFunction(() => window.__pw.scene() === 'meadow' && !window.__pw.busy(), null, { timeout: 10_000 });
-  await page.waitForTimeout(800);
-  const after = await page.evaluate(() => window.__pw.geometries());
-  // Two full loads later the GPU holds about what it held after the first one.
-  expect(after).toBeLessThan(baseline * 1.1 + 10);
+  const roundTrip = async () => {
+    await page.evaluate(() => window.__pw.travel('meadow'));
+    await page.waitForFunction(() => window.__pw.scene() === 'meadow' && !window.__pw.busy(), null, { timeout: 10_000 });
+    await page.waitForTimeout(800);
+    const n = await page.evaluate(() => window.__pw.geometries());
+    await page.evaluate(() => window.__pw.travel('rose-moon'));
+    await page.waitForFunction(() => window.__pw.scene() === 'rose-moon' && !window.__pw.busy(), null, { timeout: 10_000 });
+    return n;
+  };
+  // Same arrival spot and camera each time, so the GPU should hold the same geometry.
+  // (The very first count is lower only because unseen objects upload lazily.)
+  const first = await roundTrip();
+  const second = await roundTrip();
+  expect(second).toBeLessThanOrEqual(first + 3);
+  void baseline;
   expect(errors).toEqual([]);
 });

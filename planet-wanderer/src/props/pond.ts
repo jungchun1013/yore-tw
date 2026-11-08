@@ -4,6 +4,24 @@ import { waterMaterial } from '../render/materials';
 import { dirAt, orient } from '../world/planet';
 import { at, blob, cyl, mesh, param, type PropModule } from './kit';
 
+/** A chunky boulder: an icosphere with jittered corners, flat facets like carved stone. */
+function rockGeo(r: number, rand: () => number) {
+  const g = new THREE.IcosahedronGeometry(r, 1);
+  const pos = g.attributes.position as THREE.BufferAttribute;
+  const seen = new Map<string, number>();
+  const v = new THREE.Vector3();
+  for (let i = 0; i < pos.count; i++) {
+    v.fromBufferAttribute(pos, i);
+    const key = `${v.x.toFixed(3)},${v.y.toFixed(3)},${v.z.toFixed(3)}`;
+    let s = seen.get(key);
+    if (s === undefined) seen.set(key, (s = 0.82 + rand() * 0.3));
+    v.multiplyScalar(s);
+    pos.setXYZ(i, v.x, v.y, v.z);
+  }
+  g.computeVertexNormals();
+  return g;
+}
+
 /** A hollow in the ground with water, lily pads, a ring of rocks and some reeds. */
 export const pond: PropModule = {
   prepare(planet, p) {
@@ -52,6 +70,27 @@ export const pond: PropModule = {
       hold.add(at(rock, 0, r * 0.25, 0));
       rock.rotation.set(rand() * 3, rand() * 3, rand() * 3);
       planet.place(hold, t, rand() * 360, 0.02);
+      g.add(hold);
+    }
+    // Big grey boulders sitting on the shore, each with a smaller stone leaning on it
+    // and a cap of moss. They skip the reed bank (around 2.2–2.9 rad).
+    const k = units / 1.5;
+    for (const [a, size] of [[0.35, 0.46], [1.25, 0.34], [3.55, 0.5], [4.45, 0.36], [5.4, 0.42]] as const) {
+      axis.copy(tangent).applyAxisAngle(dir, a + (rand() - 0.5) * 0.2);
+      t.copy(dir).applyAxisAngle(axis, ang * (1.12 + rand() * 0.06));
+      const r = size * k * (0.9 + rand() * 0.2);
+      const hold = new THREE.Group();
+      const big = mesh(rockGeo(r, rand), rand() > 0.4 ? PAL.boulder : PAL.boulderDark);
+      big.scale.set(1.15, 0.78, 1);
+      big.rotation.y = rand() * 6.28;
+      hold.add(at(big, 0, r * 0.45, 0));
+      const small = mesh(rockGeo(r * 0.5, rand), PAL.boulderDark);
+      small.rotation.set(rand(), rand() * 6.28, rand());
+      hold.add(at(small, r * 0.95, r * 0.22, r * 0.35));
+      const moss = mesh(blob(r * 0.42, 1), PAL.moss);
+      moss.scale.set(1.3, 0.35, 1.1);
+      hold.add(at(moss, -r * 0.1, r * 1.12, 0));
+      planet.place(hold, t, rand() * 360, 0.05);
       g.add(hold);
     }
     // Reeds on one bank.

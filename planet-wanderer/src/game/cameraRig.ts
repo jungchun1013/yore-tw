@@ -19,6 +19,8 @@ export class CameraRig {
   readonly skyScroll = new THREE.Vector2();
   /** Key light direction (toward the light), world space. */
   readonly light = new THREE.Vector3(0, 1, 0);
+  /** Distance from the camera to the point it looks at. */
+  focusDist = 10;
   private readonly dir = new THREE.Vector3();
   private readonly up = new THREE.Vector3();
   private readonly right = new THREE.Vector3();
@@ -67,6 +69,7 @@ export class CameraRig {
     const target = prince.root.position.clone().addScaledVector(P, 0.45).multiplyScalar(e);
     cam.up.copy(this.up);
     cam.lookAt(target);
+    this.focusDist = cam.position.distanceTo(target);
 
     const delta = this.dir.clone().sub(this.prevDir);
     this.skyScroll.x -= delta.dot(this.right) * 1.4;

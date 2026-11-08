@@ -73,6 +73,27 @@ export function buildRealm(def: SceneDef): Realm {
   for (const other of Object.values(SCENES)) if (other.id !== def.id) root.add(skyBody(other.skyBody));
   for (const b of DECOR_BODIES) root.add(skyBody(b));
 
+  // Drifting motes of light (Sky): they glow and bloom in the soft style.
+  const moteRand = makeRand(def.planet.seed * 31 + 11);
+  const moteGeo = blob(0.035, 1);
+  const motes = Array.from({ length: Math.round(def.planet.radius * 6) }, () => {
+    const m = mesh(moteGeo, 0xfff3d6, { emissive: 1, glow: true });
+    const d = new THREE.Vector3(moteRand() - 0.5, moteRand() - 0.5, moteRand() - 0.5).normalize();
+    m.userData = { d, h: 0.4 + moteRand() * 2.2, ph: moteRand() * 6.28, sp: 0.3 + moteRand() * 0.5 };
+    root.add(m);
+    return m;
+  });
+  const axis = new THREE.Vector3();
+  updates.push((t) => {
+    for (const m of motes) {
+      const u = m.userData as { d: THREE.Vector3; h: number; ph: number; sp: number };
+      axis.set(Math.sin(u.ph), 1, Math.cos(u.ph)).normalize();
+      const d = u.d.clone().applyAxisAngle(axis, t * 0.01 * u.sp);
+      m.position.copy(d).multiplyScalar(planet.radius + u.h + Math.sin(t * u.sp + u.ph) * 0.25);
+      m.scale.setScalar(0.6 + 0.4 * Math.sin(t * 1.7 * u.sp + u.ph));
+    }
+  });
+
   const interactables: Interactable[] = def.exits.flatMap((exit) => {
     const object = byId.get(exit.prop);
     const placement = def.props.find((p) => p.id === exit.prop);

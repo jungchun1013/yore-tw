@@ -25,3 +25,4 @@ html, body { margin: 0; height: 100%; overflow: hidden; background: #93d2dc; col
   box-shadow: 0 2px 0 rgba(51, 65, 79, .15); }
 .prompt[hidden] { display: none; }
 @media (max-width: 640px) { .prompt { bottom: 112px; } .banner { font-size: 24px; } }
+.bar button[hidden] { display: none; }

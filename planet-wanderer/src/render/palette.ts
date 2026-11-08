@@ -27,6 +27,8 @@ export const PAL = {
   stone: 0xbcc2c0,
   stoneDark: 0x98a3a8,
   moss: 0xa9bd8c,
+  boulder: 0xa7adb0,
+  boulderDark: 0x8e979c,
   windowGlow: 0xffeab0,
 
   leafA: 0x86b58f,
