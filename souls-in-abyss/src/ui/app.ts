@@ -237,9 +237,10 @@ export class App {
     if (this.lastHtml[id] === html) return;
     this.lastHtml[id] = html;
     const el = document.getElementById(id)!;
-    const st = el.scrollTop;
+    const st = el.scrollTop, inner = el.querySelector('.keepscroll'), ist = inner ? inner.scrollTop : 0;
     el.innerHTML = html;
     el.scrollTop = st;
+    const inner2 = el.querySelector('.keepscroll'); if (inner2) inner2.scrollTop = ist;
     if (id === 'sheet') this.syncSheetBars();
   }
 
@@ -392,7 +393,13 @@ export class App {
       const it = s.equip[sel];
       return `<div class="item worn" ${it ? `data-tip="item:${it.uid}"` : ''}><div class="grow"><div class="dim">${tr(SLOT_NAME[sel])}</div>${it ? this.itemHtml(it) : t('empty')}</div>${it ? `<button data-a="unequip" data-k="${sel}">${t('unequip')}</button>` : ''}</div>`;
     })();
-    return `${this.dollSvg()}${worn}`;
+    const ORDER: Slot[] = ['weapon', 'off', 'head', 'body', 'legs', 'feet', 'neck', 'ring'];
+    const list = ORDER.map(k => { const it = s.equip[k];
+      return `<div class="kv" ${it ? `data-tip="item:${it.uid}"` : ''}><span class="lbl">${tr(SLOT_NAME[k])}</span>${it ? this.itemHtml(it) : '<span class="dim">-</span>'}</div>`; }).join('');
+    const p = s.pets.find(x => x.key === s.activePet), d = p && petOf(p.key);
+    const pal = p && d ? `<div class="tname">${tr(d.stages[stageOf(p.lvl)].name)} <small class="dim">Lv ${p.lvl}</small></div>
+        <div class="tsec">${tr(d.ability)}</div><p class="lore dim">${tr(d.lore)}</p>` : `<p class="dim">${t('noPal')}</p>`;
+    return `${this.dollSvg()}${worn}<div class="eqlist"><h4>${t('wornList')}</h4>${list}</div><div class="palcard"><h4>${t('palAlong')}</h4>${pal}</div>`;
   }
 
   /** Bag page: every carried item with its CP change, equip and sell, plus auto-sell and sell-all. */
@@ -406,9 +413,9 @@ export class App {
         <button class="ghost" data-a="sell" data-uid="${it.uid}">$${gold(sellPrice(it))}</button></div></div>`;
     }).join('') || `<p class="dim">${t('empty')}</p>`;
     const opts = RARITY.map((r, i) => [String(i), i === 0 ? '-' : tr(r.name)] as [string, string]);
-    return `<div class="row between"><b>${t('bag')} ${s.bag.length}/${BAG_SIZE}</b>
+    return `<div class="row between baghead"><b>${t('bag')} ${s.bag.length}/${BAG_SIZE}</b>
         <span class="row"><span class="dim">${t('autoSell')} ${dropdown('autoSell', opts, String(s.autoSell))}</span><button class="ghost" data-a="sellAll">${t('sellAll')}</button></span></div>
-      ${bag}`;
+      <div class="baglist keepscroll">${bag}</div>`;
   }
 
   /** Tooltip shared by every [data-tip] element: hover on desktop, tap on touch screens. */
