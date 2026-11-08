@@ -12,6 +12,8 @@ export function num(n: number): string {
   for (const [v, s] of u) if (a >= v) return (n / v).toFixed(n / v < 100 ? 2 : 0).replace(/\.?0+$/, '') + s;
   return String(Math.floor(n));
 }
+/** Gold is always shown in full, with thousands separators, never as 萬/K. */
+export const gold = (n: number): string => Math.floor(n).toLocaleString('en-US');
 export const pct = (x: number, d = 0): string => (x * 100).toFixed(d) + '%';
 export function clock(sec: number): string {
   const s = Math.max(0, Math.floor(sec));

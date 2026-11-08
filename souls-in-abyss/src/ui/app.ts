@@ -1,7 +1,7 @@
 import type { Game, Part } from '../game/engine';
 import { PRIMARY, SLOTS, twoHanded, type Item, type L, type Slot } from '../game/types';
 import { lang, setLang, t, tr, UI } from '../core/i18n';
-import { clock, num, pct } from '../core/fmt';
+import { clock, gold, num, pct } from '../core/fmt';
 import { derive, armorDef, armorPrt, weaponRange, xpNeed } from '../game/stats';
 import { nameOf, sellPrice } from '../game/loot';
 import { RACES, START_AGES, ageGrowth, raceOf } from '../data/races';
@@ -247,7 +247,7 @@ export class App {
         <div class="kv"><span class="lbl">${t('lv')}</span><span>${s.lvl}</span></div>
         <div class="kv bar"><span class="lbl">${t('exp')}</span><div class="line"><div id="s-xp" class="grey"></div></div></div>
         <div class="kv bar"><span class="lbl">${t('san')}</span><div class="line"><div id="s-san" class="purple"></div></div><span class="v" id="s-san-v"></span></div>
-        <div class="kv"><span class="lbl">${t('gold')}</span><span>${num(s.gold)}</span></div>
+        <div class="kv"><span class="lbl">${t('gold')}</span><span>${gold(s.gold)}</span></div>
         ${this.pactLine()}
       </div>
       <div class="col">${PRIMARY.map(stat).join('')}
@@ -291,7 +291,7 @@ export class App {
     const l = this.g.loot;
     const kv = (k: string, v: string, cls = '') => `<div class="kv"><span${cls ? ` class="${cls}"` : ''}>${k}</span><span>${v}</span></div>`;
     return `<div class="loot"><h3>${t('mapStats')}</h3><div class="lootcols">
-      <div class="lcol">${kv(t('stay'), '<span id="loot-sec"></span>')}${kv(t('kills'), num(l.kills))}${kv(t('deaths'), num(l.deaths))}${kv('$', num(l.gold), 'gold')}${kv(t('exp'), num(l.xp), 'xp')}</div>
+      <div class="lcol">${kv(t('stay'), '<span id="loot-sec"></span>')}${kv(t('kills'), num(l.kills))}${kv(t('deaths'), num(l.deaths))}${kv('$', gold(l.gold), 'gold')}${kv(t('exp'), num(l.xp), 'xp')}</div>
       <div class="lcol">${kv(t('loot'), num(l.items.reduce((a, b) => a + b, 0)))}${RARITY.map((r, i) => `<div class="kv sub"><span style="color:${r.color}">${tr(r.name)}</span><span>${l.items[i]}</span></div>`).join('')}</div>
     </div></div>`;
   }
@@ -326,7 +326,7 @@ export class App {
       <div class="dim">${tr(r.name)}${it.weight ? ` · ${tr(WEIGHTS[it.weight].name)}` : ''}</div>
       ${lines.length ? `<div class="tsec">${lines.join('<br>')}</div>` : ''}
       ${it.affixes.length ? `<div class="tsec next">${it.affixes.map(modText).join('<br>')}</div>` : ''}
-      <div class="tcost">${t('sell')} $${num(sellPrice(it))}</div>`;
+      <div class="tcost">${t('sell')} $${gold(sellPrice(it))}</div>`;
   }
 
   private cpDelta(it: Item, slot: Slot): number {
@@ -390,7 +390,7 @@ export class App {
       return `<div class="item" data-tip="item:${it.uid}"><div class="grow">${this.itemHtml(it)}</div><div class="acts">
         <span class="${dcp > 0 ? 'up' : dcp < 0 ? 'down' : 'dim'}">${dcp ? icon('arrow', dcp > 0 ? 'gi sm pointup' : 'gi sm') : ''}${num(Math.abs(dcp))}</span>
         <button data-a="equip" data-uid="${it.uid}">${t('equip')}</button>
-        <button class="ghost" data-a="sell" data-uid="${it.uid}">$${num(sellPrice(it))}</button></div></div>`;
+        <button class="ghost" data-a="sell" data-uid="${it.uid}">$${gold(sellPrice(it))}</button></div></div>`;
     }).join('') || `<p class="dim">${t('empty')}</p>`;
     const opts = RARITY.map((r, i) => [String(i), i === 0 ? '-' : tr(r.name)] as [string, string]);
     return `<div class="row between"><b>${t('bag')} ${s.bag.length}/${BAG_SIZE}</b>
@@ -514,7 +514,7 @@ export class App {
       const cost = smithCost(it.ilvl, it.plus), ch = A.smithChance(g, it);
       return `<div class="item" data-tip="item:${it.uid}"><div class="grow">${this.itemHtml(it)}</div><div class="acts">
         <span class="dim">${it.plus >= SMITH_BREAK_FROM ? icon('warn-hard', 'gi sm') : it.plus >= SMITH_DROP_FROM ? icon('warn-soft', 'gi sm') : ''}${pct(ch)}</span>
-        <button data-a="smith" data-uid="${it.uid}" ${s.gold < cost ? 'disabled' : ''}>$${num(cost)}</button></div></div>`;
+        <button data-a="smith" data-uid="${it.uid}" ${s.gold < cost ? 'disabled' : ''}>$${gold(cost)}</button></div></div>`;
     };
     // the warning mark sits in its own fixed-width column so both marks line up
     const rule = (k: string, v: string, mark = '') => `<div class="kv"><span class="lbl">${k}</span><span class="mk">${mark}</span><span>${v}</span></div>`;
