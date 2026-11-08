@@ -2,7 +2,7 @@ import type { Game } from './engine';
 import { SLOT_OF, twoHanded, type Item, type Save, type Slot } from './types';
 import { BAG_SIZE, SMITH_BREAK_FROM, SMITH_CHANCE, SMITH_DROP_FROM, SMITH_MAX, smithCost } from '../data/items';
 import { SMITH_BONUS } from '../data/races';
-import { MAX_RANK, rankCost, skillOf } from '../data/skills';
+import { MAX_RANK, rankCost, skillOf, canToggle } from '../data/skills';
 import { AREAS } from '../data/areas';
 import { REBIRTH_LINES } from '../data/fate';
 import { chance, pick, rnd } from '../core/rng';
@@ -97,7 +97,7 @@ export function learn(g: Game, key: string): void {
 /** Take a learned skill off, or put it back on. */
 export function toggleSkill(g: Game, key: string): void {
   const s = g.s;
-  if (!skillOf(key) || !s.skills[key]) return;
+  if (!skillOf(key) || !s.skills[key] || !canToggle(key)) return;
   const off = s.skillsOff || (s.skillsOff = []);
   const i = off.indexOf(key);
   if (i >= 0) off.splice(i, 1); else off.push(key);

@@ -20,9 +20,15 @@ test('a learned skill is clicked off and on; off skills stop acting', async ({ p
     if (await off() === before) await name.tap();
   };
   await press();
-  await expect(page.locator('.view .skill').first()).toHaveClass(/\boff\b/);
+  await expect(page.locator('.view .skill').first()).not.toHaveClass(/\bon\b/);
   expect(await off()).toBe(true);
   await press();
-  await expect(page.locator('.view .skill').first()).not.toHaveClass(/\boff\b/);
+  await expect(page.locator('.view .skill').first()).toHaveClass(/\bon\b/);
   expect(await off()).toBe(false);
+  // passives are always on: learned, but not clickable
+  await page.click('.stab[data-k="passive"]');
+  const passive = page.locator('.view .skill').first();
+  await passive.locator('.up-btn').click();
+  await expect(passive).not.toHaveAttribute('data-a', 'sktoggle');
+  await expect(passive).not.toHaveClass(/\bon\b/);
 });
