@@ -1,0 +1,55 @@
+import { PAL } from '../render/palette';
+import type { SceneDef } from './types';
+
+/** The first planet: a cottage, a pond, an old stele with a soul light, and the ship. */
+export const meadow: SceneDef = {
+  id: 'meadow',
+  kind: 'planet',
+  name: { zh: '初始草原星', en: 'Meadow Star' },
+  mood: {
+    skyTop: PAL.skyTop, skyMid: PAL.skyMid, skyLow: PAL.skyLow,
+    cloud: PAL.cloud, cloudShade: PAL.cloudShade, halo: PAL.halo,
+    sun: PAL.sun, shadowTint: PAL.shadowTint, rim: PAL.rim,
+    grass: PAL.grass, grassDark: PAL.grassDark, grassLight: PAL.grassLight, sand: PAL.sand, path: PAL.path,
+  },
+  planet: {
+    radius: 10,
+    seed: 0,
+    paths: [
+      [[14.2, 2], [-1, -23]],
+      [[14.2, 3], [11, 34]],
+      [[6, 8], [-10, 21]],
+    ],
+  },
+  props: [
+    { type: 'house', at: [19, 2], yaw: 180 },
+    { type: 'fence', at: [14.5, 9], params: { to: [24, 12.5], posts: 6 } },
+    { type: 'tree', at: [31, -20], yaw: 0, params: { scale: 1.15, leaf: PAL.leafA, leaf2: PAL.leafB } },
+    { type: 'tree', at: [27, -27], yaw: 70, params: { scale: 0.85, leaf: PAL.leafC, leaf2: PAL.leafA } },
+    { type: 'tree', at: [35, -28], yaw: 140, params: { scale: 1.0, leaf: PAL.leafB, leaf2: PAL.leafC } },
+    { type: 'tree', at: [-38, 85], yaw: 85, params: { scale: 0.9 } },
+    { type: 'tree', at: [48, 125], yaw: 125, params: { scale: 1.0 } },
+    { type: 'tree', at: [-28, -118], yaw: -118, params: { scale: 0.8 } },
+    { type: 'tree', at: [-55, 200], yaw: 200, params: { scale: 0.95 } },
+    { type: 'tree', at: [60, -60], yaw: -60, params: { scale: 0.85 } },
+    { type: 'pond', at: [-6, -30], params: { radius: 1.5, depth: 0.42 } },
+    { type: 'stele', at: [-13, 25], yaw: 160 },
+    { type: 'ship', id: 'ship', at: [13, 40], yaw: 205 },
+    { type: 'rose', at: [9, -7] },
+    { type: 'volcano', at: [12, 172], params: { active: true } },
+    { type: 'volcano', at: [-18, 150] },
+    { type: 'sprout', at: [32, 196] },
+    { type: 'boulder', at: [-45, 30] },
+    { type: 'boulder', at: [20, 95] },
+    { type: 'boulder', at: [-10, 120] },
+    { type: 'boulder', at: [40, -95] },
+    { type: 'boulder', at: [-60, -20] },
+    { type: 'boulder', at: [5, -150] },
+    { type: 'wisp', at: [-13, 25] },
+  ],
+  groundCover: { tufts: 900, flowers: 160 },
+  spawn: { at: [5, 4], heading: 180 },
+  arrival: { at: [8, 36], heading: 180 },
+  exits: [{ prop: 'ship', to: 'rose-moon', label: { zh: '搭太空艇前往 玫瑰月', en: 'Fly to the Rose Moon' } }],
+  skyBody: { color: 0xd5e6c2, radius: 1.4, pos: [30, 48, 70] },
+};

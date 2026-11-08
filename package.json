@@ -2,10 +2,11 @@
   "name": "yore-games",
   "version": "0.1.0",
   "private": true,
-  "description": "yore-tw.com: the entry site in site/ plus two independent games, each its own npm workspace. Shared tooling only (Vite, TypeScript, Playwright); no shared game code.",
+  "description": "yore-tw.com: the entry site in site/ plus three independent games, each its own npm workspace. Shared tooling only (Vite, TypeScript, Playwright); no shared game code.",
   "workspaces": [
     "meowcaron",
-    "souls-in-abyss"
+    "souls-in-abyss",
+    "planet-wanderer"
   ],
   "scripts": {
     "typecheck": "npm run typecheck --workspaces",

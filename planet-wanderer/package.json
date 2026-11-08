@@ -1,0 +1,19 @@
+{
+  "name": "planet-wanderer",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Planet Wanderer (working title): a tiny-planet frontier game rendered from 3D into pixel art. Independent from the other games; tooling comes from the workspace root.",
+  "scripts": {
+    "dev": "vite --host --port 5190",
+    "build": "tsc --noEmit -p . && vite build",
+    "preview": "vite preview --port 4190",
+    "test": "playwright test",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "dependencies": {
+    "three": "0.169.0"
+  },
+  "devDependencies": {
+    "@types/three": "0.169.0"
+  }
+}
