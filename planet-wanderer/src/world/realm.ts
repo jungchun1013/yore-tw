@@ -6,7 +6,8 @@ import { cobbles } from '../props/cobbles';
 import { blob, makeRand, mesh, type Obstacle, type PropCtx } from '../props/kit';
 import { SCENES, DECOR_BODIES } from '../scenes';
 import type { ExitDef, SceneDef, SkyBody } from '../scenes/types';
-import { Planet, dirAt } from './planet';
+import { Planet, dirAt, orient } from './planet';
+import { lumpy, merge, paint, xf } from '../props/geo';
 
 export interface Interactable {
   object: THREE.Object3D;
@@ -93,6 +94,37 @@ export function buildRealm(def: SceneDef): Realm {
       const d = u.d.clone().applyAxisAngle(axis, t * 0.01 * u.sp);
       m.position.copy(d).multiplyScalar(planet.radius + u.h + Math.sin(t * u.sp + u.ph) * 0.25);
       m.scale.setScalar(0.6 + 0.4 * Math.sin(t * 1.7 * u.sp + u.ph));
+    }
+  });
+
+  // Floating clouds circling below the camera in planet view (main hides them close up).
+  const clouds = new THREE.Group();
+  clouds.name = 'clouds';
+  const cloudRand = makeRand(def.planet.seed * 17 + 3);
+  const cloudList = Array.from({ length: 7 }, (_, i) => {
+    const parts: THREE.BufferGeometry[] = [];
+    const n = 3 + Math.floor(cloudRand() * 3);
+    for (let k = 0; k < n; k++) {
+      const r = (0.5 + cloudRand() * 0.5) * (def.planet.radius / 10);
+      const b = lumpy(r, 2, 0.12, cloudRand() * 20);
+      xf(b, { x: (k - n / 2) * r * 0.9, y: cloudRand() * r * 0.3, z: (cloudRand() - 0.5) * r }, { x: 0, y: 0, z: 0 }, { x: 1.2, y: 0.55, z: 1 });
+      parts.push(paint(b, k % 2 ? 0xf7f8f4 : 0xeef2f1));
+    }
+    // Partly self-lit so the undersides stay cloud-white instead of shadow-violet.
+    const m = mesh(merge(parts), 0xffffff, { vertexColors: true, noOutline: true, rim: 0.3, emissive: 0.55 });
+    m.castShadow = true;
+    const d = new THREE.Vector3(cloudRand() - 0.5, cloudRand() - 0.5, cloudRand() - 0.5).normalize();
+    m.userData = { d, ax: new THREE.Vector3(cloudRand() - 0.5, 1, cloudRand() - 0.5).normalize(), sp: 0.015 + cloudRand() * 0.02, i };
+    clouds.add(m);
+    return m;
+  });
+  root.add(clouds);
+  updates.push((t) => {
+    for (const m of cloudList) {
+      const u = m.userData as { d: THREE.Vector3; ax: THREE.Vector3; sp: number };
+      const d = u.d.clone().applyAxisAngle(u.ax, t * u.sp);
+      orient(m, d, 0);
+      m.position.copy(d).multiplyScalar(def.planet.radius + 3.2 * (def.planet.radius / 10));
     }
   });
 

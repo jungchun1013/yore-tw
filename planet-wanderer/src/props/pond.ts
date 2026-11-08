@@ -47,17 +47,18 @@ export const pond: PropModule = {
     const obstacles: { dir: THREE.Vector3; radius: number }[] = [{ dir, radius: units * 0.95 }];
     const rockParts: THREE.BufferGeometry[] = [];
     const mossParts: THREE.BufferGeometry[] = [];
-    const greys = [0x9ea4a8, 0x8a9096, 0xb3b8ba, 0x7d8597, 0xa6a9a6, 0x6f778c];
+    const greys = [0xa6a3bd, 0x8f8ca9, 0xb9b6cc, 0x7f7c9c, 0xaeabc0, 0x75738f];
     const arcFrom = 3.6;
     const arcTo = 5.6;
-    const masses: [angle: number, h: number, w: number, out: number][] = [
-      [4.55, 1.55, 1.7, 1.05],
-      [3.95, 1.0, 1.25, 1.08],
-      [5.15, 0.8, 1.1, 1.0],
-      [5.5, 0.42, 0.7, 0.9],
-      [3.7, 0.45, 0.7, 0.92],
+    // Mostly broad, blunt masses; only the tallest one comes to a point.
+    const masses: [angle: number, h: number, w: number, out: number, sharp: boolean][] = [
+      [4.55, 1.45, 1.6, 1.05, true],
+      [3.95, 0.85, 1.5, 1.08, false],
+      [5.15, 0.7, 1.4, 1.0, false],
+      [5.5, 0.38, 0.9, 0.9, false],
+      [3.7, 0.4, 0.9, 0.92, false],
     ];
-    for (const [a0, h0, w0, out] of masses) {
+    for (const [a0, h0, w0, out, sharp] of masses) {
       axis.copy(tangent).applyAxisAngle(dir, a0 + (rand() - 0.5) * 0.1);
       const at = dir.clone().applyAxisAngle(axis, ang * out);
       const h = h0 * k * (0.9 + rand() * 0.2);
@@ -65,7 +66,7 @@ export const pond: PropModule = {
       const o = new THREE.Object3D();
       planet.place(o, at, rand() * 360, 0.2 * k);
       o.updateMatrix();
-      const gc = crag(h, w, w * (0.75 + rand() * 0.3), rand);
+      const gc = crag(h, w, w * (0.75 + rand() * 0.3), rand, sharp);
       gc.applyMatrix4(o.matrix);
       rockParts.push(facetColors(gc, greys, rand));
       // A tuft of moss on a ledge of the bigger masses.
@@ -85,7 +86,7 @@ export const pond: PropModule = {
       planet.place(o, at, rand() * 360, 0.08 * k);
       o.updateMatrix();
       const s = (0.18 + rand() * 0.2) * k;
-      const gb = crag(s * 1.1, s * 1.4, s * 1.2, rand);
+      const gb = crag(s * 0.8, s * 1.6, s * 1.3, rand);
       gb.applyMatrix4(o.matrix);
       rockParts.push(facetColors(gb, greys, rand));
     }

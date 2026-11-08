@@ -5,7 +5,8 @@ export interface HudHandlers {
   setStyle(s: RenderStyle): void;
   setOutline(o: OutlineMode): void;
   cyclePixel(): string;
-  toggleDither(): boolean;
+  /** 2 = jagged, 1 = dither dots, 0 = hard; returns the new mode. */
+  cycleEdges(): number;
   interact(): void;
 }
 
@@ -34,7 +35,7 @@ export class Hud {
         <button data-act="style" class="on"></button>
         <button data-act="outline"></button>
         <button data-act="px" class="pixel-only">像素 ×3</button>
-        <button data-act="dither" class="on pixel-only">抖色 開</button>
+        <button data-act="dither" class="on pixel-only">色塊邊 鋸齒</button>
       </div>
       <div class="banner"></div>
       <button class="prompt" hidden></button>
@@ -55,11 +56,7 @@ export class Hud {
       if (act === 'style') this.setLook(this.style === 'soft' ? 'pixel' : 'soft', this.outline);
       if (act === 'outline') this.setLook(this.style, OUTLINES[(OUTLINES.indexOf(this.outline) + 1) % OUTLINES.length]);
       if (act === 'px') b.textContent = h.cyclePixel();
-      if (act === 'dither') {
-        const on = h.toggleDither();
-        b.classList.toggle('on', on);
-        b.textContent = `抖色 ${on ? '開' : '關'}`;
-      }
+      if (act === 'dither') b.textContent = `色塊邊 ${['硬邊', '抖色', '鋸齒'][h.cycleEdges()]}`;
     });
     this.setLook(this.style, this.outline);
   }

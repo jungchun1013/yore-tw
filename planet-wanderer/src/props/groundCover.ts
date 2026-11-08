@@ -34,7 +34,7 @@ export function groundCover({ planet, rand, root }: PropCtx, obstacles: Obstacle
   tufts.receiveShadow = flowers.receiveShadow = true;
   const o = new THREE.Object3D();
   const col = new THREE.Color();
-  const greens = [PAL.leafB, PAL.grassLight, PAL.leafB, 0xd2e4ad];
+  const greens = [PAL.leafB, PAL.grassLight, PAL.leafB, 0xc3cc9e];
   const blooms = [PAL.flowerA, PAL.flowerB, PAL.flowerC, PAL.flowerA];
   let ti = 0;
   let fi = 0;

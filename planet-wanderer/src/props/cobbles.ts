@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { toon } from '../render/materials';
 import { makeRand, type PropCtx } from './kit';
 
-const TONES = [0xb9b6aa, 0xa9a79c, 0xc6c0b0, 0x9c9d96, 0xbdb39f];
+const TONES = [0xb3afc2, 0xa39fb6, 0xc2bdcc, 0x9794ab, 0xb8aeb4];
 
 /** Cobbles laid along every path: rows of irregular flat stones with earth showing in
  *  the joints, thinning out toward the edges. One instanced mesh for the whole world. */

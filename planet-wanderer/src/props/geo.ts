@@ -88,29 +88,31 @@ export function lumpy(r: number, detail: number, amount: number, seed: number): 
 }
 
 /**
- * A crag: a tall, peaked rock mass with big flat fracture faces, like a boulder the
- * stream has cut. Rings of points narrow toward a leaning peak, hulled into facets.
+ * A water-worn rock mass with broad, gently sloping fracture faces. Rings of only a
+ * few points make each face wide. `sharp` rocks narrow to a leaning peak; the rest
+ * end in a tilted, blunt top.
  */
-export function crag(h: number, w: number, d: number, rand: () => number): THREE.BufferGeometry {
+export function crag(h: number, w: number, d: number, rand: () => number, sharp = false): THREE.BufferGeometry {
   const pts: THREE.Vector3[] = [];
-  const peak = new THREE.Vector3((rand() - 0.5) * w * 0.35, h, (rand() - 0.5) * d * 0.3);
-  const levels = [-0.25, 0.05, 0.32, 0.6, 0.82];
+  const lean = new THREE.Vector2((rand() - 0.5) * w * 0.3, (rand() - 0.5) * d * 0.25);
+  const levels = sharp ? [-0.25, 0.1, 0.45, 0.8] : [-0.25, 0.2, 0.62, 1.0];
+  const taper = sharp ? 0.7 : 0.42;
   for (const lv of levels) {
-    const y = lv * h;
-    const shrink = 1 - Math.max(0, lv) * 0.62;
-    const count = 5 + Math.floor(rand() * 2);
+    const count = 4 + Math.floor(rand() * 2);
     const start = rand() * Math.PI * 2;
+    const shrink = 1 - Math.max(0, lv) * taper;
+    // Blunt tops tilt: one side of the top ring sits lower than the other.
+    const tilt = sharp ? 0 : 0.18 * h;
     for (let i = 0; i < count; i++) {
-      const a = start + (i / count) * Math.PI * 2 + (rand() - 0.5) * 0.7;
-      const k = shrink * (0.72 + rand() * 0.36);
-      const p = new THREE.Vector3(Math.cos(a) * (w / 2) * k, y + (rand() - 0.5) * h * 0.08, Math.sin(a) * (d / 2) * k);
-      // Lean the upper rings toward the peak so the mass lists to one side.
-      p.x += peak.x * Math.max(0, lv);
-      p.z += peak.z * Math.max(0, lv);
-      pts.push(p);
+      const a = start + (i / count) * Math.PI * 2 + (rand() - 0.5) * 0.5;
+      const k = shrink * (0.8 + rand() * 0.25);
+      const x = Math.cos(a) * (w / 2) * k + lean.x * Math.max(0, lv);
+      const z = Math.sin(a) * (d / 2) * k + lean.y * Math.max(0, lv);
+      const y = lv * h + (lv >= 1 ? Math.cos(a) * tilt - tilt : 0) + (rand() - 0.5) * h * 0.05;
+      pts.push(new THREE.Vector3(x, y, z));
     }
   }
-  pts.push(peak);
+  if (sharp) pts.push(new THREE.Vector3(lean.x, h, lean.y));
   return new ConvexGeometry(pts);
 }
 

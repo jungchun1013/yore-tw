@@ -316,18 +316,22 @@ void main() {
       float z = depthAt(uv);
       // Silhouette lines from depth jumps. Alpha off the MSAA quarter steps = "never outline".
       bool marked = abs(c.a * 4.0 - floor(c.a * 4.0 + 0.5)) > 0.02;
-      if (uOutline > 0.5 && !marked) {
+      if (!marked) {
         float thr = 0.045 * z + 0.12;
         float edge = 0.0;
+        float topEdge = 0.0;
         vec2 px = vec2(uEdgePx) / uScreen;
         vec2 offs[4];
         offs[0] = vec2(px.x, 0.0); offs[1] = vec2(-px.x, 0.0); offs[2] = vec2(0.0, px.y); offs[3] = vec2(0.0, -px.y);
         for (int i = 0; i < 4; i++) {
           vec2 o = uv + offs[i];
           float dn = texture2D(tColor, o).a < 0.5 ? 1e4 : depthAt(o);
-          edge = max(edge, smoothstep(thr, thr * 1.8, dn - z));
+          float e = smoothstep(thr, thr * 1.8, dn - z);
+          if (i == 2) topEdge = e; else edge = max(edge, e);
         }
-        obj = mix(obj, edgeColor(obj), edge * (uOutline > 1.5 ? 1.0 : 0.85));
+        // Light catches the top edge of everything; the other edges get the outline.
+        if (uOutline > 0.5) obj = mix(obj, edgeColor(obj), edge * (1.0 - topEdge) * (uOutline > 1.5 ? 1.0 : 0.85));
+        obj = mix(obj, mix(uSun, vec3(1.0), 0.4) * 1.05, topEdge * 0.42);
       }
       // Aerial perspective: the far side of the world melts into the sky's colour.
       float haze = clamp((z - uFocus * 0.95) / (uFocus * 1.4), 0.0, 1.0);
@@ -349,11 +353,12 @@ void main() {
     col = mix(col, uHalo, steps * 0.55);
   } else {
     col = c.rgb;
-    if (uOutline > 0.5 && c.a > 0.9) {
+    if (c.a > 0.9) {
       float d = depthAt(uv);
       vec3 n = texture2D(tNormal, uv).xyz * 2.0 - 1.0;
       float thr = 0.045 * d + 0.12;
       float edge = 0.0;
+      float topEdge = 0.0;
       float crease = 0.0;
       vec2 offs[4];
       offs[0] = vec2(texel.x, 0.0); offs[1] = vec2(-texel.x, 0.0); offs[2] = vec2(0.0, texel.y); offs[3] = vec2(0.0, -texel.y);
@@ -361,14 +366,17 @@ void main() {
         vec2 o = uv + offs[i];
         vec4 cn = texture2D(tColor, o);
         float dn = cn.a < 0.25 ? 1e4 : depthAt(o);
-        if (dn - d > thr) edge = 1.0;
+        if (dn - d > thr) { if (i == 2) topEdge = 1.0; else edge = 1.0; }
         vec3 nn = texture2D(tNormal, o).xyz * 2.0 - 1.0;
         // Crease only on the nearer side so inner lines stay one pixel wide.
         if (abs(dn - d) < thr && d <= dn && dot(n, nn) < 0.72) crease += 1.0;
       }
-      if (edge > 0.5) {
+      if (topEdge > 0.5) {
+        // One pale pixel of light along every top silhouette.
+        col = mix(col, mix(uSun, vec3(1.0), 0.4), 0.5);
+      } else if (edge > 0.5 && uOutline > 0.5) {
         col = edgeColor(col);
-      } else if (crease > 0.5) {
+      } else if (crease > 0.5 && uOutline > 0.5) {
         float facing = dot(n, uLightView);
         col = facing > 0.15 ? mix(col, vec3(1.0, 0.97, 0.9), 0.28) : col * 0.82;
       }

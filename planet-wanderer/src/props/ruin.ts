@@ -4,7 +4,7 @@ import { dirAt } from '../world/planet';
 import { makeRand, mesh, param, type PropModule } from './kit';
 import { lumpy, merge, paint, stoneBlock, xf } from './geo';
 
-const STONE = [0xc9c6b8, 0xbab8ab, 0xaeb0a6, 0xd2cfc2];
+const STONE = [0xc0bdd0, 0xb0adc4, 0xa4a2ba, 0xcac7d8];
 
 /**
  * Ancient ring sanctuary, in the spirit of Hyrule's weathered ruins: a raised round
@@ -51,9 +51,9 @@ export const ruin: PropModule = {
         stone.push(paint(b, tone(), 0.07, rand));
       }
     }
-    stone.push(paint(xf(new THREE.CylinderGeometry(0.55, 0.57, 0.12, 16), { x: 0, y: -0.04, z: 0 }), 0xbcb9ac));
+    stone.push(paint(xf(new THREE.CylinderGeometry(0.55, 0.57, 0.12, 16), { x: 0, y: -0.04, z: 0 }), 0xb8b5ca));
     // Dark bed under everything so gaps read as shadowed joints, not grass.
-    stone.push(paint(xf(new THREE.CylinderGeometry(R + 0.1, R + 0.25, 0.3, 32), { x: 0, y: -0.2, z: 0 }), 0x7f8077));
+    stone.push(paint(xf(new THREE.CylinderGeometry(R + 0.1, R + 0.25, 0.3, 32), { x: 0, y: -0.2, z: 0 }), 0x726f8c));
 
     // Columns: plinth, fluted drums, capital. Some carry lintels, some are broken.
     const colR = R - 0.42;
@@ -169,21 +169,23 @@ export const marker: PropModule = {
     const crown = new THREE.CylinderGeometry(0.15, 0.15, 0.1, 10, 1, false, 0, Math.PI);
     crown.rotateZ(Math.PI / 2);
     crown.rotateY(Math.PI / 2);
-    xf(crown, { x: 0, y: 0.65, z: 0 });
-    xf(crown, { x: 0, y: 0, z: 0 }, lean);
+    // Same pivot as the slab (its centre), so the crown stays seated when it leans.
+    xf(crown, { x: 0, y: 0.39, z: 0 });
+    xf(crown, { x: 0, y: 0.26, z: 0 }, lean);
     stone.push(paint(crown, STONE[Math.floor(rand() * STONE.length)], 0.05, rand));
     const chunk = stoneBlock(0.14, 0.1, 0.1, rand, 1);
     xf(chunk, { x: 0.22, y: 0.04, z: 0.12 }, { x: rand(), y: rand(), z: rand() });
-    stone.push(paint(chunk, 0xb4b3a8, 0.05, rand));
+    stone.push(paint(chunk, 0xa9a6bd, 0.05, rand));
     const g = new THREE.Group();
     g.add(mesh(merge(stone), 0xffffff, { vertexColors: true }));
     const face = new THREE.Group();
     face.rotation.set(lean.x, lean.y, lean.z);
+    face.position.y = 0.26;
     const glyph = mesh(new THREE.TorusGeometry(0.045, 0.008, 4, 12), PAL.rune, { emissive: 0.35, glow: true });
-    glyph.position.set(0, 0.42, 0.056);
+    glyph.position.set(0, 0.16, 0.056);
     face.add(glyph);
     const bar = mesh(new THREE.BoxGeometry(0.008, 0.12, 0.01), PAL.rune, { emissive: 0.35, glow: true });
-    bar.position.set(0, 0.28, 0.056);
+    bar.position.set(0, 0.02, 0.056);
     face.add(bar);
     g.add(face);
     for (const [x, z, s] of [[-0.08, 0.08, 0.1], [0.12, -0.04, 0.08]] as const) {

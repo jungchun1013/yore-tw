@@ -118,7 +118,10 @@ const hud = new Hud(document.getElementById('hud')!, {
     resize();
   },
   setOutline: (o) => (pipe.outline = o),
-  toggleDither: () => !!(shared.uDither.value = shared.uDither.value ? 0 : 1),
+  cycleEdges: () => {
+    shared.uDither.value = [1, 0, 2][shared.uDither.value];
+    return shared.uDither.value;
+  },
   interact,
 });
 function resize() {
@@ -160,6 +163,9 @@ function frame() {
   scenes.update(dt);
   rig.update(dt, planet, prince);
   pipe.focus = rig.focusDist;
+  // Floating clouds belong to the planet view; close up they would block the camera.
+  const clouds = realm.root.getObjectByName('clouds');
+  if (clouds) clouds.visible = rig.eased < 0.45;
   shared.uLightDir.value.copy(rig.light);
   sun.position.copy(rig.light).multiplyScalar(planet.radius * 4);
   hud.setView(rig.zoomGoal > 0.5);

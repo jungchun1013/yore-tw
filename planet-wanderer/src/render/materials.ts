@@ -7,9 +7,11 @@ import type { Mood } from '../scenes/types';
 export const shared = {
   uLightDir: { value: new THREE.Vector3(0, 1, 0) },
   uTime: { value: 0 },
-  uDither: { value: 1 },
+  uDither: { value: 2 },
   /** 1 = soft Zelda/Sky shading (default), 0 = pixel-art bands. Pipeline keeps it in sync. */
   uStyle: { value: 1 },
+  /** Shadows of passing clouds on everything (0 = off). */
+  uCloudShadow: { value: 1 },
   uShadowTint: { value: new THREE.Color(PAL.shadowTint) },
   uSunTint: { value: new THREE.Color(PAL.sun) },
   uRimTint: { value: new THREE.Color(PAL.rim) },
@@ -56,6 +58,7 @@ uniform float uTime;
 uniform float uMark;
 uniform float uStyle;
 uniform float uGrad;
+uniform float uCloudShadow;
 #ifdef TERRAIN
 uniform vec3 uGrassDark; uniform vec3 uGrassLight; uniform vec3 uSand; uniform vec3 uPath;
 uniform vec3 uPondDir[MAX_PONDS]; uniform float uPondR[MAX_PONDS]; uniform int uPondCount;
@@ -100,6 +103,7 @@ void main() {
       base = mix(base, uGrassLight, smoothstep(0.54, 0.74, n));
       base *= 0.97 + 0.06 * fbm3(vPosW * 2.5);
     } else {
+      if (uDither > 1.5) n += (vnoise3(vPosW * 14.0) - 0.5) * 0.09;
       base = n < 0.4 ? uGrassDark : (n > 0.62 ? uGrassLight : base);
       // A scatter of single lighter blades: one cell per art pixel at close range.
       if (h > 0.93) base = mix(base, uGrassLight, 0.6);
@@ -130,9 +134,14 @@ void main() {
   vec3 V = normalize(cameraPosition - vPosW);
   float ndl = dot(N, uLightDir);
   float sh = getShadowMask();
+  // Clouds drifting over the world leave soft travelling shadows.
+  float cloud = smoothstep(0.5, 0.6, fbm3(vPosW * 0.2 + vec3(uTime * 0.035, 0.0, uTime * 0.022)));
+  sh *= 1.0 - cloud * 0.8 * uCloudShadow * (1.0 - uEmissive);
   float l = clamp(ndl * 1.25 + 0.1, 0.0, 1.0) * mix(0.18, 1.0, sh);
-  float th = bayer4(gl_FragCoord.xy) - 0.5;
-  l += th * 0.09 * uDither;
+  // Band seams: 1 = ordered dither on the screen grid, 2 = jagged, brush-broken edges
+  // from world-anchored noise (they stay put while the camera moves).
+  float th = uDither > 1.5 ? (vnoise3(vPosW * 16.0) - 0.5) * 1.6 : bayer4(gl_FragCoord.xy) - 0.5;
+  l += th * (uDither > 1.5 ? 0.12 : 0.09 * uDither);
 
   vec3 shadowCol = mix(base * 0.66, base * uShadowTint * 1.25, 0.45);
   vec3 hiCol = mix(base, uSunTint, 0.38);
@@ -160,7 +169,7 @@ void main() {
     vec3 midCol = mix(shadowCol, base, 0.58);
     col = l < 0.2 ? shadowCol : (l < 0.5 ? midCol : (l < 0.94 ? base : hiCol));
     // Sky bounce on the rims: the atmosphere reads cyan where surfaces turn away.
-    float rim = step(0.78 - th * 0.08 * uDither, fr) * uRim;
+    float rim = step(0.78 - th * 0.08 * min(uDither, 1.0), fr) * uRim;
     col = mix(col, uRimTint, rim * 0.42);
     col = mix(col, base, uEmissive);
     // Alpha carries a mark for the composite pass: 1 = outline me, below 0.9 = no outline.
@@ -288,7 +297,7 @@ export function waterMaterial(radius: number): THREE.ShaderMaterial {
         float r = length(vLocal.xy) / uRadius;
         vec3 p = vPosW * 1.8;
         float w = vnoise3(p + vec3(uTime * 0.25, 0.0, uTime * 0.18)) * 0.65 + vnoise3(p * 2.3 - vec3(0.0, uTime * 0.3, 0.0)) * 0.35;
-        w += (1.0 - r) * 0.25 + (bayer4(gl_FragCoord.xy) - 0.5) * 0.12 * uDither;
+        w += (1.0 - r) * 0.25 + (bayer4(gl_FragCoord.xy) - 0.5) * 0.12 * min(uDither, 1.0);
         vec3 col;
         if (uStyle > 0.5) {
           col = mix(mix(uMid, uLight, 0.45), uMid, smoothstep(0.3, 0.42, w));
