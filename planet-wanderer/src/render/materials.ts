@@ -95,19 +95,16 @@ void main() {
     vec3 dir = normalize(vPosW);
     // Patchy meadow in three discrete tones, anchored to the world so it never swims.
     float n = fbm3(dir * 4.2);
-    vec3 cell = floor(vPosW * 9.0);
-    float h = hash13(cell);
+    // Coarse cells: two-tone mottling on paths and sand comes in patches, not specks.
+    vec3 cell = floor(vPosW * 3.0);
     if (uStyle > 0.5) {
       // Soft: broad watercolour patches that blend into each other.
       base = mix(uGrassDark, base, smoothstep(0.3, 0.48, n));
       base = mix(base, uGrassLight, smoothstep(0.54, 0.74, n));
       base *= 0.97 + 0.06 * fbm3(vPosW * 2.5);
     } else {
-      if (uDither > 1.5) n += (vnoise3(vPosW * 14.0) - 0.5) * 0.09;
+      if (uDither > 1.5) n += (vnoise3(vPosW * 5.0) - 0.5) * 0.1;
       base = n < 0.4 ? uGrassDark : (n > 0.62 ? uGrassLight : base);
-      // A scatter of single lighter blades: one cell per art pixel at close range.
-      if (h > 0.93) base = mix(base, uGrassLight, 0.6);
-      else if (h < 0.05) base = mix(base, uGrassDark, 0.7);
     }
     float pd = 1e3;
     for (int i = 0; i < MAX_PONDS; i++) {
@@ -133,15 +130,20 @@ void main() {
   if (!gl_FrontFacing) N = -N;
   vec3 V = normalize(cameraPosition - vPosW);
   float ndl = dot(N, uLightDir);
+  float bite = vnoise3(vPosW * 3.2) * 0.65 + vnoise3(vPosW * 7.5) * 0.35 - 0.5;
   float sh = getShadowMask();
   // Clouds drifting over the world leave soft travelling shadows.
-  float cloud = smoothstep(0.5, 0.6, fbm3(vPosW * 0.2 + vec3(uTime * 0.035, 0.0, uTime * 0.022)));
+  float cloudN = fbm3(vPosW * 0.2 + vec3(uTime * 0.035, 0.0, uTime * 0.022));
+  float cloud = uStyle > 0.5 ? smoothstep(0.5, 0.6, cloudN) : step(0.55, cloudN + bite * 0.05);
+  if (uStyle < 0.5) sh = step(0.5, sh); // crisp shadow edges on the pixel grid
   sh *= 1.0 - cloud * 0.8 * uCloudShadow * (1.0 - uEmissive);
   float l = clamp(ndl * 1.25 + 0.1, 0.0, 1.0) * mix(0.18, 1.0, sh);
   // Band seams: 1 = ordered dither on the screen grid, 2 = jagged, brush-broken edges
   // from world-anchored noise (they stay put while the camera moves).
-  float th = uDither > 1.5 ? (vnoise3(vPosW * 16.0) - 0.5) * 1.6 : bayer4(gl_FragCoord.xy) - 0.5;
-  l += th * (uDither > 1.5 ? 0.12 : 0.09 * uDither);
+  // Jagged seams bite in chunks: low-frequency noise, so a whole band edge wanders
+  // together instead of every pixel flickering on its own.
+  float th = uDither > 1.5 ? bite * 1.4 : bayer4(gl_FragCoord.xy) - 0.5;
+  l += th * (uDither > 1.5 ? 0.14 : 0.09 * uDither);
 
   vec3 shadowCol = mix(base * 0.66, base * uShadowTint * 1.25, 0.45);
   vec3 hiCol = mix(base, uSunTint, 0.38);

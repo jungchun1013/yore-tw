@@ -369,7 +369,7 @@ void main() {
         if (dn - d > thr) { if (i == 2) topEdge = 1.0; else edge = 1.0; }
         vec3 nn = texture2D(tNormal, o).xyz * 2.0 - 1.0;
         // Crease only on the nearer side so inner lines stay one pixel wide.
-        if (abs(dn - d) < thr && d <= dn && dot(n, nn) < 0.72) crease += 1.0;
+        if (abs(dn - d) < thr && d <= dn && dot(n, nn) < 0.35) crease += 1.0;
       }
       if (topEdge > 0.5) {
         // One pale pixel of light along every top silhouette.
