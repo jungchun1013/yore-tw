@@ -6,7 +6,7 @@ import { derive, armorDef, armorPrt, weaponRange, xpNeed } from '../game/stats';
 import { nameOf, sellPrice } from '../game/loot';
 import { RACES, START_AGES, ageGrowth, raceOf } from '../data/races';
 import { BAG_SIZE, RARITY, SMITH_BREAK_FROM, SMITH_DROP_FROM, SMITH_MAX, WEIGHTS, smithCost } from '../data/items';
-import { MAX_RANK, RANKS, SKILLS, rankCost, type Tab as SkillTab } from '../data/skills';
+import { MAX_RANK, RANKS, SKILLS, activeRank, isOff, rankCost, type Tab as SkillTab } from '../data/skills';
 import { AREAS } from '../data/areas';
 import { AREA_CP, difficulty } from '../game/monsters';
 import { PETS, BOND_MAX, STAGE_LV, petOf, petXpNeed, stageOf } from '../data/pets';
@@ -132,6 +132,10 @@ export class App {
       case 'sellAll': A.sellAll(g); break;
       case 'smith': A.upgrade(g, uid); break;
       case 'learn': A.learn(g, k); break;
+      case 'sktoggle':
+        // on a touch screen the first tap on a skill only shows its tooltip; the second tap toggles it
+        if (this.lastPointer === 'touch' && this.tipFor !== el) { this.showTip(el); this.tipByTap = true; return; }
+        A.toggleSkill(g, k); break;
       case 'go':
         // on a touch screen the first tap on a map node only shows its tooltip; the second tap goes
         if (this.lastPointer === 'touch' && el.classList.contains('node') && this.tipFor !== el) { this.showTip(el); this.tipByTap = true; return; }
@@ -291,7 +295,7 @@ export class App {
 
   private attHtml(): string {
     const s = this.g.s;
-    const rows = SKILLS.filter(k => k.act && s.skills[k.key]).map(k => `<div class="kv"><span>${tr(k.name)}</span><span>${pct(k.act!.chance(s.skills[k.key]), 1)}</span></div>`).join('');
+    const rows = SKILLS.filter(k => k.act && activeRank(s, k.key)).map(k => `<div class="kv"><span>${tr(k.name)}</span><span>${pct(k.act!.chance(s.skills[k.key]), 1)}</span></div>`).join('');
     return `<h3>${t('att')}</h3>${rows}`;
   }
 
@@ -476,20 +480,22 @@ export class App {
     if (kind === 'pet') return this.petTip(id);
     if (kind !== 'skill') return '';
     const k = SKILLS.find(x => x.key === id); if (!k) return '';
-    const r = this.g.s.skills[k.key] || 0, max = r >= MAX_RANK;
-    return `<div class="tname">${tr(k.name)} ${r ? RANKS[r] : ''}</div>
+    const r = this.g.s.skills[k.key] || 0, max = r >= MAX_RANK, off = isOff(this.g.s, k.key);
+    return `<div class="tname">${tr(k.name)} ${r ? RANKS[r] : ''}${off ? ` <span class="dim">${t('skillOff')}</span>` : ''}</div>
       <div class="tsec">${r ? tr(k.desc(r)) : `<span class="dim">${t('notLearned')}</span>`}</div>
       ${max ? `<div class="tsec dim">${t('maxed')}</div>` : `<div class="tnext">${t('nextRank')} ${RANKS[r + 1]}</div><div class="tsec next">${tr(k.desc(r + 1))}</div>
-      <div class="tcost">${t('ap')} ${rankCost(r)}</div>`}`;
+      <div class="tcost">${t('ap')} ${rankCost(r)}</div>`}
+      ${r ? `<div class="tnext">${off ? t('clickOn') : t('clickOff')}</div>` : ''}`;
   }
 
   private skillsHtml(): string {
     const s = this.g.s;
     const tabs = (['combat', 'magic', 'passive'] as SkillTab[]).map(k => `<button class="stab ${this.skillTab === k ? 'on' : ''}" data-a="stab" data-k="${k}">${t(k)}</button>`).join('');
     const rows = SKILLS.filter(k => k.tab === this.skillTab).map(k => {
-      const r = s.skills[k.key] || 0, cost = rankCost(r), max = r >= MAX_RANK, can = !max && s.ap >= cost;
+      const r = s.skills[k.key] || 0, cost = rankCost(r), max = r >= MAX_RANK, can = !max && s.ap >= cost, off = r > 0 && isOff(s, k.key);
       // one fixed-height row; the effect text lives in a hover/tap tooltip so ranking up never changes the layout
-      return `<div class="skill ${can ? 'can' : ''}" data-tip="skill:${k.key}"><div class="sico">${icon('sk-' + k.key)}</div>
+      // a learned skill is clicked on or off; the rank-up button inside keeps its own action
+      return `<div class="skill ${can ? 'can' : ''} ${off ? 'off' : ''}" data-tip="skill:${k.key}" ${r ? `data-a="sktoggle" data-k="${k.key}"` : ''}><div class="sico">${icon('sk-' + k.key)}</div>
         <div class="grow"><div class="sname">${tr(k.name)} <b>${r ? RANKS[r] : ''}</b></div></div>
         ${max ? `<span class="dim">${t('maxed')}</span>` : `<button class="up-btn" data-a="learn" data-k="${k.key}" ${can ? '' : 'disabled'} title="${cost} ${t('ap')}"><small>${cost}</small>${icon('arrow', 'gi sm pointup')}</button>`}</div>`;
     }).join('');

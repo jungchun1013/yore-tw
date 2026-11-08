@@ -122,6 +122,9 @@ export const UI = {
   sep: { zh: '：', en: ': ' },
   unknown: { zh: '？', en: '?' },
   notLearned: { zh: '尚未學習', en: 'Not learned' },
+  skillOff: { zh: '已卸下', en: 'Unequipped' },
+  clickOff: { zh: '點擊卸下', en: 'Click to unequip' },
+  clickOn: { zh: '點擊裝上', en: 'Click to equip' },
   nextRank: { zh: '下一級', en: 'Next rank' },
   credits: { zh: '字型：俐方體11號 Cubic 11（OFL）', en: 'Font: Cubic 11 (OFL)' },
 } satisfies Record<string, L>;

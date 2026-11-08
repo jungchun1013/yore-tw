@@ -126,6 +126,10 @@ small { font-size: var(--fs-xs); }
 .stab.on { color: #fff; background: var(--accent); }
 .view .skill { display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin: 8px 0; background: #5d6b66; color: #fff; }
 .view .skill.can { background: var(--accent); }
+.view .skill[data-a] { cursor: pointer; }
+/* taken off: the row goes pale, the icon grey; it can still be ranked up */
+.view .skill.off { background: #b9bdb6; } .view .skill.off .sico { filter: grayscale(1); opacity: .6; }
+.view .skill.off .sname { opacity: .75; }
 .view .skill .sico { width: 34px; height: 34px; clip-path: var(--px1); background: #fff; color: #5d6b66; display: grid; place-items: center; flex: none; }
 .view .skill .grow { flex: 1; min-width: 0; } .view .skill .up-btn { flex: none; background: #fff; color: #5d6b66; border: 0; clip-path: var(--px1); height: 30px; padding: 0 12px; display: inline-flex; align-items: center; gap: 4px; line-height: 1; font-size: var(--fs-m); }
 .view .skill.can .sico { color: var(--accent); }

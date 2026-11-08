@@ -94,6 +94,16 @@ export function learn(g: Game, key: string): void {
   s.ap -= cost; s.skills[key] = lv + 1; g.refresh();
 }
 
+/** Take a learned skill off, or put it back on. */
+export function toggleSkill(g: Game, key: string): void {
+  const s = g.s;
+  if (!skillOf(key) || !s.skills[key]) return;
+  const off = s.skillsOff || (s.skillsOff = []);
+  const i = off.indexOf(key);
+  if (i >= 0) off.splice(i, 1); else off.push(key);
+  g.refresh();
+}
+
 export function goArea(g: Game, key: string): void {
   if (!AREAS.some(a => a.key === key) || g.s.area === key) return;
   const seen = g.s.visited || (g.s.visited = [g.s.area]);

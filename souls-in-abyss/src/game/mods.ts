@@ -1,6 +1,6 @@
 import type { Mod, ModKey, Save } from './types';
 import { raceOf } from '../data/races';
-import { SKILLS } from '../data/skills';
+import { SKILLS, activeRank } from '../data/skills';
 import { TITLES } from '../data/titles';
 import { petOf, stageOf } from '../data/pets';
 import { curseOf, giftOf } from '../data/pacts';
@@ -15,7 +15,7 @@ export type ModSource = { key: string; collect: (s: Save) => Mod[] };
 export const SOURCES: ModSource[] = [
   { key: 'race', collect: s => raceOf(s.race).mods },
   { key: 'gear', collect: s => Object.values(s.equip).flatMap(it => (it ? it.affixes : [])) },
-  { key: 'skills', collect: s => SKILLS.flatMap(d => (d.mods && s.skills[d.key] ? d.mods(s.skills[d.key], s) : [])) },
+  { key: 'skills', collect: s => SKILLS.flatMap(d => (d.mods && activeRank(s, d.key) ? d.mods(activeRank(s, d.key), s) : [])) },
   { key: 'titles', collect: s => TITLES.filter(t => s.titles.includes(t.key)).flatMap(t => t.mods) },
   {
     key: 'pet', collect: s => {
