@@ -340,7 +340,16 @@ export class App {
       <div class="dim">${tr(r.name)}${it.weight ? ` · ${tr(WEIGHTS[it.weight].name)}` : ''}</div>
       ${lines.length ? `<div class="tsec">${lines.join('<br>')}</div>` : ''}
       ${it.affixes.length ? `<div class="tsec next">${it.affixes.map(modText).join('<br>')}</div>` : ''}
+      ${this.cpTip(it)}
       <div class="tcost">${t('sell')} $${gold(sellPrice(it))}</div>`;
+  }
+  /** For an item in the bag: CP after equipping it, as a change from now. */
+  private cpTip(it: Item): string {
+    const s = this.g.s;
+    if (!s.bag.includes(it)) return '';
+    const dcp = this.cpDelta(it, A.targetSlot(s, it));
+    const cls = dcp > 0 ? 'up' : dcp < 0 ? 'down' : 'dim';
+    return `<div class="tsec">${t('cpIfEquip')} <span class="${cls}">${dcp > 0 ? '+' : dcp < 0 ? '−' : '±'}${num(Math.abs(dcp))}</span></div>`;
   }
 
   private cpDelta(it: Item, slot: Slot): number {
@@ -405,13 +414,10 @@ export class App {
   /** Bag page: every carried item with its CP change, equip and sell, plus auto-sell and sell-all. */
   private bagHtml(): string {
     const s = this.g.s;
-    const bag = s.bag.map(it => {
-      const dcp = this.cpDelta(it, A.targetSlot(s, it));
-      return `<div class="item" data-tip="item:${it.uid}"><div class="grow">${this.itemHtml(it)}</div><div class="acts">
-        <span class="${dcp > 0 ? 'up' : dcp < 0 ? 'down' : 'dim'}">${dcp ? icon('arrow', dcp > 0 ? 'gi sm pointup' : 'gi sm') : ''}${num(Math.abs(dcp))}</span>
+    // each row: the name, then Equip and Sell; the CP change and the sell price are in the tooltip
+    const bag = s.bag.map(it => `<div class="item" data-tip="item:${it.uid}"><div class="grow">${this.itemHtml(it)}</div><div class="acts">
         <button data-a="equip" data-uid="${it.uid}">${t('equip')}</button>
-        <button class="ghost" data-a="sell" data-uid="${it.uid}">$${gold(sellPrice(it))}</button></div></div>`;
-    }).join('') || `<p class="dim">${t('empty')}</p>`;
+        <button class="ghost" data-a="sell" data-uid="${it.uid}">${t('sell')}</button></div></div>`).join('') || `<p class="dim">${t('empty')}</p>`;
     const opts = RARITY.map((r, i) => [String(i), i === 0 ? '-' : tr(r.name)] as [string, string]);
     return `<div class="row between baghead"><b>${t('bag')} ${s.bag.length}/${BAG_SIZE}</b>
         <span class="row"><span class="dim">${t('autoSell')} ${dropdown('autoSell', opts, String(s.autoSell))}</span><button class="ghost" data-a="sellAll">${t('sellAll')}</button></span></div>

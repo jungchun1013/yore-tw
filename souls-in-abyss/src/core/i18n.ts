@@ -123,6 +123,7 @@ export const UI = {
   unknown: { zh: '？', en: '?' },
   notLearned: { zh: '尚未學習', en: 'Not learned' },
   wornList: { zh: '身上裝備', en: 'Worn' },
+  cpIfEquip: { zh: '裝上後戰力', en: 'CP if equipped' },
   palAlong: { zh: '同行夥伴', en: 'Pal along' },
   noPal: { zh: '還沒有夥伴同行', en: 'No pal along yet' },
   skillOff: { zh: '已卸下', en: 'Unequipped' },
