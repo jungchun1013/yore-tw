@@ -475,13 +475,21 @@ export const spirit: PropModule = {
           // Re-origin the geometry on the root centre at ground level, so placing and
           // rotating the mesh happens about the roots, never about a box centre.
           welded.translate(-baseC.x, -hb.min.y, -baseC.z);
+          welded.computeBoundingBox();
+          hb = welded.boundingBox!; hs = hb.getSize(new THREE.Vector3());
+          const targetH = spec.height * scale * spec.antlers!;
+          const k = targetH / hs.y; // size from the upright height, before the tilt
+          // Put the antlers in a canonical frame (+z = the way they sweep, +y up), then
+          // spread them wider (x) and lay them back about the roots, as on a real stag.
+          const antlerBack = tipC.clone().sub(baseC).normalize();
+          const lateral = new THREE.Vector3().crossVectors(antlerBack, new THREE.Vector3(0, 1, 0)).normalize();
+          const toCanon = new THREE.Matrix4().makeBasis(lateral, new THREE.Vector3(0, 1, 0), antlerBack).invert();
+          const spread = new THREE.Matrix4().makeScale(1.4, 1, 1);
+          const layBack = new THREE.Matrix4().makeRotationX(THREE.MathUtils.degToRad(28));
+          welded.applyMatrix4(new THREE.Matrix4().multiplyMatrices(layBack, new THREE.Matrix4().multiplyMatrices(spread, toCanon)));
           welded.computeVertexNormals();
           welded.computeBoundingBox();
           hb = welded.boundingBox!; hs = hb.getSize(new THREE.Vector3());
-          const antlerBack = tipC.clone().sub(baseC);
-          // Scale to the body, mount on the skull cap, sink the roots a little into it.
-          const targetH = spec.height * scale * spec.antlers!;
-          const k = targetH / hs.y;
           const mesh2 = new THREE.Mesh(welded, antlerMaterial(0x8fe9f6, 0xffd27a, hb.min.y, hb.max.y));
           mesh2.castShadow = false;
           mesh2.scale.setScalar(k);
@@ -503,7 +511,7 @@ export const spirit: PropModule = {
           }
           const bodyBack = new THREE.Vector3();
           bodyBack[axis] = topHi > topLo ? -1 : 1;
-          if (antlerBack.lengthSq() > 1e-8) mesh2.rotation.y = Math.atan2(bodyBack.x, bodyBack.z) - Math.atan2(antlerBack.x, antlerBack.z);
+          mesh2.rotation.y = Math.atan2(bodyBack.x, bodyBack.z); // canonical +z → body's tail
           body.add(mesh2);
         });
       }
