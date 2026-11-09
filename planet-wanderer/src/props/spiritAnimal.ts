@@ -25,7 +25,7 @@ interface ModelSpec {
 // Model D (madtrollstudio) is the stag with its own antlers; model C (Google Poly) is
 // the doe with its antlers removed. Both are the slender static deer the user picked.
 const MODELS: Record<string, ModelSpec> = {
-  stag: { file: 'deer_d.glb', height: 1.7, idle: [], radius: 0.7, deer: true, antlerCut: 0.805, graftAntlers: 1 },
+  stag: { file: 'deer_d.glb', height: 1.7, idle: [], radius: 0.7, deer: true, antlerCut: 0.805, graftAntlers: 0.9 },
   doe: { file: 'deer_c.glb', height: 1.4, idle: [], radius: 0.6, deer: true, antlerCut: 0.87 },
   rabbit: { file: 'rabbit.glb', height: 0.34, idle: [], radius: 0.25 },
 };
