@@ -2,15 +2,16 @@
  *  parchment family lifted toward a cyan daylight sky. Values are sRGB and used raw
  *  (colour management is off), so what is written here is what the shader sees. */
 export const PAL = {
-  skyTop: 0x86a9c4,
-  skyMid: 0xbcd3d9,
-  skyLow: 0xe9eee6,
-  cloud: 0xf7f8f4,
-  cloudShade: 0xd3dde3,
-  halo: 0xeef3ee,
-  sun: 0xfff4e2,
-  shadowTint: 0x6c62a0,
-  rim: 0xd6e4ea,
+  skyTop: 0x4b84b6,
+  skyMid: 0x7ea5cb,
+  skyLow: 0xc6d7e5,
+  cloud: 0xedf0f1,
+  cloudShade: 0x86a6c7,
+  halo: 0xdfe9f2,
+  cloudWarm: 0xefc4b4,
+  sun: 0xffe6cc,
+  shadowTint: 0x6472b2,
+  rim: 0xd8e3ee,
   outline: 0x3e3a5c,
 
   grass: 0x9bb07f,

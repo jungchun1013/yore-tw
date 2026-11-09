@@ -4,7 +4,7 @@ export type LatLon = readonly [lat: number, lon: number];
 
 export interface Mood {
   skyTop: number; skyMid: number; skyLow: number;
-  cloud: number; cloudShade: number; halo: number;
+  cloud: number; cloudShade: number; cloudWarm: number; halo: number;
   sun: number; shadowTint: number; rim: number;
   grass: number; grassDark: number; grassLight: number; sand: number; path: number;
 }

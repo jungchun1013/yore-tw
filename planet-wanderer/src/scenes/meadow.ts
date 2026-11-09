@@ -8,7 +8,7 @@ export const meadow: SceneDef = {
   name: { zh: '初始草原星', en: 'Meadow Star' },
   mood: {
     skyTop: PAL.skyTop, skyMid: PAL.skyMid, skyLow: PAL.skyLow,
-    cloud: PAL.cloud, cloudShade: PAL.cloudShade, halo: PAL.halo,
+    cloud: PAL.cloud, cloudShade: PAL.cloudShade, cloudWarm: PAL.cloudWarm, halo: PAL.halo,
     sun: PAL.sun, shadowTint: PAL.shadowTint, rim: PAL.rim,
     grass: PAL.grass, grassDark: PAL.grassDark, grassLight: PAL.grassLight, sand: PAL.sand, path: PAL.path,
   },

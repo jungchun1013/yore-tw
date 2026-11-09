@@ -112,6 +112,7 @@ export class PixelPipeline {
         uSkyLow: { value: new THREE.Color(PAL.skyLow) },
         uCloud: { value: new THREE.Color(PAL.cloud) },
         uCloudShade: { value: new THREE.Color(PAL.cloudShade) },
+        uCloudWarm: { value: new THREE.Color(PAL.cloudWarm) },
         uHalo: { value: new THREE.Color(PAL.halo) },
         uSun: { value: new THREE.Color(PAL.sun) },
         uOutlineTint: { value: new THREE.Color(PAL.outline) },
@@ -178,6 +179,7 @@ export class PixelPipeline {
     u.uSkyLow.value.setHex(m.skyLow);
     u.uCloud.value.setHex(m.cloud);
     u.uCloudShade.value.setHex(m.cloudShade);
+    u.uCloudWarm.value.setHex(m.cloudWarm);
     u.uHalo.value.setHex(m.halo);
     u.uSun.value.setHex(m.sun);
     u.uFadeColor.value.setHex(m.skyLow);
@@ -243,7 +245,7 @@ uniform float uSoft;
 uniform vec2 uLowRes; uniform vec2 uScreen; uniform float uPx;
 uniform float uNear; uniform float uFar; uniform float uFocus; uniform float uTime; uniform float uOutline; uniform float uEdgePx;
 uniform vec3 uLightView;
-uniform vec3 uSkyTop; uniform vec3 uSkyMid; uniform vec3 uSkyLow; uniform vec3 uCloud; uniform vec3 uCloudShade;
+uniform vec3 uSkyTop; uniform vec3 uSkyMid; uniform vec3 uSkyLow; uniform vec3 uCloud; uniform vec3 uCloudShade; uniform vec3 uCloudWarm;
 uniform vec3 uHalo; uniform vec3 uSun; uniform vec3 uOutlineTint; uniform vec3 uWisp;
 uniform vec2 uSkyScroll; uniform vec3 uPlanet; uniform vec3 uWispPos; uniform float uWispVis;
 uniform float uFade; uniform vec3 uFadeColor;
@@ -271,22 +273,30 @@ vec3 sky(vec2 s, vec2 lp) {
   vec2 sd = (s - vec2(0.16, 0.95)) * vec2(aspect, 1.0);
   float sl = length(sd);
   c += uSun * (0.32 * exp(-sl * sl * 14.0) + 0.08 * exp(-sl * 2.5));
-  // Clouds: on the art-pixel grid in pixel mode, soft-edged in soft mode.
+  // Clouds built from stacked brush blocks: a blue-grey shade ring, a white body,
+  // a cream top light, and a peach glow where the underside catches the sun.
   vec2 sp = uSoft > 0.5 ? s : (lp + 0.5) / uLowRes;
-  vec2 q = vec2(sp.x * aspect, sp.y) * vec2(1.6, 3.2) + uSkyScroll + vec2(uTime * 0.006, 0.0);
-  float n = fbm2(q) + (0.3 - sp.y) * 0.5;
-  float wob = (fbm2(q * 2.0 + 7.0) - 0.5) * 0.08;
-  float shade, body;
-  if (uSoft > 0.5) {
-    shade = smoothstep(0.45, 0.55, n);
-    body = smoothstep(0.52, 0.64, n + wob);
-  } else {
-    float th = (bayer4(lp) - 0.5) * 0.03;
-    shade = step(0.5 + th, n);
-    body = step(0.56 + th, n + wob);
-  }
-  c = mix(c, uCloudShade, shade * 0.7);
-  c = mix(c, uCloud, body * 0.9);
+  vec2 q = vec2(sp.x * aspect, sp.y) * vec2(1.5, 2.8) + uSkyScroll + vec2(uTime * 0.006, 0.0);
+  float big = fbm2(q);
+  float detail = fbm2(q * 2.4 + 7.0) - 0.5;
+  // Brush strokes: slanted flat cells of slightly different tone inside the mass only
+  // (they never move the edges, so no grid shows).
+  vec2 qr = mat2(0.94, 0.34, -0.34, 0.94) * q;
+  float blocks = hash12(floor(qr * vec2(22.0, 7.0))) - 0.5;
+  // Distinct masses with sky between them: thin coverage, heavier low in the view.
+  float n = (big - 0.5) * 1.9 + 0.5 + (0.02 - sp.y) * 0.3 + detail * 0.22;
+  float e = uSoft > 0.5 ? 0.012 : 0.0;
+  float th = uSoft > 0.5 ? 0.0 : (bayer4(lp) - 0.5) * 0.02;
+  float shade = smoothstep(0.5 - e, 0.5 + e, n + th);
+  float body = smoothstep(0.58 - e, 0.58 + e, n + th);
+  float top = smoothstep(0.68 - e, 0.68 + e, n + detail * 0.12 + th);
+  // Underside: the mass is above this pixel, so the sun from the upper left warms it.
+  float above = fbm2(q + vec2(-0.05, 0.1)) - big;
+  float under = smoothstep(0.0, 0.1, above) * body * (1.0 - top);
+  c = mix(c, uCloudShade, shade * 0.8);
+  c = mix(c, uCloud * (0.98 + blocks * 0.05), body);
+  c = mix(c, uCloudWarm, under * 0.35);
+  c = mix(c, mix(uCloud, uSun, 0.35) * 1.02, top * 0.85);
   return c;
 }
 

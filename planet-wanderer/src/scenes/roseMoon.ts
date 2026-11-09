@@ -8,9 +8,9 @@ export const roseMoon: SceneDef = {
   kind: 'planet',
   name: { zh: '玫瑰月', en: 'Rose Moon' },
   mood: {
-    skyTop: 0x6c9fc4, skyMid: 0xb4d3df, skyLow: 0xf3ebe4,
-    cloud: 0xfdf8f4, cloudShade: 0xe2d7dc, halo: 0xfbefee,
-    sun: 0xfff0e0, shadowTint: 0x6a5f9e, rim: 0xf4dce4,
+    skyTop: 0x5f86b4, skyMid: 0x9fb6d2, skyLow: 0xe6d9dc,
+    cloud: 0xf6eeee, cloudShade: 0xa9a9c9, cloudWarm: 0xf0bfb6, halo: 0xe9e2ea,
+    sun: 0xffe4cf, shadowTint: 0x6a5f9e, rim: 0xf0d8de,
     grass: 0xd8c4c0, grassDark: 0xc4acb2, grassLight: 0xe8d8cf, sand: 0xefe3d0, path: 0xe2cfc0,
   },
   planet: {
