@@ -25,7 +25,7 @@ interface ModelSpec {
 // Model D (madtrollstudio) is the stag with its own antlers; model C (Google Poly) is
 // the doe with its antlers removed. Both are the slender static deer the user picked.
 const MODELS: Record<string, ModelSpec> = {
-  stag: { file: 'deer_d.glb', height: 1.7, idle: [], radius: 0.7, deer: true, antlerCut: 0.83, graftAntlers: 1 },
+  stag: { file: 'deer_d.glb', height: 1.7, idle: [], radius: 0.7, deer: true, antlerCut: 0.805, graftAntlers: 1 },
   doe: { file: 'deer_c.glb', height: 1.4, idle: [], radius: 0.6, deer: true, antlerCut: 0.87 },
   rabbit: { file: 'rabbit.glb', height: 0.34, idle: [], radius: 0.25 },
 };
@@ -494,14 +494,26 @@ export const spirit: PropModule = {
           welded.computeBoundingBox();
           const hb = welded.boundingBox!;
           const hs = hb.getSize(new THREE.Vector3());
-          // Roots: centre of the lowest 12% of the antler vertices.
+          // Roots: the lowest 12% of antler vertices, split into left/right by the
+          // Quaternius stag's own midline; the mount point is the midpoint of the two
+          // clusters (the plain vertex average drifts toward whichever antler has more
+          // geometry and pulls the whole pair sideways).
           const hp = welded.attributes.position as THREE.BufferAttribute;
-          const rootC = new THREE.Vector3(); let nr = 0;
-          for (let i = 0; i < hp.count; i++) if (hp.getY(i) < hb.min.y + hs.y * 0.12) { rootC.add(new THREE.Vector3(hp.getX(i), hp.getY(i), hp.getZ(i))); nr++; }
-          rootC.divideScalar(Math.max(1, nr));
-          // Quaternius forward = from its body centre toward the antler roots (horizontal).
           const qc = qb.getCenter(new THREE.Vector3());
           const qBodyH = qb.getSize(new THREE.Vector3()).y;
+          const qsz = qb.getSize(new THREE.Vector3());
+          const qAxis: 'x' | 'z' = qsz.x > qsz.z ? 'x' : 'z'; // Quaternius forward axis
+          const qSide: 'x' | 'z' = qAxis === 'x' ? 'z' : 'x';
+          const L = new THREE.Vector3(), R = new THREE.Vector3(); let nl = 0, nrr = 0;
+          for (let i = 0; i < hp.count; i++) {
+            if (hp.getY(i) >= hb.min.y + hs.y * 0.12) continue;
+            const v = new THREE.Vector3(hp.getX(i), hp.getY(i), hp.getZ(i));
+            if (v[qSide] < qc[qSide]) { L.add(v); nl++; } else { R.add(v); nrr++; }
+          }
+          L.divideScalar(Math.max(1, nl)); R.divideScalar(Math.max(1, nrr));
+          const rootC = L.clone().add(R).multiplyScalar(0.5);
+          rootC[qSide] = qc[qSide]; // exactly on the source stag's midline
+          // Quaternius forward = from its body centre toward the antler roots (horizontal).
           const qFwd = new THREE.Vector3(rootC.x - qc.x, 0, rootC.z - qc.z).normalize();
           // Re-origin on the roots so the placement and yaw pivot there.
           welded.translate(-rootC.x, -rootC.y, -rootC.z);
@@ -510,7 +522,23 @@ export const spirit: PropModule = {
           const hb2 = welded.boundingBox!;
           // Same proportion to the body as on the source stag: scale Quaternius units to this body's height.
           const k = ((spec.height * scale) / qBodyH) * spec.graftAntlers!;
-          const mesh2 = new THREE.Mesh(welded, antlerMaterial(0x8fe9f6, 0xffd27a, hb2.min.y, hb2.max.y));
+          // Pedicle: the lowest stretch of the antlers is part of the head, so it takes
+          // the body's spirit material; the glow begins above it.
+          const pedH = hb2.min.y + (hb2.max.y - hb2.min.y) * 0.09;
+          const wIdx = welded.index!;
+          const lo: number[] = [], hi: number[] = [];
+          for (let i = 0; i < wIdx.count; i += 3) {
+            const a = wIdx.getX(i), b = wIdx.getX(i + 1), c = wIdx.getX(i + 2);
+            const cy = (hp.getY(a) + hp.getY(b) + hp.getY(c)) / 3;
+            (cy < pedH ? lo : hi).push(a, b, c);
+          }
+          welded.setIndex([...lo, ...hi]);
+          welded.clearGroups();
+          welded.addGroup(0, lo.length, 0);
+          welded.addGroup(lo.length, hi.length, 1);
+          const pedMat = spiritMaterial(tint, false, k);
+          pedMat.depthWrite = true;
+          const mesh2 = new THREE.Mesh(welded, [pedMat, antlerMaterial(0x8fe9f6, 0xffd27a, pedH, hb2.max.y)]);
           mesh2.name = 'antlers';
           mesh2.castShadow = false;
           mesh2.scale.setScalar(k);
@@ -528,9 +556,11 @@ export const spirit: PropModule = {
           }
           const dFwd = new THREE.Vector3(); dFwd[axis] = topHi > topLo ? 1 : -1;
           mesh2.rotation.y = Math.atan2(dFwd.x, dFwd.z) - Math.atan2(qFwd.x, qFwd.z);
-          const mountWorld = mm.localToWorld(ml.clone());
+          const side: 'x' | 'z' = axis === 'x' ? 'z' : 'x';
+          const mlc = ml.clone(); mlc[side] = (bb2.min[side] + bb2.max[side]) / 2; // body midline
+          const mountWorld = mm.localToWorld(mlc);
           body.worldToLocal(mountWorld);
-          mesh2.position.copy(mountWorld).add(new THREE.Vector3(0, -0.07 * scale, 0));
+          mesh2.position.copy(mountWorld).add(new THREE.Vector3(0, -0.05 * scale, 0));
           body.add(mesh2);
         });
       }
