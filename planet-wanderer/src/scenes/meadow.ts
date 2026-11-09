@@ -49,6 +49,7 @@ export const meadow: SceneDef = {
     { type: 'marker', at: [0, 0], params: { path: 2, t: 0.5, side: 1 } },
     { type: 'ship', id: 'ship', at: [13, 40], yaw: 205 },
     { type: 'rose', at: [9, -7] },
+    { type: 'deer', id: 'deer', at: [-3, -12], yaw: 150 },
     { type: 'volcano', at: [12, 172], params: { active: true } },
     { type: 'volcano', at: [-18, 150] },
     { type: 'sprout', at: [32, 196] },

@@ -65,6 +65,7 @@ uniform float uStyle;
 uniform float uPixelSize;
 uniform float uGrad;
 uniform float uCloudShadow;
+uniform float uPearl;
 #ifdef TERRAIN
 uniform vec3 uGrassDark; uniform vec3 uGrassLight; uniform vec3 uSand; uniform vec3 uPath;
 uniform vec3 uPondDir[MAX_PONDS]; uniform float uPondR[MAX_PONDS]; uniform int uPondCount;
@@ -136,7 +137,7 @@ void main() {
   float pigment = fbm3(vPosW * 1.8);
   vec3 pearl = mix(vec3(0.88, 0.85, 1.0), vec3(0.84, 1.0, 0.95), smoothstep(0.28, 0.7, pigment));
   pearl = mix(pearl, vec3(1.0, 0.9, 0.83), smoothstep(0.58, 0.82, fbm3(vPosW * 1.3 + 19.0)));
-  base *= mix(vec3(1.0), pearl, neutral * 0.65);
+  base *= mix(vec3(1.0), pearl, neutral * 0.65 * uPearl);
 
   // Grass blades: dark at the root, bright at the tip.
   if (uGrad > 0.5) base *= mix(0.68, 1.14, clamp(vLocal.y / 0.22, 0.0, 1.0));
@@ -222,12 +223,14 @@ export interface ToonOpts {
   glow?: boolean;
   /** Skip the composite outline (thin things that would turn into dark specks). */
   noOutline?: boolean;
+  /** Keep the authored colour exactly (no world-space pearl tint): characters, badges. */
+  flat?: boolean;
   /** Darken toward the base of the mesh (grass blades). */
   gradient?: boolean;
 }
 
 export function toon(color: number, opts: ToonOpts = {}): THREE.ShaderMaterial {
-  const key = `${color}|${opts.emissive ?? 0}|${opts.rim ?? 1}|${opts.side ?? 0}|${opts.vertexColors ? 1 : 0}|${opts.glow ? 1 : 0}|${opts.noOutline ? 1 : 0}|${opts.gradient ? 1 : 0}`;
+  const key = `${color}|${opts.emissive ?? 0}|${opts.rim ?? 1}|${opts.side ?? 0}|${opts.vertexColors ? 1 : 0}|${opts.glow ? 1 : 0}|${opts.noOutline ? 1 : 0}|${opts.gradient ? 1 : 0}|${opts.flat ? 1 : 0}`;
   const hit = cache.get(key);
   if (hit) return hit;
   const m = new THREE.ShaderMaterial({
@@ -244,6 +247,7 @@ export function toon(color: number, opts: ToonOpts = {}): THREE.ShaderMaterial {
         uRim: { value: opts.rim ?? 1 },
         uMark: { value: opts.glow ? 0.75 : opts.noOutline ? 0.8 : 1 },
         uGrad: { value: opts.gradient ? 1 : 0 },
+        uPearl: { value: opts.flat ? 0 : 1 },
       },
     ]),
   });
@@ -279,6 +283,7 @@ export function terrainMaterial(z: TerrainZones): THREE.ShaderMaterial {
         uRim: { value: 1 },
         uMark: { value: 1 },
         uGrad: { value: 0 },
+        uPearl: { value: 1 },
         uGrassDark: { value: new THREE.Color(z.mood.grassDark) },
         uGrassLight: { value: new THREE.Color(z.mood.grassLight) },
         uSand: { value: new THREE.Color(z.mood.sand) },
