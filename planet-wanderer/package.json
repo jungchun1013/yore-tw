@@ -11,7 +11,8 @@
     "typecheck": "tsc --noEmit -p ."
   },
   "dependencies": {
-    "three": "0.169.0"
+    "three": "0.169.0",
+    "three-subdivide": "^1.1.5"
   },
   "devDependencies": {
     "@types/three": "0.169.0"

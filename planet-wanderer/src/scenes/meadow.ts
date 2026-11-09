@@ -24,6 +24,11 @@ export const meadow: SceneDef = {
   },
   props: [
     { type: 'cabin', at: [19, 2], yaw: 215 },
+    // Compact landscape crown and the Little Prince baobab: separate study lots.
+    { type: 'gardenTree', at: [12, -58], yaw: 180, params: { scale: 1, seed: 47 } },
+    { type: 'gardenTree', at: [17, -72], yaw: 225, params: { scale: 0.74, seed: 63 } },
+    { type: 'baobab', at: [39, -62], yaw: 180, params: { scale: 1, seed: 131 } },
+    { type: 'sprout', at: [31, -58], params: { scale: 1.1 } },
     // Separate study lots; existing cabin and ship approaches stay available.
     { type: BUILDING_STUDIES.plank.prop, id: 'rustic-hut', at: [30, 65], yaw: 190, params: { tier: 1 } },
     { type: BUILDING_STUDIES.log.prop, id: 'log-cabin', at: [-8, 105], yaw: 190, params: { tier: 2 } },
@@ -49,7 +54,9 @@ export const meadow: SceneDef = {
     { type: 'marker', at: [0, 0], params: { path: 2, t: 0.5, side: 1 } },
     { type: 'ship', id: 'ship', at: [13, 40], yaw: 205 },
     { type: 'rose', at: [9, -7] },
-    { type: 'deer', id: 'deer', at: [-3, -12], yaw: 150 },
+    { type: 'spirit', id: 'stag', at: [-3, -12], yaw: 150, params: { model: 'stag', variant: 'night' } },
+    { type: 'spirit', id: 'doe', at: [-24, 60], yaw: 20, params: { model: 'doe', variant: 'day' } },
+    { type: 'spirit', id: 'rabbit', at: [7, -3], yaw: 230, params: { model: 'rabbit', variant: 'day' } },
     { type: 'volcano', at: [12, 172], params: { active: true } },
     { type: 'volcano', at: [-18, 150] },
     { type: 'sprout', at: [32, 196] },
