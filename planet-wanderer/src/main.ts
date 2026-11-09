@@ -111,7 +111,7 @@ const hud = new Hud(document.getElementById('hud')!, {
   cyclePixel: () => {
     pipe.pxSize = PX[(PX.indexOf(pipe.pxSize) + 1) % PX.length];
     resize();
-    return pipe.pxSize === 1 ? '像素 關（原解析度）' : `像素 ×${pipe.pxSize}`;
+    return `混色格 ×${pipe.pxSize}`;
   },
   setStyle: (s) => {
     pipe.setStyle(s);
@@ -120,7 +120,7 @@ const hud = new Hud(document.getElementById('hud')!, {
   },
   setOutline: (o) => (pipe.outline = o),
   cycleEdges: () => {
-    shared.uDither.value = [1, 0, 2][shared.uDither.value];
+    shared.uDither.value = (shared.uDither.value + 1) % 3;
     return shared.uDither.value;
   },
   interact,
@@ -144,6 +144,8 @@ resize();
 const clock = new THREE.Clock();
 const tmp = new THREE.Vector3();
 let frames = 0;
+let portraitView = false;
+let inspectName: string | null = null;
 
 function screenOf(p: THREE.Vector3) {
   tmp.copy(p).project(camera);
@@ -163,6 +165,24 @@ function frame() {
   realm.update(t, dt);
   scenes.update(dt);
   rig.update(dt, planet, prince);
+  // Art-review camera: look straight at the face at body height, without
+  // changing the gameplay camera's zoom or orbit settings.
+  if (portraitView) {
+    const target = prince.root.position.clone().addScaledVector(prince.dir, 0.49);
+    camera.position.copy(target).addScaledVector(prince.forward, 2.5);
+    camera.up.copy(prince.dir);
+    camera.lookAt(target);
+    rig.focusDist = camera.position.distanceTo(target);
+  }
+  const inspected = inspectName ? realm.root.getObjectByName(inspectName) : null;
+  if (inspected) {
+    const framing = inspected.userData.inspection as { target: number[]; camera: number[] } | undefined;
+    const target = inspected.localToWorld(new THREE.Vector3().fromArray(framing?.target ?? [0.35, 1.05, 0]));
+    camera.position.copy(inspected.localToWorld(new THREE.Vector3().fromArray(framing?.camera ?? [3.4, 2.8, 5.4])));
+    camera.up.copy(inspected.getWorldPosition(new THREE.Vector3())).normalize();
+    camera.lookAt(target);
+    rig.focusDist = camera.position.distanceTo(target);
+  }
   pipe.focus = rig.focusDist;
   // Floating clouds belong to the planet view; close up they would block the camera.
   const clouds = realm.root.getObjectByName('clouds');
@@ -228,10 +248,14 @@ declare global {
       interact: () => void;
       look: (style: RenderStyle, outline: OutlineMode) => void;
       hud: (on: boolean) => void;
+      portrait: (on: boolean) => void;
+      inspect: (name: string | null) => void;
     };
   }
 }
 window.__pw = {
+  portrait: (on) => { portraitView = on; },
+  inspect: (name) => { inspectName = name; },
   frames: () => frames,
   zoom: (z) => {
     rig.zoomGoal = rig.zoom = z;

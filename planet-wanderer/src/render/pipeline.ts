@@ -8,28 +8,14 @@ export type RenderStyle = 'soft' | 'sky' | 'pixel';
 /** none = no lines; tint = a darker, cooler shade of the object's own colour; dark = ink line. */
 export type OutlineMode = 'none' | 'tint' | 'dark';
 
-/**
- * Two looks over the same scenes, switchable at runtime.
- *
- * sky — soft pass with smooth shading, the sun behind the traveller, sun glare and
- *   god rays marched toward it through the gaps between objects, heavier warm haze.
- * soft (default) — Zelda: full resolution with 4× MSAA into a half-float target,
- *   soft two-tone cel shading, no outlines, distance haze that melts into the sky,
- *   bloom on emissive things and light motes, smooth clouds and halo.
- * pixel — colour blocks come from a pass at screen ÷ pxSize (nearest upscale), while
- *   silhouettes, outlines and the top light edge still come from the full-res pass,
- *   so lines stay continuous over chunky colour.
- *
- * Both end in one full-screen composite that also draws the sky, the planet halo,
- * the wisp glow, the vignette and the scene fade.
- */
+/** All looks share full-resolution MSAA geometry. Pixel style quantizes only
+ * lighting transitions in the material, never resamples silhouettes or object IDs. */
 export class PixelPipeline {
-  style: RenderStyle = 'soft';
+  style: RenderStyle = 'pixel';
   pxSize = 3;
-  outline: OutlineMode = 'tint';
+  outline: OutlineMode = 'none';
   lowW = 1;
   lowH = 1;
-  private pixelRT: THREE.WebGLRenderTarget;
   private softRT: THREE.WebGLRenderTarget;
   private bloomA: THREE.WebGLRenderTarget;
   private bloomB: THREE.WebGLRenderTarget;
@@ -44,9 +30,6 @@ export class PixelPipeline {
   private cssH = 1;
 
   constructor(readonly renderer: THREE.WebGLRenderer) {
-    const nearest = { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: true };
-    this.pixelRT = new THREE.WebGLRenderTarget(1, 1, nearest);
-    this.pixelRT.depthTexture = new THREE.DepthTexture(1, 1, THREE.UnsignedIntType);
     this.softRT = new THREE.WebGLRenderTarget(1, 1, {
       type: THREE.HalfFloatType,
       samples: 4,
@@ -95,7 +78,6 @@ export class PixelPipeline {
       depthWrite: false,
       uniforms: {
         tColor: { value: this.softRT.texture },
-        tLow: { value: this.pixelRT.texture },
         tDepth: { value: this.softRT.depthTexture },
         tBloom: { value: this.bloomA.texture },
         uSoft: { value: 1 },
@@ -149,24 +131,16 @@ export class PixelPipeline {
     // The full-resolution pass runs in both styles: it gives smooth silhouettes and
     // the depth the edge lines are drawn from. Pixel style adds a low-res colour pass.
     this.softRT.setSize(devW, devH);
-    if (this.style !== 'pixel') {
-      this.lowW = devW;
-      this.lowH = devH;
-      const bw = Math.max(1, Math.round(devW / 4));
-      const bh = Math.max(1, Math.round(devH / 4));
-      this.bloomA.setSize(bw, bh);
-      this.bloomB.setSize(bw, bh);
-      u.uPx.value = 1;
-      u.uSoft.value = 1;
-      u.uRays.value = this.style === 'sky' ? 1 : 0;
-    } else {
-      this.lowW = Math.max(1, Math.ceil(cssW / this.pxSize));
-      this.lowH = Math.max(1, Math.ceil(cssH / this.pxSize));
-      this.pixelRT.setSize(this.lowW, this.lowH);
-      u.uPx.value = this.pxSize * dpr;
-      u.uSoft.value = 0;
-      u.uRays.value = 0;
-    }
+    this.lowW = devW;
+    this.lowH = devH;
+    const bw = Math.max(1, Math.round(devW / 4));
+    const bh = Math.max(1, Math.round(devH / 4));
+    this.bloomA.setSize(bw, bh);
+    this.bloomB.setSize(bw, bh);
+    u.uPx.value = this.style === 'pixel' ? this.pxSize * dpr : 1;
+    u.uSoft.value = 1;
+    u.uRays.value = this.style === 'sky' ? 1 : 0;
+    shared.uPixelSize.value = this.style === 'pixel' ? this.pxSize * dpr : dpr;
     u.uLowRes.value.set(this.lowW, this.lowH);
     shared.uStyle.value = this.style === 'sky' ? 2 : this.style === 'soft' ? 1 : 0;
   }
@@ -216,15 +190,10 @@ export class PixelPipeline {
     r.setClearColor(0x000000, 0);
     r.shadowMap.needsUpdate = true;
 
-    if (this.style === 'pixel') {
-      r.setRenderTarget(this.pixelRT);
-      r.clear();
-      r.render(scene, camera);
-    }
     r.setRenderTarget(this.softRT);
     r.clear();
     r.render(scene, camera);
-    if (this.style !== 'pixel') {
+    {
       // Bloom: bright pass at quarter size, then a separable blur, twice.
       this.bright.uniforms.tSrc.value = this.softRT.texture;
       this.bright.uniforms.uTexel.value.set(1 / this.softRT.width, 1 / this.softRT.height);
@@ -246,7 +215,7 @@ export class PixelPipeline {
 
 const COMPOSITE = /* glsl */ `
 #include <packing>
-uniform sampler2D tColor; uniform sampler2D tLow; uniform sampler2D tDepth; uniform sampler2D tBloom;
+uniform sampler2D tColor; uniform sampler2D tDepth; uniform sampler2D tBloom;
 uniform float uSoft; uniform float uRays; uniform vec2 uSunPos;
 uniform vec2 uLowRes; uniform vec2 uScreen; uniform float uPx;
 uniform float uNear; uniform float uFar; uniform float uFocus; uniform float uTime; uniform float uOutline; uniform float uEdgePx;
@@ -328,12 +297,6 @@ void main() {
 
   vec3 obj = c.a > 0.0 ? c.rgb / c.a : vec3(0.0);
   if (c.a > 0.01) {
-    if (uSoft < 0.5) {
-      // Pixel style: blocky colour from the low-res pass wherever it has an object
-      // texel; the thin silhouette ring it misses keeps the full-res colour.
-      vec4 lowC = texture2D(tLow, (lp + 0.5) / uLowRes);
-      if (lowC.a > 0.25) obj = lowC.rgb;
-    }
     float z = depthAt(s);
     // Alpha off the MSAA quarter steps = "never outline" (grass, glows).
     bool marked = abs(c.a * 4.0 - floor(c.a * 4.0 + 0.5)) > 0.02;
@@ -354,7 +317,7 @@ void main() {
       }
       // Light catches the top edge of everything; the other edges get the outline.
       if (uOutline > 0.5) obj = mix(obj, edgeColor(obj), edge * (1.0 - topEdge) * (uOutline > 1.5 ? 1.0 : 0.85));
-      obj = mix(obj, mix(uSun, vec3(1.0), 0.4) * 1.05, topEdge * 0.42);
+      obj = mix(obj, mix(uSun, vec3(1.0), 0.4) * 1.05, topEdge * 0.12);
     }
     if (uSoft > 0.5) {
       // Aerial perspective: the far side of the world melts into the sky's colour.

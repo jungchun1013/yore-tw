@@ -161,18 +161,28 @@ export const marker: PropModule = {
       yaw = THREE.MathUtils.radToDeg(Math.atan2(new THREE.Vector3().crossVectors(north, toRoad).dot(d), north.dot(toRoad)));
     }
     const stone: THREE.BufferGeometry[] = [];
-    // Tall thin tablet with a rounded, chipped crown; the lower third is underground.
+    // One extruded outline joins straight sides to a tangent semicircular crown.
+    // A single colour sample covers the whole tablet, so there is no cap seam.
     const lean = { x: -0.28 + (rand() - 0.5) * 0.12, y: 0, z: (rand() - 0.5) * 0.35 };
-    const slab = stoneBlock(0.3, 0.78, 0.1, rand, 0.25);
+    const outline = new THREE.Shape();
+    outline.moveTo(-0.15, -0.39);
+    outline.lineTo(0.15, -0.39);
+    outline.lineTo(0.15, 0.39);
+    outline.absarc(0, 0.39, 0.15, 0, Math.PI, false);
+    outline.lineTo(-0.15, -0.39);
+    outline.closePath();
+    const slab = new THREE.ExtrudeGeometry(outline, {
+      depth: 0.084,
+      steps: 1,
+      curveSegments: 24,
+      bevelEnabled: true,
+      bevelThickness: 0.008,
+      bevelSize: 0.008,
+      bevelSegments: 3,
+    });
+    slab.translate(0, 0, -0.042);
     xf(slab, { x: 0, y: 0.26, z: 0 }, lean);
     stone.push(paint(slab, STONE[Math.floor(rand() * STONE.length)], 0.05, rand));
-    const crown = new THREE.CylinderGeometry(0.15, 0.15, 0.1, 10, 1, false, 0, Math.PI);
-    crown.rotateZ(Math.PI / 2);
-    crown.rotateY(Math.PI / 2);
-    // Same pivot as the slab (its centre), so the crown stays seated when it leans.
-    xf(crown, { x: 0, y: 0.39, z: 0 });
-    xf(crown, { x: 0, y: 0.26, z: 0 }, lean);
-    stone.push(paint(crown, STONE[Math.floor(rand() * STONE.length)], 0.05, rand));
     const chunk = stoneBlock(0.14, 0.1, 0.1, rand, 1);
     xf(chunk, { x: 0.22, y: 0.04, z: 0.12 }, { x: rand(), y: rand(), z: rand() });
     stone.push(paint(chunk, 0xa9a6bd, 0.05, rand));

@@ -22,7 +22,7 @@ const TILES = [0xb5523f, 0xc0634b, 0xa94a39, 0xc87159, 0x9e4536];
 /**
  * Half-timbered cottage after the user's references: rough stone lower walls, cream
  * plaster above held in dark timber (posts, rails, braces), a steep clay roof whose
- * tiles sit unevenly and whose ridge sags, a little porch roof over the door, stone
+ * tiles have thickness and staggered courses with straight eaves, a little porch roof over the door, stone
  * steps, diamond-latticed windows with flower boxes, pots and a climbing vine.
  */
 export const house: PropModule = {
@@ -46,6 +46,16 @@ export const house: PropModule = {
       geo.translate(0, len / 2, 0);
       geo.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), b.clone().sub(a).normalize()));
       geo.translate(a.x, a.y, a.z);
+      // Cut beams against the roof underside, including the outer corners of
+      // the top plates: their box thickness must not pierce the sloping tiles.
+      const positions = geo.getAttribute('position');
+      for (let i = 0; i < positions.count; i++) {
+        const z = Math.abs(positions.getZ(i));
+        if (z > D / 2 + OVER_EAVE) continue;
+        const underside = RIDGE + 0.05 - z * Math.tan(PITCH) - 0.062 / Math.cos(PITCH);
+        positions.setY(i, Math.min(positions.getY(i), underside));
+      }
+      geo.computeVertexNormals();
       timber.push(paint(geo, pick(TIMBER), 0.05, rand));
     };
 
@@ -101,26 +111,29 @@ export const house: PropModule = {
       beam(xx, EAVE, D / 2 - 0.06, xx, EAVE + 0.3, 0.04, 0.045);
     }
 
-    // Roof: two steep planes of uneven tiles over a deck; the ridge sags a touch.
+    // Roof: solid tiles retain their thickness and overhang; clip staggered end tiles
+    // to the same boundary so both gables and the eaves have straight edges.
     const slopeLen = (D / 2 + OVER_EAVE) / Math.cos(PITCH);
     const span = W + OVER_GABLE * 2;
-    const sag = (x: number) => -0.045 * Math.cos((x / span) * Math.PI);
-    const tileGeo = new THREE.BoxGeometry(0.15, 0.022, 0.15);
-    const roofPlane = (matrix: THREE.Matrix4, len: number, width: number, sagAmt: number) => {
+    const roofPlane = (matrix: THREE.Matrix4, len: number, width: number) => {
       const deck = xf(new THREE.BoxGeometry(width, 0.05, len), { x: 0, y: -0.035, z: len / 2 });
       deck.applyMatrix4(matrix);
       timber.push(paint(deck, 0x7a3a2c));
       const rows = Math.ceil(len / 0.11);
       const cols = Math.ceil(width / 0.135);
+      const tileW = width / cols;
+      const tileL = len / rows;
       for (let r = 0; r < rows; r++) {
-        for (let c = 0; c < cols; c++) {
-          const x = -width / 2 + 0.07 + c * 0.135 + (r % 2) * 0.06 + (rand() - 0.5) * 0.015;
-          if (x > width / 2 - 0.03) continue;
-          const tg = tileGeo.clone();
-          // Each course lies on the one below, lower edge lifted, a little crooked.
-          xf(tg, { x, y: 0.006 + (rows - r) * 0.002 + sag(x) * sagAmt, z: 0.075 + r * 0.11 }, { x: -0.07 + (rand() - 0.5) * 0.05, y: (rand() - 0.5) * 0.14, z: (rand() - 0.5) * 0.08 }, { x: 0.9 + rand() * 0.25, y: 1, z: 0.95 + rand() * 0.15 });
+        for (let c = -1; c < cols; c++) {
+          const left = Math.max(-width / 2, -width / 2 + (c + (r % 2) * 0.5) * tileW);
+          const right = Math.min(width / 2, -width / 2 + (c + 1 + (r % 2) * 0.5) * tileW);
+          if (right <= left) continue;
+          // Uniform thickness, no random rotation, scale or height: the half tiles
+          // at staggered row ends stop exactly at the roof edge rather than jut out.
+          const tg = new THREE.BoxGeometry(right - left, 0.022, tileL);
+          tg.translate((left + right) / 2, 0.001, (r + 0.5) * tileL);
           tg.applyMatrix4(matrix);
-          tiles.push(paint(tg, pick(TILES), 0.07, rand));
+          tiles.push(paint(tg, pick(TILES), 0.04, rand));
         }
       }
     };
@@ -129,16 +142,8 @@ export const house: PropModule = {
         .makeTranslation(0, RIDGE + 0.05, 0)
         .multiply(new THREE.Matrix4().makeRotationY(side > 0 ? 0 : Math.PI))
         .multiply(new THREE.Matrix4().makeRotationX(PITCH));
-      roofPlane(m, slopeLen, span, 1);
+      roofPlane(m, slopeLen, span);
     }
-    for (let c = 0; c * 0.14 < span; c++) {
-      const x = -span / 2 + 0.07 + c * 0.14;
-      const cap = new THREE.CylinderGeometry(0.075, 0.075, 0.15, 6, 1, false, 0, Math.PI);
-      cap.rotateZ(Math.PI / 2); // runs along X, arched up
-      xf(cap, { x, y: RIDGE + 0.07 + sag(x), z: 0 }, { x: 0, y: 0, z: (rand() - 0.5) * 0.1 });
-      tiles.push(paint(cap, 0x8f3f31, 0.05, rand));
-    }
-
     // Porch: a small lean-to roof over the door on two posts with knee braces.
     const doorX = -0.3;
     const porchW = 0.72;
@@ -149,7 +154,7 @@ export const house: PropModule = {
     const porchM = new THREE.Matrix4()
       .makeTranslation(doorX, porchTop, D / 2 + 0.03)
       .multiply(new THREE.Matrix4().makeRotationX(porchPitch));
-    roofPlane(porchM, Math.hypot(porchD, porchDrop) + 0.05, porchW, 0.3);
+    roofPlane(porchM, Math.hypot(porchD, porchDrop) + 0.05, porchW);
     for (const xs of [-1, 1]) {
       const px = doorX + xs * (porchW / 2 - 0.06);
       const pz = D / 2 + porchD - 0.04;
@@ -245,7 +250,6 @@ export const house: PropModule = {
     g.add(mesh(merge(stone), 0xffffff, { vertexColors: true }));
     g.add(mesh(merge(tiles), 0xffffff, { vertexColors: true }));
     g.add(mesh(merge(green), 0xffffff, { vertexColors: true }));
-    tileGeo.dispose();
 
     const d = dirAt(p.at);
     planet.place(g, d, p.yaw ?? 0, 0.03);

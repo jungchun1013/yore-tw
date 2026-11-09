@@ -1,4 +1,5 @@
 import { PAL } from '../render/palette';
+import { BUILDING_STUDIES } from '../props/buildingStudies';
 import type { SceneDef } from './types';
 
 /** The first planet: a cottage, a pond, an old stele with a soul light, and the ship. */
@@ -22,7 +23,14 @@ export const meadow: SceneDef = {
     ],
   },
   props: [
-    { type: 'house', at: [19, 2], yaw: 215 },
+    { type: 'cabin', at: [19, 2], yaw: 215 },
+    // Separate study lots; existing cabin and ship approaches stay available.
+    { type: BUILDING_STUDIES.plank.prop, id: 'rustic-hut', at: [30, 65], yaw: 190, params: { tier: 1 } },
+    { type: BUILDING_STUDIES.log.prop, id: 'log-cabin', at: [-8, 105], yaw: 190, params: { tier: 2 } },
+    { type: 'spruce', at: [-1, 95], params: { scale: 1.05, seed: 71 } },
+    { type: 'spruce', at: [-2, 116], params: { scale: 0.87, seed: 98 } },
+    { type: 'spruce', at: [9, 113], params: { scale: 0.78, seed: 111 } },
+    { type: 'spruce', at: [8, 98], params: { scale: 0.92, seed: 156 } },
     { type: 'fence', at: [14, -6], params: { to: [24, -9.5], posts: 7 } },
     { type: 'tree', at: [31, -20], yaw: 0, params: { scale: 1.15, leaf: PAL.leafA, leaf2: PAL.leafB } },
     { type: 'tree', at: [27, -27], yaw: 70, params: { scale: 0.85, leaf: PAL.leafC, leaf2: PAL.leafA } },

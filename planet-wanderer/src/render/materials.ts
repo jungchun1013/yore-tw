@@ -7,9 +7,10 @@ import type { Mood } from '../scenes/types';
 export const shared = {
   uLightDir: { value: new THREE.Vector3(0, 1, 0) },
   uTime: { value: 0 },
-  uDither: { value: 2 },
-  /** 1 = soft Zelda/Sky shading (default), 0 = pixel-art bands. Pipeline keeps it in sync. */
-  uStyle: { value: 1 },
+  uDither: { value: 1 },
+  /** 0 = hybrid optical mixing (default), 1 = soft cel, 2 = broad Sky ramp. */
+  uStyle: { value: 0 },
+  uPixelSize: { value: 3 },
   /** Shadows of passing clouds on everything (0 = off). */
   uCloudShadow: { value: 1 },
   uShadowTint: { value: new THREE.Color(PAL.shadowTint) },
@@ -20,6 +21,7 @@ export const shared = {
 const VERT = /* glsl */ `
 #include <common>
 #include <color_pars_vertex>
+#include <skinning_pars_vertex>
 #include <shadowmap_pars_vertex>
 varying vec3 vNormalW;
 varying vec3 vPosW;
@@ -27,8 +29,11 @@ varying vec3 vLocal;
 void main() {
   #include <color_vertex>
   #include <beginnormal_vertex>
+  #include <skinbase_vertex>
+  #include <skinnormal_vertex>
   #include <defaultnormal_vertex>
   #include <begin_vertex>
+  #include <skinning_vertex>
   #include <project_vertex>
   #include <worldpos_vertex>
   #include <shadowmap_vertex>
@@ -57,6 +62,7 @@ uniform float uDither;
 uniform float uTime;
 uniform float uMark;
 uniform float uStyle;
+uniform float uPixelSize;
 uniform float uGrad;
 uniform float uCloudShadow;
 #ifdef TERRAIN
@@ -97,8 +103,8 @@ void main() {
     float n = fbm3(dir * 4.2);
     // Coarse cells: two-tone mottling on paths and sand comes in patches, not specks.
     vec3 cell = floor(vPosW * 3.0);
-    if (uStyle > 0.5) {
-      // Soft: broad watercolour patches that blend into each other.
+    if (true) {
+      // Broad watercolour patches that blend into each other.
       base = mix(uGrassDark, base, smoothstep(0.3, 0.48, n));
       base = mix(base, uGrassLight, smoothstep(0.54, 0.74, n));
       base *= 0.97 + 0.06 * fbm3(vPosW * 2.5);
@@ -116,12 +122,21 @@ void main() {
       float d = arcDist(dir, uPathA[i], uPathB[i]);
       float wob = (fbm3(dir * 18.0) - 0.5) * 0.008;
       float w = uPathW[i];
-      if (uStyle > 0.5) base = mix(base, mix(uPath, uSand, fbm3(vPosW * 3.0) * 0.6), 1.0 - smoothstep(w * 0.8, w * 1.15, d + wob));
+      if (true) base = mix(base, mix(uPath, uSand, fbm3(vPosW * 3.0) * 0.6), 1.0 - smoothstep(w * 0.8, w * 1.15, d + wob));
       else if (d + wob < w) base = mix(uPath, uSand, step(0.6, hash13(cell * 1.7)) * 0.5);
     }
-    if (uStyle > 0.5) base = mix(base, mix(uSand, uPath, fbm3(vPosW * 4.0) * 0.5), 1.0 - smoothstep(1.26, 1.4, pd));
+    if (true) base = mix(base, mix(uSand, uPath, fbm3(vPosW * 4.0) * 0.5), 1.0 - smoothstep(1.26, 1.4, pd));
     else if (pd < 1.32) base = mix(uSand, uPath, step(0.75, hash13(cell)));
   #endif
+
+  // High-value neutrals carry complementary reflected hues, with nearly equal
+  // luminance: pearl white remains white rather than turning into grey noise.
+  float neutral = (1.0 - smoothstep(0.12, 0.38, max(base.r, max(base.g, base.b)) - min(base.r, min(base.g, base.b))))
+    * smoothstep(0.55, 0.9, dot(base, vec3(0.2126, 0.7152, 0.0722)));
+  float pigment = fbm3(vPosW * 1.8);
+  vec3 pearl = mix(vec3(0.88, 0.85, 1.0), vec3(0.84, 1.0, 0.95), smoothstep(0.28, 0.7, pigment));
+  pearl = mix(pearl, vec3(1.0, 0.9, 0.83), smoothstep(0.58, 0.82, fbm3(vPosW * 1.3 + 19.0)));
+  base *= mix(vec3(1.0), pearl, neutral * 0.65);
 
   // Grass blades: dark at the root, bright at the tip.
   if (uGrad > 0.5) base *= mix(0.68, 1.14, clamp(vLocal.y / 0.22, 0.0, 1.0));
@@ -134,16 +149,16 @@ void main() {
   float sh = getShadowMask();
   // Clouds drifting over the world leave soft travelling shadows.
   float cloudN = fbm3(vPosW * 0.2 + vec3(uTime * 0.035, 0.0, uTime * 0.022));
-  float cloud = uStyle > 0.5 ? smoothstep(0.5, 0.6, cloudN) : step(0.55, cloudN + bite * 0.05);
-  if (uStyle < 0.5) sh = step(0.5, sh); // crisp shadow edges on the pixel grid
+  float cloud = smoothstep(0.48, 0.65, cloudN);
+
   sh *= 1.0 - cloud * 0.8 * uCloudShadow * (1.0 - uEmissive);
   float l = clamp(ndl * 1.25 + 0.1, 0.0, 1.0) * mix(0.18, 1.0, sh);
-  // Band seams: 1 = ordered dither on the screen grid, 2 = jagged, brush-broken edges
-  // from world-anchored noise (they stay put while the camera moves).
-  // Jagged seams bite in chunks: low-frequency noise, so a whole band edge wanders
-  // together instead of every pixel flickering on its own.
-  float th = uDither > 1.5 ? bite * 1.4 : bayer4(gl_FragCoord.xy) - 0.5;
-  l += th * (uDither > 1.5 ? 0.14 : 0.09 * uDither);
+  // Bounded optical mixing: stable ordered cells only inside a lighting seam.
+  // No noise moves the geometry, cast shadows or broad colour patches.
+  vec2 cellPx = floor(gl_FragCoord.xy / max(uPixelSize, 1.0));
+  float th = bayer4(cellPx) - 0.5;
+  float seamWidth = max(0.035, fwidth(l) * 1.5);
+  float seam = 1.0 - smoothstep(seamWidth, seamWidth * 2.0, abs(l - 0.32));
 
   vec3 shadowCol = mix(base * 0.66, base * uShadowTint * 1.25, 0.45);
   vec3 hiCol = mix(base, uSunTint, 0.38);
@@ -172,11 +187,16 @@ void main() {
     alpha = uMark < 0.9 ? 0.99 : 1.0;
   } else {
     vec3 midCol = mix(shadowCol, base, 0.58);
-    col = l < 0.2 ? shadowCol : (l < 0.5 ? midCol : (l < 0.94 ? base : hiCol));
-    // Sky bounce on the rims: the atmosphere reads cyan where surfaces turn away.
-    float rim = step(0.78 - th * 0.08 * min(uDither, 1.0), fr) * uRim;
-    col = mix(col, uRimTint, rim * 0.42);
-    col = mix(col, base, uEmissive);
+    float ramp = smoothstep(0.25, 0.39, l);
+    float dots = smoothstep(0.25, 0.39, l + th * 0.14);
+    float amount = uDither < 0.5 ? 0.0 : uDither > 1.5 ? 0.7 : 0.38;
+    float lit = mix(ramp, dots, seam * amount);
+    col = mix(midCol, base, lit);
+    col = mix(shadowCol, col, smoothstep(0.04, 0.18, l));
+    col = mix(col, hiCol, smoothstep(0.84, 1.0, l) * 0.48);
+    float rim = smoothstep(0.65, 0.98, fr) * uRim;
+    col = mix(col, mix(base, uRimTint, 0.5), rim * 0.28);
+    col = mix(col, base * (1.0 + 0.7 * uEmissive * uEmissive), uEmissive);
     alpha = uMark < 0.9 ? 0.99 : 1.0;
   }
   gl_FragColor = vec4(col, alpha);
@@ -295,6 +315,7 @@ export function waterMaterial(radius: number): THREE.ShaderMaterial {
     `,
     fragmentShader: /* glsl */ `
       uniform float uRadius; uniform vec3 uDeep; uniform vec3 uMid; uniform vec3 uLight; uniform float uTime; uniform float uDither; uniform float uStyle;
+uniform float uPixelSize;
       varying vec3 vLocal; varying vec3 vPosW;
       ${NOISE}
       void main() {
@@ -327,11 +348,15 @@ export const normalPassMaterial = new THREE.ShaderMaterial({
   side: THREE.DoubleSide,
   vertexShader: /* glsl */ `
     #include <common>
+    #include <skinning_pars_vertex>
     varying vec3 vN;
     void main() {
       #include <beginnormal_vertex>
+  #include <skinbase_vertex>
+  #include <skinnormal_vertex>
       #include <defaultnormal_vertex>
       #include <begin_vertex>
+  #include <skinning_vertex>
       #include <project_vertex>
       vN = normalize(transformedNormal);
     }
