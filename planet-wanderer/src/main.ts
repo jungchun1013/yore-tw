@@ -146,6 +146,7 @@ const tmp = new THREE.Vector3();
 let frames = 0;
 let portraitView = false;
 let inspectName: string | null = null;
+let inspectOrbit: [number, number, number] | null = null;
 
 function screenOf(p: THREE.Vector3) {
   tmp.copy(p).project(camera);
@@ -168,17 +169,23 @@ function frame() {
   // Art-review camera: look straight at the face at body height, without
   // changing the gameplay camera's zoom or orbit settings.
   if (portraitView) {
-    const target = prince.root.position.clone().addScaledVector(prince.dir, 0.49);
-    camera.position.copy(target).addScaledVector(prince.forward, 2.5);
+    const target = prince.root.position.clone().addScaledVector(prince.dir, 0.59);
+    camera.position.copy(target).addScaledVector(prince.forward, 2.9);
     camera.up.copy(prince.dir);
     camera.lookAt(target);
     rig.focusDist = camera.position.distanceTo(target);
   }
-  const inspected = inspectName ? realm.root.getObjectByName(inspectName) : null;
+  const inspected = inspectName ? scene.getObjectByName(inspectName) : null;
   if (inspected) {
     const framing = inspected.userData.inspection as { target: number[]; camera: number[] } | undefined;
     const target = inspected.localToWorld(new THREE.Vector3().fromArray(framing?.target ?? [0.35, 1.05, 0]));
-    camera.position.copy(inspected.localToWorld(new THREE.Vector3().fromArray(framing?.camera ?? [3.4, 2.8, 5.4])));
+    if (inspectOrbit) {
+      // Review orbit: azimuth/elevation (deg) around the target in the object's frame.
+      const [az, el, dist] = inspectOrbit;
+      const a = THREE.MathUtils.degToRad(az), e = THREE.MathUtils.degToRad(el);
+      const local = new THREE.Vector3().fromArray(framing?.target ?? [0.35, 1.05, 0]).add(new THREE.Vector3(Math.sin(a) * Math.cos(e) * dist, Math.sin(e) * dist, Math.cos(a) * Math.cos(e) * dist));
+      camera.position.copy(inspected.localToWorld(local));
+    } else camera.position.copy(inspected.localToWorld(new THREE.Vector3().fromArray(framing?.camera ?? [3.4, 2.8, 5.4])));
     camera.up.copy(inspected.getWorldPosition(new THREE.Vector3())).normalize();
     camera.lookAt(target);
     rig.focusDist = camera.position.distanceTo(target);
@@ -250,12 +257,14 @@ declare global {
       hud: (on: boolean) => void;
       portrait: (on: boolean) => void;
       inspect: (name: string | null) => void;
+      inspectOrbit: (o: [number, number, number] | null) => void;
     };
   }
 }
 window.__pw = {
   portrait: (on) => { portraitView = on; },
   inspect: (name) => { inspectName = name; },
+  inspectOrbit: (o) => { inspectOrbit = o; },
   frames: () => frames,
   zoom: (z) => {
     rig.zoomGoal = rig.zoom = z;

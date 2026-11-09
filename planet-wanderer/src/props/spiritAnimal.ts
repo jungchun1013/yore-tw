@@ -18,14 +18,18 @@ interface ModelSpec {
   antlerCut?: number;
   /** Keep the model's own antlers (as a glowing part) instead of discarding them. */
   keepAntlers?: boolean;
+  /** Graft the Quaternius stag's antlers onto the skull cap at their original tilt and
+   *  spread; value = size multiplier, 1 = the same antler-to-body proportion as on that stag. */
+  graftAntlers?: number;
 }
 // Model D (madtrollstudio) is the stag with its own antlers; model C (Google Poly) is
 // the doe with its antlers removed. Both are the slender static deer the user picked.
 const MODELS: Record<string, ModelSpec> = {
-  stag: { file: 'deer_d.glb', height: 1.7, idle: [], radius: 0.7, deer: true, antlerCut: 0.83, keepAntlers: true },
+  stag: { file: 'deer_d.glb', height: 1.7, idle: [], radius: 0.7, deer: true, antlerCut: 0.83, graftAntlers: 1 },
   doe: { file: 'deer_c.glb', height: 1.4, idle: [], radius: 0.6, deer: true, antlerCut: 0.87 },
   rabbit: { file: 'rabbit.glb', height: 0.34, idle: [], radius: 0.25 },
 };
+const ANTLER_FILE = 'stag.glb'; // Quaternius stag: body `Stag`, antlers `Stag_Horns`
 
 const loader = new GLTFLoader();
 const cache = new Map<string, Promise<THREE.Group>>();
@@ -190,7 +194,7 @@ function subdivideSkinned(g: THREE.BufferGeometry): THREE.BufferGeometry {
  * head stays closed; the antler piece keeps its original position, so it sits exactly
  * where the modeller put it.
  */
-function cutAbove(geo: THREE.BufferGeometry, cutY: number): { geo: THREE.BufferGeometry; above: THREE.BufferGeometry | null } {
+function cutAbove(geo: THREE.BufferGeometry, cutY: number): { geo: THREE.BufferGeometry; above: THREE.BufferGeometry | null; mounts: THREE.Vector3[] } {
   const g = geo.index ? geo : mergeVertices(geo, 1e-5);
   const pos = g.attributes.position as THREE.BufferAttribute;
   const idx = g.index!;
@@ -218,6 +222,7 @@ function cutAbove(geo: THREE.BufferGeometry, cutY: number): { geo: THREE.BufferG
   for (const [u, v] of open) { (adj.get(u) ?? adj.set(u, []).get(u)!).push(v); (adj.get(v) ?? adj.set(v, []).get(v)!).push(u); }
   const seen = new Set<number>();
   const extra: number[] = [];
+  const mounts: THREE.Vector3[] = [];
   const P: number[] = Array.from(pos.array as ArrayLike<number>);
   let next = pos.count;
   for (const start of adj.keys()) {
@@ -229,6 +234,7 @@ function cutAbove(geo: THREE.BufferGeometry, cutY: number): { geo: THREE.BufferG
     const c = new THREE.Vector3();
     for (const v of loop) c.add(new THREE.Vector3(pos.getX(v), pos.getY(v), pos.getZ(v)));
     c.divideScalar(loop.length);
+    mounts.push(c.clone());
     const ci = next++;
     P.push(c.x, c.y, c.z);
     for (const [u, v] of open) if (loop.includes(u) && loop.includes(v)) extra.push(u, v, ci);
@@ -243,7 +249,7 @@ function cutAbove(geo: THREE.BufferGeometry, cutY: number): { geo: THREE.BufferG
     above.setAttribute('position', new THREE.Float32BufferAttribute(Array.from(pos.array as ArrayLike<number>), 3));
     above.setIndex(upper);
   }
-  return { geo: out, above };
+  return { geo: out, above, mounts };
 }
 
 /**
@@ -400,6 +406,8 @@ export const spirit: PropModule = {
       }
       // Static deer: split off the modelled antlers. Kept ones become their own mesh
       // (glowing material, smooth normals only); discarded ones leave a capped skull.
+      let mountLocal: THREE.Vector3 | null = null;
+      let mountMesh: THREE.Mesh | null = null;
       if (spec.antlerCut) {
         let done = false;
         const toAdd: [THREE.Object3D, THREE.Mesh][] = [];
@@ -411,8 +419,9 @@ export const spirit: PropModule = {
           g0.computeBoundingBox();
           const bb = g0.boundingBox!;
           const cutY = bb.min.y + (bb.max.y - bb.min.y) * spec.antlerCut!;
-          const { geo: g1, above } = cutAbove(g0, cutY);
+          const { geo: g1, above, mounts } = cutAbove(g0, cutY);
           m.geometry = g1;
+          if (mounts.length) { mountLocal = mounts.reduce((a, b) => (a.y > b.y ? a : b)).clone(); mountMesh = m; }
           if (spec.keepAntlers && above) {
             const antlers = new THREE.Mesh(above);
             antlers.name = 'antlers';
@@ -459,6 +468,72 @@ export const spirit: PropModule = {
       });
       body.add(clone);
       root = clone;
+
+      if (spec.graftAntlers && mountLocal && mountMesh) {
+        const mm = mountMesh as THREE.Mesh;
+        const ml = mountLocal as THREE.Vector3;
+        loadModel(ANTLER_FILE).then((src) => {
+          // The antlers keep exactly the orientation they have on the Quaternius stag; the
+          // only correction is a yaw so that stag's forward matches this body's forward.
+          // The body is several primitives (coat, hooves, eyes…): take the union of all
+          // non-antler meshes, not the first one found.
+          let horns: THREE.Mesh | null = null;
+          const qb = new THREE.Box3();
+          src.updateMatrixWorld(true);
+          src.traverse((o) => {
+            const m = o as THREE.Mesh;
+            if (!m.isMesh) return;
+            if (/horn|antler/i.test(m.name) || /horn|antler/i.test(m.parent?.name ?? '')) { horns = horns ?? m; return; }
+            qb.expandByObject(m);
+          });
+          if (!horns || qb.isEmpty()) return;
+          const hGeo = ((horns as THREE.Mesh).geometry as THREE.BufferGeometry).clone();
+          hGeo.applyMatrix4((horns as THREE.Mesh).matrixWorld); // into the Quaternius scene frame
+          hGeo.deleteAttribute('normal'); if (hGeo.attributes.uv) hGeo.deleteAttribute('uv');
+          const welded = mergeVertices(hGeo, 1e-6);
+          welded.computeBoundingBox();
+          const hb = welded.boundingBox!;
+          const hs = hb.getSize(new THREE.Vector3());
+          // Roots: centre of the lowest 12% of the antler vertices.
+          const hp = welded.attributes.position as THREE.BufferAttribute;
+          const rootC = new THREE.Vector3(); let nr = 0;
+          for (let i = 0; i < hp.count; i++) if (hp.getY(i) < hb.min.y + hs.y * 0.12) { rootC.add(new THREE.Vector3(hp.getX(i), hp.getY(i), hp.getZ(i))); nr++; }
+          rootC.divideScalar(Math.max(1, nr));
+          // Quaternius forward = from its body centre toward the antler roots (horizontal).
+          const qc = qb.getCenter(new THREE.Vector3());
+          const qBodyH = qb.getSize(new THREE.Vector3()).y;
+          const qFwd = new THREE.Vector3(rootC.x - qc.x, 0, rootC.z - qc.z).normalize();
+          // Re-origin on the roots so the placement and yaw pivot there.
+          welded.translate(-rootC.x, -rootC.y, -rootC.z);
+          welded.computeVertexNormals();
+          welded.computeBoundingBox();
+          const hb2 = welded.boundingBox!;
+          // Same proportion to the body as on the source stag: scale Quaternius units to this body's height.
+          const k = ((spec.height * scale) / qBodyH) * spec.graftAntlers!;
+          const mesh2 = new THREE.Mesh(welded, antlerMaterial(0x8fe9f6, 0xffd27a, hb2.min.y, hb2.max.y));
+          mesh2.name = 'antlers';
+          mesh2.castShadow = false;
+          mesh2.scale.setScalar(k);
+          // This body's forward: the head end is the higher end of its long axis.
+          const bodyPos = (mm.geometry as THREE.BufferGeometry).attributes.position as THREE.BufferAttribute;
+          const bb2 = new THREE.Box3().setFromBufferAttribute(bodyPos);
+          const bsz = bb2.getSize(new THREE.Vector3());
+          const axis: 'x' | 'z' = bsz.x > bsz.z ? 'x' : 'z';
+          let topLo = -Infinity, topHi = -Infinity;
+          for (let i = 0; i < bodyPos.count; i++) {
+            const a = axis === 'x' ? bodyPos.getX(i) : bodyPos.getZ(i);
+            const t = (a - bb2.min[axis]) / Math.max(1e-6, bsz[axis]);
+            if (t < 0.25) topLo = Math.max(topLo, bodyPos.getY(i));
+            if (t > 0.75) topHi = Math.max(topHi, bodyPos.getY(i));
+          }
+          const dFwd = new THREE.Vector3(); dFwd[axis] = topHi > topLo ? 1 : -1;
+          mesh2.rotation.y = Math.atan2(dFwd.x, dFwd.z) - Math.atan2(qFwd.x, qFwd.z);
+          const mountWorld = mm.localToWorld(ml.clone());
+          body.worldToLocal(mountWorld);
+          mesh2.position.copy(mountWorld).add(new THREE.Vector3(0, -0.07 * scale, 0));
+          body.add(mesh2);
+        });
+      }
 
       // Constellation on the flank (night only): a handful of body vertices joined up.
       if (tint === SPIRIT_NIGHT) {
