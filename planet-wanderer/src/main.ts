@@ -227,6 +227,7 @@ declare global {
       nearExit: () => string | null;
       interact: () => void;
       look: (style: RenderStyle, outline: OutlineMode) => void;
+      hud: (on: boolean) => void;
     };
   }
 }
@@ -247,4 +248,5 @@ window.__pw = {
   nearExit: () => nearbyExit()?.exit.to ?? null,
   interact,
   look: (style, outline) => hud.setLook(style, outline),
+  hud: (on) => ((document.getElementById('hud') as HTMLElement).style.display = on ? '' : 'none'),
 };

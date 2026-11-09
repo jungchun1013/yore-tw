@@ -30,7 +30,7 @@ export class Hud {
 
   constructor(el: HTMLElement, private readonly h: HudHandlers) {
     el.innerHTML = `
-      <div class="title"><b>Planet Wanderer</b><span class="sub"></span></div>
+      <div class="title"><b>Planet Wanderer <i class="demo">DEMO</i></b><span class="sub"></span></div>
       <div class="bar">
         <button data-act="view">生活視角</button>
         <button data-act="style" class="on"></button>
