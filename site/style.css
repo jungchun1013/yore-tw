@@ -47,6 +47,11 @@ footer a { color: var(--muted); font-weight: 800; }
 @media (max-width: 760px) { .hero { grid-template-columns: 1fr; } .hero h1 { font-size: 32px; } nav a { margin-left: 10px; } body { font-size: 16px; } }
 .ad-slot { display: none; } .ad-slot.on { display: block; margin: 28px auto 0; max-width: 728px; min-height: 0; }
 ins.adsbygoogle[data-ad-status="unfilled"] { display: none !important; }
+/* pixel icons (Pixelarticons, MIT) in place of ▶ → ♥ glyphs */
+svg.ic { width: 20px; height: 20px; flex: none; shape-rendering: crispEdges; vertical-align: -4px; }
+.btn > span[lang], .card .more > span[lang], .dev a > span[lang] { display: inline-flex; align-items: center; gap: 6px; }
+.btn svg.ic { margin-left: -4px; } .card .more svg.ic, .dev a svg.ic { margin-left: -2px; }
+.pet .heart svg.ic { width: 24px; height: 24px; }
 /* ---- AdSense-review layout (2026-11-08): game detail pages, richer home; see docs/site-adsense-layout.md ---- */
 .welcome { padding: 18px 0 8px; }
 .welcome h1 { font-size: 40px; line-height: 1.15; margin: 0 0 12px; }
