@@ -7,9 +7,9 @@ import { dirAt } from '../world/planet';
 import { blob, mesh, param, type PropModule } from './kit';
 
 /** Base models (public/models/, see LICENSES.md there) and how tall they stand. */
-const MODELS: Record<string, { file: string; height: number; idle: string[]; radius: number }> = {
-  stag: { file: 'stag.glb', height: 1.75, idle: ['Idle', 'Idle_2', 'Idle_Headlow', 'Eating'], radius: 0.75 },
-  doe: { file: 'doe.glb', height: 1.35, idle: ['Idle', 'Idle_2', 'Idle_Headlow', 'Eating'], radius: 0.6 },
+const MODELS: Record<string, { file: string; height: number; idle: string[]; radius: number; deer?: boolean }> = {
+  stag: { file: 'stag.glb', height: 1.75, idle: ['Idle', 'Idle_2', 'Idle_Headlow', 'Eating'], radius: 0.75, deer: true },
+  doe: { file: 'doe.glb', height: 1.35, idle: ['Idle', 'Idle_2', 'Idle_Headlow', 'Eating'], radius: 0.6, deer: true },
   rabbit: { file: 'rabbit.glb', height: 0.34, idle: [], radius: 0.25 },
 };
 
@@ -31,16 +31,229 @@ function loadModel(file: string) {
 /** Facets off, skin on: a static mesh gets two rounds of Loop subdivision; a skinned
  *  one keeps its vertex count (joint weights cannot be interpolated) and only gets its
  *  split vertices welded so the normals run smoothly across the surface. */
-function smooth(geo: THREE.BufferGeometry, skinned: boolean, subdivide: boolean): THREE.BufferGeometry {
+/** Vertices that share a position (across material groups or UV seams) form one
+ *  cluster; smoothing and normals work per cluster so seams never open or shade apart. */
+function clusters(pos: THREE.BufferAttribute): { of: Int32Array; members: number[][] } {
+  const map = new Map<string, number>();
+  const of = new Int32Array(pos.count);
+  const members: number[][] = [];
+  // Quantise relative to the model's size: base models are tiny in file units, so a
+  // fixed decimal count would split welded vertices and the seams would open up.
+  let span = 0;
+  for (let i = 0; i < pos.count; i++) span = Math.max(span, Math.abs(pos.getX(i)), Math.abs(pos.getY(i)), Math.abs(pos.getZ(i)));
+  const q = span * 2e-3 || 1e-6;
+  for (let i = 0; i < pos.count; i++) {
+    const k = `${Math.round(pos.getX(i) / q)},${Math.round(pos.getY(i) / q)},${Math.round(pos.getZ(i) / q)}`;
+    let c = map.get(k);
+    if (c === undefined) { c = members.length; map.set(k, c); members.push([]); }
+    of[i] = c; members[c].push(i);
+  }
+  return { of, members };
+}
+
+/** Taubin smoothing (λ/μ) on position clusters: rounds off sculpted detail such as
+ *  muscle groups without the shrinkage of plain Laplacian smoothing. Positions only,
+ *  so skinning attributes stay valid. Needs an indexed geometry. */
+function relax(g: THREE.BufferGeometry, iterations: number, lambda = 0.5, mu = -0.53) {
+  const idx = g.index;
+  if (!idx) return;
+  const pos = g.attributes.position as THREE.BufferAttribute;
+  const { of, members } = clusters(pos);
+  const n = members.length;
+  const nbrs: Set<number>[] = Array.from({ length: n }, () => new Set<number>());
+  for (let i = 0; i < idx.count; i += 3) {
+    const a = of[idx.getX(i)], b = of[idx.getX(i + 1)], c = of[idx.getX(i + 2)];
+    if (a !== b) { nbrs[a].add(b); nbrs[b].add(a); }
+    if (b !== c) { nbrs[b].add(c); nbrs[c].add(b); }
+    if (a !== c) { nbrs[a].add(c); nbrs[c].add(a); }
+  }
+  const p = new Float32Array(n * 3);
+  for (let c = 0; c < n; c++) { const i = members[c][0]; p[c * 3] = pos.getX(i); p[c * 3 + 1] = pos.getY(i); p[c * 3 + 2] = pos.getZ(i); }
+  const q = new Float32Array(n * 3);
+  const step = (k: number) => {
+    for (let c = 0; c < n; c++) {
+      const nb = nbrs[c];
+      if (!nb.size) { q[c * 3] = p[c * 3]; q[c * 3 + 1] = p[c * 3 + 1]; q[c * 3 + 2] = p[c * 3 + 2]; continue; }
+      let x = 0, y = 0, z = 0;
+      for (const j of nb) { x += p[j * 3]; y += p[j * 3 + 1]; z += p[j * 3 + 2]; }
+      x /= nb.size; y /= nb.size; z /= nb.size;
+      q[c * 3] = p[c * 3] + k * (x - p[c * 3]);
+      q[c * 3 + 1] = p[c * 3 + 1] + k * (y - p[c * 3 + 1]);
+      q[c * 3 + 2] = p[c * 3 + 2] + k * (z - p[c * 3 + 2]);
+    }
+    p.set(q);
+  };
+  for (let it = 0; it < iterations; it++) { step(lambda); step(mu); }
+  for (let c = 0; c < n; c++) for (const i of members[c]) pos.setXYZ(i, p[c * 3], p[c * 3 + 1], p[c * 3 + 2]);
+  pos.needsUpdate = true;
+}
+
+/** Plump the body: push every vertex out along its smooth normal by a fraction of
+ *  the model's size, so a lean sculpt reads soft and rounded rather than wiry. */
+function inflate(g: THREE.BufferGeometry, fraction: number) {
+  clusterNormals(g);
+  const pos = g.attributes.position as THREE.BufferAttribute;
+  const nrm = g.attributes.normal as THREE.BufferAttribute;
+  g.computeBoundingSphere();
+  const d = (g.boundingSphere?.radius ?? 1) * fraction;
+  for (let i = 0; i < pos.count; i++) pos.setXYZ(i, pos.getX(i) + nrm.getX(i) * d, pos.getY(i) + nrm.getY(i) * d, pos.getZ(i) + nrm.getZ(i) * d);
+  pos.needsUpdate = true;
+}
+
+/** Smooth normals that agree across position clusters (no seam shading). */
+function clusterNormals(g: THREE.BufferGeometry) {
+  g.computeVertexNormals();
+  const pos = g.attributes.position as THREE.BufferAttribute;
+  const nrm = g.attributes.normal as THREE.BufferAttribute;
+  const { members } = clusters(pos);
+  const v = new THREE.Vector3();
+  for (const m of members) {
+    if (m.length < 2) continue;
+    v.set(0, 0, 0);
+    for (const i of m) v.add(new THREE.Vector3(nrm.getX(i), nrm.getY(i), nrm.getZ(i)));
+    v.normalize();
+    for (const i of m) nrm.setXYZ(i, v.x, v.y, v.z);
+  }
+  nrm.needsUpdate = true;
+}
+
+/** One round of 1→4 midpoint subdivision that also interpolates skin joints/weights
+ *  (the library cannot), so low-poly animated bodies get enough vertices to relax into
+ *  soft shapes. Midpoints merge both parents' influences and keep the four strongest. */
+function subdivideSkinned(g: THREE.BufferGeometry): THREE.BufferGeometry {
+  const idx = g.index!;
+  const pos = g.attributes.position as THREE.BufferAttribute;
+  const J = g.attributes.skinIndex as THREE.BufferAttribute | undefined;
+  const W = g.attributes.skinWeight as THREE.BufferAttribute | undefined;
+  const n0 = pos.count;
+  const P: number[] = Array.from(pos.array as ArrayLike<number>);
+  const JI: number[] = J ? Array.from(J.array as ArrayLike<number>) : [];
+  const WI: number[] = W ? Array.from(W.array as ArrayLike<number>) : [];
+  const mid = new Map<string, number>();
+  let count = n0;
+  const midpoint = (a: number, b: number) => {
+    const key = a < b ? `${a}_${b}` : `${b}_${a}`;
+    let m = mid.get(key);
+    if (m !== undefined) return m;
+    m = count++;
+    P.push((P[a * 3] + P[b * 3]) / 2, (P[a * 3 + 1] + P[b * 3 + 1]) / 2, (P[a * 3 + 2] + P[b * 3 + 2]) / 2);
+    if (J && W) {
+      const acc = new Map<number, number>();
+      for (const v of [a, b]) for (let k = 0; k < 4; k++) { const w = WI[v * 4 + k]; if (w > 0) acc.set(JI[v * 4 + k], (acc.get(JI[v * 4 + k]) ?? 0) + w / 2); }
+      const top = [...acc.entries()].sort((x, y) => y[1] - x[1]).slice(0, 4);
+      const sum = top.reduce((s, e) => s + e[1], 0) || 1;
+      for (let k = 0; k < 4; k++) { JI.push(top[k]?.[0] ?? 0); WI.push(top[k] ? top[k][1] / sum : 0); }
+    }
+    mid.set(key, m);
+    return m;
+  };
+  const out: number[] = [];
+  const groups = g.groups.length ? g.groups : [{ start: 0, count: idx.count, materialIndex: 0 }];
+  const newGroups: { start: number; count: number; materialIndex: number }[] = [];
+  for (const grp of groups) {
+    const start = out.length;
+    for (let i = grp.start; i < grp.start + grp.count; i += 3) {
+      const a = idx.getX(i), b = idx.getX(i + 1), c = idx.getX(i + 2);
+      const ab = midpoint(a, b), bc = midpoint(b, c), ca = midpoint(c, a);
+      out.push(a, ab, ca, ab, b, bc, ca, bc, c, ab, bc, ca);
+    }
+    newGroups.push({ start, count: out.length - start, materialIndex: grp.materialIndex ?? 0 });
+  }
+  const r = new THREE.BufferGeometry();
+  r.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+  if (J && W) {
+    r.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(JI, 4));
+    r.setAttribute('skinWeight', new THREE.Float32BufferAttribute(WI, 4));
+  }
+  r.setIndex(out);
+  for (const grp of newGroups) r.addGroup(grp.start, grp.count, grp.materialIndex);
+  return r;
+}
+
+/**
+ * Toward a fawn's build (Bambi): the base sculpts have a swayed back and a heavy,
+ * muscular rump. Straighten the back line and draw the hindquarters in. Works in the
+ * model's own space; the forward axis is the longer horizontal one, the front is the
+ * taller end (head and neck rise above the rump).
+ */
+function fawnShape(g: THREE.BufferGeometry) {
+  const pos = g.attributes.position as THREE.BufferAttribute;
+  g.computeBoundingBox();
+  const bb = g.boundingBox!;
+  const size = bb.getSize(new THREE.Vector3());
+  const axis: 'x' | 'z' = size.x > size.z ? 'x' : 'z';
+  const other: 'x' | 'z' = axis === 'x' ? 'z' : 'x';
+  const lo = bb.min[axis], hi = bb.max[axis], len = hi - lo;
+  // Which end is the front: the end whose top is higher.
+  const bins = 20;
+  const top = new Array<number>(bins).fill(-Infinity);
+  for (let i = 0; i < pos.count; i++) {
+    const t = Math.min(bins - 1, Math.floor(((pos as THREE.BufferAttribute & { getComponent(i: number, c: number): number }).getComponent(i, axis === 'x' ? 0 : 2) - lo) / len * bins));
+    top[t] = Math.max(top[t], pos.getY(i));
+  }
+  const frontIsHi = Math.max(...top.slice(bins - 5)) > Math.max(...top.slice(0, 5));
+  const h = size.y;
+  const midOther = (bb.min[other] + bb.max[other]) / 2;
+  // Back line target: a straight line from the withers (t≈0.72) to the croup (t≈0.18).
+  const tOf = (i: number) => { const v = axis === 'x' ? pos.getX(i) : pos.getZ(i); const t = (v - lo) / len; return frontIsHi ? t : 1 - t; };
+  const topAt = (t: number) => { const b = Math.min(bins - 1, Math.max(0, Math.floor((frontIsHi ? t : 1 - t) * bins))); return top[b]; };
+  const withers = topAt(0.72), croup = topAt(0.2);
+  for (let i = 0; i < pos.count; i++) {
+    const t = tOf(i);
+    let y = pos.getY(i);
+    let o = axis === 'x' ? pos.getZ(i) : pos.getX(i);
+    let a = axis === 'x' ? pos.getX(i) : pos.getZ(i);
+    // 1. Straighten the back: lift the saddle up to the withers–croup line.
+    if (t > 0.18 && t < 0.78 && y > bb.min.y + h * 0.55) {
+      const line = croup + (withers - croup) * THREE.MathUtils.clamp((t - 0.2) / 0.52, 0, 1);
+      const localTop = topAt(t);
+      const nearTop = THREE.MathUtils.smoothstep(y, localTop - h * 0.22, localTop);
+      const lift = Math.max(0, line - localTop) * nearTop;
+      y += lift;
+    }
+    // 2. Smaller hindquarters: pull the rear body toward its own centre, legs untouched.
+    if (t < 0.4 && y > bb.min.y + h * 0.42) {
+      const w = THREE.MathUtils.smoothstep(0.4 - t, 0, 0.3);
+      const cy = bb.min.y + h * 0.68;
+      const k = 1 - 0.14 * w;
+      y = cy + (y - cy) * k;
+      o = midOther + (o - midOther) * k;
+      // and tuck the very end of the rump forward a touch
+      const tuck = (0.1 - Math.min(t, 0.1)) / 0.1 * len * 0.03;
+      a += frontIsHi ? tuck : -tuck;
+    }
+    pos.setY(i, y);
+    if (axis === 'x') { pos.setZ(i, o); pos.setX(i, a); } else { pos.setX(i, o); pos.setZ(i, a); }
+  }
+  pos.needsUpdate = true;
+}
+
+function smooth(geo: THREE.BufferGeometry, skinned: boolean, subdivide: boolean, deer = false): THREE.BufferGeometry {
   let g = geo;
   const tris = (g.index ? g.index.count : g.attributes.position.count) / 3;
-  // Subdivide only compact static bodies: the library is slow on big or fragmented
-  // meshes (the stag's antlers took 46 s), and thin parts look fine with smooth normals.
-  if (subdivide && !skinned && tris < 1200) g = LoopSubdivision.modify(g, 2, { split: false, uvSmooth: false, preserveEdges: false, flatOnly: false });
   g.deleteAttribute('normal');
   if (g.attributes.uv) g.deleteAttribute('uv');
-  g = mergeVertices(g, 1e-4);
-  g.computeVertexNormals();
+  if (g.attributes.color) g.deleteAttribute('color');
+  if (subdivide && !skinned && tris < 1200) {
+    // Static body: the library's Loop subdivision, then weld.
+    g = LoopSubdivision.modify(g, 2, { split: false, uvSmooth: false, preserveEdges: false, flatOnly: false });
+    g = mergeVertices(g, 1e-4);
+    relax(g, 10);
+    inflate(g, 0.02);
+  } else if (subdivide && skinned) {
+    // Animated body: weld, subdivide with skin weights, weld again, then relax hard.
+    g = mergeVertices(g, 1e-4);
+    if (deer) fawnShape(g);
+    // Two rounds, like the rabbit's Loop subdivision, so the relax has enough vertices
+    // to round into a soft surface instead of a faceted one.
+    if (tris < 2500) { g = subdivideSkinned(g); g = mergeVertices(g, 1e-5); g = subdivideSkinned(g); }
+    g = mergeVertices(g, 1e-5);
+    relax(g, 36, 0.55, -0.58);
+    inflate(g, 0.02);
+  } else {
+    g = mergeVertices(g, 1e-4); // antlers: smooth normals only
+  }
+  clusterNormals(g);
   return g;
 }
 
@@ -99,7 +312,7 @@ export const spirit: PropModule = {
         if (!m.isMesh) return;
         const skinned = (m as THREE.SkinnedMesh).isSkinnedMesh === true;
         const horn = /horn|antler/i.test(m.name);
-        m.geometry = smooth(m.geometry as THREE.BufferGeometry, skinned, !horn);
+        m.geometry = smooth(m.geometry as THREE.BufferGeometry, skinned, !horn, !!spec.deer && !horn);
         m.castShadow = false;
         m.receiveShadow = false;
         if (horn) {
@@ -107,7 +320,19 @@ export const spirit: PropModule = {
           const bb = m.geometry.boundingBox!;
           m.material = antlerMaterial(0x8fe9f6, 0xffd27a, bb.min.y, bb.max.y);
         } else {
+          // Translucent bodies overlap themselves (far side under near side) and the
+          // overlap brightens unevenly along the mesh's draw order, which shows as
+          // lines. A depth-only prepass fixes which surface wins per pixel, then the
+          // colour pass draws only that nearest layer.
+          const prepass = (m as THREE.Mesh).clone();
+          prepass.material = new THREE.MeshBasicMaterial({ colorWrite: false });
+          prepass.renderOrder = 1;
+          prepass.castShadow = prepass.receiveShadow = false;
+          if ((prepass as THREE.SkinnedMesh).isSkinnedMesh) (prepass as THREE.SkinnedMesh).bind((m as THREE.SkinnedMesh).skeleton, (m as THREE.SkinnedMesh).bindMatrix);
+          m.parent!.add(prepass);
           m.material = spiritMaterial(tint, skinned, s);
+          (m.material as THREE.ShaderMaterial).depthWrite = false;
+          (m.material as THREE.ShaderMaterial).depthFunc = THREE.LessEqualDepth;
           m.renderOrder = 2;
         }
       });
@@ -145,7 +370,7 @@ export const spirit: PropModule = {
     }).catch((e) => console.warn('[spirit] failed to load', spec.file, e));
 
     // Light motes drifting up around the body.
-    const moteGeo = blob(0.02, 1);
+    const moteGeo = blob(0.011 * spec.height * scale + 0.004, 1);
     const motes = Array.from({ length: 14 }, () => {
       const m = mesh(moteGeo, tint.star, { emissive: 1, glow: true, flat: true });
       m.castShadow = false;

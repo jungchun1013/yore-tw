@@ -13,7 +13,7 @@ export interface SpiritTint {
 }
 
 export const SPIRIT_DAY: SpiritTint = { body: 0xf4f8fb, rim: 0xbfe9ff, deep: 0x9ecfe8, star: 0xfff6d8, alpha: 0.78 };
-export const SPIRIT_NIGHT: SpiritTint = { body: 0x4a6ea6, rim: 0x8feaff, deep: 0x2a3d6b, star: 0xfff3c4, alpha: 0.88 };
+export const SPIRIT_NIGHT: SpiritTint = { body: 0x5b82bc, rim: 0x8feaff, deep: 0x344a7e, star: 0xfff3c4, alpha: 0.86 };
 
 /**
  * Patronus-style body material: the form reads by its silhouette and a bright fresnel
@@ -68,12 +68,12 @@ export function spiritMaterial(t: SpiritTint, skinned = false, localScale = 1): 
         vec3 lw = vLocal * uLocalScale; // local position in world units, so patterns match across models
         float inner = fbm3(lw * 3.5 + vec3(uTime * 0.12, uTime * 0.07, 0.0));
         float sun = max(dot(N, uLightDir), 0.0);
-        vec3 col = mix(uDeep, uBody, 0.35 + 0.5 * inner + 0.3 * sun);
-        // Fresnel edge: a wide soft glow and a thin bright line at the very rim.
-        float edge = smoothstep(0.3, 0.95, fr);
-        float line = smoothstep(0.82, 1.0, fr);
-        col = mix(col, uRim, edge * 0.7);
-        col += uRim * line * 0.9;
+        vec3 col = mix(uDeep, uBody, 0.45 + 0.45 * inner + 0.1 * sun);
+        // Fresnel edge: one wide soft glow, brightest at the rim but never a hard line
+        // (a hard line traces every internal contour and reads as a wire drawing).
+        float edge = smoothstep(0.25, 1.0, fr);
+        col = mix(col, uRim, edge * 0.75);
+        col += uRim * edge * edge * 0.35;
         // Star dust: sparse points anchored to the body, twinkling.
         vec3 cell = floor(lw * 16.0); // one cell ≈ 6 cm
         float h = hash13(cell);
@@ -82,7 +82,7 @@ export function spiritMaterial(t: SpiritTint, skinned = false, localScale = 1): 
         float dot2 = 1.0 - smoothstep(0.0, 0.14, length(inCell));
         float star = step(0.9, h) * dot2 * tw;
         col += uStar * star * 1.05;
-        float a = mix(uAlpha, 1.0, edge * 0.8 + star);
+        float a = mix(uAlpha, 1.0, edge * 0.7 + star);
         gl_FragColor = vec4(col, a);
       }
     `,
