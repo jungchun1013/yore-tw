@@ -174,8 +174,7 @@ void main() {
     float rim = step(0.78 - th * 0.08 * min(uDither, 1.0), fr) * uRim;
     col = mix(col, uRimTint, rim * 0.42);
     col = mix(col, base, uEmissive);
-    // Alpha carries a mark for the composite pass: 1 = outline me, below 0.9 = no outline.
-    alpha = uMark;
+    alpha = uMark < 0.9 ? 0.99 : 1.0;
   }
   gl_FragColor = vec4(col, alpha);
 }

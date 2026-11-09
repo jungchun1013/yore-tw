@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { PAL } from './palette';
 import { NOISE } from './glsl';
 import type { Mood } from '../scenes/types';
-import { normalPassMaterial, shared } from './materials';
+import { shared } from './materials';
 
 export type RenderStyle = 'soft' | 'pixel';
 /** none = no lines; tint = a darker, cooler shade of the object's own colour; dark = ink line. */
@@ -14,8 +14,9 @@ export type OutlineMode = 'none' | 'tint' | 'dark';
  * soft (default) — Zelda / Sky: full resolution with 4× MSAA into a half-float target,
  *   soft two-tone cel shading, no outlines, distance haze that melts into the sky,
  *   bloom on emissive things and light motes, smooth clouds and halo.
- * pixel — the scene renders at screen ÷ pxSize, a normal pre-pass feeds depth outlines
- *   and light-facing crease highlights, everything snaps to the art-pixel grid.
+ * pixel — colour blocks come from a pass at screen ÷ pxSize (nearest upscale), while
+ *   silhouettes, outlines and the top light edge still come from the full-res pass,
+ *   so lines stay continuous over chunky colour.
  *
  * Both end in one full-screen composite that also draws the sky, the planet halo,
  * the wisp glow, the vignette and the scene fade.
@@ -27,7 +28,6 @@ export class PixelPipeline {
   lowW = 1;
   lowH = 1;
   private pixelRT: THREE.WebGLRenderTarget;
-  private normalRT: THREE.WebGLRenderTarget;
   private softRT: THREE.WebGLRenderTarget;
   private bloomA: THREE.WebGLRenderTarget;
   private bloomB: THREE.WebGLRenderTarget;
@@ -45,7 +45,6 @@ export class PixelPipeline {
     const nearest = { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: true };
     this.pixelRT = new THREE.WebGLRenderTarget(1, 1, nearest);
     this.pixelRT.depthTexture = new THREE.DepthTexture(1, 1, THREE.UnsignedIntType);
-    this.normalRT = new THREE.WebGLRenderTarget(1, 1, nearest);
     this.softRT = new THREE.WebGLRenderTarget(1, 1, {
       type: THREE.HalfFloatType,
       samples: 4,
@@ -94,7 +93,7 @@ export class PixelPipeline {
       depthWrite: false,
       uniforms: {
         tColor: { value: this.softRT.texture },
-        tNormal: { value: this.normalRT.texture },
+        tLow: { value: this.pixelRT.texture },
         tDepth: { value: this.softRT.depthTexture },
         tBloom: { value: this.bloomA.texture },
         uSoft: { value: 1 },
@@ -142,26 +141,23 @@ export class PixelPipeline {
     const devH = Math.round(cssH * dpr);
     u.uScreen.value.set(devW, devH);
     u.uEdgePx.value = 0.5 + 1.1 * dpr;
+    // The full-resolution pass runs in both styles: it gives smooth silhouettes and
+    // the depth the edge lines are drawn from. Pixel style adds a low-res colour pass.
+    this.softRT.setSize(devW, devH);
     if (this.style === 'soft') {
       this.lowW = devW;
       this.lowH = devH;
-      this.softRT.setSize(devW, devH);
       const bw = Math.max(1, Math.round(devW / 4));
       const bh = Math.max(1, Math.round(devH / 4));
       this.bloomA.setSize(bw, bh);
       this.bloomB.setSize(bw, bh);
       u.uPx.value = 1;
-      u.tColor.value = this.softRT.texture;
-      u.tDepth.value = this.softRT.depthTexture;
       u.uSoft.value = 1;
     } else {
       this.lowW = Math.max(1, Math.ceil(cssW / this.pxSize));
       this.lowH = Math.max(1, Math.ceil(cssH / this.pxSize));
       this.pixelRT.setSize(this.lowW, this.lowH);
-      this.normalRT.setSize(this.lowW, this.lowH);
       u.uPx.value = this.pxSize * dpr;
-      u.tColor.value = this.pixelRT.texture;
-      u.tDepth.value = this.pixelRT.depthTexture;
       u.uSoft.value = 0;
     }
     u.uLowRes.value.set(this.lowW, this.lowH);
@@ -212,10 +208,15 @@ export class PixelPipeline {
     r.setClearColor(0x000000, 0);
     r.shadowMap.needsUpdate = true;
 
-    if (this.style === 'soft') {
-      r.setRenderTarget(this.softRT);
+    if (this.style === 'pixel') {
+      r.setRenderTarget(this.pixelRT);
       r.clear();
       r.render(scene, camera);
+    }
+    r.setRenderTarget(this.softRT);
+    r.clear();
+    r.render(scene, camera);
+    if (this.style === 'soft') {
       // Bloom: bright pass at quarter size, then a separable blur, twice.
       this.bright.uniforms.tSrc.value = this.softRT.texture;
       this.bright.uniforms.uTexel.value.set(1 / this.softRT.width, 1 / this.softRT.height);
@@ -230,15 +231,6 @@ export class PixelPipeline {
         this.blur.uniforms.uDir.value.set(0, ty * k);
         this.pass(this.blur, this.bloomA);
       }
-    } else {
-      r.setRenderTarget(this.pixelRT);
-      r.clear();
-      r.render(scene, camera);
-      scene.overrideMaterial = normalPassMaterial;
-      r.setRenderTarget(this.normalRT);
-      r.clear();
-      r.render(scene, camera);
-      scene.overrideMaterial = null;
     }
     this.pass(this.composite, null);
   }
@@ -246,7 +238,7 @@ export class PixelPipeline {
 
 const COMPOSITE = /* glsl */ `
 #include <packing>
-uniform sampler2D tColor; uniform sampler2D tNormal; uniform sampler2D tDepth; uniform sampler2D tBloom;
+uniform sampler2D tColor; uniform sampler2D tLow; uniform sampler2D tDepth; uniform sampler2D tBloom;
 uniform float uSoft;
 uniform vec2 uLowRes; uniform vec2 uScreen; uniform float uPx;
 uniform float uNear; uniform float uFar; uniform float uFocus; uniform float uTime; uniform float uOutline; uniform float uEdgePx;
@@ -300,39 +292,53 @@ vec3 sky(vec2 s, vec2 lp) {
 
 void main() {
   vec2 lp = floor(gl_FragCoord.xy / uPx);
-  vec2 uv = uSoft > 0.5 ? gl_FragCoord.xy / uScreen : (lp + 0.5) / uLowRes;
-  vec2 texel = 1.0 / uLowRes;
-  vec4 c = texture2D(tColor, uv);
   vec2 s = gl_FragCoord.xy / uScreen;
+  // Full-resolution pass: smooth silhouettes (MSAA coverage in alpha) and depth for edges.
+  vec4 c = texture2D(tColor, s);
   vec3 col;
 
+  vec3 skyC = sky(s, lp);
   if (uSoft > 0.5) {
-    // Soft: MSAA coverage is in alpha (cleared to 0), so blend over the sky by it.
-    vec3 skyC = sky(s, lp);
     float d = (length(gl_FragCoord.xy - uPlanet.xy) - uPlanet.z) / max(uPlanet.z, 1.0);
     skyC = mix(skyC, uHalo, exp(-max(d, 0.0) * 7.0) * 0.55);
-    vec3 obj = c.a > 0.0 ? c.rgb / c.a : vec3(0.0);
-    if (c.a > 0.01) {
-      float z = depthAt(uv);
-      // Silhouette lines from depth jumps. Alpha off the MSAA quarter steps = "never outline".
-      bool marked = abs(c.a * 4.0 - floor(c.a * 4.0 + 0.5)) > 0.02;
-      if (!marked) {
-        float thr = 0.045 * z + 0.12;
-        float edge = 0.0;
-        float topEdge = 0.0;
-        vec2 px = vec2(uEdgePx) / uScreen;
-        vec2 offs[4];
-        offs[0] = vec2(px.x, 0.0); offs[1] = vec2(-px.x, 0.0); offs[2] = vec2(0.0, px.y); offs[3] = vec2(0.0, -px.y);
-        for (int i = 0; i < 4; i++) {
-          vec2 o = uv + offs[i];
-          float dn = texture2D(tColor, o).a < 0.5 ? 1e4 : depthAt(o);
-          float e = smoothstep(thr, thr * 1.8, dn - z);
-          if (i == 2) topEdge = e; else edge = max(edge, e);
-        }
-        // Light catches the top edge of everything; the other edges get the outline.
-        if (uOutline > 0.5) obj = mix(obj, edgeColor(obj), edge * (1.0 - topEdge) * (uOutline > 1.5 ? 1.0 : 0.85));
-        obj = mix(obj, mix(uSun, vec3(1.0), 0.4) * 1.05, topEdge * 0.42);
+  } else {
+    // Atmosphere: stepped rings around the planet's silhouette, on the pixel grid.
+    float d = (length((lp + 0.5) * uPx - uPlanet.xy) - uPlanet.z) / max(uPlanet.z, 1.0);
+    float h = exp(-max(d, 0.0) * 9.0) + (bayer4(lp) - 0.5) * 0.07;
+    skyC = mix(skyC, uHalo, floor(clamp(h, 0.0, 1.0) * 3.0) / 3.0 * 0.55);
+  }
+
+  vec3 obj = c.a > 0.0 ? c.rgb / c.a : vec3(0.0);
+  if (c.a > 0.01) {
+    if (uSoft < 0.5) {
+      // Pixel style: blocky colour from the low-res pass wherever it has an object
+      // texel; the thin silhouette ring it misses keeps the full-res colour.
+      vec4 lowC = texture2D(tLow, (lp + 0.5) / uLowRes);
+      if (lowC.a > 0.25) obj = lowC.rgb;
+    }
+    float z = depthAt(s);
+    // Alpha off the MSAA quarter steps = "never outline" (grass, glows).
+    bool marked = abs(c.a * 4.0 - floor(c.a * 4.0 + 0.5)) > 0.02;
+    if (!marked) {
+      // Silhouette lines from depth jumps, drawn at full resolution in both styles,
+      // so they stay continuous while the colour blocks underneath stay chunky.
+      float thr = 0.045 * z + 0.12;
+      float edge = 0.0;
+      float topEdge = 0.0;
+      vec2 px = vec2(uEdgePx) / uScreen;
+      vec2 offs[4];
+      offs[0] = vec2(px.x, 0.0); offs[1] = vec2(-px.x, 0.0); offs[2] = vec2(0.0, px.y); offs[3] = vec2(0.0, -px.y);
+      for (int i = 0; i < 4; i++) {
+        vec2 o = s + offs[i];
+        float dn = texture2D(tColor, o).a < 0.5 ? 1e4 : depthAt(o);
+        float e = smoothstep(thr, thr * 1.8, dn - z);
+        if (i == 2) topEdge = e; else edge = max(edge, e);
       }
+      // Light catches the top edge of everything; the other edges get the outline.
+      if (uOutline > 0.5) obj = mix(obj, edgeColor(obj), edge * (1.0 - topEdge) * (uOutline > 1.5 ? 1.0 : 0.85));
+      obj = mix(obj, mix(uSun, vec3(1.0), 0.4) * 1.05, topEdge * 0.42);
+    }
+    if (uSoft > 0.5) {
       // Aerial perspective: the far side of the world melts into the sky's colour.
       float haze = clamp((z - uFocus * 0.95) / (uFocus * 1.4), 0.0, 1.0);
       vec3 hazeC = mix(skyGradient(vec2(s.x, 0.35)), uHalo, 0.45);
@@ -341,47 +347,9 @@ void main() {
       vec2 sd = (s - vec2(0.16, 0.95)) * vec2(uScreen.x / uScreen.y, 1.0);
       obj += uSun * 0.1 * exp(-length(sd) * 1.6);
     }
-    col = mix(skyC, min(obj, vec3(1.6)), clamp(c.a, 0.0, 1.0));
-    col += texture2D(tBloom, s).rgb * 0.85;
-  } else if (c.a < 0.25) {
-    col = sky(s, lp);
-    // Atmosphere: stepped rings around the planet's silhouette, on the pixel grid.
-    float d = (length((lp + 0.5) * uPx - uPlanet.xy) - uPlanet.z) / max(uPlanet.z, 1.0);
-    float h = exp(-max(d, 0.0) * 9.0);
-    h += (bayer4(lp) - 0.5) * 0.07;
-    float steps = floor(clamp(h, 0.0, 1.0) * 3.0) / 3.0;
-    col = mix(col, uHalo, steps * 0.55);
-  } else {
-    col = c.rgb;
-    if (c.a > 0.9) {
-      float d = depthAt(uv);
-      vec3 n = texture2D(tNormal, uv).xyz * 2.0 - 1.0;
-      float thr = 0.045 * d + 0.12;
-      float edge = 0.0;
-      float topEdge = 0.0;
-      float crease = 0.0;
-      vec2 offs[4];
-      offs[0] = vec2(texel.x, 0.0); offs[1] = vec2(-texel.x, 0.0); offs[2] = vec2(0.0, texel.y); offs[3] = vec2(0.0, -texel.y);
-      for (int i = 0; i < 4; i++) {
-        vec2 o = uv + offs[i];
-        vec4 cn = texture2D(tColor, o);
-        float dn = cn.a < 0.25 ? 1e4 : depthAt(o);
-        if (dn - d > thr) { if (i == 2) topEdge = 1.0; else edge = 1.0; }
-        vec3 nn = texture2D(tNormal, o).xyz * 2.0 - 1.0;
-        // Crease only on the nearer side so inner lines stay one pixel wide.
-        if (abs(dn - d) < thr && d <= dn && dot(n, nn) < 0.35) crease += 1.0;
-      }
-      if (topEdge > 0.5) {
-        // One pale pixel of light along every top silhouette.
-        col = mix(col, mix(uSun, vec3(1.0), 0.4), 0.5);
-      } else if (edge > 0.5 && uOutline > 0.5) {
-        col = edgeColor(col);
-      } else if (crease > 0.5 && uOutline > 0.5) {
-        float facing = dot(n, uLightView);
-        col = facing > 0.15 ? mix(col, vec3(1.0, 0.97, 0.9), 0.28) : col * 0.82;
-      }
-    }
   }
+  col = mix(skyC, min(obj, vec3(1.6)), clamp(c.a, 0.0, 1.0));
+  if (uSoft > 0.5) col += texture2D(tBloom, s).rgb * 0.85;
 
   // Wisp glow: soft, full resolution, the one thing allowed to ignore the grid.
   if (uWispVis > 0.0) {
