@@ -459,11 +459,27 @@ export const spirit: PropModule = {
           const hGeo = ((horns as THREE.Mesh).geometry as THREE.BufferGeometry).clone();
           hGeo.deleteAttribute('normal'); if (hGeo.attributes.uv) hGeo.deleteAttribute('uv');
           const welded = mergeVertices(hGeo, 1e-5);
+          welded.computeBoundingBox();
+          let hb = welded.boundingBox!;
+          let hs = hb.getSize(new THREE.Vector3());
+          // Find the roots (lowest 15%) and the tips (top 30%) of the antlers.
+          const hp = welded.attributes.position as THREE.BufferAttribute;
+          const baseC = new THREE.Vector3(), tipC = new THREE.Vector3();
+          let nb = 0, nt = 0;
+          for (let i = 0; i < hp.count; i++) {
+            const y = hp.getY(i);
+            if (y < hb.min.y + hs.y * 0.15) { baseC.add(new THREE.Vector3(hp.getX(i), 0, hp.getZ(i))); nb++; }
+            if (y > hb.max.y - hs.y * 0.3) { tipC.add(new THREE.Vector3(hp.getX(i), 0, hp.getZ(i))); nt++; }
+          }
+          baseC.divideScalar(Math.max(1, nb)); tipC.divideScalar(Math.max(1, nt));
+          // Re-origin the geometry on the root centre at ground level, so placing and
+          // rotating the mesh happens about the roots, never about a box centre.
+          welded.translate(-baseC.x, -hb.min.y, -baseC.z);
           welded.computeVertexNormals();
           welded.computeBoundingBox();
-          const hb = welded.boundingBox!;
-          const hs = hb.getSize(new THREE.Vector3());
-          // Stand the antlers on the skull cap, scaled to the body.
+          hb = welded.boundingBox!; hs = hb.getSize(new THREE.Vector3());
+          const antlerBack = tipC.clone().sub(baseC);
+          // Scale to the body, mount on the skull cap, sink the roots a little into it.
           const targetH = spec.height * scale * spec.antlers!;
           const k = targetH / hs.y;
           const mesh2 = new THREE.Mesh(welded, antlerMaterial(0x8fe9f6, 0xffd27a, hb.min.y, hb.max.y));
@@ -471,11 +487,23 @@ export const spirit: PropModule = {
           mesh2.scale.setScalar(k);
           const mountWorld = mm.localToWorld(ml.clone());
           body.worldToLocal(mountWorld);
-          // Sink the beams a little into the skull so the bases read as growing from it.
-          mesh2.position.copy(mountWorld).add(new THREE.Vector3(-(hb.min.x + hb.max.x) / 2 * k, -hb.min.y * k - 0.07 * scale, -(hb.min.z + hb.max.z) / 2 * k));
-          // Face the antlers the way the body faces (longer horizontal axis = forward).
-          const bs = box.getSize(new THREE.Vector3());
-          if (bs.x > bs.z) mesh2.rotation.y = Math.PI / 2;
+          mesh2.position.copy(mountWorld).add(new THREE.Vector3(0, -0.06 * scale, 0));
+          // Orient: antlers sweep backward, so root→tip must point toward the body's tail,
+          // which is the lower end of the body's long axis (head and neck rise above it).
+          const bodyPos = (mm.geometry as THREE.BufferGeometry).attributes.position as THREE.BufferAttribute;
+          const bb2 = new THREE.Box3().setFromBufferAttribute(bodyPos);
+          const bsz = bb2.getSize(new THREE.Vector3());
+          const axis: 'x' | 'z' = bsz.x > bsz.z ? 'x' : 'z';
+          let topLo = -Infinity, topHi = -Infinity;
+          for (let i = 0; i < bodyPos.count; i++) {
+            const a = axis === 'x' ? bodyPos.getX(i) : bodyPos.getZ(i);
+            const t = (a - bb2.min[axis]) / Math.max(1e-6, bsz[axis]);
+            if (t < 0.25) topLo = Math.max(topLo, bodyPos.getY(i));
+            if (t > 0.75) topHi = Math.max(topHi, bodyPos.getY(i));
+          }
+          const bodyBack = new THREE.Vector3();
+          bodyBack[axis] = topHi > topLo ? -1 : 1;
+          if (antlerBack.lengthSq() > 1e-8) mesh2.rotation.y = Math.atan2(bodyBack.x, bodyBack.z) - Math.atan2(antlerBack.x, antlerBack.z);
           body.add(mesh2);
         });
       }
