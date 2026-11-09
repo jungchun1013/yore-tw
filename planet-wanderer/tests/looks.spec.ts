@@ -3,6 +3,7 @@ import { test } from '@playwright/test';
 // Every style × outline pair, life view and planet view, for side-by-side comparison.
 const LOOKS = [
   ['soft', 'none'], ['soft', 'tint'], ['soft', 'dark'],
+  ['sky', 'none'], ['sky', 'tint'],
   ['pixel', 'none'], ['pixel', 'tint'], ['pixel', 'dark'],
 ] as const;
 

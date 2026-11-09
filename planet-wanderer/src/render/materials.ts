@@ -153,16 +153,19 @@ void main() {
   if (uStyle > 0.5) {
     // Soft cel: two tones joined by a short smooth ramp, cool shadows, warm light.
     float lr = clamp(ndl * 1.25 + 0.1, 0.0, 1.0) * mix(0.12, 1.0, sh);
-    float lit = smoothstep(0.14, 0.34, lr);
-    vec3 softShadow = mix(base * 0.7, base * uShadowTint * 1.35, 0.5);
+    bool skyStyle = uStyle > 1.5;
+    // Zelda: two tones with a short ramp. Sky: one long smooth ramp, shadows lifted
+    // and filled with sky light so the dark side stays luminous.
+    float lit = skyStyle ? smoothstep(-0.05, 0.85, lr) : smoothstep(0.14, 0.34, lr);
+    vec3 softShadow = skyStyle ? mix(base * 0.86, base * uShadowTint * 1.5, 0.45) : mix(base * 0.7, base * uShadowTint * 1.35, 0.5);
     col = mix(softShadow, base, lit);
-    col = mix(col, hiCol, smoothstep(0.88, 1.0, lr) * 0.45);
+    col = mix(col, hiCol, smoothstep(0.88, 1.0, lr) * (skyStyle ? 0.6 : 0.45));
     // Sky fill on surfaces facing up, so shadows stay airy rather than muddy.
     float up = clamp(dot(N, normalize(vPosW)), 0.0, 1.0);
-    col += uRimTint * 0.06 * up * (1.0 - lit);
+    col += uRimTint * (skyStyle ? 0.16 : 0.06) * up * (1.0 - lit);
     // Backlit rim glow (Sky): a soft bright fringe where surfaces turn away.
-    float rim = smoothstep(0.55, 0.95, fr) * uRim;
-    col = mix(col, mix(uRimTint, uSunTint, 0.5), rim * (0.25 + 0.3 * lit));
+    float rim = smoothstep(skyStyle ? 0.45 : 0.55, 0.95, fr) * uRim;
+    col = mix(col, mix(uRimTint, uSunTint, skyStyle ? 0.7 : 0.5), rim * (skyStyle ? 0.55 + 0.3 * lit : 0.25 + 0.3 * lit));
     // Emissive goes above 1 so the bloom pass picks it up.
     col = mix(col, base * (1.0 + 0.7 * uEmissive * uEmissive), uEmissive);
     // Alpha = MSAA coverage; a value off the quarter steps marks "no outline".

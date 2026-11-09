@@ -115,6 +115,7 @@ const hud = new Hud(document.getElementById('hud')!, {
   },
   setStyle: (s) => {
     pipe.setStyle(s);
+    rig.backlit = s === 'sky';
     resize();
   },
   setOutline: (o) => (pipe.outline = o),
@@ -176,6 +177,14 @@ function frame() {
   u.uTime.value = t;
   u.uSkyScroll.value.copy(rig.skyScroll);
   u.uLightView.value.copy(rig.light).transformDirection(camera.matrixWorldInverse);
+  if (pipe.style === 'sky') {
+    // Where the sun sits on screen (far along the light direction), for glare and rays.
+    // The camera looks down with a narrow lens, so the true sun is above the frame;
+    // pin it to the top edge and let glare and rays pour in from there.
+    const sp = screenOf(camera.position.clone().addScaledVector(rig.light, 500));
+    const sc = u.uScreen.value as THREE.Vector2;
+    u.uSunPos.value.set(THREE.MathUtils.clamp(sp.x / sc.x, 0.2, 0.8), THREE.MathUtils.clamp(sp.y / sc.y, 0.6, 1.04));
+  } else u.uSunPos.value.set(0.16, 0.95);
   const screenH = (u.uScreen.value as THREE.Vector2).y;
   const tanHalf = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
   const dist = camera.position.length();

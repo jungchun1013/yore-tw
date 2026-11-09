@@ -4,14 +4,16 @@ import { NOISE } from './glsl';
 import type { Mood } from '../scenes/types';
 import { shared } from './materials';
 
-export type RenderStyle = 'soft' | 'pixel';
+export type RenderStyle = 'soft' | 'sky' | 'pixel';
 /** none = no lines; tint = a darker, cooler shade of the object's own colour; dark = ink line. */
 export type OutlineMode = 'none' | 'tint' | 'dark';
 
 /**
  * Two looks over the same scenes, switchable at runtime.
  *
- * soft (default) — Zelda / Sky: full resolution with 4× MSAA into a half-float target,
+ * sky — soft pass with smooth shading, the sun behind the traveller, sun glare and
+ *   god rays marched toward it through the gaps between objects, heavier warm haze.
+ * soft (default) — Zelda: full resolution with 4× MSAA into a half-float target,
  *   soft two-tone cel shading, no outlines, distance haze that melts into the sky,
  *   bloom on emissive things and light motes, smooth clouds and halo.
  * pixel — colour blocks come from a pass at screen ÷ pxSize (nearest upscale), while
@@ -97,6 +99,8 @@ export class PixelPipeline {
         tDepth: { value: this.softRT.depthTexture },
         tBloom: { value: this.bloomA.texture },
         uSoft: { value: 1 },
+        uRays: { value: 0 },
+        uSunPos: { value: new THREE.Vector2(0.16, 0.95) },
         uLowRes: { value: new THREE.Vector2(1, 1) },
         uScreen: { value: new THREE.Vector2(1, 1) },
         uPx: { value: 1 },
@@ -145,7 +149,7 @@ export class PixelPipeline {
     // The full-resolution pass runs in both styles: it gives smooth silhouettes and
     // the depth the edge lines are drawn from. Pixel style adds a low-res colour pass.
     this.softRT.setSize(devW, devH);
-    if (this.style === 'soft') {
+    if (this.style !== 'pixel') {
       this.lowW = devW;
       this.lowH = devH;
       const bw = Math.max(1, Math.round(devW / 4));
@@ -154,15 +158,17 @@ export class PixelPipeline {
       this.bloomB.setSize(bw, bh);
       u.uPx.value = 1;
       u.uSoft.value = 1;
+      u.uRays.value = this.style === 'sky' ? 1 : 0;
     } else {
       this.lowW = Math.max(1, Math.ceil(cssW / this.pxSize));
       this.lowH = Math.max(1, Math.ceil(cssH / this.pxSize));
       this.pixelRT.setSize(this.lowW, this.lowH);
       u.uPx.value = this.pxSize * dpr;
       u.uSoft.value = 0;
+      u.uRays.value = 0;
     }
     u.uLowRes.value.set(this.lowW, this.lowH);
-    shared.uStyle.value = this.style === 'soft' ? 1 : 0;
+    shared.uStyle.value = this.style === 'sky' ? 2 : this.style === 'soft' ? 1 : 0;
   }
 
   /** Switch look; main re-runs its own resize afterwards so the camera aspect matches. */
@@ -218,7 +224,7 @@ export class PixelPipeline {
     r.setRenderTarget(this.softRT);
     r.clear();
     r.render(scene, camera);
-    if (this.style === 'soft') {
+    if (this.style !== 'pixel') {
       // Bloom: bright pass at quarter size, then a separable blur, twice.
       this.bright.uniforms.tSrc.value = this.softRT.texture;
       this.bright.uniforms.uTexel.value.set(1 / this.softRT.width, 1 / this.softRT.height);
@@ -241,7 +247,7 @@ export class PixelPipeline {
 const COMPOSITE = /* glsl */ `
 #include <packing>
 uniform sampler2D tColor; uniform sampler2D tLow; uniform sampler2D tDepth; uniform sampler2D tBloom;
-uniform float uSoft;
+uniform float uSoft; uniform float uRays; uniform vec2 uSunPos;
 uniform vec2 uLowRes; uniform vec2 uScreen; uniform float uPx;
 uniform float uNear; uniform float uFar; uniform float uFocus; uniform float uTime; uniform float uOutline; uniform float uEdgePx;
 uniform vec3 uLightView;
@@ -269,10 +275,12 @@ vec3 skyGradient(vec2 s) {
 vec3 sky(vec2 s, vec2 lp) {
   vec3 c = skyGradient(s);
   float aspect = uScreen.x / uScreen.y;
-  // Sun bloom up and to the left, where the key light comes from.
-  vec2 sd = (s - vec2(0.16, 0.95)) * vec2(aspect, 1.0);
+  // Sun bloom where the key light comes from (upper left; behind the traveller in Sky style).
+  vec2 sd = (s - uSunPos) * vec2(aspect, 1.0);
   float sl = length(sd);
   c += uSun * (0.32 * exp(-sl * sl * 14.0) + 0.08 * exp(-sl * 2.5));
+  // Sky style: a hot disc with a wide glare that bleaches the sky around it.
+  c += uSun * uRays * (0.9 * exp(-sl * sl * 90.0) + 0.45 * exp(-sl * sl * 6.0) + 0.18 * exp(-sl * 1.1));
   // Clouds built from stacked brush blocks: a blue-grey shade ring, a white body,
   // a cream top light, and a peach glow where the underside catches the sun.
   vec2 sp = uSoft > 0.5 ? s : (lp + 0.5) / uLowRes;
@@ -352,14 +360,35 @@ void main() {
       // Aerial perspective: the far side of the world melts into the sky's colour.
       float haze = clamp((z - uFocus * 0.95) / (uFocus * 1.4), 0.0, 1.0);
       vec3 hazeC = mix(skyGradient(vec2(s.x, 0.35)), uHalo, 0.45);
-      obj = mix(obj, hazeC, haze * 0.62);
-      // Sky-style sunlight wash from the upper left.
-      vec2 sd = (s - vec2(0.16, 0.95)) * vec2(uScreen.x / uScreen.y, 1.0);
-      obj += uSun * 0.1 * exp(-length(sd) * 1.6);
+      hazeC = mix(hazeC, uSun, uRays * 0.3);
+      obj = mix(obj, hazeC, haze * (0.62 + uRays * 0.2));
+      // Sunlight wash spreading from the sun's position.
+      vec2 sd = (s - uSunPos) * vec2(uScreen.x / uScreen.y, 1.0);
+      obj += uSun * (0.1 + uRays * 0.2) * exp(-length(sd) * 1.6);
     }
   }
   col = mix(skyC, min(obj, vec3(1.6)), clamp(c.a, 0.0, 1.0));
   if (uSoft > 0.5) col += texture2D(tBloom, s).rgb * 0.85;
+
+  // God rays (Sky style): march toward the sun; every step that sees open sky adds
+  // light, so beams stream through the gaps between objects and past the planet's rim.
+  if (uRays > 0.5) {
+    vec2 toSun = uSunPos - s;
+    float dist = length(toSun * vec2(uScreen.x / uScreen.y, 1.0));
+    vec2 stepv = toSun / 28.0;
+    float light = 0.0;
+    float w = 1.0;
+    vec2 p = s + stepv * (0.5 + 0.5 * hash12(gl_FragCoord.xy));
+    for (int i = 0; i < 28; i++) {
+      float open = 1.0 - clamp(texture2D(tColor, p).a, 0.0, 1.0);
+      light += open * w;
+      w *= 0.93;
+      p += stepv;
+    }
+    light /= 28.0;
+    float falloff = exp(-dist * 1.6);
+    col += uSun * light * light * falloff * 0.55;
+  }
 
   // Wisp glow: soft, full resolution, the one thing allowed to ignore the grid.
   if (uWispVis > 0.0) {

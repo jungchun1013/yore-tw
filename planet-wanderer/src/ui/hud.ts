@@ -10,7 +10,8 @@ export interface HudHandlers {
   interact(): void;
 }
 
-const STYLE_LABEL: Record<RenderStyle, string> = { soft: '畫風 薩爾達', pixel: '畫風 像素' };
+const STYLE_LABEL: Record<RenderStyle, string> = { soft: '畫風 薩爾達', sky: '畫風 光遇', pixel: '畫風 像素' };
+const STYLES: RenderStyle[] = ['soft', 'sky', 'pixel'];
 const OUTLINE_LABEL: Record<OutlineMode, string> = { none: '描邊 無', tint: '描邊 同色加深', dark: '描邊 深色' };
 const OUTLINES: OutlineMode[] = ['tint', 'none', 'dark'];
 
@@ -53,7 +54,7 @@ export class Hud {
       if (!b) return;
       const act = b.dataset.act;
       if (act === 'view') h.toggleView();
-      if (act === 'style') this.setLook(this.style === 'soft' ? 'pixel' : 'soft', this.outline);
+      if (act === 'style') this.setLook(STYLES[(STYLES.indexOf(this.style) + 1) % STYLES.length], this.outline);
       if (act === 'outline') this.setLook(this.style, OUTLINES[(OUTLINES.indexOf(this.outline) + 1) % OUTLINES.length]);
       if (act === 'px') b.textContent = h.cyclePixel();
       if (act === 'dither') b.textContent = `色塊邊 ${['硬邊', '抖色', '鋸齒'][h.cycleEdges()]}`;

@@ -19,6 +19,8 @@ export class CameraRig {
   readonly skyScroll = new THREE.Vector2();
   /** Key light direction (toward the light), world space. */
   readonly light = new THREE.Vector3(0, 1, 0);
+  /** Sky style: the sun sits beyond the traveller, so everything is backlit. */
+  backlit = false;
   /** Distance from the camera to the point it looks at. */
   focusDist = 10;
   private readonly dir = new THREE.Vector3();
@@ -81,7 +83,9 @@ export class CameraRig {
     const ground = this.dir;
     const north = this.up.clone().addScaledVector(ground, -this.up.dot(ground)).normalize();
     const east = new THREE.Vector3().crossVectors(north, ground);
-    this.light.copy(ground).multiplyScalar(0.78).addScaledVector(north, -0.42).addScaledVector(east, 0.46).normalize();
+    // Low sun beyond the traveller, a little to the right: long shadows, glare in frame.
+    if (this.backlit) this.light.copy(ground).multiplyScalar(0.3).addScaledVector(north, 0.9).addScaledVector(east, 0.2).normalize();
+    else this.light.copy(ground).multiplyScalar(0.78).addScaledVector(north, -0.42).addScaledVector(east, 0.46).normalize();
   }
 
   /** Drag: far away it spins the planet, close up it swings around the traveller. */
