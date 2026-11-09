@@ -68,7 +68,7 @@ export class App {
   /** Madness on screen: the edges close in over the whole page and the battle strip sways; at 0 the screen goes black. */
   private madFx(): void {
     const g = this.g, m = madness(g.s.san), st = this.root.querySelector('.stage') as HTMLElement | null;
-    const r = (100 - 65 * m).toFixed(1), a = m > 0 ? (0.35 + 0.6 * m).toFixed(2) : '0';
+    const r = (100 - 55 * m).toFixed(1), a = m > 0 ? (0.3 + 0.5 * m).toFixed(2) : '0'; // never so dark the sheet cannot be read
     if (this.fx.dataset.v !== r + a) { this.fx.dataset.v = r + a; this.fx.style.setProperty('--vr', r + '%'); this.fx.style.setProperty('--va', a); }
     if (st) { st.classList.toggle('mad', m > 0.15); st.style.setProperty('--wob', (m * m).toFixed(2)); }
     const on = g.collapsing;
