@@ -7,11 +7,24 @@ import { dirAt } from '../world/planet';
 import { blob, mesh, param, type PropModule } from './kit';
 
 /** Base models (public/models/, see LICENSES.md there) and how tall they stand. */
-const MODELS: Record<string, { file: string; height: number; idle: string[]; radius: number; deer?: boolean }> = {
-  stag: { file: 'stag.glb', height: 1.75, idle: ['Idle', 'Idle_2', 'Idle_Headlow', 'Eating'], radius: 0.75, deer: true },
-  doe: { file: 'doe.glb', height: 1.35, idle: ['Idle', 'Idle_2', 'Idle_Headlow', 'Eating'], radius: 0.6, deer: true },
+interface ModelSpec {
+  file: string;
+  /** Standing height in world units (after any antlers are cut). */
+  height: number;
+  idle: string[];
+  radius: number;
+  deer?: boolean;
+  /** Cut everything above this fraction of the model's height (removes modelled antlers). */
+  antlerCut?: number;
+  /** Attach the glowing antlers (Quaternius `Stag_Horns`) at the cut, this tall relative to the body. */
+  antlers?: number;
+}
+const MODELS: Record<string, ModelSpec> = {
+  stag: { file: 'stag_body.glb', height: 1.7, idle: [], radius: 0.7, deer: true, antlerCut: 0.87, antlers: 0.38 },
+  doe: { file: 'doe.glb', height: 1.4, idle: [], radius: 0.6, deer: true, antlerCut: 0.83 },
   rabbit: { file: 'rabbit.glb', height: 0.34, idle: [], radius: 0.25 },
 };
+const ANTLER_FILE = 'stag.glb';
 
 const loader = new GLTFLoader();
 const cache = new Map<string, Promise<THREE.Group>>();
@@ -171,6 +184,62 @@ function subdivideSkinned(g: THREE.BufferGeometry): THREE.BufferGeometry {
 }
 
 /**
+ * Remove the modelled antlers: drop every triangle whose centroid lies above `cutY`,
+ * then cap the openings left in the skull with a fan so the head stays closed.
+ * Returns the cap centres (world of the geometry), used to mount the glowing antlers.
+ */
+function cutAbove(geo: THREE.BufferGeometry, cutY: number): { geo: THREE.BufferGeometry; mounts: THREE.Vector3[] } {
+  const g = geo.index ? geo : mergeVertices(geo, 1e-5);
+  const pos = g.attributes.position as THREE.BufferAttribute;
+  const idx = g.index!;
+  const keep: number[] = [];
+  const edgeCount = new Map<string, number>();
+  const key = (a: number, b: number) => (a < b ? `${a}_${b}` : `${b}_${a}`);
+  for (let i = 0; i < idx.count; i += 3) {
+    const a = idx.getX(i), b = idx.getX(i + 1), c = idx.getX(i + 2);
+    const cy = (pos.getY(a) + pos.getY(b) + pos.getY(c)) / 3;
+    if (cy > cutY) continue;
+    keep.push(a, b, c);
+    for (const [u, v] of [[a, b], [b, c], [c, a]]) edgeCount.set(key(u, v), (edgeCount.get(key(u, v)) ?? 0) + 1);
+  }
+  // Open edges near the cut belong to the holes we just made.
+  const open: [number, number][] = [];
+  for (let i = 0; i < keep.length; i += 3) {
+    const a = keep[i], b = keep[i + 1], c = keep[i + 2];
+    for (const [u, v] of [[a, b], [b, c], [c, a]]) {
+      if (edgeCount.get(key(u, v)) === 1 && Math.max(pos.getY(u), pos.getY(v)) > cutY - (cutY * 0.15)) open.push([u, v]);
+    }
+  }
+  // Group open edges into loops by shared vertices, fan each loop from its centre.
+  const adj = new Map<number, number[]>();
+  for (const [u, v] of open) { (adj.get(u) ?? adj.set(u, []).get(u)!).push(v); (adj.get(v) ?? adj.set(v, []).get(v)!).push(u); }
+  const seen = new Set<number>();
+  const mounts: THREE.Vector3[] = [];
+  const extra: number[] = [];
+  const P: number[] = Array.from(pos.array as ArrayLike<number>);
+  let next = pos.count;
+  for (const start of adj.keys()) {
+    if (seen.has(start)) continue;
+    const loop: number[] = [];
+    const stack = [start];
+    while (stack.length) { const v = stack.pop()!; if (seen.has(v)) continue; seen.add(v); loop.push(v); for (const w of adj.get(v) ?? []) if (!seen.has(w)) stack.push(w); }
+    if (loop.length < 3) continue;
+    const c = new THREE.Vector3();
+    for (const v of loop) c.add(new THREE.Vector3(pos.getX(v), pos.getY(v), pos.getZ(v)));
+    c.divideScalar(loop.length);
+    mounts.push(c.clone());
+    const ci = next++;
+    P.push(c.x, c.y, c.z);
+    for (const [u, v] of open) if (loop.includes(u) && loop.includes(v)) extra.push(u, v, ci);
+  }
+  const out = new THREE.BufferGeometry();
+  out.setAttribute('position', new THREE.Float32BufferAttribute(P, 3));
+  out.setIndex([...keep, ...extra]);
+  // Capped fans may face either way; the spirit material shades both sides.
+  return { geo: out, mounts };
+}
+
+/**
  * Toward a fawn's build (Bambi): the base sculpts have a swayed back and a heavy,
  * muscular rump. Straighten the back line and draw the hindquarters in. Works in the
  * model's own space; the forward axis is the longer horizontal one, the front is the
@@ -237,9 +306,9 @@ function smooth(geo: THREE.BufferGeometry, skinned: boolean, subdivide: boolean,
   if (subdivide && !skinned && tris < 1200) {
     // Static body: the library's Loop subdivision, then weld.
     g = LoopSubdivision.modify(g, 2, { split: false, uvSmooth: false, preserveEdges: false, flatOnly: false });
-    g = mergeVertices(g, 1e-4);
+    g = mergeVertices(g, 2e-4);
     relax(g, 10);
-    inflate(g, 0.02);
+    inflate(g, 0.015);
   } else if (subdivide && skinned) {
     // Animated body: weld, subdivide with skin weights, weld again, then relax hard.
     g = mergeVertices(g, 1e-4);
@@ -301,6 +370,47 @@ export const spirit: PropModule = {
         }
       });
 
+      // Base files come in wildly different units (0.02 to 135 per model). Bake a
+      // uniform scale into the geometry first so every tolerance below (welding,
+      // clustering, cutting) means the same thing: the body is 1 unit tall here.
+      {
+        clone.updateMatrixWorld(true);
+        const raw = new THREE.Box3().setFromObject(clone);
+        const k0 = 1 / Math.max(1e-6, raw.getSize(new THREE.Vector3()).y);
+        clone.traverse((o) => {
+          const m = o as THREE.Mesh;
+          if (m.isMesh && !(m as THREE.SkinnedMesh).isSkinnedMesh) {
+            m.geometry = (m.geometry as THREE.BufferGeometry).clone();
+            m.updateWorldMatrix(true, false);
+            const sc = new THREE.Vector3(); m.getWorldScale(sc);
+            m.geometry.scale(sc.x * k0, sc.y * k0, sc.z * k0);
+            m.scale.set(1, 1, 1);
+            // Parent scales were baked in; neutralise them up the chain.
+            let par = m.parent; while (par && par !== clone) { par.scale.set(1, 1, 1); par = par.parent; }
+          }
+        });
+        clone.scale.set(1, 1, 1);
+      }
+      // Static deer: take the antlers off the base model before measuring height.
+      let mountLocal: THREE.Vector3 | null = null;
+      let mountMesh: THREE.Mesh | null = null;
+      if (spec.antlerCut) {
+        clone.traverse((o) => {
+          const m = o as THREE.Mesh;
+          if (!m.isMesh || mountMesh) return;
+          const g0 = m.geometry as THREE.BufferGeometry;
+          g0.computeBoundingBox();
+          const bb = g0.boundingBox!;
+          const cutY = bb.min.y + (bb.max.y - bb.min.y) * spec.antlerCut!;
+          const { geo: g1, mounts } = cutAbove(g0, cutY);
+          m.geometry = g1;
+          if (mounts.length) {
+            // Highest cap = top of the skull between the ears.
+            mountLocal = mounts.reduce((a, b) => (a.y > b.y ? a : b)).clone();
+            mountMesh = m;
+          }
+        });
+      }
       clone.updateMatrixWorld(true);
       const box = new THREE.Box3().setFromObject(clone);
       const size = box.getSize(new THREE.Vector3());
@@ -338,6 +448,37 @@ export const spirit: PropModule = {
       });
       body.add(clone);
       root = clone;
+
+      if (spec.antlers && mountLocal && mountMesh) {
+        const mm = mountMesh as THREE.Mesh;
+        const ml = mountLocal as THREE.Vector3;
+        loadModel(ANTLER_FILE).then((src) => {
+          let horns: THREE.Mesh | null = null;
+          src.traverse((o) => { if ((o as THREE.Mesh).isMesh && /horn|antler/i.test(o.name)) horns = o as THREE.Mesh; });
+          if (!horns) return;
+          const hGeo = ((horns as THREE.Mesh).geometry as THREE.BufferGeometry).clone();
+          hGeo.deleteAttribute('normal'); if (hGeo.attributes.uv) hGeo.deleteAttribute('uv');
+          const welded = mergeVertices(hGeo, 1e-5);
+          welded.computeVertexNormals();
+          welded.computeBoundingBox();
+          const hb = welded.boundingBox!;
+          const hs = hb.getSize(new THREE.Vector3());
+          // Stand the antlers on the skull cap, scaled to the body.
+          const targetH = spec.height * scale * spec.antlers!;
+          const k = targetH / hs.y;
+          const mesh2 = new THREE.Mesh(welded, antlerMaterial(0x8fe9f6, 0xffd27a, hb.min.y, hb.max.y));
+          mesh2.castShadow = false;
+          mesh2.scale.setScalar(k);
+          const mountWorld = mm.localToWorld(ml.clone());
+          body.worldToLocal(mountWorld);
+          // Sink the beams a little into the skull so the bases read as growing from it.
+          mesh2.position.copy(mountWorld).add(new THREE.Vector3(-(hb.min.x + hb.max.x) / 2 * k, -hb.min.y * k - 0.07 * scale, -(hb.min.z + hb.max.z) / 2 * k));
+          // Face the antlers the way the body faces (longer horizontal axis = forward).
+          const bs = box.getSize(new THREE.Vector3());
+          if (bs.x > bs.z) mesh2.rotation.y = Math.PI / 2;
+          body.add(mesh2);
+        });
+      }
 
       // Constellation on the flank (night only): a handful of body vertices joined up.
       if (tint === SPIRIT_NIGHT) {

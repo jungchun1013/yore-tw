@@ -25,7 +25,7 @@ export function spiritMaterial(t: SpiritTint, skinned = false, localScale = 1): 
   const m = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: true,
-    side: THREE.FrontSide,
+    side: THREE.DoubleSide,
     defines: skinned ? { USE_SKINNING: '' } : {},
     uniforms: {
       uBody: { value: new THREE.Color(t.body) },
@@ -122,11 +122,11 @@ export function antlerMaterial(fromHex = 0x8fe9f6, toHex = 0xffd27a, yMin = 0, y
 export function constellation(positions: THREE.Vector3[], color: number): THREE.Group {
   const g = new THREE.Group();
   const pts = new THREE.BufferGeometry().setFromPoints(positions);
-  const starMat = new THREE.PointsMaterial({ color, size: 0.06, sizeAttenuation: true, transparent: true, opacity: 0.95, depthWrite: false, blending: THREE.AdditiveBlending });
+  const starMat = new THREE.PointsMaterial({ color, size: 0.05, sizeAttenuation: true, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending });
   g.add(new THREE.Points(pts, starMat));
   const segs: THREE.Vector3[] = [];
   for (let i = 0; i + 1 < positions.length; i++) segs.push(positions[i], positions[i + 1]);
-  const lineMat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.55, depthWrite: false, blending: THREE.AdditiveBlending });
+  const lineMat = new THREE.LineBasicMaterial({ color, transparent: true, opacity: 0.22, depthWrite: false, blending: THREE.AdditiveBlending });
   g.add(new THREE.LineSegments(new THREE.BufferGeometry().setFromPoints(segs), lineMat));
   return g;
 }
