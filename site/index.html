@@ -22,7 +22,7 @@
     .pet .heart { position: absolute; left: 50%; bottom: 120px; font-size: 26px; pointer-events: none; animation: heart 0.9s ease-out forwards; }
     @keyframes heart { from { transform: translate(-50%, 0) scale(0.6); opacity: 1; } to { transform: translate(calc(-50% + var(--dx)), -70px) scale(1.1); opacity: 0; } }
     .pet-count { font-weight: 900; color: var(--accent-ink); font-size: 16px; min-height: 20px; }
-    .pet-shadow { width: 120px; height: 10px; border-radius: 50%; background: rgba(90,64,56,0.12); margin-top: -8px; }
+    .pet-shadow { width: 120px; height: 10px; border-radius: 50%; background: rgba(52,56,66,0.12); margin-top: -8px; }
     footer.mini { border: 0; margin-top: 8px; padding: 0 0 28px; justify-content: center; font-size: 14px; }
   </style>
 </head>
@@ -120,7 +120,7 @@
       show(pats); busy++;
       img.src = pats % 5 === 0 ? frames.laugh : frames.happy;           // > ∀ < every fifth pat
       stage.classList.add('bounce'); setTimeout(function () { stage.classList.remove('bounce'); }, 130);
-      var h = document.createElement('span'); h.className = 'heart'; h.textContent = pats % 5 === 0 ? '✨' : '♥'; h.style.color = '#F28CA3';
+      var h = document.createElement('span'); h.className = 'heart'; h.textContent = pats % 5 === 0 ? '✨' : '♥'; h.style.color = '#B47F76';
       h.style.setProperty('--dx', (Math.random() * 60 - 30) + 'px'); stage.appendChild(h); setTimeout(function () { h.remove(); }, 900);
       chime(pats);
       setTimeout(function () { busy--; if (!busy) img.src = frames.open; }, 650);
