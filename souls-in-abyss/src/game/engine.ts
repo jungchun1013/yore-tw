@@ -12,7 +12,7 @@ import { chance, pick, range, rnd } from '../core/rng';
 import { makeItem, nameOf, rollRarity, sellPrice } from './loot';
 import { REBIRTH_AGE, YEAR_SEC } from './state';
 import { tr } from '../core/i18n';
-import { BOND_CALM, COLLAPSE, COLLAPSE_SEC, GLITCH, HALLUCINATIONS, SAN_REGEN, SAN_WAKE, sanTier, willResist } from '../data/sanity';
+import { COLLAPSE, COLLAPSE_SEC, GLITCH, HALLUCINATIONS, LOSS_MAX, LOSS_MIN, SAN_REGEN, SAN_WAKE, WAKE, deathSanLoss, madInterval, madness, rollMad, sanTier } from '../data/sanity';
 import { SAN_MAX } from './state';
 
 /** A log line is a list of parts; styled parts carry a CSS class or a colour. */
@@ -20,7 +20,8 @@ export type Part = string | { text: string; cls?: string; color?: string };
 export type GameEvent =
   | { t: 'log'; parts: Part[]; cls?: string }
   | { t: 'hit'; from: 'hero' | 'mon' | 'pet'; dmg: number; crit?: boolean; skill?: string; blocked?: boolean; target?: 'pet' }
-  | { t: 'spawn' } | { t: 'kill' } | { t: 'death' } | { t: 'level' } | { t: 'heal'; amt: number };
+  | { t: 'spawn' } | { t: 'kill' } | { t: 'death' } | { t: 'level' } | { t: 'heal'; amt: number }
+  | { t: 'collapse' } | { t: 'wake' };
 
 /** Running tally shown as "Loot in current map"; resets when you move. */
 export interface MapLoot { sec: number; kills: number; deaths: number; gold: number; xp: number; items: number[] }
@@ -43,6 +44,9 @@ export class Game {
   private heroT = 0; private monT = 0; private petT = 0;
   private pause = 0; private down = 0;
   private petDown = 0; private petKey: string | null = null;
+  private madT = 0;
+  /** True while the screen is black after SAN hit 0. */
+  collapsing = false;
   private listeners: ((e: GameEvent) => void)[] = [];
 
   constructor(s: Save) {
@@ -116,9 +120,11 @@ export class Game {
       }
     }
     if (areaOf(s.area).dread === 0 && s.san < SAN_MAX) this.setSan(s.san + SAN_REGEN * dt);
+    this.madTick(dt);
     if (this.down > 0) {
       this.down -= dt;
       if (this.down <= 0) {
+        if (this.collapsing) this.wake();
         this.hp = this.d.hp; this.mp = this.d.mp; this.petHp = this.petMaxHp; this.petDown = 0;
         this.say({ zh: '深淵賜予你重生', en: 'The Abyss grants you rebirth' }, [], 'fate');
         this.newMonster();
@@ -238,6 +244,7 @@ export class Game {
       this.hp = 0; this.down = RESPAWN; this.s.counters.deaths++; this.loot.deaths++;
       this.say({ zh: '你倒下了！', en: 'You die!' }, [], 'bad'); // the Abyss answers once the revive animation is over
       this.emit({ t: 'death' });
+      this.deathSan();
       this.checkTitles();
     }
   }
@@ -268,23 +275,76 @@ export class Game {
     if (chance(FATE_CHANCE)) { c.fateLines++; this.say(pick(FATE_LINES), [], 'fate'); }
     if (c.kills % 25 === 0) this.checkTitles();
     this.pause = KILL_PAUSE;
-    this.drainSan();
+    if (sanTier(s.san) === 2 && chance(0.05)) this.say(pick(HALLUCINATIONS), [], 'mad');
   }
 
-  /** Each kill in a dreadful place costs a little sanity. WILL and a bonded pal soften it. */
-  private drainSan(): void {
-    const s = this.s, dread = areaOf(s.area).dread;
-    if (!dread) return;
+  /** SAN lost on dying in an area above your level (nothing on safe ground). WILL and a bonded pal soften it. */
+  sanLossHere(): number {
+    const s = this.s, a = areaOf(s.area);
+    if (!a.dread) return 0;
     const pet = s.pets.find(p => p.key === s.activePet);
-    const calm = 1 - (pet ? pet.bond * BOND_CALM : 0);
-    this.setSan(s.san - dread * willResist(this.d.prim.will) * this.d.sanDrain * calm);
-    if (sanTier(s.san) === 2 && chance(0.05)) this.say(pick(HALLUCINATIONS), [], 'mad');
-    if (s.san <= 0) {
-      s.san = SAN_WAKE; s.counters.collapses = (s.counters.collapses || 0) + 1;
-      this.down = COLLAPSE_SEC; this.pause = 0; this.hp = Math.max(1, this.hp);
+    return deathSanLoss(a.min, s.lvl, this.d.prim.will, this.d.sanDrain, pet ? pet.bond : 0);
+  }
+  private deathSan(): void {
+    const loss = this.sanLossHere();
+    if (!loss) return;
+    this.setSan(this.s.san - loss);
+    this.say({ zh: 'SAN -{0}', en: 'SAN -{0}' }, [{ text: String(loss), cls: 'num' }], 'mad');
+    if (this.s.san <= 0) {
+      // the mind breaks: the screen goes black, and you wake on the surface with less than you had
+      this.collapsing = true; this.down = COLLAPSE_SEC;
+      this.s.counters.collapses = (this.s.counters.collapses || 0) + 1;
       this.say(COLLAPSE, [], 'mad');
-      this.refresh(); this.checkTitles();
+      this.emit({ t: 'collapse' });
     }
+  }
+
+  /** While mad, the Abyss re-rolls its blessings and curses every 5 s (edge of madness) down to every 1 s (SAN 0). */
+  private madTick(dt: number): void {
+    const s = this.s, m = madness(s.san);
+    if (m <= 0) {
+      if (s.madRoll) { s.madRoll = undefined; this.madT = 0; this.refresh(); }
+      return;
+    }
+    this.madT -= dt;
+    if (this.madT > 0 && s.madRoll) return;
+    this.madT = madInterval(m);
+    s.madRoll = rollMad(m);
+    this.refresh();
+  }
+
+  /** After the blackout: 30–50% of the gold, the bag and this life's EXP are gone (each rolled), and you wake on the first layer. */
+  private wake(): void {
+    const s = this.s;
+    this.collapsing = false;
+    const pg = range(LOSS_MIN, LOSS_MAX), pb = range(LOSS_MIN, LOSS_MAX), px = range(LOSS_MIN, LOSS_MAX);
+    const goldLost = Math.floor(s.gold * pg);
+    s.gold -= goldLost;
+    const drop = Math.round(s.bag.length * pb);
+    for (let i = 0; i < drop; i++) s.bag.splice(Math.floor(rnd() * s.bag.length), 1);
+    // EXP: the whole life's worth, so the level falls back to wherever the rest of it reaches
+    const lv0 = s.lvl;
+    let total = s.xp;
+    for (let l = 1; l < s.lvl; l++) total += xpNeed(l);
+    const xpLost = Math.floor(total * px);
+    let left = total - xpLost, lvl = 1;
+    while (left >= xpNeed(lvl)) { left -= xpNeed(lvl); lvl++; }
+    s.peakLvl = Math.max(s.peakLvl || 0, lv0);
+    if (lvl < lv0) {
+      // the growth those levels gave goes with them; it comes back on the way up, the AP do not
+      const g = ageGrowth(raceOf(s.race), s.age);
+      for (const k of PRIMARY) s.grown[k] = Math.max(0, s.grown[k] - g[k] * LEVEL_SHARE * (lv0 - lvl));
+    }
+    s.lvl = lvl; s.xp = left;
+    const home = AREAS[0].key;
+    s.area = home;
+    if (s.visited && !s.visited.includes(home)) s.visited.push(home);
+    s.san = SAN_WAKE; s.madRoll = undefined; this.madT = 0;
+    this.resetLoot(); this.refresh();
+    this.say(WAKE, [], 'fate');
+    this.say({ zh: '失去 {0}、{1} 件物品、{2} EXP（Lv.{3} → Lv.{4}）', en: 'Lost {0}, {1} items, {2} EXP (Lv.{3} → Lv.{4})' },
+      [{ text: '$' + goldLost, cls: 'gold' }, String(drop), { text: String(xpLost), cls: 'xp' }, String(lv0), String(lvl)], 'bad');
+    this.emit({ t: 'wake' });
   }
 
   setSan(v: number): void {
@@ -303,11 +363,14 @@ export class Game {
     s.xp += x;
     let up = false;
     while (s.xp >= xpNeed(s.lvl)) {
-      s.xp -= xpNeed(s.lvl); s.lvl++; s.ap++; up = true;
+      s.xp -= xpNeed(s.lvl); s.lvl++; up = true;
       const g = ageGrowth(raceOf(s.race), s.age);
       for (const k of PRIMARY) s.grown[k] += g[k] * LEVEL_SHARE;
       this.say({ zh: '升級！到達 Lv.{0}！', en: 'Level Up! You reach Lv.{0}!' }, [{ text: String(s.lvl), cls: 'good' }], 'good');
-      this.say({ zh: '獲得 {0} 技能點！', en: 'You get {0} AP!' }, [{ text: '1', cls: 'ap' }], 'ap');
+      if (s.lvl > (s.peakLvl || 0)) {
+        s.peakLvl = s.lvl; s.ap++;
+        this.say({ zh: '獲得 {0} 技能點！', en: 'You get {0} AP!' }, [{ text: '1', cls: 'ap' }], 'ap');
+      }
     }
     if (up) { this.refresh(); this.hp = this.d.hp; this.mp = this.d.mp; this.emit({ t: 'level' }); }
   }

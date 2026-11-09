@@ -89,24 +89,48 @@ test('rebirth with a pact keeps gear and adds legacy', async ({ page }, info) =>
   expect(s.legacy.str).toBeGreaterThan(0);
 });
 
-test('sanity drains in the abyss, glitches the log, and collapses at zero', async ({ page }) => {
+test('dying above your level costs SAN; madness blesses and curses; SAN 0 blacks out and wakes on the meadow with less', async ({ page }) => {
   await page.addInitScript(fresh, 'en');
   await page.goto('/');
   await page.click('#t-play');
   await page.click('.intro');
   await page.click('#c-go');
   const r = await page.evaluate(() => {
-    const g = (window as any).__game;
-    g.s.legacy.str = 200000; g.refresh(); g.hp = g.d.hp; // strong enough to survive the abyss
-    g.s.area = 'abyss'; g.newMonster();
-    const before = g.s.san;
-    g.fastForward(120);
-    const mid = g.s.san;
-    g.s.san = 2; g.refresh();
-    g.fastForward(60);
-    return { before, mid, collapses: g.s.counters.collapses || 0, titles: g.s.titles };
+    const g = (window as any).__game, s = g.s;
+    // a level-1 hero in the labyrinth (Lv 12+) dies and loses a whole number of SAN; kills cost nothing
+    s.area = 'labyrinth'; g.newMonster();
+    const before = s.san, loss = g.sanLossHere();
+    g.fastForward(40);
+    const afterDeaths = s.san, deaths = s.counters.deaths;
+    // below 50 the Abyss rolls a whole-percent blessing or curse on each ability
+    s.area = 'meadow'; g.newMonster(); g.setSan(10); g.fastForward(1);
+    const rolls = { ...s.madRoll };
+    // SAN 0: black, then the meadow with 30-50% less gold and EXP, and no AP for the levels regained
+    s.lvl = 30; s.xp = 0; s.peakLvl = 30; s.ap = 0; s.gold = 1000; s.san = 1;
+    s.legacy.str = 0; g.refresh();
+    s.area = 'abyss'; g.newMonster();
+    let black = false;
+    for (let i = 0; i < 400 && !black; i++) { g.tick(0.25); black = g.collapsing; }
+    for (let i = 0; i < 40; i++) g.tick(0.25);
+    const woke = { area: s.area, gold: s.gold, lvl: s.lvl, san: s.san, ap: s.ap, peak: s.peakLvl };
+    g.gainXp(1e9);
+    return { before, loss, afterDeaths, deaths, rolls, black, woke, lvlAfter: s.lvl, apAfter: s.ap, collapses: s.counters.collapses || 0, titles: s.titles };
   });
-  expect(r.mid).toBeLessThan(r.before);
+  expect(r.loss).toBe(Math.round(r.loss));
+  expect(r.loss).toBeGreaterThan(5);
+  expect(r.deaths).toBeGreaterThan(0);
+  expect(r.afterDeaths).toBeLessThan(r.before);
+  const vals = Object.values(r.rolls) as number[];
+  expect(vals.length).toBe(8);
+  for (const v of vals) { expect(Number.isInteger(v)).toBe(true); expect(v).toBeGreaterThanOrEqual(-50); expect(v).toBeLessThanOrEqual(10); }
+  expect(r.black).toBe(true);
+  expect(r.woke.area).toBe('meadow');
+  expect(r.woke.san).toBeGreaterThanOrEqual(40); expect(r.woke.san).toBeLessThan(41); // wakes at 40, the meadow already restoring it
+  expect(r.woke.gold).toBeGreaterThanOrEqual(500); expect(r.woke.gold).toBeLessThanOrEqual(760);
+  expect(r.woke.lvl).toBeLessThan(30);
+  expect(r.woke.peak).toBe(30);
+  // regaining up to Lv 30 gives no AP; only the levels past it do
+  expect(r.apAfter - r.woke.ap).toBe(r.lvlAfter - 30);
   expect(r.collapses).toBeGreaterThan(0);
   expect(r.titles).toContain('broken');
   await expect(page.locator('#sheet')).toContainText('SAN');

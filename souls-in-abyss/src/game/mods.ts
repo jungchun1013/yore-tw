@@ -4,7 +4,6 @@ import { SKILLS, activeRank } from '../data/skills';
 import { TITLES } from '../data/titles';
 import { petOf, stageOf } from '../data/pets';
 import { curseOf, giftOf } from '../data/pacts';
-import { SAN_TIERS, sanTier } from '../data/sanity';
 
 /**
  * Every system that changes numbers is a ModSource. To add food, buffs, guilds...
@@ -24,7 +23,8 @@ export const SOURCES: ModSource[] = [
       return st && d ? d.mods(stageOf(st.lvl), st.bond, s.counters.rebirths) : [];
     },
   },
-  { key: 'sanity', collect: s => SAN_TIERS[sanTier(s.san)].mods },
+  // madness: each rolled ability is blessed (+) or cursed (-) by a whole percent
+  { key: 'sanity', collect: s => Object.entries(s.madRoll || {}).map(([k, v]) => ({ key: k as Mod['key'], mul: v / 100 })) },
   { key: 'pact', collect: s => (s.pact ? [...(giftOf(s.pact[0])?.mods || []), ...(curseOf(s.pact[1])?.mods || [])] : []) },
 ];
 

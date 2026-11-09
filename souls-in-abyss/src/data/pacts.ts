@@ -7,15 +7,15 @@ import type { L, Mod } from '../game/types';
 export interface PactDef { key: string; name: L; line: L; mods: Mod[]; stat: string }
 
 export const GIFTS: PactDef[] = [
-  { key: 'blood', stat: 'hp', name: { zh: '血之餽贈', en: 'Gift of Blood' }, line: { zh: '「多給你一點血。反正最後都會流回我這裡。」', en: '"Have a little more blood. It all flows back to me in the end."' }, mods: [{ key: 'hp', mul: 0.3 }] },
-  { key: 'blade', stat: 'atk', name: { zh: '刃之餽贈', en: 'Gift of the Blade' }, line: { zh: '「去斬吧。斬得越多，落下來的越多。」', en: '"Go and cut. The more you cut, the more fall to me."' }, mods: [{ key: 'atk', mul: 0.2 }] },
-  { key: 'gold', stat: 'gold', name: { zh: '金之餽贈', en: 'Gift of Gold' }, line: { zh: '「深淵底下的金幣，從來沒人回來拿。」', en: '"No one ever comes back for the gold down here."' }, mods: [{ key: 'gold', mul: 0.5 }] },
-  { key: 'memory', stat: 'xp', name: { zh: '記憶之餽贈', en: 'Gift of Memory' }, line: { zh: '「把上一個你學會的，還一點給你。」', en: '"I return a little of what your last self learned."' }, mods: [{ key: 'xp', mul: 0.3 }] },
-  { key: 'star', stat: 'crit', name: { zh: '凶星之餽贈', en: 'Gift of the Ill Star' }, line: { zh: '「你的星星很亮。亮得不太吉利。」', en: '"Your star burns bright. Too bright to be lucky."' }, mods: [{ key: 'crit', add: 0.08 }] },
-  { key: 'whisper', stat: 'magic', name: { zh: '低語之餽贈', en: 'Gift of Whispers' }, line: { zh: '「我教你幾個字。別在白天念。」', en: '"I will teach you a few words. Do not say them by day."' }, mods: [{ key: 'magic', mul: 0.3 }, { key: 'mp', mul: 0.3 }] },
-  { key: 'fang', stat: 'petPower', name: { zh: '獠牙之餽贈', en: 'Gift of Fangs' }, line: { zh: '「你的小東西們，也該長點牙了。」', en: '"Your little ones ought to grow some teeth."' }, mods: [{ key: 'petPower', mul: 0.6 }] },
-  { key: 'clarity', stat: 'san', name: { zh: '清明之餽贈', en: 'Gift of Clarity' }, line: { zh: '「我讓你暫時看不見我。暫時。」', en: '"I will let you not see me. For a while."' }, mods: [{ key: 'sanDrain', mul: -0.5 }] },
-  { key: 'fortune', stat: 'drop', name: { zh: '拾遺之餽贈', en: 'Gift of Gleaning' }, line: { zh: '「掉在路上的東西，你都會看見。」', en: '"Whatever falls by the road, you will see it."' }, mods: [{ key: 'drop', mul: 0.4 }, { key: 'luk', add: 10 }] },
+  { key: 'blood', stat: 'hp', name: { zh: '血之祝福', en: 'Blessing of Blood' }, line: { zh: '「多給你一點血。反正最後都會流回我這裡。」', en: '"Have a little more blood. It all flows back to me in the end."' }, mods: [{ key: 'hp', mul: 0.3 }] },
+  { key: 'blade', stat: 'atk', name: { zh: '刃之祝福', en: 'Blessing of the Blade' }, line: { zh: '「去斬吧。斬得越多，落下來的越多。」', en: '"Go and cut. The more you cut, the more fall to me."' }, mods: [{ key: 'atk', mul: 0.2 }] },
+  { key: 'gold', stat: 'gold', name: { zh: '金之祝福', en: 'Blessing of Gold' }, line: { zh: '「深淵底下的金幣，從來沒人回來拿。」', en: '"No one ever comes back for the gold down here."' }, mods: [{ key: 'gold', mul: 0.5 }] },
+  { key: 'memory', stat: 'xp', name: { zh: '記憶之祝福', en: 'Blessing of Memory' }, line: { zh: '「把上一個你學會的，還一點給你。」', en: '"I return a little of what your last self learned."' }, mods: [{ key: 'xp', mul: 0.3 }] },
+  { key: 'star', stat: 'crit', name: { zh: '凶星之祝福', en: 'Blessing of the Ill Star' }, line: { zh: '「你的星星很亮。亮得不太吉利。」', en: '"Your star burns bright. Too bright to be lucky."' }, mods: [{ key: 'crit', add: 0.08 }] },
+  { key: 'whisper', stat: 'magic', name: { zh: '低語之祝福', en: 'Blessing of Whispers' }, line: { zh: '「我教你幾個字。別在白天念。」', en: '"I will teach you a few words. Do not say them by day."' }, mods: [{ key: 'magic', mul: 0.3 }, { key: 'mp', mul: 0.3 }] },
+  { key: 'fang', stat: 'petPower', name: { zh: '獠牙之祝福', en: 'Blessing of Fangs' }, line: { zh: '「你的小東西們，也該長點牙了。」', en: '"Your little ones ought to grow some teeth."' }, mods: [{ key: 'petPower', mul: 0.6 }] },
+  { key: 'clarity', stat: 'san', name: { zh: '清明之祝福', en: 'Blessing of Clarity' }, line: { zh: '「我讓你暫時看不見我。暫時。」', en: '"I will let you not see me. For a while."' }, mods: [{ key: 'sanDrain', mul: -0.5 }] },
+  { key: 'fortune', stat: 'drop', name: { zh: '拾遺之祝福', en: 'Blessing of Gleaning' }, line: { zh: '「掉在路上的東西，你都會看見。」', en: '"Whatever falls by the road, you will see it."' }, mods: [{ key: 'drop', mul: 0.4 }, { key: 'luk', add: 10 }] },
 ];
 
 export const CURSES: PactDef[] = [

@@ -61,6 +61,8 @@ export interface Save {
   nextUid: number;
   area: string;
   skillsOff?: string[];             // learned skills the player has taken off (missing in older saves: none)
+  madRoll?: Record<string, number>;  // while mad: the Abyss's blessing (+) or curse (-) on each ability, whole percents
+  peakLvl?: number;                  // highest level this life; levels lost to a collapse give no AP when regained
   visited?: string[];               // areas this soul has stood in (missing in older saves: just the current one)
   pets: PetState[];
   activePet: string | null;

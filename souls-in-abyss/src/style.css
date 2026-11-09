@@ -248,6 +248,24 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .pactline { font-size: var(--fs-xs); }
 .log p.mad { color: #625575; letter-spacing: .04em; }
 .log .gift { color: #53695e; } .log .curse { color: #625575; }
+/* madness: the Abyss blesses (green) or curses (red) an ability; the numbers jump while SAN is low */
+.sheet .bless { color: var(--up); } .sheet .cursed { color: var(--down); }
+/* the edges close in over the whole page; clicks pass through */
+.madfx { position: fixed; inset: 0; pointer-events: none; z-index: 15; --vr: 100%; --va: 0;
+  background: radial-gradient(ellipse at center, transparent calc(var(--vr) * .55), rgba(29,26,46,var(--va)) var(--vr)); transition: background .8s; }
+/* only the battle strip sways, so buttons stay where they are */
+.stage.mad { animation: madsway calc(3.2s - 1.6s * var(--wob)) ease-in-out infinite; }
+@keyframes madsway {
+  0%, 100% { transform: translate(0, 0) rotate(0); filter: none; }
+  25% { transform: translate(calc(var(--wob) * 6px), calc(var(--wob) * -3px)) rotate(calc(var(--wob) * 1.6deg)); filter: hue-rotate(calc(var(--wob) * 25deg)); }
+  50% { transform: translate(calc(var(--wob) * -2px), calc(var(--wob) * 4px)) rotate(calc(var(--wob) * -.8deg)); }
+  75% { transform: translate(calc(var(--wob) * -6px), calc(var(--wob) * -2px)) rotate(calc(var(--wob) * -1.6deg)); filter: hue-rotate(calc(var(--wob) * -25deg)); }
+}
+@media (prefers-reduced-motion: reduce) { .stage.mad { animation: none; } }
+/* SAN 0: the screen fades to black, a line, then the surface */
+.blackout { position: fixed; inset: 0; z-index: 30; background: #000; color: #c4bacd; display: flex; align-items: center; justify-content: center;
+  padding: 24px; text-align: center; font-size: var(--fs-l); opacity: 0; pointer-events: none; transition: opacity .9s; }
+.blackout.on { opacity: 1; pointer-events: auto; }
 .pacts { display: grid; grid-template-columns: 1fr; gap: 8px; }
 .pact { text-align: left; white-space: normal; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; background: #f3f0e8; }
 .pact.on { background: var(--accent-soft); }

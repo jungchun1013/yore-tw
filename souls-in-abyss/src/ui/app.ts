@@ -18,7 +18,7 @@ import { icon, pixelMarkup } from './icons';
 import { heroMarkup } from './hero';
 import { WORLD_MAP_POSITIONS, areaPageBg, mapShadeCss, worldMapRoute } from './world-map';
 import { curseOf, giftOf, type PactDef } from '../data/pacts';
-import { SAN_TIERS, sanTier, willResist } from '../data/sanity';
+import { COLLAPSE, SAN_TIERS, deathSanLoss, madness, sanTier } from '../data/sanity';
 import { SAN_MAX } from '../game/state';
 
 type View = 'equip' | 'bag' | 'pets' | 'skills' | 'map' | 'smith' | 'titles' | 'settings';
@@ -60,7 +60,19 @@ export class App {
     this.installTips();
     this.root.addEventListener('change', e => this.onChange(e));
     this.root.addEventListener('input', e => this.onChange(e));
-    g.on(e => { if (e.t === 'log') this.addLog(e.parts, e.cls); });
+    g.on(e => { if (e.t === 'log') this.addLog(e.parts, e.cls); else if (e.t === 'wake') this.render(); });
+    this.fx = document.createElement('div'); this.fx.className = 'madfx'; document.body.appendChild(this.fx);
+    this.black = document.createElement('div'); this.black.className = 'blackout'; document.body.appendChild(this.black);
+  }
+  private fx!: HTMLElement; private black!: HTMLElement;
+  /** Madness on screen: the edges close in over the whole page and the battle strip sways; at 0 the screen goes black. */
+  private madFx(): void {
+    const g = this.g, m = madness(g.s.san), st = this.root.querySelector('.stage') as HTMLElement | null;
+    const r = (100 - 65 * m).toFixed(1), a = m > 0 ? (0.35 + 0.6 * m).toFixed(2) : '0';
+    if (this.fx.dataset.v !== r + a) { this.fx.dataset.v = r + a; this.fx.style.setProperty('--vr', r + '%'); this.fx.style.setProperty('--va', a); }
+    if (st) { st.classList.toggle('mad', m > 0.15); st.style.setProperty('--wob', (m * m).toFixed(2)); }
+    const on = g.collapsing;
+    if (this.black.classList.contains('on') !== on) { this.black.classList.toggle('on', on); if (on) this.black.textContent = tr(COLLAPSE); }
   }
 
   private build(): void {
@@ -189,6 +201,7 @@ export class App {
     this.width('s-hp', g.hp / g.d.hp); this.width('s-mp', g.mp / g.d.mp);
     if (g.petMaxHp > 0) { this.width('p-hp', g.petHp / g.petMaxHp); this.width('p-mp', g.petMp / g.petMaxMp); }
     this.syncSheetBars();
+    this.madFx();
   }
   /** EXP and SAN live in the sheet, which is rebuilt when its text changes; fill them right away so they never flash empty. */
   private syncSheetBars(): void {
@@ -249,9 +262,10 @@ export class App {
   private sheetHtml(): string {
     const { s, d } = this.g, r = raceOf(s.race);
     const base = (k: string) => r.base[k as 'str'] + s.grown[k as 'str'] + s.legacy[k as 'str'];
+    const mad = (k: string) => { const v = s.madRoll?.[k]; return v ? ` ${v > 0 ? 'bless' : 'cursed'}" data-tip="mad:${k}` : ''; };
     const stat = (k: string) => {
-      const v = Math.floor(d.prim[k as 'str']), b = Math.floor(base(k));
-      return `<div class="kv"><span class="lbl">${icon(k, 'gi sm')}${tr(STAT[k])}</span><span class="val ${v > b ? 'boost' : 'stat'}">${v}</span><span class="dim">(${b})</span></div>`;
+      const v = Math.round(d.prim[k as 'str']), b = Math.round(base(k));
+      return `<div class="kv"><span class="lbl">${icon(k, 'gi sm')}${tr(STAT[k])}</span><span class="val ${v > b ? 'boost' : 'stat'}${mad(k)}">${v}</span><span class="dim">(${b})</span></div>`;
     };
     // the name gets a row of its own: a title will prefix it (「XXXX 的奧雷里亞諾」) and must not squeeze the first column
     return `<div class="kv name"><span class="lbl">${t('name')}</span><span>${esc(s.name)}</span></div>
@@ -268,13 +282,13 @@ export class App {
         <div class="kv"><span class="lbl">${icon('ap', 'gi sm')}${t('ap')}</span><span>${s.ap}</span></div>
       </div>
       <div class="col">
-        <div class="kv"><span class="lbl">${t('atk')}</span><span>${Math.floor(d.atkMin)}~${Math.floor(d.atkMax)}</span></div>
+        <div class="kv"><span class="lbl">${t('atk')}</span><span class="${mad('atk')}">${Math.round(d.atkMin)}~${Math.round(d.atkMax)}</span></div>
         <div class="kv"><span class="lbl">${t('bal')}</span><span>${Math.round(d.bal * 100)}</span></div>
         <div class="kv"><span class="lbl">${t('crt')}</span><span>${Math.round(d.crit * 100)}</span></div>
         <div class="kv"><span class="lbl">${t('crtm')}</span><span>${Math.round(d.critDmg * 100)}</span></div>
-        <div class="kv"><span class="lbl">${t('def')}</span><span>${Math.floor(d.def)}</span></div>
+        <div class="kv"><span class="lbl">${t('def')}</span><span class="${mad('def')}">${Math.round(d.def)}</span></div>
         <div class="kv"><span class="lbl">${t('prt')}</span><span>${Math.round(d.prt * 100)}</span></div>
-        <div class="kv"><span class="lbl">${t('spd')}</span><span>${Math.round(d.spd)}</span></div>
+        <div class="kv"><span class="lbl">${t('spd')}</span><span class="${mad('speed')}">${Math.round(d.spd)}</span></div>
       </div>`;
   }
 
@@ -482,7 +496,7 @@ export class App {
     const cls = d.cp >= cp ? 'up' : d.cp >= cp * 0.6 ? 'warn' : 'down';
     const pals = PETS.filter(p => p.home === a.key && !p.hidden).map(p => s.pets.some(x => x.key === p.key) ? tr(p.stages[0].name) : t('unknown')).join(' · ');
     return `<div class="tname">${tr(a.name)} <small class="dim">Lv ${a.min}–${a.max}</small></div>
-      <div class="tsec">${t('recArea')} <b class="${cls}">${num(cp)}</b> · ${a.dread ? `<span class="madtxt">${t('dread')} -${(a.dread * willResist(d.prim.will) * d.sanDrain).toFixed(2)}</span>` : `<span class="up">${t('safe')}</span>`}${pals ? ` · ${t('pet')}${t('sep')}${pals}` : ''}</div>
+      <div class="tsec">${t('recArea')} <b class="${cls}">${num(cp)}</b> · ${a.dread ? `<span class="madtxt">${t('dread')} -${deathSanLoss(a.min, s.lvl, d.prim.will, d.sanDrain, s.pets.find(p => p.key === s.activePet)?.bond || 0)}</span>` : `<span class="up">${t('safe')}</span>`}${pals ? ` · ${t('pet')}${t('sep')}${pals}` : ''}</div>
       <p class="lore">${tr(a.flavor)}</p>
       <div class="tnext">${this.g.s.area === a.key ? t('here') : t('clickGo')}</div>`;
   }
@@ -491,6 +505,10 @@ export class App {
     if (kind === 'item') { const it = this.g.itemOf(Number(id)); return it ? this.itemTip(it) : ''; }
     if (kind === 'area') return this.areaTip(id);
     if (kind === 'pet') return this.petTip(id);
+    if (kind === 'mad') {
+      const v = this.g.s.madRoll?.[id]; if (!v) return '';
+      return `<div class="tname ${v > 0 ? 'up' : 'down'}">${v > 0 ? t('madBless') : t('madCurse')} ${v > 0 ? '+' : '−'}${Math.abs(v)}%</div><div class="tsec dim">${t('madNote')}</div>`;
+    }
     if (kind !== 'skill') return '';
     const k = SKILLS.find(x => x.key === id); if (!k) return '';
     const r = this.g.s.skills[k.key] || 0, max = r >= MAX_RANK, off = isOff(this.g.s, k.key);

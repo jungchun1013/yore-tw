@@ -137,7 +137,7 @@ export function rebirth(g: Game, race: string, age: number, pact = -1): boolean 
   if (s.age < REBIRTH_AGE) return false;
   for (const k of PRIMARY) s.legacy[k] += s.grown[k] * LEGACY_RATE;
   s.grown = zeroStats();
-  s.lvl = 1; s.xp = 0; s.race = race; s.age = Math.max(10, Math.min(17, age)); s.ageT = 0;
+  s.lvl = 1; s.peakLvl = 1; s.xp = 0; s.madRoll = undefined; s.race = race; s.age = Math.max(10, Math.min(17, age)); s.ageT = 0;
   s.counters.rebirths++;
   const offers = s.offers || [];
   s.pact = pact >= 0 && offers[pact] ? offers[pact] : null;
