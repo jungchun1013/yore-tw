@@ -1,4 +1,4 @@
-# Souls in Abyss 輪迴無止盡
+# Souls in Abyss 奈落魂迴
 
 A Battle Without End style auto-battle RPG. Fully independent from Meowcaron: own package, config, save key (`soulsinabyss.save`) and build. It is one workspace of the repo root, which only supplies the tooling (`node_modules`).
 

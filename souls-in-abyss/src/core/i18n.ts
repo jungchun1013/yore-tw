@@ -21,9 +21,9 @@ export const tr = (x: L): string => x[lang];
 
 /** UI strings. Content strings live next to their data. */
 export const UI = {
-  title: { zh: '輪迴無止盡', en: 'SOULS IN ABYSS' },
+  title: { zh: '奈落魂迴', en: 'SOULS IN ABYSS' },
   subtitle: { zh: 'SOULS IN ABYSS', en: '' },
-  tagline: { zh: '所有靈魂最後都會落入深淵<br>而你，總是會回來', en: 'Every soul falls into the Abyss in the end.<br>And you, you always come back.' },
+  tagline: { zh: '所有靈魂最後都會落入深淵', en: 'Every soul falls into the Abyss in the end.' },
   play: { zh: '開始遊戲', en: 'Play Game' },
   name: { zh: '名字', en: 'NAME' },
   race: { zh: '種族', en: 'RACE' },
