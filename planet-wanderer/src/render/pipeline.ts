@@ -12,10 +12,14 @@ export type OutlineMode = 'none' | 'tint' | 'dark';
  * lighting transitions in the material, never resamples silhouettes or object IDs. */
 export class PixelPipeline {
   style: RenderStyle = 'pixel';
-  pxSize = 3;
-  outline: OutlineMode = 'none';
+  pxSize = 1;
+  /** Pixel style: tonal levels after compositing (0 = off, the default). Ordered dither picks between neighbouring levels. */
+  quant = 0;
+  outline: OutlineMode = 'tint';
   lowW = 1;
   lowH = 1;
+  /** Pixel style: the scene again at screen ÷ pxSize, nearest-filtered, for the colour blocks. */
+  private pixelRT: THREE.WebGLRenderTarget;
   private softRT: THREE.WebGLRenderTarget;
   private bloomA: THREE.WebGLRenderTarget;
   private bloomB: THREE.WebGLRenderTarget;
@@ -30,6 +34,8 @@ export class PixelPipeline {
   private cssH = 1;
 
   constructor(readonly renderer: THREE.WebGLRenderer) {
+    this.pixelRT = new THREE.WebGLRenderTarget(1, 1, { minFilter: THREE.NearestFilter, magFilter: THREE.NearestFilter, depthBuffer: true });
+    this.pixelRT.depthTexture = new THREE.DepthTexture(1, 1, THREE.UnsignedIntType);
     this.softRT = new THREE.WebGLRenderTarget(1, 1, {
       type: THREE.HalfFloatType,
       samples: 4,
@@ -78,6 +84,7 @@ export class PixelPipeline {
       depthWrite: false,
       uniforms: {
         tColor: { value: this.softRT.texture },
+        tLow: { value: this.pixelRT.texture },
         tDepth: { value: this.softRT.depthTexture },
         tBloom: { value: this.bloomA.texture },
         uSoft: { value: 1 },
@@ -108,6 +115,7 @@ export class PixelPipeline {
         uWispPos: { value: new THREE.Vector3(0, 0, 0) }, // xy device px, z radius px
         uWispVis: { value: 0 },
         uFade: { value: 0 },
+        uQuant: { value: 0 },
         uFadeColor: { value: new THREE.Color(PAL.skyLow) },
       },
       vertexShader: /* glsl */ `void main() { gl_Position = vec4(position.xy, 0.0, 1.0); }`,
@@ -131,14 +139,23 @@ export class PixelPipeline {
     // The full-resolution pass runs in both styles: it gives smooth silhouettes and
     // the depth the edge lines are drawn from. Pixel style adds a low-res colour pass.
     this.softRT.setSize(devW, devH);
-    this.lowW = devW;
-    this.lowH = devH;
+    if (this.style === 'pixel') {
+      // Colour blocks: one block = pxSize CSS pixels, so the look is the same on Retina.
+      this.lowW = Math.max(1, Math.ceil(cssW / this.pxSize));
+      this.lowH = Math.max(1, Math.ceil(cssH / this.pxSize));
+      this.pixelRT.setSize(this.lowW, this.lowH);
+    } else {
+      this.lowW = devW;
+      this.lowH = devH;
+    }
     const bw = Math.max(1, Math.round(devW / 4));
     const bh = Math.max(1, Math.round(devH / 4));
     this.bloomA.setSize(bw, bh);
     this.bloomB.setSize(bw, bh);
     u.uPx.value = this.style === 'pixel' ? this.pxSize * dpr : 1;
-    u.uSoft.value = 1;
+    // Pixel style: the sky, clouds and atmosphere rings take the same stepped,
+    // Bayer-thresholded path as the surfaces, so the whole frame is one rendering.
+    u.uSoft.value = this.style === 'pixel' ? 0 : 1;
     u.uRays.value = this.style === 'sky' ? 1 : 0;
     shared.uPixelSize.value = this.style === 'pixel' ? this.pxSize * dpr : dpr;
     u.uLowRes.value.set(this.lowW, this.lowH);
@@ -187,9 +204,15 @@ export class PixelPipeline {
     u.uNear.value = camera.near;
     u.uFar.value = camera.far;
     u.uOutline.value = { none: 0, tint: 1, dark: 2 }[this.outline];
+    u.uQuant.value = this.style === 'pixel' ? this.quant : 0;
     r.setClearColor(0x000000, 0);
     r.shadowMap.needsUpdate = true;
 
+    if (this.style === 'pixel') {
+      r.setRenderTarget(this.pixelRT);
+      r.clear();
+      r.render(scene, camera);
+    }
     r.setRenderTarget(this.softRT);
     r.clear();
     r.render(scene, camera);
@@ -215,7 +238,7 @@ export class PixelPipeline {
 
 const COMPOSITE = /* glsl */ `
 #include <packing>
-uniform sampler2D tColor; uniform sampler2D tDepth; uniform sampler2D tBloom;
+uniform sampler2D tColor; uniform sampler2D tLow; uniform sampler2D tDepth; uniform sampler2D tBloom;
 uniform float uSoft; uniform float uRays; uniform vec2 uSunPos;
 uniform vec2 uLowRes; uniform vec2 uScreen; uniform float uPx;
 uniform float uNear; uniform float uFar; uniform float uFocus; uniform float uTime; uniform float uOutline; uniform float uEdgePx;
@@ -223,7 +246,7 @@ uniform vec3 uLightView;
 uniform vec3 uSkyTop; uniform vec3 uSkyMid; uniform vec3 uSkyLow; uniform vec3 uCloud; uniform vec3 uCloudShade; uniform vec3 uCloudWarm;
 uniform vec3 uHalo; uniform vec3 uSun; uniform vec3 uOutlineTint; uniform vec3 uWisp;
 uniform vec2 uSkyScroll; uniform vec3 uPlanet; uniform vec3 uWispPos; uniform float uWispVis;
-uniform float uFade; uniform vec3 uFadeColor;
+uniform float uFade; uniform vec3 uFadeColor; uniform float uQuant;
 ${NOISE}
 
 float depthAt(vec2 uv) {
@@ -297,6 +320,13 @@ void main() {
 
   vec3 obj = c.a > 0.0 ? c.rgb / c.a : vec3(0.0);
   if (c.a > 0.01) {
+    if (uSoft < 0.5 && uPx > 1.01) {
+      // Pixel style: blocky colour from the low-res pass wherever it has an object
+      // texel; the thin silhouette ring it misses keeps the full-res colour, so
+      // edges stay continuous while the colour underneath is chunky.
+      vec4 lowC = texture2D(tLow, (lp + 0.5) / uLowRes);
+      if (lowC.a > 0.25) obj = lowC.rgb;
+    }
     float z = depthAt(s);
     // Alpha off the MSAA quarter steps = "never outline" (grass, glows).
     bool marked = abs(c.a * 4.0 - floor(c.a * 4.0 + 0.5)) > 0.02;
@@ -331,7 +361,8 @@ void main() {
     }
   }
   col = mix(skyC, min(obj, vec3(1.6)), clamp(c.a, 0.0, 1.0));
-  if (uSoft > 0.5) col += texture2D(tBloom, s).rgb * 0.85;
+  // Bloom in every style: it is what lets the spirits and the wisp glow.
+  col += texture2D(tBloom, s).rgb * (uSoft > 0.5 ? 0.85 : 0.6);
 
   // God rays (Sky style): march toward the sun; every step that sees open sky adds
   // light, so beams stream through the gaps between objects and past the planet's rim.
@@ -362,6 +393,20 @@ void main() {
 
   vec2 v = s - 0.5;
   col *= 1.0 - dot(v, v) * 0.22;
+  if (uQuant > 0.5) {
+    // Tonal quantization with ordered dither: lightness snaps to one of uQuant
+    // levels and the Bayer threshold of this block decides whether a value between
+    // two levels rounds up or down, so mid tones become interlocking dots the way
+    // they do in a limited-palette pixel painting. Hue and saturation pass through
+    // untouched (quantizing channels separately would fringe the colours). Applied
+    // to the whole frame, sky and bloom included, so the look is one piece.
+    float L = uQuant - 1.0;
+    float th = bayer4(lp) - 0.5;
+    col = clamp(col, 0.0, 1.0);
+    float y = dot(col, vec3(0.2126, 0.7152, 0.0722));
+    float yq = floor(y * L + 0.5 + th * 0.95) / L;
+    col = clamp(col + (yq - y), 0.0, 1.0);
+  }
   if (uFade > 0.0) {
     col = uSoft > 0.5
       ? mix(col, uFadeColor, smoothstep(0.0, 1.0, uFade))

@@ -21,7 +21,10 @@ export const SPIRIT_NIGHT: SpiritTint = { body: 0x5b82bc, rim: 0x8feaff, deep: 0
  * dusting of star points. Supports skinning so animated GLB bodies keep moving. Rim
  * brightness goes above 1 so the bloom pass picks it up in the soft and sky styles.
  */
-export function spiritMaterial(t: SpiritTint, skinned = false, localScale = 1): THREE.ShaderMaterial {
+/** A streak of another colour through the body: `axis` is the local direction it runs along, `at` where (0..1 of the body's extent on that axis), `width` its half width. */
+export interface SpiritStreak { from: number; to: number; axis: THREE.Vector3; at: number; width: number; min: number; max: number; upMin: number; upMax: number; halfWidth: number }
+
+export function spiritMaterial(t: SpiritTint, skinned = false, localScale = 1, streak?: SpiritStreak): THREE.ShaderMaterial {
   const m = new THREE.ShaderMaterial({
     transparent: true,
     depthWrite: true,
@@ -34,6 +37,13 @@ export function spiritMaterial(t: SpiritTint, skinned = false, localScale = 1): 
       uStar: { value: new THREE.Color(t.star) },
       uAlpha: { value: t.alpha },
       uLocalScale: { value: localScale },
+      uStreakOn: { value: streak ? 1 : 0 },
+      uStreakFrom: { value: new THREE.Color(streak?.from ?? 0) },
+      uStreakTo: { value: new THREE.Color(streak?.to ?? 0) },
+      uStreakAxis: { value: streak?.axis.clone().normalize() ?? new THREE.Vector3(0, 1, 0) },
+      uStreakRange: { value: new THREE.Vector4(streak?.at ?? 0.5, streak?.width ?? 0.1, streak?.min ?? 0, streak?.max ?? 1) },
+      uStreakUp: { value: new THREE.Vector2(streak?.upMin ?? 0, streak?.upMax ?? 1) },
+      uStreakSide: { value: streak?.halfWidth ?? 1 },
       uTime: shared.uTime,
       uLightDir: shared.uLightDir,
     },
@@ -57,6 +67,7 @@ export function spiritMaterial(t: SpiritTint, skinned = false, localScale = 1): 
     fragmentShader: /* glsl */ `
       uniform vec3 uBody; uniform vec3 uRim; uniform vec3 uDeep; uniform vec3 uStar;
       uniform float uAlpha; uniform float uTime; uniform vec3 uLightDir; uniform float uLocalScale;
+      uniform float uStreakOn; uniform vec3 uStreakFrom; uniform vec3 uStreakTo; uniform vec3 uStreakAxis; uniform vec4 uStreakRange; uniform vec2 uStreakUp; uniform float uStreakSide;
       varying vec3 vN; varying vec3 vPosW; varying vec3 vLocal;
       ${NOISE}
       void main() {
@@ -74,6 +85,40 @@ export function spiritMaterial(t: SpiritTint, skinned = false, localScale = 1): 
         float edge = smoothstep(0.25, 1.0, fr);
         col = mix(col, uRim, edge * 0.75);
         col += uRim * edge * edge * 0.35;
+        if (uStreakOn > 0.5) {
+          // One brush stroke of the antler gradient on the chest / front-leg flank.
+          // Coordinates: along = 0 at the nose, 1 at the tail; upN = -1 belly, +1 back;
+          // sideN = 0 keel/spine, 1 widest flank. The stroke is a short slanted band on the
+          // lower front quarter, solid where it starts (cyan, low on the chest) and
+          // fading out toward its tip (gold, higher and further back), like one sweep.
+          float along = (dot(vLocal, uStreakAxis) - uStreakRange.z) / max(uStreakRange.w - uStreakRange.z, 1e-4);
+          float upN = ((vLocal.y - uStreakUp.x) / max(uStreakUp.y - uStreakUp.x, 1e-4)) * 2.0 - 1.0;
+          float sideN = abs(vLocal.x) / max(uStreakSide, 1e-4);
+          float wob = (fbm3(vLocal * 5.0) - 0.5) * 0.05;
+          // Stroke axis: from (along = at, upN = -0.45) rising backward. t runs along the stroke.
+          vec2 p0 = vec2(uStreakRange.x, -0.35);
+          // ~20° in world terms (along is per body length, upN per half height).
+          vec2 dir = normalize(vec2(1.0, 1.3));
+          vec2 q = vec2(along, upN) - p0;
+          float len = uStreakRange.y * 4.0;     // stroke length (body fractions)
+          float t = dot(q, dir) + wob;          // distance along the stroke
+          float n = dot(q, vec2(-dir.y, dir.x)); // distance across it
+          float w = uStreakRange.y * (1.0 - 0.6 * smoothstep(0.0, len, t)); // tapers toward the tip
+          float band = 1.0 - smoothstep(w * 0.25, w, abs(n)); // soft feathered edges
+          float head = smoothstep(-0.08, 0.06, t);
+          float tip = 1.0 - smoothstep(len * 0.45, len, t);
+          float onSide = smoothstep(0.12, 0.45, sideN); // the flank, not the keel or the spine
+          float stroke = band * head * tip * onSide;
+          // Colour is its own layer under the mask: the cyan→gold gradient runs along
+          // an axis rotated 10° counter-clockwise from the stroke and shifted down a
+          // little, so the divide between the two colours sits at a slight angle.
+          float ca = radians(20.0);
+          vec2 gdir = vec2(dir.x * cos(ca) - dir.y * sin(ca), dir.x * sin(ca) + dir.y * cos(ca));
+          vec2 gq = q + vec2(0.0, 0.04); // layer moved down (upN units; ~2 px at the review distance)
+          float gt = dot(gq, gdir);
+          vec3 sc = mix(uStreakFrom, uStreakTo, smoothstep(0.0, len * 0.8, gt));
+          col = mix(col, sc * 1.2, stroke);
+        }
         // Star dust: sparse points anchored to the body, twinkling.
         vec3 cell = floor(lw * 16.0); // one cell ≈ 6 cm
         float h = hash13(cell);
@@ -82,7 +127,9 @@ export function spiritMaterial(t: SpiritTint, skinned = false, localScale = 1): 
         float dot2 = 1.0 - smoothstep(0.0, 0.14, length(inCell));
         float star = step(0.9, h) * dot2 * tw;
         col += uStar * star * 1.05;
-        float a = mix(uAlpha, 1.0, edge * 0.7 + star);
+        // Capped below 1 and kept off the MSAA quarter steps: the composite reads
+        // that as "glowing thing, never outline" (see pipeline.ts 'marked').
+        float a = min(mix(uAlpha, 1.0, edge * 0.7 + star), 0.98);
         gl_FragColor = vec4(col, a);
       }
     `,
@@ -112,7 +159,8 @@ export function antlerMaterial(fromHex = 0x8fe9f6, toHex = 0xffd27a, yMin = 0, y
         vec3 col = mix(uFrom, uTo, pow(t, 1.3));
         float sparkle = step(0.965, hash13(floor(vLocal * 60.0) + floor(uTime * 2.0)));
         col = col * (0.95 + 0.35 * t) + sparkle * 0.5;
-        gl_FragColor = vec4(col, 1.0);
+        // Alpha 0.98 marks the antlers as a glow so the composite draws no outline.
+        gl_FragColor = vec4(col, 0.98);
       }
     `,
   });

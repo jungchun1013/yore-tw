@@ -88,7 +88,10 @@ export class Planet {
 
   private rawHeight(d: THREE.Vector3) {
     const o = this.off;
-    return 0.22 * (vnoise(d.x * 2.1 + 5 + o, d.y * 2.1, d.z * 2.1) - 0.5) + 0.07 * (vnoise(d.x * 6, d.y * 6 + 3 + o, d.z * 6) - 0.5);
+    // One very broad swell (a few percent of the radius) so the silhouette is not a
+    // perfect circle, then the meadow's rolling ground and its small detail.
+    return 0.028 * this.radius * (vnoise(d.x * 0.9 + 11 + o, d.y * 0.9 + 7, d.z * 0.9 + 3) - 0.5) * 2
+      + 0.22 * (vnoise(d.x * 2.1 + 5 + o, d.y * 2.1, d.z * 2.1) - 0.5) + 0.07 * (vnoise(d.x * 6, d.y * 6 + 3 + o, d.z * 6) - 0.5);
   }
 
   /** Terrain height above the radius for a unit direction. */
@@ -104,7 +107,9 @@ export class Planet {
     }
     for (const p of this.ponds) {
       const pa = d.angleTo(p.dir) / p.radius;
-      if (pa < 1.25) h -= p.depth * THREE.MathUtils.smoothstep(1.25 - pa, 0, 0.55);
+      // A flat bed, a bank wall between 0.78 and 1.12 radii, then level ground: a dug
+      // hole rather than a dish, so the bank reads as a bank from any angle.
+      if (pa < 1.12) h -= p.depth * THREE.MathUtils.smoothstep(1.12 - pa, 0, 0.34);
     }
     return h;
   }

@@ -11,8 +11,12 @@ export const shared = {
   /** 0 = hybrid optical mixing (default), 1 = soft cel, 2 = broad Sky ramp. */
   uStyle: { value: 0 },
   uPixelSize: { value: 3 },
+  /** 0 original, 1 timber/tiles only, 2 includes experimental ruin stone. */
+  uSurfaceDetails: { value: 2 },
   /** Shadows of passing clouds on everything (0 = off). */
   uCloudShadow: { value: 1 },
+  /** Terrain only: 0 smooth, 1 cloud-shadow edges dithered, 2 patch edges dithered too, 3 = 2 plus a few regions carry the water's stippled two-tone body. */
+  uGrassDither: { value: 2 },
   uShadowTint: { value: new THREE.Color(PAL.shadowTint) },
   uSunTint: { value: new THREE.Color(PAL.sun) },
   uRimTint: { value: new THREE.Color(PAL.rim) },
@@ -25,6 +29,10 @@ const VERT = /* glsl */ `
 #include <shadowmap_pars_vertex>
 varying vec3 vNormalW;
 varying vec3 vPosW;
+#ifdef TIMBER_DETAIL
+attribute vec3 grainPosition;
+varying vec3 vGrain;
+#endif
 varying vec3 vLocal;
 void main() {
   #include <color_vertex>
@@ -44,6 +52,9 @@ void main() {
   #endif
   vPosW = (modelMatrix * wp).xyz;
   vLocal = position;
+  #ifdef TIMBER_DETAIL
+    vGrain = grainPosition;
+  #endif
 }
 `;
 
@@ -65,7 +76,13 @@ uniform float uStyle;
 uniform float uPixelSize;
 uniform float uGrad;
 uniform float uCloudShadow;
+uniform float uGrassDither;
 uniform float uPearl;
+uniform float uFoliage;
+uniform float uSurfaceDetails;
+#ifdef TIMBER_DETAIL
+varying vec3 vGrain;
+#endif
 #ifdef TERRAIN
 uniform vec3 uGrassDark; uniform vec3 uGrassLight; uniform vec3 uSand; uniform vec3 uPath;
 uniform vec3 uPondDir[MAX_PONDS]; uniform float uPondR[MAX_PONDS]; uniform int uPondCount;
@@ -81,6 +98,11 @@ varying vec3 vNormalW;
 varying vec3 vPosW;
 varying vec3 vLocal;
 ${NOISE}
+// HSV-equivalent: keep hue, increase saturation, lower value. No grey wash.
+vec3 pigmentShade(vec3 c, float value, float saturation) {
+  float peak = max(c.r, max(c.g, c.b));
+  return max(vec3(0.0), vec3(peak) - (vec3(peak) - c) * saturation) * value;
+}
 #ifdef TERRAIN
 float arcDist(vec3 p, vec3 a, vec3 b) {
   vec3 n = normalize(cross(a, b));
@@ -101,17 +123,31 @@ void main() {
   #ifdef TERRAIN
     vec3 dir = normalize(vPosW);
     // Patchy meadow in three discrete tones, anchored to the world so it never swims.
-    float n = fbm3(dir * 4.2);
+    // Few, broad patches (low frequency), no fine mottling: calm meadow, not camouflage.
+    float n = fbm3(dir * 1.7);
     // Coarse cells: two-tone mottling on paths and sand comes in patches, not specks.
     vec3 cell = floor(vPosW * 3.0);
-    if (true) {
-      // Broad watercolour patches that blend into each other.
-      base = mix(uGrassDark, base, smoothstep(0.3, 0.48, n));
-      base = mix(base, uGrassLight, smoothstep(0.54, 0.74, n));
-      base *= 0.97 + 0.06 * fbm3(vPosW * 2.5);
-    } else {
-      if (uDither > 1.5) n += (vnoise3(vPosW * 5.0) - 0.5) * 0.1;
-      base = n < 0.4 ? uGrassDark : (n > 0.62 ? uGrassLight : base);
+    // Broad watercolour patches that blend into each other. In grass-dither mode 2
+    // the blend across each patch edge is an ordered dither instead of a gradient:
+    // the two greens interlock cell by cell, like the water's tone boundaries.
+    float gBay = bayer4(floor(gl_FragCoord.xy / max(uPixelSize, 1.0)));
+    // Mode 2: a narrow blend band, so each patch is one clean colour and only a thin
+    // strip at its edge interlocks (the same recipe as the water's tone boundaries).
+    float band = uGrassDither > 1.5 ? 0.035 : 0.07;
+    float tMid = smoothstep(0.43 - band, 0.43 + band, n);
+    float tLight = smoothstep(0.63 - band, 0.63 + band, n);
+    if (uGrassDither > 1.5) { tMid = step(gBay, tMid); tLight = step(gBay, tLight); }
+    base = mix(uGrassDark, base, tMid);
+    base = mix(base, uGrassLight, tLight);
+    if (uGrassDither > 2.5) {
+      // Mode 3: some regions (a slow world-anchored mask) take a stippled texture:
+      // a second noise crosses a threshold and the Bayer grid decides cell by cell
+      // which of two close tones shows, exactly like the pond water. Elsewhere flat.
+      float region = smoothstep(0.5, 0.58, fbm3(dir * 1.1 + 31.0));
+      float w2 = fbm3(vPosW * 1.6 + 7.0);
+      float stipple = step(gBay, smoothstep(0.42, 0.58, w2));
+      vec3 alt = base * vec3(0.9, 0.94, 0.88);
+      base = mix(base, mix(base, alt, stipple), region);
     }
     float pd = 1e3;
     for (int i = 0; i < MAX_PONDS; i++) {
@@ -123,11 +159,63 @@ void main() {
       float d = arcDist(dir, uPathA[i], uPathB[i]);
       float wob = (fbm3(dir * 18.0) - 0.5) * 0.008;
       float w = uPathW[i];
-      if (true) base = mix(base, mix(uPath, uSand, fbm3(vPosW * 3.0) * 0.6), 1.0 - smoothstep(w * 0.8, w * 1.15, d + wob));
-      else if (d + wob < w) base = mix(uPath, uSand, step(0.6, hash13(cell * 1.7)) * 0.5);
+      float tPath = 1.0 - smoothstep(w * 0.9, w * 1.08, d + wob);
+      if (uGrassDither > 1.5) tPath = step(gBay, tPath);
+      base = mix(base, mix(uPath, uSand, fbm3(vPosW * 3.0) * 0.6), tPath);
     }
-    if (true) base = mix(base, mix(uSand, uPath, fbm3(vPosW * 4.0) * 0.5), 1.0 - smoothstep(1.26, 1.4, pd));
-    else if (pd < 1.32) base = mix(uSand, uPath, step(0.75, hash13(cell)));
+    // Pond bank: grass gives way to sand over a wider band, dithered in mode 2.
+    float tSand = 1.0 - smoothstep(1.28, 1.42, pd);
+    if (uGrassDither > 1.5) tSand = step(gBay, tSand);
+    base = mix(base, mix(uSand, uPath, fbm3(vPosW * 4.0) * 0.5), tSand);
+  #endif
+
+  // Sparse, object-anchored pigment marks. Fade before their cells become
+  // subpixel; no displacement, silhouette changes or screen-space noise.
+  #ifdef SURFACE_DETAIL
+  if (uSurfaceDetails > 0.5) {
+    vec3 p = vLocal;
+    float scale = 72.0;
+    #ifdef TIMBER_DETAIL
+      p = vGrain;
+    #endif
+    float footprint = max(length(dFdx(p)), length(dFdy(p))) * scale;
+    float visible = 1.0 - smoothstep(0.65, 1.65, footprint);
+    vec3 q = (floor(p * scale) + 0.5) / scale;
+    float dark = 0.0;
+    float light = 0.0;
+    #ifdef TIMBER_DETAIL
+      // Long, interrupted fibres with a gentle bend.
+      float crossGrain = q.x + q.z;
+      float bend = sin(q.y * 8.0 + crossGrain * 13.0) * 0.009;
+      float bands = fract((crossGrain + bend) * 44.0);
+      float breaks = vnoise3(vec3(crossGrain * 65.0, q.y * 9.0, 4.0));
+      dark = (1.0 - smoothstep(0.13, 0.23, bands)) * smoothstep(0.32, 0.58, breaks);
+      light = step(0.80, bands) * smoothstep(0.55, 0.72, breaks);
+      float keepGrain = step(0.5, hash13(floor(q * vec3(12.0, 7.0, 12.0))));
+      dark *= keepGrain; light *= keepGrain;
+      base = mix(base, pigmentShade(base, 0.82, 1.25), visible * dark);
+      base *= 1.0 + visible * light * 0.055;
+    #elif defined(TILE_DETAIL)
+      // Small fired-clay pigment islands, avoiding a uniform speckle coating.
+      float clay = vnoise3(q * vec3(25.0, 8.0, 33.0));
+      dark = smoothstep(0.66, 0.82, clay);
+      light = 1.0 - smoothstep(0.20, 0.33, clay);
+      float keepClay = step(0.5, hash13(floor(q * 14.0)));
+      dark *= keepClay; light *= keepClay;
+      base = mix(base, pigmentShade(base, 0.85, 1.22), visible * dark);
+      base *= 1.0 + visible * light * 0.07;
+    #elif defined(STONE_DETAIL)
+      if (uSurfaceDetails > 1.5) {
+        // Faint mineral seams with plenty of untouched polished stone.
+        float mineral = vnoise3(q * 11.0);
+        float seam = abs(sin(q.x * 13.0 + q.z * 9.0 + q.y * 5.0 + mineral * 4.0));
+        dark = (1.0 - smoothstep(0.04, 0.13, seam)) * smoothstep(0.55, 0.75, mineral);
+        light = smoothstep(0.70, 0.87, mineral);
+        base = mix(base, pigmentShade(base, 0.86, 1.4), dark * visible * 0.65);
+        base += vec3(0.018, 0.015, 0.012) * light * visible;
+      }
+    #endif
+  }
   #endif
 
   // High-value neutrals carry complementary reflected hues, with nearly equal
@@ -151,6 +239,11 @@ void main() {
   // Clouds drifting over the world leave soft travelling shadows.
   float cloudN = fbm3(vPosW * 0.2 + vec3(uTime * 0.035, 0.0, uTime * 0.022));
   float cloud = smoothstep(0.48, 0.65, cloudN);
+  #ifdef TERRAIN
+    // Dithered cloud edge on the meadow: the shadow's border is a band of
+    // interlocking cells that drifts with the cloud. Everything else keeps the soft edge.
+    if (uGrassDither > 0.5) cloud = step(bayer4(floor(gl_FragCoord.xy / max(uPixelSize, 1.0))), smoothstep(0.5, 0.62, cloudN));
+  #endif
 
   sh *= 1.0 - cloud * 0.8 * uCloudShadow * (1.0 - uEmissive);
   float l = clamp(ndl * 1.25 + 0.1, 0.0, 1.0) * mix(0.18, 1.0, sh);
@@ -161,7 +254,7 @@ void main() {
   float seamWidth = max(0.035, fwidth(l) * 1.5);
   float seam = 1.0 - smoothstep(seamWidth, seamWidth * 2.0, abs(l - 0.32));
 
-  vec3 shadowCol = mix(base * 0.66, base * uShadowTint * 1.25, 0.45);
+  vec3 shadowCol = pigmentShade(base, 0.69, 1.32);
   vec3 hiCol = mix(base, uSunTint, 0.38);
   float fr = 1.0 - max(dot(N, V), 0.0);
   vec3 col;
@@ -173,7 +266,7 @@ void main() {
     // Zelda: two tones with a short ramp. Sky: one long smooth ramp, shadows lifted
     // and filled with sky light so the dark side stays luminous.
     float lit = skyStyle ? smoothstep(-0.05, 0.85, lr) : smoothstep(0.14, 0.34, lr);
-    vec3 softShadow = skyStyle ? mix(base * 0.86, base * uShadowTint * 1.5, 0.45) : mix(base * 0.7, base * uShadowTint * 1.35, 0.5);
+    vec3 softShadow = pigmentShade(base, skyStyle ? 0.82 : 0.72, skyStyle ? 1.18 : 1.30);
     col = mix(softShadow, base, lit);
     col = mix(col, hiCol, smoothstep(0.88, 1.0, lr) * (skyStyle ? 0.6 : 0.45));
     // Sky fill on surfaces facing up, so shadows stay airy rather than muddy.
@@ -190,7 +283,7 @@ void main() {
     vec3 midCol = mix(shadowCol, base, 0.58);
     float ramp = smoothstep(0.25, 0.39, l);
     float dots = smoothstep(0.25, 0.39, l + th * 0.14);
-    float amount = uDither < 0.5 ? 0.0 : uDither > 1.5 ? 0.7 : 0.38;
+    float amount = (uDither < 0.5 ? 0.0 : uDither > 1.5 ? 0.45 : 0.18) * (1.0 - uFoliage);
     float lit = mix(ramp, dots, seam * amount);
     col = mix(midCol, base, lit);
     col = mix(shadowCol, col, smoothstep(0.04, 0.18, l));
@@ -200,6 +293,34 @@ void main() {
     col = mix(col, base * (1.0 + 0.7 * uEmissive * uEmissive), uEmissive);
     alpha = uMark < 0.9 ? 0.99 : 1.0;
   }
+  if (uFoliage > 0.5) {
+    // Broad foliage light masses, with a few object-anchored leaf-sized dabs.
+    // Geometry keeps the soft polygon outline; no screen-wide checkerboard.
+    float patches = fbm3(vLocal * 6.0);
+    vec3 cell = floor(vLocal * 48.0);
+    float tiny = hash13(cell);
+    float boundary = (ndl * 0.6 + 0.4) * mix(0.3, 1.0, sh) + (patches - 0.5) * 0.42;
+    float litPatch = smoothstep(0.37, 0.49, boundary + (tiny - 0.5) * 0.04);
+    vec3 coolLeaf = mix(base * vec3(0.68,0.83,0.83), base * uShadowTint, 0.16);
+    vec3 sunLeaf = mix(base * vec3(1.02,1.08,0.97), uSunTint, 0.08);
+    vec3 foliageCol = mix(coolLeaf, sunLeaf, litPatch);
+    float detailVis = 1.0 - smoothstep(0.025,0.065,length(fwidth(vLocal)));
+    float dab = step(0.79,tiny) * (1.0-smoothstep(0.2,0.48,length(fract(vLocal.xy*48.0)-0.5)));
+    foliageCol = mix(foliageCol, foliageCol * vec3(0.85,0.94,0.87), dab * 0.38 * detailVis);
+    col = mix(col, foliageCol, 0.8);
+  }
+  #if NUM_POINT_LIGHTS > 0
+    vec3 posView = (viewMatrix * vec4(vPosW, 1.0)).xyz;
+    vec3 normalView = normalize((viewMatrix * vec4(N, 0.0)).xyz);
+    for (int i = 0; i < NUM_POINT_LIGHTS; i++) {
+      vec3 delta = pointLights[i].position - posView;
+      float dist = length(delta);
+      float range = max(pointLights[i].distance, 0.001);
+      float falloff = pow(clamp(1.0 - dist / range, 0.0, 1.0), 2.0);
+      float facing = max(dot(normalView, delta / max(dist, 0.001)), 0.0);
+      col += base * pointLights[i].color * falloff * facing * 0.55 * (1.0 - uEmissive);
+    }
+  #endif
   gl_FragColor = vec4(col, alpha);
 }
 `;
@@ -216,6 +337,9 @@ export function applyMaterialMood(mood: Mood) {
 }
 
 export interface ToonOpts {
+  surfaceDetail?: 'wood' | 'tile' | 'stone';
+  /** Soft polygon foliage with local leaf-sized colour dabs. */
+  foliage?: boolean;
   emissive?: number;
   rim?: number;
   side?: THREE.Side;
@@ -230,10 +354,11 @@ export interface ToonOpts {
 }
 
 export function toon(color: number, opts: ToonOpts = {}): THREE.ShaderMaterial {
-  const key = `${color}|${opts.emissive ?? 0}|${opts.rim ?? 1}|${opts.side ?? 0}|${opts.vertexColors ? 1 : 0}|${opts.glow ? 1 : 0}|${opts.noOutline ? 1 : 0}|${opts.gradient ? 1 : 0}|${opts.flat ? 1 : 0}`;
+  const key = `${color}|${opts.emissive ?? 0}|${opts.rim ?? 1}|${opts.side ?? 0}|${opts.vertexColors ? 1 : 0}|${opts.glow ? 1 : 0}|${opts.noOutline ? 1 : 0}|${opts.gradient ? 1 : 0}|${opts.flat ? 1 : 0}|${opts.foliage ? 1 : 0}|${opts.surfaceDetail ?? 'none'}`;
   const hit = cache.get(key);
   if (hit) return hit;
   const m = new THREE.ShaderMaterial({
+    defines: opts.surfaceDetail ? { SURFACE_DETAIL: 1, [{ wood: 'TIMBER_DETAIL', tile: 'TILE_DETAIL', stone: 'STONE_DETAIL' }[opts.surfaceDetail]]: 1 } : {},
     vertexShader: VERT,
     fragmentShader: FRAG,
     lights: true,
@@ -248,6 +373,7 @@ export function toon(color: number, opts: ToonOpts = {}): THREE.ShaderMaterial {
         uMark: { value: opts.glow ? 0.75 : opts.noOutline ? 0.8 : 1 },
         uGrad: { value: opts.gradient ? 1 : 0 },
         uPearl: { value: opts.flat ? 0 : 1 },
+        uFoliage: { value: opts.foliage ? 1 : 0 },
       },
     ]),
   });
@@ -305,6 +431,8 @@ export function terrainMaterial(z: TerrainZones): THREE.ShaderMaterial {
 /** Pond surface: three wave tones that drift, a shore ring and world-anchored glints. */
 export function waterMaterial(radius: number): THREE.ShaderMaterial {
   const m = new THREE.ShaderMaterial({
+    transparent: true,
+    depthWrite: false,
     uniforms: {
       uRadius: { value: radius },
       uDeep: { value: new THREE.Color(PAL.waterDeep) },
@@ -332,16 +460,17 @@ uniform float uPixelSize;
         if (uStyle > 0.5) {
           col = mix(mix(uMid, uLight, 0.45), uMid, smoothstep(0.3, 0.42, w));
           col = mix(col, uDeep, smoothstep(0.48, 0.6, w));
-          col = mix(col, uLight, smoothstep(0.82, 0.92, r));
         } else {
           col = w < 0.52 ? uMid : uDeep;
           if (w < 0.36) col = mix(uMid, uLight, 0.45);
-          if (r > 0.86) col = uLight;
         }
+        // Deeper toward the middle; the bed shows through near the bank.
+        col = mix(col, uDeep, 0.25 + (1.0 - r) * 0.45);
         vec3 cell = floor(vPosW * 12.0);
         float g = fract(hash13(cell) + uTime * 0.18);
         if (g > 0.992 && r < 0.8) col = uStyle > 0.5 ? vec3(1.4, 1.38, 1.3) : vec3(1.0, 0.99, 0.94);
-        gl_FragColor = vec4(col, 1.0);
+        // Translucent: the sandy bed is visible through the shallows, less so mid-pond.
+        gl_FragColor = vec4(col, mix(0.3, 0.5, 1.0 - r));
       }
     `,
   });

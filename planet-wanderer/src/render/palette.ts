@@ -15,8 +15,8 @@ export const PAL = {
   outline: 0x3e3a5c,
 
   grass: 0xa9c5ad,
-  grassDark: 0x7da99f,
-  grassLight: 0xd1d9b2,
+  grassDark: 0x8dbb9c,
+  grassLight: 0xc6d8a8,
   sand: 0xdac8bc,
   path: 0xc2b2b0,
 

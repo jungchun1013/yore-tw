@@ -4,6 +4,8 @@ import { waterMaterial } from '../render/materials';
 import { dirAt, orient } from '../world/planet';
 import { at, blob, cyl, mesh, param, type PropModule } from './kit';
 import { crag, facetColors, lumpy, merge, paint, stoneBlock, xf } from './geo';
+import { grassCard } from './grassCard';
+import { koiCard } from './koi';
 
 /** A hollow in the ground with water, lily pads, a ring of rocks and some reeds. */
 export const pond: PropModule = {
@@ -21,12 +23,13 @@ export const pond: PropModule = {
     const spin = Math.abs(dir.y) > 0.95 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0);
     const rimH = planet.heightAt(dir.clone().applyAxisAngle(spin, ang * 1.05));
 
-    const water = new THREE.Mesh(new THREE.CircleGeometry(units * 1.02, 48), waterMaterial(units * 1.02));
+    // The surface sits well below the rim, inside the bank wall, so the hole shows.
+    const water = new THREE.Mesh(new THREE.CircleGeometry(units * 0.96, 48), waterMaterial(units * 0.96));
     water.receiveShadow = true;
     water.rotation.x = -Math.PI / 2;
     const holder = new THREE.Group();
     holder.add(water);
-    holder.position.copy(dir).multiplyScalar(planet.radius + rimH - 0.08);
+    holder.position.copy(dir).multiplyScalar(planet.radius + rimH - 0.34);
     orient(holder, dir);
     g.add(holder);
 
@@ -36,7 +39,32 @@ export const pond: PropModule = {
       pad.castShadow = false;
       holder.add(at(pad, x, 0.015, z));
     }
-    holder.add(at(mesh(blob(0.06, 1), PAL.flowerC), 0.48, 0.07, 0.18));
+    // Lotus on the big pad: two rings of cupped petals round a small yellow heart,
+    // plus a closed bud on the far pad.
+    const lotus = (open: number) => {
+      const fl = new THREE.Group();
+      const petal = (ring: number, i: number, n: number) => {
+        const pm = mesh(blob(1, 2), ring === 0 ? 0xf1c3cb : 0xf8dde2, { rim: 0.3, noOutline: true });
+        const len = ring === 0 ? 0.11 : 0.085;
+        pm.scale.set(len * 0.5, len * 0.28, len);
+        const a = i / n * Math.PI * 2 + ring * 0.5;
+        const tilt = ring === 0 ? 0.2 + 0.95 * open : 0.1 + 0.5 * open; // closed bud → wide-open bloom
+        pm.position.set(Math.cos(a) * len * 0.5 * open, 0.02 + ring * 0.02 + len * 0.3, Math.sin(a) * len * 0.5 * open);
+        pm.rotation.set(0, -a, 0);
+        pm.rotateZ(-(Math.PI / 2 - tilt));
+        fl.add(pm);
+      };
+      for (let i = 0; i < 7; i++) petal(0, i, 7);
+      for (let i = 0; i < 5; i++) petal(1, i, 5);
+      if (open > 0.6) {
+        const heart = mesh(blob(0.028, 1), 0xf0dc8e, { rim: 0.2, noOutline: true, emissive: 0.15 });
+        heart.position.y = 0.065;
+        fl.add(heart);
+      }
+      return fl;
+    };
+    holder.add(at(lotus(1), 0.47, 0.012, 0.19));
+    holder.add(at(lotus(0.25), -0.3, 0.012, -0.5));
 
     const t = new THREE.Vector3();
     const axis = new THREE.Vector3();
@@ -125,17 +153,36 @@ export const pond: PropModule = {
     }
     g.add(mesh(merge(pebbles), 0xffffff, { vertexColors: true }));
 
-    // Reeds on one bank.
-    for (let i = 0; i < 6; i++) {
-      axis.copy(tangent).applyAxisAngle(dir, 2.2 + i * 0.12);
-      t.copy(dir).applyAxisAngle(axis, ang * (0.9 + (i % 2) * 0.08));
-      const reed = mesh(cyl(0.008, 0.025, 0.42 + rand() * 0.2, 4), PAL.leafC);
-      const hold = new THREE.Group();
-      hold.add(at(reed, 0, 0.2, 0));
-      reed.rotation.z = (rand() - 0.5) * 0.3;
-      planet.place(hold, t, 0, 0.05);
-      g.add(hold);
+    // Grass clumps on one bank: pixel-art cards, not cones.
+    for (let i = 0; i < 14; i++) {
+      // Two stretches of bank, a few clumps each, the rest scattered just outside the rim.
+      const a = i < 5 ? 1.6 + i * 0.16 : i < 9 ? 4.1 + (i - 5) * 0.18 : rand() * Math.PI * 2;
+      axis.copy(tangent).applyAxisAngle(dir, a + (rand() - 0.5) * 0.08);
+      t.copy(dir).applyAxisAngle(axis, ang * (1.02 + rand() * 0.22));
+      const clump = grassCard(0.24 + rand() * 0.16, rand() * Math.PI);
+      planet.place(clump, t, 0, 0.0);
+      g.add(clump);
     }
-    return { object: g, obstacles };
+    // Koi under the surface: flat vector-drawn cards with a swimming wave, slow circling.
+    const fish: { g: THREE.Object3D; r: number; speed: number; phase: number; depth: number }[] = [];
+    const variants = ['kohaku', 'ivory', 'amber', 'bekko'] as const;
+    for (let i = 0; i < 4; i++) {
+      const f = koiCard(variants[i], 0.7 + rand() * 0.2, rand() * Math.PI * 2);
+      holder.add(f);
+      fish.push({ g: f, r: 0.3 + rand() * 0.5, speed: (0.1 + rand() * 0.08) * (i % 2 ? 1 : -1), phase: rand() * Math.PI * 2, depth: -0.03 - rand() * 0.03 });
+    }
+    return {
+      object: g,
+      obstacles,
+      update(t) {
+        for (const f of fish) {
+          const a = t * f.speed + f.phase;
+          // Holder space: Y up, surface in XZ. The card's head points to -z; turn it to the velocity.
+          f.g.position.set(Math.cos(a) * f.r, f.depth, Math.sin(a) * f.r);
+          const vx = -Math.sin(a) * f.speed, vz = Math.cos(a) * f.speed;
+          f.g.rotation.y = Math.atan2(-vx, -vz);
+        }
+      },
+    };
   },
 };

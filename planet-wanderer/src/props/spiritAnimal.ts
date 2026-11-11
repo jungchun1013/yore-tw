@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { LoopSubdivision } from 'three-subdivide';
-import { SPIRIT_DAY, SPIRIT_NIGHT, antlerMaterial, constellation, spiritMaterial, type SpiritTint } from '../render/spirit';
+import { SPIRIT_DAY, SPIRIT_NIGHT, antlerMaterial, constellation, spiritMaterial, type SpiritStreak, type SpiritTint } from '../render/spirit';
 import { dirAt } from '../world/planet';
 import { blob, mesh, param, type PropModule } from './kit';
 
@@ -348,7 +348,8 @@ function smooth(geo: THREE.BufferGeometry, skinned: boolean, subdivide: boolean,
  */
 export const spirit: PropModule = {
   build({ planet, rand }, p) {
-    const spec = MODELS[param(p, 'model', 'stag')] ?? MODELS.stag;
+    const modelName = param<string>(p, 'model', 'stag');
+    const spec = MODELS[modelName] ?? MODELS.stag;
     const variant = param<string>(p, 'variant', 'day');
     const tint: SpiritTint = variant === 'night' ? SPIRIT_NIGHT : SPIRIT_DAY;
     const scale = param(p, 'scale', 1);
@@ -460,7 +461,28 @@ export const spirit: PropModule = {
           prepass.castShadow = prepass.receiveShadow = false;
           if ((prepass as THREE.SkinnedMesh).isSkinnedMesh) (prepass as THREE.SkinnedMesh).bind((m as THREE.SkinnedMesh).skeleton, (m as THREE.SkinnedMesh).bindMatrix);
           m.parent!.add(prepass);
-          m.material = spiritMaterial(tint, skinned, s);
+          // The rabbit carries one brush stroke of the antler gradient on its chest / front-leg flank.
+          const posA = (m as THREE.Mesh).geometry.getAttribute('position') as THREE.BufferAttribute;
+          const bb = new THREE.Box3().setFromBufferAttribute(posA);
+          let streak: SpiritStreak | undefined;
+          if (modelName === 'rabbit') {
+            // Head end = the higher end of the long axis (ears); run the axis nose→tail.
+            let topLo = -Infinity, topHi = -Infinity;
+            for (let i = 0; i < posA.count; i++) {
+              const t = (posA.getZ(i) - bb.min.z) / Math.max(1e-6, bb.max.z - bb.min.z);
+              if (t < 0.25) topLo = Math.max(topLo, posA.getY(i));
+              if (t > 0.75) topHi = Math.max(topHi, posA.getY(i));
+            }
+            const noseAtMin = topLo > topHi;
+            streak = {
+              from: 0x8fe9f6, to: 0xffd27a,
+              axis: new THREE.Vector3(0, 0, noseAtMin ? 1 : -1),
+              at: 0.22, width: 0.17,
+              min: noseAtMin ? bb.min.z : -bb.max.z, max: noseAtMin ? bb.max.z : -bb.min.z,
+              upMin: bb.min.y, upMax: bb.max.y, halfWidth: Math.max(Math.abs(bb.min.x), Math.abs(bb.max.x)),
+            };
+          }
+          m.material = spiritMaterial(tint, skinned, s, streak);
           (m.material as THREE.ShaderMaterial).depthWrite = false;
           (m.material as THREE.ShaderMaterial).depthFunc = THREE.LessEqualDepth;
           m.renderOrder = 2;

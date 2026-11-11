@@ -119,6 +119,10 @@ const hud = new Hud(document.getElementById('hud')!, {
     resize();
   },
   setOutline: (o) => (pipe.outline = o),
+  cycleDetails: () => {
+    shared.uSurfaceDetails.value = (shared.uSurfaceDetails.value + 1) % 3;
+    return shared.uSurfaceDetails.value;
+  },
   cycleEdges: () => {
     shared.uDither.value = (shared.uDither.value + 1) % 3;
     return shared.uDither.value;
@@ -147,6 +151,7 @@ let frames = 0;
 let portraitView = false;
 let inspectName: string | null = null;
 let inspectOrbit: [number, number, number] | null = null;
+let inspectTarget: [number, number, number] | null = null;
 
 function screenOf(p: THREE.Vector3) {
   tmp.copy(p).project(camera);
@@ -178,12 +183,13 @@ function frame() {
   const inspected = inspectName ? scene.getObjectByName(inspectName) : null;
   if (inspected) {
     const framing = inspected.userData.inspection as { target: number[]; camera: number[] } | undefined;
-    const target = inspected.localToWorld(new THREE.Vector3().fromArray(framing?.target ?? [0.35, 1.05, 0]));
+    const localTarget = new THREE.Vector3().fromArray(inspectTarget ?? framing?.target ?? [0.35, 1.05, 0]);
+    const target = inspected.localToWorld(localTarget.clone());
     if (inspectOrbit) {
       // Review orbit: azimuth/elevation (deg) around the target in the object's frame.
       const [az, el, dist] = inspectOrbit;
       const a = THREE.MathUtils.degToRad(az), e = THREE.MathUtils.degToRad(el);
-      const local = new THREE.Vector3().fromArray(framing?.target ?? [0.35, 1.05, 0]).add(new THREE.Vector3(Math.sin(a) * Math.cos(e) * dist, Math.sin(e) * dist, Math.cos(a) * Math.cos(e) * dist));
+      const local = localTarget.clone().add(new THREE.Vector3(Math.sin(a) * Math.cos(e) * dist, Math.sin(e) * dist, Math.cos(a) * Math.cos(e) * dist));
       camera.position.copy(inspected.localToWorld(local));
     } else camera.position.copy(inspected.localToWorld(new THREE.Vector3().fromArray(framing?.camera ?? [3.4, 2.8, 5.4])));
     camera.up.copy(inspected.getWorldPosition(new THREE.Vector3())).normalize();
@@ -258,13 +264,37 @@ declare global {
       portrait: (on: boolean) => void;
       inspect: (name: string | null) => void;
       inspectOrbit: (o: [number, number, number] | null) => void;
+      inspectTarget: (p: [number, number, number] | null) => void;
+      px: (size: number) => void;
+      quant: (levels: number) => void;
+      grassDither: (mode: number) => void;
+      bounds: (name: string) => number[] | null;
+      surfaceDetails: (mode: number) => void;
     };
   }
 }
 window.__pw = {
+  surfaceDetails: (mode) => { shared.uSurfaceDetails.value = mode; },
+  px: (size) => { pipe.pxSize = size; resize(); },
+  quant: (levels) => { pipe.quant = levels; },
+  grassDither: (mode) => { shared.uGrassDither.value = mode; },
+  bounds: (name) => {
+    const o = scene.getObjectByName(name);
+    if (!o) return null;
+    let out: number[] | null = null;
+    o.traverse((c) => {
+      const m = c as THREE.Mesh;
+      if (!out && m.isMesh && m.geometry && m.geometry.getAttribute('position')) {
+        const bb = new THREE.Box3().setFromBufferAttribute(m.geometry.getAttribute('position') as THREE.BufferAttribute);
+        out = [bb.min.x, bb.min.y, bb.min.z, bb.max.x, bb.max.y, bb.max.z];
+      }
+    });
+    return out;
+  },
   portrait: (on) => { portraitView = on; },
   inspect: (name) => { inspectName = name; },
   inspectOrbit: (o) => { inspectOrbit = o; },
+  inspectTarget: (p) => { inspectTarget = p; },
   frames: () => frames,
   zoom: (z) => {
     rig.zoomGoal = rig.zoom = z;

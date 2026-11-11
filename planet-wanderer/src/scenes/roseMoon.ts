@@ -30,7 +30,7 @@ export const roseMoon: SceneDef = {
     { type: 'sprout', at: [10, 200] },
     { type: 'wisp', at: [-4, -2] },
   ],
-  groundCover: { tufts: 330, flowers: 90 },
+  groundCover: { tufts: 0, flowers: 90 },
   spawn: { at: [-2, 14], heading: 180 },
   arrival: { at: [-2, 14], heading: 180 },
   exits: [{ prop: 'ship', to: 'meadow', label: { zh: '搭太空艇回 初始草原星', en: 'Fly back to Meadow Star' } }],

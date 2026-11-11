@@ -24,6 +24,10 @@ export const meadow: SceneDef = {
   },
   props: [
     { type: 'cabin', at: [19, 2], yaw: 215 },
+    // Two ridge tents after the user's pixel-art references (cream + flowers, olive + leaves).
+    { type: 'pyramidTent', at: [7, -94], yaw: 180 },
+    { type: 'campfire', at: [-5, -81], yaw: 180 },
+    { type: 'ridgeTent', at: [-17, -99], yaw: 160, params: { variant: 'leaf' } },
     // Compact landscape crown and the Little Prince baobab: separate study lots.
     { type: 'gardenTree', at: [12, -58], yaw: 180, params: { scale: 1, seed: 47 } },
     { type: 'gardenTree', at: [17, -72], yaw: 225, params: { scale: 0.74, seed: 63 } },
@@ -45,7 +49,7 @@ export const meadow: SceneDef = {
     { type: 'tree', at: [-28, -118], yaw: -118, params: { scale: 0.8 } },
     { type: 'tree', at: [-55, 200], yaw: 200, params: { scale: 0.95 } },
     { type: 'tree', at: [60, -60], yaw: -60, params: { scale: 0.85 } },
-    { type: 'pond', at: [-6, -30], params: { radius: 1.5, depth: 0.42 } },
+    { type: 'pond', at: [-6, -30], params: { radius: 1.5, depth: 0.72 } },
     { type: 'ruin', at: [-13, 25], params: { radius: 2.2 } },
     { type: 'stele', at: [-13, 25], yaw: 160, params: { flat: false, bare: true } },
     { type: 'marker', at: [0, 0], params: { path: 0, t: 0.38, side: 1 } },
@@ -56,7 +60,7 @@ export const meadow: SceneDef = {
     { type: 'rose', at: [9, -7] },
     { type: 'spirit', id: 'stag', at: [-3, -12], yaw: 150, params: { model: 'stag', variant: 'night' } },
     { type: 'spirit', id: 'doe', at: [-24, 60], yaw: 20, params: { model: 'doe', variant: 'day' } },
-    { type: 'spirit', id: 'rabbit', at: [7, -3], yaw: 230, params: { model: 'rabbit', variant: 'day' } },
+    { type: 'spirit', id: 'rabbit', at: [-9, 41], yaw: 250, params: { model: 'rabbit', variant: 'day' } },
     { type: 'volcano', at: [12, 172], params: { active: true } },
     { type: 'volcano', at: [-18, 150] },
     { type: 'sprout', at: [32, 196] },
@@ -68,7 +72,7 @@ export const meadow: SceneDef = {
     { type: 'boulder', at: [5, -150] },
     { type: 'wisp', at: [-13, 25] },
   ],
-  groundCover: { tufts: 900, flowers: 160 },
+  groundCover: { tufts: 0, flowers: 160 },
   spawn: { at: [5, 4], heading: 180 },
   arrival: { at: [8, 36], heading: 180 },
   exits: [{ prop: 'ship', to: 'rose-moon', label: { zh: '搭太空艇前往 玫瑰月', en: 'Fly to the Rose Moon' } }],

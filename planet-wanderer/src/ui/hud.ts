@@ -7,6 +7,7 @@ export interface HudHandlers {
   cyclePixel(): string;
   /** 0 = smooth, 1 = subtle seam mixing, 2 = stronger seam mixing. */
   cycleEdges(): number;
+  cycleDetails(): number;
   interact(): void;
 }
 
@@ -26,7 +27,7 @@ export class Hud {
   private sub: HTMLElement;
   private bannerTimer = 0;
   private style: RenderStyle = 'pixel';
-  private outline: OutlineMode = 'none';
+  private outline: OutlineMode = 'tint';
 
   constructor(el: HTMLElement, private readonly h: HudHandlers) {
     el.innerHTML = `
@@ -35,7 +36,8 @@ export class Hud {
         <button data-act="view">生活視角</button>
         <button data-act="style" class="on"></button>
         <button data-act="outline"></button>
-        <button data-act="px" class="pixel-only">混色格 ×3</button>
+        <button data-act="px" class="pixel-only">混色格 ×1</button>
+        <button data-act="details">紋路 木屋＋遺跡</button>
         <button data-act="dither" class="on pixel-only">交界混色 輕柔</button>
       </div>
       <div class="banner"></div>
@@ -56,6 +58,7 @@ export class Hud {
       if (act === 'view') h.toggleView();
       if (act === 'style') this.setLook(STYLES[(STYLES.indexOf(this.style) + 1) % STYLES.length], this.outline);
       if (act === 'outline') this.setLook(this.style, OUTLINES[(OUTLINES.indexOf(this.outline) + 1) % OUTLINES.length]);
+      if (act === 'details') b.textContent = `紋路 ${['原版', '僅木屋', '木屋＋遺跡'][h.cycleDetails()]}`;
       if (act === 'px') b.textContent = h.cyclePixel();
       if (act === 'dither') b.textContent = `色塊邊 ${['平滑', '輕柔', '濃郁'][h.cycleEdges()]}`;
     });
