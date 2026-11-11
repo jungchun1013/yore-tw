@@ -1,0 +1,12 @@
+{
+  "name": "prism-defense",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite --host 127.0.0.1 --port 5195",
+    "build": "vite build",
+    "test": "playwright test",
+    "balance": "node sim/balance.mjs",
+    "preview": "vite preview --host 127.0.0.1 --port 5196"
+  }
+}

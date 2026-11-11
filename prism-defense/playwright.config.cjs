@@ -1,0 +1,2 @@
+const {defineConfig,devices}=require('@playwright/test');
+module.exports=defineConfig({testDir:'./tests',testMatch:'game.spec.cjs',timeout:60000,workers:1,reporter:'list',use:{baseURL:'http://127.0.0.1:5195'},webServer:{command:'npm run dev',url:'http://127.0.0.1:5195',reuseExistingServer:false},projects:[{name:'desktop',use:{...devices['Desktop Chrome'],viewport:{width:1440,height:1000}}},{name:'mobile',use:{...devices['Pixel 5']}}]});

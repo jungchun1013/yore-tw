@@ -1,0 +1,549 @@
+{
+  "note": "Deterministic simulations using the shipped combat engine. Greedy coverage/DPS placement is a repeatable benchmark, not a claim about human win rate. No research unless indicated. No enemies or money modified.",
+  "cases": [
+    {
+      "map": "ribbon",
+      "difficulty": "calm",
+      "policy": "empty",
+      "state": "lost",
+      "wave": 3,
+      "lives": 0,
+      "leaked": 30,
+      "kills": 0,
+      "towers": 0,
+      "seconds": 96,
+      "composition": {}
+    },
+    {
+      "map": "ribbon",
+      "difficulty": "calm",
+      "policy": "pulse",
+      "state": "won",
+      "wave": 20,
+      "lives": 30,
+      "leaked": 0,
+      "kills": 444,
+      "towers": 24,
+      "seconds": 314,
+      "composition": {
+        "pulse": 24
+      }
+    },
+    {
+      "map": "ribbon",
+      "difficulty": "calm",
+      "policy": "mixed",
+      "state": "won",
+      "wave": 20,
+      "lives": 30,
+      "leaked": 0,
+      "kills": 444,
+      "towers": 35,
+      "seconds": 287,
+      "composition": {
+        "beam": 14,
+        "pulse": 12,
+        "cannon": 8,
+        "chain": 1
+      }
+    },
+    {
+      "map": "ribbon",
+      "difficulty": "normal",
+      "policy": "empty",
+      "state": "lost",
+      "wave": 2,
+      "lives": 0,
+      "leaked": 20,
+      "kills": 0,
+      "towers": 0,
+      "seconds": 60,
+      "composition": {}
+    },
+    {
+      "map": "ribbon",
+      "difficulty": "normal",
+      "policy": "pulse",
+      "state": "won",
+      "wave": 20,
+      "lives": 12,
+      "leaked": 8,
+      "kills": 436,
+      "towers": 26,
+      "seconds": 346,
+      "composition": {
+        "pulse": 26
+      }
+    },
+    {
+      "map": "ribbon",
+      "difficulty": "normal",
+      "policy": "mixed",
+      "state": "won",
+      "wave": 20,
+      "lives": 20,
+      "leaked": 0,
+      "kills": 444,
+      "towers": 35,
+      "seconds": 308,
+      "composition": {
+        "beam": 14,
+        "pulse": 12,
+        "cannon": 8,
+        "chain": 1
+      }
+    },
+    {
+      "map": "ribbon",
+      "difficulty": "hard",
+      "policy": "empty",
+      "state": "lost",
+      "wave": 2,
+      "lives": 0,
+      "leaked": 15,
+      "kills": 0,
+      "towers": 0,
+      "seconds": 51,
+      "composition": {}
+    },
+    {
+      "map": "ribbon",
+      "difficulty": "hard",
+      "policy": "pulse",
+      "state": "lost",
+      "wave": 20,
+      "lives": 0,
+      "leaked": 15,
+      "kills": 416,
+      "towers": 24,
+      "seconds": 422,
+      "composition": {
+        "pulse": 24
+      }
+    },
+    {
+      "map": "ribbon",
+      "difficulty": "hard",
+      "policy": "mixed",
+      "state": "won",
+      "wave": 20,
+      "lives": 2,
+      "leaked": 13,
+      "kills": 435,
+      "towers": 35,
+      "seconds": 382,
+      "composition": {
+        "beam": 14,
+        "cannon": 8,
+        "pulse": 11,
+        "chain": 2
+      }
+    },
+    {
+      "map": "spiral",
+      "difficulty": "calm",
+      "policy": "empty",
+      "state": "lost",
+      "wave": 3,
+      "lives": 0,
+      "leaked": 30,
+      "kills": 0,
+      "towers": 0,
+      "seconds": 158,
+      "composition": {}
+    },
+    {
+      "map": "spiral",
+      "difficulty": "calm",
+      "policy": "pulse",
+      "state": "won",
+      "wave": 20,
+      "lives": 30,
+      "leaked": 0,
+      "kills": 444,
+      "towers": 26,
+      "seconds": 430,
+      "composition": {
+        "pulse": 26
+      }
+    },
+    {
+      "map": "spiral",
+      "difficulty": "calm",
+      "policy": "mixed",
+      "state": "won",
+      "wave": 20,
+      "lives": 30,
+      "leaked": 0,
+      "kills": 444,
+      "towers": 36,
+      "seconds": 356,
+      "composition": {
+        "beam": 16,
+        "pulse": 10,
+        "cannon": 9,
+        "chain": 1
+      }
+    },
+    {
+      "map": "spiral",
+      "difficulty": "normal",
+      "policy": "empty",
+      "state": "lost",
+      "wave": 2,
+      "lives": 0,
+      "leaked": 20,
+      "kills": 0,
+      "towers": 0,
+      "seconds": 96,
+      "composition": {}
+    },
+    {
+      "map": "spiral",
+      "difficulty": "normal",
+      "policy": "pulse",
+      "state": "won",
+      "wave": 20,
+      "lives": 20,
+      "leaked": 0,
+      "kills": 444,
+      "towers": 26,
+      "seconds": 465,
+      "composition": {
+        "pulse": 26
+      }
+    },
+    {
+      "map": "spiral",
+      "difficulty": "normal",
+      "policy": "mixed",
+      "state": "won",
+      "wave": 20,
+      "lives": 20,
+      "leaked": 0,
+      "kills": 444,
+      "towers": 35,
+      "seconds": 388,
+      "composition": {
+        "beam": 17,
+        "pulse": 9,
+        "cannon": 8,
+        "chain": 1
+      }
+    },
+    {
+      "map": "spiral",
+      "difficulty": "hard",
+      "policy": "empty",
+      "state": "lost",
+      "wave": 2,
+      "lives": 0,
+      "leaked": 15,
+      "kills": 0,
+      "towers": 0,
+      "seconds": 82,
+      "composition": {}
+    },
+    {
+      "map": "spiral",
+      "difficulty": "hard",
+      "policy": "pulse",
+      "state": "lost",
+      "wave": 20,
+      "lives": 0,
+      "leaked": 15,
+      "kills": 433,
+      "towers": 26,
+      "seconds": 756,
+      "composition": {
+        "pulse": 26
+      }
+    },
+    {
+      "map": "spiral",
+      "difficulty": "hard",
+      "policy": "mixed",
+      "state": "won",
+      "wave": 20,
+      "lives": 15,
+      "leaked": 0,
+      "kills": 444,
+      "towers": 35,
+      "seconds": 617,
+      "composition": {
+        "beam": 16,
+        "cannon": 8,
+        "pulse": 10,
+        "chain": 1
+      }
+    },
+    {
+      "map": "switch",
+      "difficulty": "calm",
+      "policy": "empty",
+      "state": "lost",
+      "wave": 3,
+      "lives": 0,
+      "leaked": 30,
+      "kills": 0,
+      "towers": 0,
+      "seconds": 88,
+      "composition": {}
+    },
+    {
+      "map": "switch",
+      "difficulty": "calm",
+      "policy": "pulse",
+      "state": "won",
+      "wave": 20,
+      "lives": 30,
+      "leaked": 0,
+      "kills": 444,
+      "towers": 21,
+      "seconds": 290,
+      "composition": {
+        "pulse": 21
+      }
+    },
+    {
+      "map": "switch",
+      "difficulty": "calm",
+      "policy": "mixed",
+      "state": "won",
+      "wave": 20,
+      "lives": 30,
+      "leaked": 0,
+      "kills": 444,
+      "towers": 42,
+      "seconds": 319,
+      "composition": {
+        "beam": 16,
+        "pulse": 14,
+        "cannon": 9,
+        "chain": 3
+      }
+    },
+    {
+      "map": "switch",
+      "difficulty": "normal",
+      "policy": "empty",
+      "state": "lost",
+      "wave": 2,
+      "lives": 0,
+      "leaked": 20,
+      "kills": 0,
+      "towers": 0,
+      "seconds": 55,
+      "composition": {}
+    },
+    {
+      "map": "switch",
+      "difficulty": "normal",
+      "policy": "pulse",
+      "state": "won",
+      "wave": 20,
+      "lives": 11,
+      "leaked": 9,
+      "kills": 435,
+      "towers": 22,
+      "seconds": 322,
+      "composition": {
+        "pulse": 22
+      }
+    },
+    {
+      "map": "switch",
+      "difficulty": "normal",
+      "policy": "mixed",
+      "state": "won",
+      "wave": 20,
+      "lives": 20,
+      "leaked": 0,
+      "kills": 444,
+      "towers": 45,
+      "seconds": 344,
+      "composition": {
+        "beam": 19,
+        "pulse": 14,
+        "cannon": 8,
+        "chain": 4
+      }
+    },
+    {
+      "map": "switch",
+      "difficulty": "hard",
+      "policy": "empty",
+      "state": "lost",
+      "wave": 2,
+      "lives": 0,
+      "leaked": 15,
+      "kills": 0,
+      "towers": 0,
+      "seconds": 46,
+      "composition": {}
+    },
+    {
+      "map": "switch",
+      "difficulty": "hard",
+      "policy": "pulse",
+      "state": "lost",
+      "wave": 16,
+      "lives": 0,
+      "leaked": 15,
+      "kills": 296,
+      "towers": 22,
+      "seconds": 317,
+      "composition": {
+        "pulse": 22
+      }
+    },
+    {
+      "map": "switch",
+      "difficulty": "hard",
+      "policy": "mixed",
+      "state": "won",
+      "wave": 20,
+      "lives": 1,
+      "leaked": 14,
+      "kills": 434,
+      "towers": 45,
+      "seconds": 389,
+      "composition": {
+        "beam": 19,
+        "pulse": 14,
+        "cannon": 9,
+        "chain": 3
+      }
+    },
+    {
+      "map": "ribbon",
+      "difficulty": "hard",
+      "policy": "mixed",
+      "state": "won",
+      "wave": 20,
+      "lives": 15,
+      "leaked": 0,
+      "kills": 444,
+      "towers": 18,
+      "seconds": 284,
+      "composition": {
+        "beam": 9,
+        "cannon": 3,
+        "pulse": 6
+      },
+      "research": "all"
+    },
+    {
+      "map": "spiral",
+      "difficulty": "hard",
+      "policy": "mixed",
+      "state": "won",
+      "wave": 20,
+      "lives": 15,
+      "leaked": 0,
+      "kills": 444,
+      "towers": 19,
+      "seconds": 358,
+      "composition": {
+        "beam": 10,
+        "pulse": 5,
+        "cannon": 4
+      },
+      "research": "all"
+    },
+    {
+      "map": "switch",
+      "difficulty": "hard",
+      "policy": "mixed",
+      "state": "won",
+      "wave": 20,
+      "lives": 15,
+      "leaked": 0,
+      "kills": 444,
+      "towers": 27,
+      "seconds": 313,
+      "composition": {
+        "beam": 9,
+        "pulse": 12,
+        "cannon": 5,
+        "chain": 1
+      },
+      "research": "all"
+    },
+    {
+      "map": "ribbon",
+      "difficulty": "normal",
+      "policy": "cannon",
+      "state": "won",
+      "wave": 20,
+      "lives": 20,
+      "leaked": 0,
+      "kills": 444,
+      "towers": 22,
+      "seconds": 291,
+      "composition": {
+        "cannon": 22
+      }
+    },
+    {
+      "map": "ribbon",
+      "difficulty": "normal",
+      "policy": "frost",
+      "state": "lost",
+      "wave": 7,
+      "lives": 0,
+      "leaked": 20,
+      "kills": 80,
+      "towers": 5,
+      "seconds": 267,
+      "composition": {
+        "frost": 5
+      }
+    },
+    {
+      "map": "ribbon",
+      "difficulty": "normal",
+      "policy": "beam",
+      "state": "won",
+      "wave": 20,
+      "lives": 20,
+      "leaked": 0,
+      "kills": 444,
+      "towers": 16,
+      "seconds": 313,
+      "composition": {
+        "beam": 16
+      }
+    },
+    {
+      "map": "ribbon",
+      "difficulty": "normal",
+      "policy": "chain",
+      "state": "won",
+      "wave": 20,
+      "lives": 20,
+      "leaked": 0,
+      "kills": 444,
+      "towers": 23,
+      "seconds": 334,
+      "composition": {
+        "chain": 23
+      }
+    },
+    {
+      "map": "ribbon",
+      "difficulty": "normal",
+      "policy": "bloom",
+      "state": "won",
+      "wave": 20,
+      "lives": 15,
+      "leaked": 5,
+      "kills": 443,
+      "towers": 16,
+      "seconds": 360,
+      "composition": {
+        "bloom": 16
+      }
+    }
+  ]
+}
