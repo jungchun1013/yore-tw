@@ -12,8 +12,8 @@
     "typecheck": "npm run typecheck --workspaces",
     "test": "npm test --workspaces",
     "build": "npm run build --workspaces",
-    "site": "npm run build && rm -rf dist-site && cp -r site dist-site && cp -r meowcaron/dist dist-site/meowcaron && cp -r souls-in-abyss/dist dist-site/souls-in-abyss && cp -r planet-wanderer/dist dist-site/planet-wanderer",
-    "serve:site": "python3 -m http.server 4100 --directory dist-site"
+    "site": "npm run build && node site/build.cjs",
+    "serve:site": "node site/serve.cjs"
   },
   "devDependencies": {
     "@playwright/test": "1.44.1",
