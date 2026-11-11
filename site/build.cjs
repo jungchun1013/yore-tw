@@ -143,8 +143,12 @@ fs.writeFileSync(
 );
 
 // Cloudflare assets _redirects: the root and the old unprefixed page URLs go to the Chinese tree
-const redirects = ['/ /zh/ 302'];
-for (const rel of [...pages].sort()) if (rel !== 'index.html') redirects.push(`${pageUrl('/' + rel, 'zh').replace(/^\/zh/, '')} ${pageUrl('/' + rel, 'zh')} 301`);
+const redirects = ['/ /zh/ 302', '/index.html /zh/ 301'];
+for (const rel of [...pages].sort()) {
+  if (rel === 'index.html') continue;
+  const to = pageUrl('/' + rel, 'zh');
+  redirects.push(`${to.replace(/^\/zh/, '')} ${to} 301`, `/${rel} ${to} 301`);
+}
 fs.writeFileSync(path.join(OUT, '_redirects'), redirects.join('\n') + '\n');
 
 if (!process.env.SITE_ONLY) {
