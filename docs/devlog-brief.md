@@ -14,7 +14,7 @@
 
 `npm run site` 跑 `site/build.cjs`，對 `site/` 底下每個 html：
 
-- 產出中文版在 `/devlog/...`，英文版在 `/en/devlog/...`。同一個原始檔寫中英兩份，用 `lang="zh"` 和 `lang="en"` 標在元素上，建置時各留一種。
+- 產出中文版在 `/zh/devlog/...`，英文版在 `/en/devlog/...`。同一個原始檔寫中英兩份，用 `lang="zh"` 和 `lang="en"` 標在元素上，建置時各留一種。
 - 自動加 canonical、hreflang、og:url，把 `.html` 連結改成無副檔名。
 - 自動加進 sitemap.xml，lastmod 取該檔最後一次 commit 的日期。
 

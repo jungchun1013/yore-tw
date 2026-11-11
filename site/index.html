@@ -110,7 +110,7 @@
   <script>
   (function () {
     var stage = document.getElementById('pet'), img = document.getElementById('pet-img'), count = document.getElementById('pet-count');
-    var frames = { open: './assets/pet-open.png', blink: './assets/pet-blink.png', happy: './assets/pet-happy.png', laugh: './assets/pet-laugh.png' };
+    var frames = { open: '/assets/pet-open.png', blink: '/assets/pet-blink.png', happy: '/assets/pet-happy.png', laugh: '/assets/pet-laugh.png' };
     var HEART = '<svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M13 22h-2v-2h2v2Zm-2-2H9v-2h2v2Zm4 0h-2v-2h2v2Zm-6-2H7v-2h2v2Zm8 0h-2v-2h2v2ZM7 16H5v-2h2v2Zm12 0h-2v-2h2v2ZM5 14H3v-2h2v2Zm16 0h-2v-2h2v2ZM3 12H1V6h2v6Zm20 0h-2V6h2v6ZM13 8h-2V6h2v2ZM5 6H3V4h2v2Zm6 0H9V4h2v2Zm4 0h-2V4h2v2Zm6 0h-2V4h2v2ZM9 4H5V2h4v2Zm10 0h-4V2h4v2Z"/></svg>', STAR = '<svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24"><path d="M5 20H8V22H3V16H5V20ZM21 22H16V20H19V16H21V22ZM10 20H8V18H10V20ZM16 20H14V18H16V20ZM14 18H10V16H14V18ZM7 16H5V13H7V16ZM19 16H17V13H19V16ZM5 13H3V11H5V13ZM21 13H19V11H21V13ZM9 9H3V11H1V7H9V9ZM23 11H21V9H15V7H23V11ZM11 7H9V3H11V7ZM15 7H13V3H15V7ZM13 3H11V1H13V3Z"/></svg>';
     var pats = 0; try { pats = Number(localStorage.getItem('yore.pats') || 0); } catch (e) {}
     var busy = 0, ac = null;

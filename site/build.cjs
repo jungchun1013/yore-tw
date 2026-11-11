@@ -1,7 +1,8 @@
-// Builds dist-site/ from site/: a Traditional Chinese tree at / and an English tree at /en/,
+// Builds dist-site/ from site/: a Traditional Chinese tree at /zh/ and an English tree at /en/,
 // generated from the same bilingual sources (elements carrying lang="zh" / lang="en").
 // Adds canonical + hreflang links, rewrites links to extensionless same-language URLs,
-// writes sitemap.xml, then copies the three game builds in. SITE_ONLY=1 skips the games.
+// writes sitemap.xml and _redirects (/ and the old unprefixed URLs go to /zh/), then copies
+// the three game builds in. SITE_ONLY=1 skips the games.
 const fs = require('fs');
 const path = require('path');
 const cp = require('child_process');
@@ -12,7 +13,7 @@ const OUT = path.join(ROOT, 'dist-site');
 const HOST = 'https://yore-tw.com';
 const GAMES = ['meowcaron', 'souls-in-abyss', 'planet-wanderer'];
 const LANGS = {
-  zh: { html: 'zh-TW', hreflang: 'zh-Hant', prefix: '', locale: 'zh_TW', label: '中文' },
+  zh: { html: 'zh-TW', hreflang: 'zh-Hant', prefix: '/zh', locale: 'zh_TW', label: '中文' },
   en: { html: 'en', hreflang: 'en', prefix: '/en', locale: 'en_US', label: 'EN' },
 };
 const VOID = new Set(['meta', 'link', 'img', 'br', 'hr', 'input', 'source']);
@@ -140,6 +141,11 @@ fs.writeFileSync(
   path.join(OUT, 'sitemap.xml'),
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls.join('\n')}\n</urlset>\n`,
 );
+
+// Cloudflare assets _redirects: the root and the old unprefixed page URLs go to the Chinese tree
+const redirects = ['/ /zh/ 302'];
+for (const rel of [...pages].sort()) if (rel !== 'index.html') redirects.push(`${pageUrl('/' + rel, 'zh').replace(/^\/zh/, '')} ${pageUrl('/' + rel, 'zh')} 301`);
+fs.writeFileSync(path.join(OUT, '_redirects'), redirects.join('\n') + '\n');
 
 if (!process.env.SITE_ONLY) {
   for (const g of GAMES) {

@@ -17,7 +17,7 @@ npm install                 # once; installs both workspaces into the root node_
 npm run typecheck           # both games
 npm test                    # both games' Playwright suites (npx playwright install chromium once)
 npm run build               # both games → <game>/dist
-npm run site                # build the games, then site/build.cjs assembles dist-site/: zh pages at /, en pages at /en/, sitemap, game builds
+npm run site                # build the games, then site/build.cjs assembles dist-site/: zh pages at /zh/, en pages at /en/, / redirects to /zh/, sitemap, game builds
 npm run serve:site          # preview dist-site/ on http://localhost:4100
 ```
 

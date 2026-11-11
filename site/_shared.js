@@ -1,4 +1,4 @@
-// language: every page exists twice, Traditional Chinese at / and English at /en/ (built by build.cjs).
+// language: every page exists twice, Traditional Chinese at /zh/ and English at /en/ (built by build.cjs).
 // The header toggle is a plain link to the other tree; a click is remembered, and a remembered
 // choice redirects the other tree's pages. Nothing is sniffed from the browser, so crawlers see the real page.
 (function () {
