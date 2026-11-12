@@ -1,7 +1,7 @@
 // Builds dist-site/ from site/: a Traditional Chinese tree at /zh/ and an English tree at /en/,
 // generated from the same bilingual sources (elements carrying lang="zh" / lang="en").
 // Adds canonical + hreflang links, rewrites links to extensionless same-language URLs,
-// writes sitemap.xml and _redirects (/ and the old unprefixed URLs go to /zh/), then copies
+// writes sitemap.xml and _redirects (/ goes to /en/, the old unprefixed URLs to /zh/), then copies
 // the three game builds in. SITE_ONLY=1 skips the games.
 const fs = require('fs');
 const path = require('path');
@@ -97,7 +97,7 @@ function render(src, rel, lang) {
     `<link rel="canonical" href="${here}" />`,
     `<link rel="alternate" hreflang="${LANGS.zh.hreflang}" href="${HOST + pageUrl('/' + rel, 'zh')}" />`,
     `<link rel="alternate" hreflang="${LANGS.en.hreflang}" href="${HOST + pageUrl('/' + rel, 'en')}" />`,
-    `<link rel="alternate" hreflang="x-default" href="${HOST + pageUrl('/' + rel, 'zh')}" />`,
+    `<link rel="alternate" hreflang="x-default" href="${HOST + pageUrl('/' + rel, 'en')}" />`,
     `<meta property="og:url" content="${here}" />`,
     `<meta property="og:locale" content="${L.locale}" />`,
   ].map((l) => '  ' + l).join('\n');
@@ -134,7 +134,7 @@ for (const rel of [...pages].sort()) {
   const lastmod = gitDate(path.join('site', rel));
   const alts = ['zh', 'en']
     .map((l) => `    <xhtml:link rel="alternate" hreflang="${LANGS[l].hreflang}" href="${HOST + pageUrl('/' + rel, l)}" />`)
-    .concat(`    <xhtml:link rel="alternate" hreflang="x-default" href="${HOST + pageUrl('/' + rel, 'zh')}" />`)
+    .concat(`    <xhtml:link rel="alternate" hreflang="x-default" href="${HOST + pageUrl('/' + rel, 'en')}" />`)
     .join('\n');
   for (const l of ['zh', 'en']) {
     urls.push(`  <url>\n    <loc>${HOST + pageUrl('/' + rel, l)}</loc>\n    <lastmod>${lastmod}</lastmod>\n${alts}\n  </url>`);
@@ -146,8 +146,8 @@ fs.writeFileSync(
   `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">\n${urls.join('\n')}\n</urlset>\n`,
 );
 
-// Cloudflare assets _redirects: the root and the old unprefixed page URLs go to the Chinese tree
-const redirects = ['/ /zh/ 302', '/index.html /zh/ 301'];
+// Cloudflare assets _redirects: the root goes to English (the default language); the old unprefixed page URLs keep their Chinese content
+const redirects = ['/ /en/ 302', '/index.html /en/ 301'];
 for (const rel of [...pages].sort()) {
   if (rel === 'index.html') continue;
   const to = pageUrl('/' + rel, 'zh');
