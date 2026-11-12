@@ -1,0 +1,31 @@
+{
+  "method": "Direct nearest-neighbour editing of original pixels; no generated repaint.",
+  "source": "art-reference/previous-towers.png",
+  "source_sha256": "72fedcb37591fffb426e9a4bc9ef0b970be1c0ae20d096818c32d9af72dec840",
+  "atlas": "towers-original-trim-l2-r1.png",
+  "cell": 1,
+  "source_cell_px": 512,
+  "display_cell_px": 64,
+  "inset_display_px_per_side": {
+    "left": 2,
+    "right": 1
+  },
+  "max_inset_source_px_per_side": {
+    "left": 16,
+    "right": 8
+  },
+  "changed_source_pixels": 15364,
+  "affected_rows": [
+    270,
+    411
+  ],
+  "verification": {
+    "other_five_source_sprites_identical": true,
+    "upper_components_and_feet_identical": true,
+    "protected_ammunition_bucket_identical": true,
+    "barrel_mount_identical": true,
+    "original_sprig_identical": true,
+    "all_changes_inside_two_contour_bands": true,
+    "central_body_pixels_identical": true
+  }
+}

@@ -1,11 +1,11 @@
 export const COLS=18,ROWS=12,CELL=32;
 export const TOWERS={
- pulse:{name:'脈衝',shape:'diamond',cost:35,range:102,damage:12,rate:.5,color:'#93eedc',desc:'快速單體射擊。便宜可靠，適合轉角。'},
- cannon:{name:'星爆',shape:'square',cost:65,range:124,damage:35,rate:1.65,splash:46,color:'#f5b8c9',desc:'爆炸範圍傷害。聚集的敵人越多越有效。'},
- frost:{name:'霜環',shape:'hex',cost:50,range:94,damage:6,rate:.9,slow:.48,color:'#a9c5ff',desc:'減速 48%，持續 1.5 秒。同類減速不疊加。'},
- beam:{name:'穿光',shape:'triangle',cost:80,range:150,damage:52,rate:1.35,pierce:true,color:'#edd58e',desc:'長射程、無視護甲。處理重裝與首領。'},
- chain:{name:'連鎖',shape:'bolt',cost:75,range:105,damage:23,rate:1.05,chain:3,color:'#cbb0ff',desc:'向附近三個目標跳電，後續傷害衰減。'},
- bloom:{name:'光暈',shape:'cross',cost:85,range:78,damage:17,rate:1.1,aura:true,color:'#e7efad',desc:'同時打擊範圍內所有敵人。適合密集迴彎。'}
+ pulse:{name:'脈衝',shape:'diamond',cost:35,range:102,damage:12,rate:.5,color:'#6b9f9d',desc:'快速單體射擊。便宜可靠，適合轉角。'},
+ cannon:{name:'星爆',shape:'square',cost:65,range:124,damage:35,rate:1.65,splash:46,color:'#cc8a72',desc:'爆炸範圍傷害。聚集的敵人越多越有效。'},
+ frost:{name:'霜環',shape:'hex',cost:50,range:94,damage:6,rate:.9,slow:.48,color:'#6eaebf',desc:'減速 48%，持續 1.5 秒。同類減速不疊加。'},
+ beam:{name:'穿光',shape:'triangle',cost:80,range:150,damage:52,rate:1.35,pierce:true,color:'#b28d51',desc:'長射程、無視護甲。處理重裝與首領。'},
+ chain:{name:'連鎖',shape:'bolt',cost:75,range:105,damage:23,rate:1.05,chain:3,color:'#9690c5',desc:'向附近三個目標跳電，後續傷害衰減。'},
+ bloom:{name:'光暈',shape:'cross',cost:85,range:78,damage:17,rate:1.1,aura:true,color:'#93ad7a',desc:'同時打擊範圍內所有敵人。適合密集迴彎。'}
 };
 export const RESEARCH=[
  ['power','聚焦',1,[], 'power','傷害 +8%'],['tempo','共振',2,['power'],'power','攻速 +8%'],['pierce','破甲',2,['tempo'],'power','一般攻擊忽略 20% 護甲'],['critical','星芒',3,['pierce'],'power','每五次攻擊，傷害加倍'],['overdrive','超頻',4,['critical'],'power','全塔傷害再 +18%'],

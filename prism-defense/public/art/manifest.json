@@ -1,0 +1,59 @@
+{
+  "active": {
+    "terrain": "garden.png",
+    "defense": "towers-pixel-v2.png",
+    "enemies": "enemies-original-local-v10.png",
+    "defense_overrides": {
+      "cannon": {
+        "atlas": "towers-original-trim-l2-r1.png",
+        "cell": 1,
+        "edit_metadata": "cannon-trim.json"
+      },
+      "chain": {
+        "atlas": "towers-mixed-v4.png",
+        "cell": 4
+      }
+    },
+    "objective_crystal": {
+      "atlas": "enemies-original-local-v10.png",
+      "cell": 5
+    },
+    "enemy_recipe": "enemies-original-local-v10.recipe.json",
+    "research_tree": "research-tree-v4.png",
+    "research_icons": {
+      "atlas": "research-icons-flat-v3.png",
+      "columns": 5,
+      "rows": 3,
+      "order": [
+        "power",
+        "tempo",
+        "pierce",
+        "critical",
+        "overdrive",
+        "reach",
+        "cold",
+        "blast",
+        "jump",
+        "spectrum",
+        "fund",
+        "bounty",
+        "build",
+        "repair",
+        "interest"
+      ]
+    }
+  },
+  "direction": {
+    "defense": "Original v2 artwork for pulse, frost, beam and bloom. Chain retains the selected new slender-base structure in the old style. Cannon is edited directly from the original artwork: marked left belly contour inset by 2px and right by 1px at 64px UI size (16 and 8 source pixels respectively). Original bucket, star, barrel, centre motifs and feet preserved.",
+    "enemies": "Left column restored pixel-for-pixel to the FIRST CLOUDED version (v4). Fast and armor retain the unedited first-version sprites; fast is a ground unit, so its feet/leaves remain. Boss is the first clouded sprite with original cloudy blue head crystals and unchanged body outside a small chest inlay copied from the sprout recess. The copied core is blue and its stone cavity matches the lilac body. The resource is one thick irregular pink multifaceted chunk. Chest inlay enlarged from 66x54 to 80x66 source pixels, with its original centre (191,221) preserved; all five other atlas cells remain pixel-identical to the published v9.",
+    "research": "Ivory-white luminous functional tree, three main boughs with five skill tips each. Tower artwork is the primary material/style reference. Background deepened to desaturated slate, sage and smoky lilac to emphasize the glowing white branches. Flat pixel skill icons use a shared stepped hexagonal backplate and remain independent from the background; selection opens details and upgrading is explicit. See RESEARCH-ART.md and retained image_gen prompts. Skill button means the hexagonal backplate plus icon. All unlearned plates use moss #7c8c63; learned plates use pale yellow #eadb95. Selection changes glow only. Icons use per-object alpha bounds in src/research-icon-bounds.json for centering and a brightness 1.24/saturation 1.12 UI filter. Entire buttons sit outward/upward from their branch tips. Title: 技能樹."
+  },
+  "generation": "Existing tower sources and their documented edits are retained. Final enemy atlas is assembled by scripts/compose_enemy_atlas.py from the specified original/clouded source pixels, with assertions proving four creatures and the boss body outside the inlay are unchanged. Only the independently requested pink resource design uses built-in image_gen (art-reference/enemies-gem-edits-v8.prompt.json, cell 5). See enemies-original-local-v10.recipe.json.",
+  "view": {
+    "projection": "isometric",
+    "diamond_ratio": "2:1",
+    "implementation": "src/projection.mjs",
+    "terrain": "Raised grass tiles textured from the existing meadow; projected road, range, particles and actor positions."
+  },
+  "setting": "The creatures raid crystals. Their crystals contain internal dark cloudy inclusions; retain the original muted pixel-art style."
+}

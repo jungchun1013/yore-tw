@@ -6,7 +6,8 @@
   "workspaces": [
     "meowcaron",
     "souls-in-abyss",
-    "planet-wanderer"
+    "planet-wanderer",
+    "prism-defense"
   ],
   "scripts": {
     "typecheck": "npm run typecheck --workspaces",

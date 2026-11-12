@@ -1,0 +1,43 @@
+{
+  "method": "Direct source-pixel composition. No whole-creature regeneration.",
+  "sources": {
+    "art-reference/previous-enemies.png": "cfc8ba4e254ea78c61834b48468b244c8353a222fa09095475993e610dd36410",
+    "art-reference/enemies-clouded-v4.png": "9c47f51acc2f7660472ac590c778f7e52b968c3aed60ec18448801882b1a2311",
+    "art-reference/enemies-gem-edits-v8.png": "3b593faa9e3d4a30370b8dea5e80da018399a7d7822cc0bd293d943714fe5d5c"
+  },
+  "atlas": "enemies-original-local-v9.png",
+  "grid": [
+    3,
+    2
+  ],
+  "cell_px": 512,
+  "socket_source_cell": 3,
+  "socket_source_box": [
+    199,
+    247,
+    289,
+    322
+  ],
+  "socket_target_in_boss_cell": {
+    "position": [
+      158,
+      194
+    ],
+    "size": [
+      66,
+      54
+    ]
+  },
+  "socket_material": "Existing sprout recess shading; lilac stone wall with a muted blue inner core, no added raised bezel.",
+  "changed_boss_pixels": 2394,
+  "verification": {
+    "top_left_clouded_restored": true,
+    "bottom_left_clouded_restored": true,
+    "fast_original_restored": true,
+    "armor_original_restored": true,
+    "boss_body_unchanged_outside_inlay": true,
+    "three_cloudy_blue_head_crystals_unchanged": true,
+    "pink_resource_exact_selected_design": true
+  },
+  "fast_enemy": "Ground path follower. No flying mechanic; original feet/leaves retained."
+}
