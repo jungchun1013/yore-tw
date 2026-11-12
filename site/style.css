@@ -2,7 +2,7 @@
    Blues from the Planet Wanderer sky (#5F86B4 steel, #858EC2 periwinkle); background is that blue at very low saturation;
    buttons and card shadows use the Souls in Abyss greens (#82947B, #53695E); darks and greys from the same set. */
 :root {
-  --bg: #EDF0F4; --card: #FFFFFF; --line: #DDE3EA; --ink: #343842; --muted: #667681;
+  --bg: #EDF3FA; --card: #FFFFFF; --line: #DDE3EA; --ink: #343842; --muted: #667681;
   --blue: #5F86B4; --peri: #858EC2; --green: #82947B; --green-ink: #53695E; --green-soft: #C9D2C4;
   --accent: var(--blue); --accent-ink: #4A6A92; --shadow: 0 3px 0 var(--green-soft);
   font-family: "Nunito", "Avenir Next", "Segoe UI", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
@@ -30,7 +30,7 @@ nav a { margin-left: 16px; text-decoration: none; font-weight: 800; }
 .hero p { font-size: 19px; color: var(--muted); margin: 0 0 18px; }
 .hero img { width: 100%; border-radius: 18px; box-shadow: 0 10px 30px rgba(95,134,180,0.18); image-rendering: pixelated; }
 .btn { display: inline-block; background: var(--green); color: #F4F2EB; font-weight: 900; text-decoration: none; padding: 14px 24px; border-radius: 999px; font-size: 18px; box-shadow: 0 3px 0 var(--green-ink); }
-.btn.ghost { background: var(--card); color: var(--green-ink); box-shadow: var(--shadow); }
+.btn.ghost { background: var(--card); color: var(--accent-ink); box-shadow: 0 3px 0 #C9D6E4; }
 h2.section { font-size: 24px; margin: 36px 0 14px; }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
 .card { background: var(--card); border-radius: 18px; overflow: hidden; box-shadow: var(--shadow); display: flex; flex-direction: column; }
