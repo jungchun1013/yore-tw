@@ -1,8 +1,8 @@
 /* yore-tw.com — small game studio entry site.
-   Accent is the Planet Wanderer sky blue (#5F86B4, text #4A6A92); background is a soft goose yellow (#FAF3D2);
+   Accent is the Planet Wanderer sky blue (#5F86B4, text #4A6A92); background is a warm off-white (#FBF7EF);
    buttons and card shadows use the Souls in Abyss greens (#82947B, #53695E); darks and greys from the same set. */
 :root {
-  --bg: #FAF3D2; --card: #FFFFFF; --line: #E8E0BF; --ink: #343842; --muted: #667681;
+  --bg: #FBF7EF; --card: #FFFFFF; --line: #E9E3D6; --ink: #343842; --muted: #667681;
   --blue: #5F86B4; --blue-soft: #C9D6E4; --green: #82947B; --green-ink: #53695E; --green-soft: #C9D2C4;
   --accent: var(--blue); --accent-ink: #4A6A92; --shadow: 0 3px 0 var(--green-soft);
   font-family: "Nunito", "Avenir Next", "Segoe UI", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
@@ -49,7 +49,7 @@ h2.section { font-size: 24px; margin: 36px 0 14px; }
 article.doc { background: var(--card); border-radius: 18px; padding: 24px 28px; margin: 12px 0 40px; box-shadow: var(--shadow); }
 article.doc h1 { font-size: 30px; margin: 0 0 6px; } article.doc h2 { font-size: 20px; margin: 22px 0 6px; }
 article.doc .muted { color: var(--muted); }
-footer { border-top: 2px solid #E8E0BF; margin-top: 40px; padding: 22px 0 40px; color: var(--muted); font-size: 15px; display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; justify-content: space-between; }
+footer { border-top: 2px solid #E9E3D6; margin-top: 40px; padding: 22px 0 40px; color: var(--muted); font-size: 15px; display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; justify-content: space-between; }
 footer a { color: var(--muted); font-weight: 800; }
 @media (max-width: 760px) { .hero { grid-template-columns: 1fr; } .hero h1 { font-size: 32px; } nav a { margin-left: 10px; } body { font-size: 16px; } }
 .ad-slot { display: none; } .ad-slot.on { display: block; margin: 28px auto 0; max-width: 728px; min-height: 0; }
