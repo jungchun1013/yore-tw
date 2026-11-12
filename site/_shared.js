@@ -1,5 +1,5 @@
 // language: every page exists twice, Traditional Chinese at /zh/ and English at /en/ (built by build.cjs).
-// The header toggle is a plain link to the other tree; a click is remembered, and a remembered
+// The header globe opens a menu with both languages; a choice is remembered, and a remembered
 // choice redirects the other tree's pages. Nothing is sniffed from the browser, so crawlers see the real page.
 (function () {
   var page = (document.documentElement.lang || '').indexOf('zh') === 0 ? 'zh' : 'en';
@@ -10,11 +10,19 @@
     if (alt) { location.replace(alt.getAttribute('href').replace(/^https?:\/\/[^/]+/, '') + location.hash); return; }
   }
   document.addEventListener('DOMContentLoaded', function () {
-    var a = document.getElementById('lang');
-    if (!a) return;
-    a.addEventListener('click', function () {
-      try { localStorage.setItem('yore.lang', page === 'zh' ? 'en' : 'zh'); } catch (e) {}
-    });
+    var box = document.getElementById('lang');
+    if (!box) return;
+    var btn = box.querySelector('.lang-btn');
+    var setOpen = function (on) { box.classList.toggle('open', on); btn.setAttribute('aria-expanded', on ? 'true' : 'false'); };
+    btn.addEventListener('click', function (e) { e.stopPropagation(); setOpen(!box.classList.contains('open')); });
+    document.addEventListener('click', function () { setOpen(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
+    var links = box.querySelectorAll('.lang-menu a');
+    for (var i = 0; i < links.length; i++) {
+      links[i].addEventListener('click', function () {
+        try { localStorage.setItem('yore.lang', this.getAttribute('data-lang')); } catch (e) {}
+      });
+    }
   });
 })();
 

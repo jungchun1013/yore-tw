@@ -13,9 +13,11 @@ const OUT = path.join(ROOT, 'dist-site');
 const HOST = 'https://yore-tw.com';
 const GAMES = ['meowcaron', 'souls-in-abyss', 'planet-wanderer', 'prism-defense'];
 const LANGS = {
-  zh: { html: 'zh-TW', hreflang: 'zh-Hant', prefix: '/zh', locale: 'zh_TW', label: '中文' },
-  en: { html: 'en', hreflang: 'en', prefix: '/en', locale: 'en_US', label: 'EN' },
+  zh: { html: 'zh-TW', hreflang: 'zh-Hant', prefix: '/zh', locale: 'zh_TW', name: '中文', menuLabel: '語言' },
+  en: { html: 'en', hreflang: 'en', prefix: '/en', locale: 'en_US', name: 'English', menuLabel: 'Language' },
 };
+const GLOBE = '<svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" viewBox="0 0 24 24"><path d="m22,9v-2h-1v-2h-1v-1h-1v-1h-2v-1h-2v-1h-6v1h-2v1h-2v1h-1v1h-1v2h-1v2h-1v7h1v1h1v2h1v1h1v1h2v1h2v1h6v-1h2v-1h2v-1h1v-1h1v-2h1v-2h1v-6h-1Zm-1,1v4h-3v-4h3Zm-5-6h1v1h2v2h1v1h-3v-3h-1v-1Zm-2,14v2h-1v1h-2v-1h-1v-2h-1v-2h6v2h-1Zm2-8v4h-8v-4h8Zm-7-4h1v-2h1v-1h2v1h1v2h1v2h-6v-2Zm-5,1h1v-2h2v-1h1v1h-1v3h-3v-1Zm-1,7v-4h3v4h-3Zm2,5v-2h-1v-1h3v3h1v1h-1v-1h-2Zm14-2v2h-2v1h-1v-1h1v-3h3v1h-1Z"/></svg>';
+const CHEV = '<svg class="ic chev" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 24 24"><path d="M7 8H5v2h2v2h2v2h2v2h2v-2h2v-2h2v-2h2V8h-2v2h-2v2h-2v2h-2v-2H9v-2H7V8z"/></svg>';
 const VOID = new Set(['meta', 'link', 'img', 'br', 'hr', 'input', 'source']);
 const SKIP = new Set(['build.cjs', 'serve.cjs', 'sitemap.xml']);
 
@@ -100,9 +102,11 @@ function render(src, rel, lang) {
     `<meta property="og:locale" content="${L.locale}" />`,
   ].map((l) => '  ' + l).join('\n');
   html = html.replace(/(<\/title>)/, `$1\n${head}`);
+  // language menu: a globe button (HackerNoon pixel icon library, MIT) opening both languages; the current one is marked
+  const item = (l) => `<li><a href="${pageUrl('/' + rel, l)}" hreflang="${LANGS[l].hreflang}" data-lang="${l}"${l === lang ? ' aria-current="page"' : ' rel="alternate"'}>${LANGS[l].name}</a></li>`;
   html = html.replace(
     /<button id="lang"[^>]*>[^<]*<\/button>/,
-    `<a id="lang" class="lang-btn" href="${there}" hreflang="${O.hreflang}" rel="alternate">${O.label}</a>`,
+    `<div class="lang" id="lang"><button class="lang-btn" type="button" aria-haspopup="true" aria-expanded="false" aria-label="${L.menuLabel}">${GLOBE}${CHEV}</button><ul class="lang-menu">${item('zh')}${item('en')}</ul></div>`,
   );
   return html;
 }
