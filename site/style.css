@@ -1,10 +1,10 @@
 /* yore-tw.com — small game studio entry site.
-   Accent is the Planet Wanderer sky blue (#5F86B4, text #4A6A92); background is a warm off-white (#FBF7EF);
+   Accent is the Planet Wanderer sky blue (#5F86B4, text #507299); background is a warm off-white (#FBF7EF);
    primary buttons are the blue too; card shadows use the Souls in Abyss greens (#C9D2C4 on #53695E ink); darks and greys from the same set. */
 :root {
   --bg: #FBF7EF; --card: #FFFFFF; --line: #E9E3D6; --ink: #343842; --muted: #667681;
-  --blue: #5F86B4; --blue-soft: #C9D6E4; --green: #82947B; --green-ink: #53695E; --green-soft: #C9D2C4;
-  --accent: var(--blue); --accent-ink: #4A6A92; --shadow: 0 3px 0 var(--green-soft);
+  --blue: #638EBF; --blue-soft: #C9D6E4; --green: #82947B; --green-ink: #53695E; --green-soft: #C9D2C4;
+  --accent: var(--blue); --accent-ink: #507299; --shadow: 0 3px 0 var(--green-soft);
   font-family: "Nunito", "Avenir Next", "Segoe UI", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
@@ -28,7 +28,7 @@ nav a { margin-left: 16px; text-decoration: none; font-weight: 800; }
 .hero { display: grid; grid-template-columns: 1.1fr 1fr; gap: 28px; align-items: center; padding: 24px 0 36px; }
 .hero h1 { font-size: 40px; line-height: 1.15; margin: 0 0 12px; }
 .hero p { font-size: 19px; color: var(--muted); margin: 0 0 18px; }
-.hero img { width: 100%; border-radius: 18px; box-shadow: 0 10px 30px rgba(95,134,180,0.18); image-rendering: pixelated; }
+.hero img { width: 100%; border-radius: 18px; box-shadow: 0 10px 30px rgba(99,142,191,0.18); image-rendering: pixelated; }
 .btn { display: inline-block; background: var(--blue); color: #F6F8FB; font-weight: 900; text-decoration: none; padding: 14px 24px; border-radius: 999px; font-size: 18px; box-shadow: 0 3px 0 var(--accent-ink); }
 .btn.ghost { background: var(--card); color: var(--accent-ink); box-shadow: 0 3px 0 var(--blue-soft); }
 h2.section { font-size: 24px; margin: 36px 0 14px; }
@@ -40,7 +40,7 @@ h2.section { font-size: 24px; margin: 36px 0 14px; }
 .card p { margin: 0; color: var(--muted); }
 .card .tags { display: flex; gap: 6px; flex-wrap: wrap; }
 .tag { font-size: 13px; font-weight: 800; padding: 2px 10px; border-radius: 999px; background: #DDE6D8; color: #53695E; }
-.tag.pink { background: #EEDCD6; color: #855C59; } .tag.sky { background: #D7E3EE; color: #4A6A92; } .tag.lemon { background: #EBE3CF; color: #725E53; } .tag.lavender { background: #E2DCE8; color: #625575; }
+.tag.pink { background: #EEDCD6; color: #855C59; } .tag.sky { background: #D7E3EE; color: #507299; } .tag.lemon { background: #EBE3CF; color: #725E53; } .tag.lavender { background: #E2DCE8; color: #625575; }
 .card.soon { opacity: 0.75; }
 .card.soon .cover { aspect-ratio: 16 / 10; background: repeating-linear-gradient(45deg, #D7E3EE 0 12px, #E6EDF4 12px 24px); display: grid; place-items: center; font-weight: 900; color: var(--accent-ink); font-size: 20px; }
 .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
@@ -70,7 +70,7 @@ svg.ic { width: 20px; height: 20px; flex: none; shape-rendering: crispEdges; ver
 .crumbs a { color: var(--muted); font-weight: 800; text-decoration: none; }
 .game-head h1 { font-size: 36px; margin: 0 0 6px; line-height: 1.2; }
 .game-head p.lede { font-size: 19px; margin: 0 0 18px; color: var(--muted); }
-.play-cover { position: relative; display: block; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(95,134,180,0.18); }
+.play-cover { position: relative; display: block; border-radius: 18px; overflow: hidden; box-shadow: 0 10px 30px rgba(99,142,191,0.18); }
 .play-cover img { display: block; width: 100%; aspect-ratio: 16 / 10; object-fit: cover; image-rendering: pixelated; }
 .play-cover .btn { position: absolute; left: 50%; bottom: 22px; transform: translateX(-50%); white-space: nowrap; }
 .game-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 24px; align-items: start; margin-top: 22px; }
