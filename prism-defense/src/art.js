@@ -18,8 +18,30 @@ function object(c, key, index, x, y, size) {
   const im = images[key];
   if (!ready(im)) return;
   const cell = im.naturalWidth / 3;
+  // Anchor by the sprite's own footprint: its horizontal centre on the cell centre and its base
+  // straddling it (bottom edge a little below), so bases sit on the tile instead of above it.
+  const bb = footprint(im, key, index, cell);
   c.drawImage(im, index % 3 * cell, Math.floor(index / 3) * cell, cell, cell,
-    Math.round(x - size / 2), Math.round(y - size * .9), size, size);
+    Math.round(x - bb.cx * size), Math.round(y + size * .09 - bb.bottom * size), size, size);
+}
+const footprints = new Map();
+function footprint(im, key, index, cell) {
+  const id = key + ':' + index;
+  if (footprints.has(id)) return footprints.get(id);
+  let out = { cx: .5, bottom: .9 };
+  try {
+    const cv = document.createElement('canvas'); cv.width = cv.height = cell;
+    const g = cv.getContext('2d', { willReadFrequently: true });
+    g.drawImage(im, index % 3 * cell, Math.floor(index / 3) * cell, cell, cell, 0, 0, cell, cell);
+    const d = g.getImageData(0, 0, cell, cell).data;
+    let left = cell, right = -1, bottom = -1;
+    for (let yy = 0; yy < cell; yy++) for (let xx = 0; xx < cell; xx++) {
+      if (d[(yy * cell + xx) * 4 + 3] > 40) { if (xx < left) left = xx; if (xx > right) right = xx; bottom = yy; }
+    }
+    if (right >= 0) out = { cx: (left + right + 1) / 2 / cell, bottom: (bottom + 1) / cell };
+  } catch (e) { /* tainted or unavailable: keep the default anchor */ }
+  footprints.set(id, out);
+  return out;
 }
 function fill(c, x, y, w, h, color) {
   c.fillStyle = color; c.fillRect(Math.round(x), Math.round(y), w, h);
@@ -107,7 +129,7 @@ function terrain(game) {
 
 export function drawScene(c, game, selected, hover, buildType, flashes, particles, time) {
   c.imageSmoothingEnabled = false;
-  fill(c, 0, 0, VIEW.width, VIEW.height, '#f5f0e6');
+  fill(c, 0, 0, VIEW.width, VIEW.height, '#2b2e33');
   c.drawImage(terrain(game), 0, 0);
   c.save();
   polygon(c, [project(0, 0), project(COLS * CELL, 0), project(COLS * CELL, ROWS * CELL), project(0, ROWS * CELL)]);
@@ -138,15 +160,15 @@ export function drawScene(c, game, selected, hover, buildType, flashes, particle
   actors.sort((a, b) => a.y - b.y || a.x - b.x);
   for (const a of actors) {
     if (a.ghost) {
-      c.save(); c.globalAlpha = .5; object(c, 'towers', indexes[buildType], a.x, a.y, 43); c.restore();
+      c.save(); c.globalAlpha = .5; object(c, 'towers', indexes[buildType], a.x, a.y, 35); c.restore();
     } else if (a.t) {
       const t = a.t;
-      shadow(c, a.x, a.y, 43); gemLight(c, a.x, a.y, TOWERS[t.type].color);
-      object(c, 'towers', indexes[t.type], a.x, a.y, 43); gemSpark(c, a.x, a.y, t, time);
-      if (selected === t) polygon(c, [{ x: a.x - 3, y: a.y - 43 }, { x: a.x + 3, y: a.y - 43 }, { x: a.x, y: a.y - 39 }], '#72866a');
+      shadow(c, a.x, a.y, 35); gemLight(c, a.x, a.y, TOWERS[t.type].color);
+      object(c, 'towers', indexes[t.type], a.x, a.y, 35); gemSpark(c, a.x, a.y, t, time);
+      if (selected === t) polygon(c, [{ x: a.x - 3, y: a.y - 35 }, { x: a.x + 3, y: a.y - 35 }, { x: a.x, y: a.y - 31 }], '#72866a');
       for (let i = 0; i < t.level; i++) fill(c, a.x - 5 + i * 3, a.y + 4, 2, 1, '#a28b5d');
     } else {
-      const e = a.e, size = e.kind === 'boss' ? 43 : e.kind === 'swarm' ? 21 : 29;
+      const e = a.e, size = e.kind === 'boss' ? 39 : e.kind === 'swarm' ? 19 : 26;
       shadow(c, a.x, a.y, size);
       c.save(); c.translate(a.x, a.y + Math.round(Math.sin(time * 8 + e.id)));
       const breath = Math.sin(game.time * 4 + e.id) * (e.kind === 'boss' ? .025 : .045);
@@ -155,7 +177,7 @@ export function drawScene(c, game, selected, hover, buildType, flashes, particle
         fill(c, a.x - 6, a.y + 1, 2, 2, '#87bbbf'); fill(c, a.x + 4, a.y, 2, 2, '#87bbbf');
       }
       if (e.hp < e.maxHp) {
-        fill(c, a.x - 8, a.y - size * .83, 16, 2, '#eee6d7');
+        fill(c, a.x - 8, a.y - size * .83, 16, 2, '#3a3d44');
         fill(c, a.x - 8, a.y - size * .83, 16 * Math.max(0, e.hp / e.maxHp), 2, e.kind === 'boss' ? '#9690c5' : '#6b9f9d');
       }
     }

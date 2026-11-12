@@ -46,7 +46,7 @@ test('warm frameless artwork renders all six objects and the research tree',asyn
   const atlas=await page.locator('.tower-grid .object-'+type).evaluate(e=>getComputedStyle(e).backgroundImage);
   expect(atlas).toContain(type==='cannon'?'towers-original-trim-l2-r1.png':type==='chain'?'towers-mixed-v4.png':'towers-pixel-v2.png');
  }
- expect(await page.locator('body').evaluate(e=>getComputedStyle(e).backgroundColor)).toBe('rgb(245, 240, 230)');
+ expect(await page.locator('body').evaluate(e=>getComputedStyle(e).backgroundColor)).toBe('rgb(43, 46, 51)');
  for(const selector of ['.board-wrap','.panel','.tower-button','button'])expect(await page.locator(selector).evaluateAll(nodes=>nodes.every(n=>getComputedStyle(n).borderTopWidth==='0px'))).toBe(true);
  await page.evaluate(async()=>{const{plan}=await(new Function('return import("/sim/balance.mjs")'))();const g=window.__prism.game;let n=0;while(g.wave<7||g.state==='running'){if(++n>100000)throw Error('scenario failed');if(g.state==='planning'){plan(g);g.startWave();}g.tick(.05);g.effects.length=0;}for(const t of [...g.towers])g.sell(t);for(const[type,x,y]of[['pulse',4,2],['cannon',6,6],['frost',4,7],['beam',9,7],['chain',10,5],['bloom',8,9]]){if(!g.build(type,x,y))throw Error('Cannot build review object '+type);}g.startWave();for(let i=0;i<220;i++){g.tick(.05);g.effects.length=0;}});
  await clickCell(page.locator('#board'),4,2);
