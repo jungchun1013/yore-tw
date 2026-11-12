@@ -1,6 +1,6 @@
 /* yore-tw.com — small game studio entry site.
    Accent is the Planet Wanderer sky blue (#5F86B4, text #4A6A92); background is a warm off-white (#FBF7EF);
-   buttons and card shadows use the Souls in Abyss greens (#82947B, #53695E); darks and greys from the same set. */
+   primary buttons are the blue too; card shadows use the Souls in Abyss greens (#C9D2C4 on #53695E ink); darks and greys from the same set. */
 :root {
   --bg: #FBF7EF; --card: #FFFFFF; --line: #E9E3D6; --ink: #343842; --muted: #667681;
   --blue: #5F86B4; --blue-soft: #C9D6E4; --green: #82947B; --green-ink: #53695E; --green-soft: #C9D2C4;
@@ -29,7 +29,7 @@ nav a { margin-left: 16px; text-decoration: none; font-weight: 800; }
 .hero h1 { font-size: 40px; line-height: 1.15; margin: 0 0 12px; }
 .hero p { font-size: 19px; color: var(--muted); margin: 0 0 18px; }
 .hero img { width: 100%; border-radius: 18px; box-shadow: 0 10px 30px rgba(95,134,180,0.18); image-rendering: pixelated; }
-.btn { display: inline-block; background: var(--green); color: #F4F2EB; font-weight: 900; text-decoration: none; padding: 14px 24px; border-radius: 999px; font-size: 18px; box-shadow: 0 3px 0 var(--green-ink); }
+.btn { display: inline-block; background: var(--blue); color: #F6F8FB; font-weight: 900; text-decoration: none; padding: 14px 24px; border-radius: 999px; font-size: 18px; box-shadow: 0 3px 0 var(--accent-ink); }
 .btn.ghost { background: var(--card); color: var(--accent-ink); box-shadow: 0 3px 0 var(--blue-soft); }
 h2.section { font-size: 24px; margin: 36px 0 14px; }
 .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
