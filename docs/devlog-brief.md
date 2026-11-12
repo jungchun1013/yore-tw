@@ -2,6 +2,10 @@
 
 給 Joan 和 Codex 用。這份只整理「放在哪裡、長什麼樣、有哪些事實可寫」。文章本身由 Joan 用 Codex 寫。
 
+## 目前的做法（2026-11-13）
+
+每日日誌由 `docs/devlog-gen.py` 的 POSTS 清單產生，跑 `python3 -X utf8 docs/devlog-gen.py` 會重寫 `site/devlog/`。新的一天就在 POSTS 加一筆（日期、中英標題、各專案的中英句子）。白描，短句，不加情緒。長篇文章仍可用下面的模板另外寫。
+
 ## 放在哪裡
 
 - 每篇一個檔案：`site/devlog/YYYY-MM-DD-slug.html`，例如 `site/devlog/2026-11-12-site-launch.html`。
