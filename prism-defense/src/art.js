@@ -12,7 +12,7 @@ const ready = im => im.complete && im.naturalWidth > 0;
 export const artReady = () => Object.values(images).every(ready);
 const indexes = { pulse: 0, cannon: 1, frost: 2, beam: 3, chain: 4, bloom: 5, normal: 0, fast: 1, armor: 2, swarm: 3, boss: 4 };
 
-function object(c, key, index, x, y, size) {
+function object(c, key, index, x, y, size, drop = .09) {
   if (key === 'towers' && index === 1) key = 'cannon';
   else if (key === 'towers' && index === 4) key = 'towerEdits';
   const im = images[key];
@@ -22,7 +22,7 @@ function object(c, key, index, x, y, size) {
   // straddling it (bottom edge a little below), so bases sit on the tile instead of above it.
   const bb = footprint(im, key, index, cell);
   c.drawImage(im, index % 3 * cell, Math.floor(index / 3) * cell, cell, cell,
-    Math.round(x - bb.cx * size), Math.round(y + size * .09 - bb.bottom * size), size, size);
+    Math.round(x - bb.cx * size), Math.round(y + size * drop - bb.bottom * size), size, size);
 }
 const footprints = new Map();
 function footprint(im, key, index, cell) {
@@ -160,11 +160,11 @@ export function drawScene(c, game, selected, hover, buildType, flashes, particle
   actors.sort((a, b) => a.y - b.y || a.x - b.x);
   for (const a of actors) {
     if (a.ghost) {
-      c.save(); c.globalAlpha = .5; object(c, 'towers', indexes[buildType], a.x, a.y, 35); c.restore();
+      c.save(); c.globalAlpha = .5; object(c, 'towers', indexes[buildType], a.x, a.y, 35, .17); c.restore();
     } else if (a.t) {
       const t = a.t;
       shadow(c, a.x, a.y, 35); gemLight(c, a.x, a.y, TOWERS[t.type].color);
-      object(c, 'towers', indexes[t.type], a.x, a.y, 35); gemSpark(c, a.x, a.y, t, time);
+      object(c, 'towers', indexes[t.type], a.x, a.y, 35, .17); gemSpark(c, a.x, a.y, t, time);
       if (selected === t) polygon(c, [{ x: a.x - 3, y: a.y - 35 }, { x: a.x + 3, y: a.y - 35 }, { x: a.x, y: a.y - 31 }], '#72866a');
       for (let i = 0; i < t.level; i++) fill(c, a.x - 5 + i * 3, a.y + 4, 2, 1, '#a28b5d');
     } else {
