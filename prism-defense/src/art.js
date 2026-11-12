@@ -1,8 +1,9 @@
-import { TOWERS, CELL, COLS, ROWS, position } from './engine.mjs';
+import { TOWERS, CELL, COLS, ROWS, position, goalCourt } from './engine.mjs';
 import { VIEW, project, cellCenter, groundRadius } from './projection.mjs';
+import { GEM_MASKS, GEM_LIGHTS } from './boss-lighting.mjs';
 
 const images = {};
-const sources = { garden: 'garden', towers: 'towers-pixel-v2', towerEdits: 'towers-mixed-v4', cannon: 'towers-original-trim-l2-r1', enemies: 'enemies-original-local-v10' };
+const sources = { garden: 'garden', towers: 'towers-pixel-v2', towerEdits: 'towers-mixed-v4', cannon: 'towers-original-trim-l2-r1', enemies: 'enemies-original-local-v10', goal: 'goal-kiki-atlas-v1' };
 for (const [key, file] of Object.entries(sources)) {
   const im = new Image();
   im.src = import.meta.env.BASE_URL + 'art/' + file + '.png';
@@ -11,25 +12,26 @@ for (const [key, file] of Object.entries(sources)) {
 const ready = im => im.complete && im.naturalWidth > 0;
 export const artReady = () => Object.values(images).every(ready);
 const indexes = { pulse: 0, cannon: 1, frost: 2, beam: 3, chain: 4, bloom: 5, normal: 0, fast: 1, armor: 2, swarm: 3, boss: 4 };
+const goalElevation = VIEW.depth / 4;
 
-function object(c, key, index, x, y, size, drop = .09) {
+const nightColor = '#171c2a', warmLight = '#fff2cc', nightOpacity = .72, terrainNightOpacity = .6;
+const shadeCache = new Map(), emissionCache = new Map(), haloCache = new Map();
+function sprite(key, index) {
   if (key === 'towers' && index === 1) key = 'cannon';
   else if (key === 'towers' && index === 4) key = 'towerEdits';
   const im = images[key];
-  if (!ready(im)) return;
-  const cell = im.naturalWidth / 3;
-  // Anchor by the sprite's own footprint: its horizontal centre on the cell centre and its base
-  // straddling it (bottom edge a little below), so bases sit on the tile instead of above it.
-  const bb = footprint(im, key, index, cell);
-  c.drawImage(im, index % 3 * cell, Math.floor(index / 3) * cell, cell, cell,
-    Math.round(x - bb.cx * size), Math.round(y + size * drop - bb.bottom * size), size, size);
+  return { key, im, cell: im.naturalWidth / 3 };
 }
-// how far below the tile centre each tower's footprint bottom sits (fraction of sprite size); beam has feet under its ring
+// Sprites are anchored by their own footprint: the horizontal centre of the opaque pixels sits on the
+// cell centre and the bottom edge sits `drop` of the size below it, so bases straddle the tile instead of
+// floating above it. Towers use a deeper drop; beam has feet under its ring, so a little less.
 const TOWER_DROP = { beam: .11 };
+const towerDrop = (kind) => TOWER_DROP[kind] ?? .17;
 const footprints = new Map();
-function footprint(im, key, index, cell) {
-  const id = key + ':' + index;
+function footprint(source, index) {
+  const id = source.key + ':' + index;
   if (footprints.has(id)) return footprints.get(id);
+  const { im, cell } = source;
   let out = { cx: .5, bottom: .9 };
   try {
     const cv = document.createElement('canvas'); cv.width = cv.height = cell;
@@ -41,9 +43,81 @@ function footprint(im, key, index, cell) {
       if (d[(yy * cell + xx) * 4 + 3] > 40) { if (xx < left) left = xx; if (xx > right) right = xx; bottom = yy; }
     }
     if (right >= 0) out = { cx: (left + right + 1) / 2 / cell, bottom: (bottom + 1) / cell };
-  } catch (e) { /* tainted or unavailable: keep the default anchor */ }
+  } catch (e) { /* unavailable: keep the default anchor */ }
   footprints.set(id, out);
   return out;
+}
+function anchor(source, index, x, y, size, drop = .09) {
+  const bb = footprint(source, index);
+  return { dx: Math.round(x - bb.cx * size), dy: Math.round(y + size * drop - bb.bottom * size) };
+}
+function object(c, key, index, x, y, size, night = 0, drop = .09) {
+  const source = sprite(key, index), { im, cell } = source;
+  if (!ready(im)) return;
+  const { dx, dy } = anchor(source, index, x, y, size, drop);
+  c.drawImage(im, index % 3 * cell, Math.floor(index / 3) * cell, cell, cell,
+    dx, dy, size, size);
+  if (!night) return;
+  const cacheKey = source.key + ':' + index;
+  if (!shadeCache.has(cacheKey)) {
+    const cv = document.createElement('canvas'); cv.width = cv.height = cell;
+    const b = cv.getContext('2d');
+    b.drawImage(im, index % 3 * cell, Math.floor(index / 3) * cell, cell, cell, 0, 0, cell, cell);
+    b.globalCompositeOperation = 'source-atop'; b.globalAlpha = nightOpacity; b.fillStyle = nightColor; b.fillRect(0, 0, cell, cell);
+    shadeCache.set(cacheKey, cv);
+  }
+  c.save(); c.globalAlpha *= night; c.drawImage(shadeCache.get(cacheKey), dx, dy, size, size); c.restore();
+}
+function emission(key, index, kind) {
+  const { im, cell } = sprite(key, index);
+  if (!ready(im) || !GEM_MASKS[kind]) return;
+  if (!emissionCache.has(kind)) {
+    const cv = document.createElement('canvas'); cv.width = cv.height = cell;
+    const b = cv.getContext('2d');
+    b.save(); b.beginPath();
+    for (const points of GEM_MASKS[kind]) {
+      points.forEach(([x, y], i) => i ? b.lineTo(x * cell / 512, y * cell / 512) : b.moveTo(x * cell / 512, y * cell / 512)); b.closePath();
+    }
+    b.clip(); b.drawImage(im, index % 3 * cell, Math.floor(index / 3) * cell, cell, cell, 0, 0, cell, cell); b.restore();
+    emissionCache.set(kind, cv);
+  }
+  return emissionCache.get(kind);
+}
+function halo(c, x, y, radius, color, alpha) {
+  // A small raster light texture keeps the stepped pixel edges of the artwork.
+  if (!haloCache.has(color)) {
+    const cv = document.createElement('canvas'); cv.width = cv.height = 24;
+    const b = cv.getContext('2d'), gradient = b.createRadialGradient(12, 12, 0, 12, 12, 12);
+    gradient.addColorStop(0, color + 'b0'); gradient.addColorStop(.3, color + '65'); gradient.addColorStop(1, color + '00');
+    b.fillStyle = gradient; b.fillRect(0, 0, 24, 24); haloCache.set(color, cv);
+  }
+  c.save(); c.globalCompositeOperation = 'screen'; c.globalAlpha *= alpha;
+  c.drawImage(haloCache.get(color), Math.round(x - radius), Math.round(y - radius), radius * 2, radius * 2); c.restore();
+}
+function gemEmission(c, key, index, kind, x, y, size, night, hostile = false, shimmer = 1) {
+  if (!night || !GEM_LIGHTS[kind]) return;
+  const mask = emission(key, index, kind); if (!mask) return;
+  const source = sprite(key, index); if (!ready(source.im)) return;
+  const { dx, dy } = anchor(source, index, x, y, size, key === 'towers' ? towerDrop(kind) : .09);
+  const color = hostile ? '#a08abe' : kind === 'objective' ? '#d99190' : TOWERS[kind].color;
+  for (const [gx, gy, r] of GEM_LIGHTS[kind]) {
+    const px = dx + gx / 512 * size, py = dy + gy / 512 * size;
+    halo(c, px, py, r / 512 * size * 2, color, night * (hostile ? .32 : .85) * shimmer);
+    if (!hostile) halo(c, px, py, r / 512 * size, warmLight, night * .45 * shimmer);
+  }
+  // Restore only gem facets above the dimmed body, retaining their cloudy texture.
+  c.save(); c.globalAlpha = night * (hostile ? .32 : .95);
+  c.drawImage(mask, dx, dy, size, size);
+  c.globalCompositeOperation = 'screen'; c.globalAlpha = night * (hostile ? .13 : .22) * shimmer;
+  c.drawImage(tintedEmission(mask, kind, hostile ? '#9c7fbc' : warmLight), dx, dy, size, size); c.restore();
+}
+const tintCache = new Map();
+function tintedEmission(mask, kind, color) {
+  if (!tintCache.has(kind)) {
+    const cv = document.createElement('canvas'); cv.width = mask.width; cv.height = mask.height;
+    const b = cv.getContext('2d'); b.drawImage(mask, 0, 0); b.globalCompositeOperation = 'source-in'; b.fillStyle = color; b.fillRect(0, 0, cv.width, cv.height); tintCache.set(kind, cv);
+  }
+  return tintCache.get(kind);
 }
 function fill(c, x, y, w, h, color) {
   c.fillStyle = color; c.fillRect(Math.round(x), Math.round(y), w, h);
@@ -125,14 +199,40 @@ function terrain(game) {
     const p = project((x + .3) * CELL, (y + .4) * CELL);
     fill(c, p.x, p.y, 2, 1, '#e4d3b4'); fill(c, p.x + 6, p.y + 3, 2, 1, '#b6a285');
   }
+  // A small stone court leads to a single quarter-block-high endpoint plinth.
+  const [gx, gy] = game.path.at(-1), stones = ['#b1b0ad', '#b9b6b0', '#a8a9a7'];
+  for (const [x, y] of goalCourt(game.path)) {
+    tile(c, x, y, stones[hash(x, y) % stones.length]);
+    c.lineWidth = .6; c.strokeStyle = '#8f93916b'; c.stroke();
+    const p = cellCenter(x, y); fill(c, p.x - 5, p.y - 2, 5, 1, '#cfcbc1'); fill(c, p.x + 4, p.y + 2, 3, 1, '#999f9c');
+  }
+  const base = corners(gx, gy), raised = base.map(p => ({x: p.x, y: p.y - goalElevation}));
+  polygon(c, [base[3], base[2], raised[2], raised[3]], '#898e8e');
+  polygon(c, [base[1], base[2], raised[2], raised[1]], '#777f81');
+  polygon(c, raised, '#c5c2ba'); c.strokeStyle = '#989e9b'; c.lineWidth = .7; c.stroke();
   terrainCache.set(key, cv);
   return cv;
 }
 
-export function drawScene(c, game, selected, hover, buildType, flashes, particles, time) {
+const nightTerrainCache = new Map();
+function nightTerrain(game) {
+  const original = terrain(game);
+  if (!nightTerrainCache.has(original)) {
+    const cv = document.createElement('canvas'); cv.width = original.width; cv.height = original.height;
+    const b = cv.getContext('2d'); b.drawImage(original, 0, 0); b.globalCompositeOperation = 'source-atop';
+    b.globalAlpha = terrainNightOpacity; b.fillStyle = nightColor; b.fillRect(0, 0, cv.width, cv.height); nightTerrainCache.set(original, cv);
+  }
+  return nightTerrainCache.get(original);
+}
+
+export function drawScene(c, game, selected, hover, buildType, flashes, particles, time, lighting = {}) {
+  const night = lighting.strength || 0;
+  const shimmer = lighting.reducedEffects ? 1 : .96 + Math.sin(game.time * 1.6) * .04;
   c.imageSmoothingEnabled = false;
   fill(c, 0, 0, VIEW.width, VIEW.height, '#2b2e33');
+  if (night) { c.save(); c.globalAlpha = night * nightOpacity; fill(c, 0, 0, VIEW.width, VIEW.height, nightColor); c.restore(); }
   c.drawImage(terrain(game), 0, 0);
+  if (night) { c.save(); c.globalAlpha = night; c.drawImage(nightTerrain(game), 0, 0); c.restore(); }
   c.save();
   polygon(c, [project(0, 0), project(COLS * CELL, 0), project(COLS * CELL, ROWS * CELL), project(0, ROWS * CELL)]);
   c.clip();
@@ -152,7 +252,10 @@ export function drawScene(c, game, selected, hover, buildType, flashes, particle
   c.restore();
 
   const end = game.path.at(-1), endPos = cellCenter(...end);
-  object(c, 'enemies', 5, endPos.x, endPos.y, 26);
+  endPos.y -= goalElevation;
+  shadow(c, endPos.x, endPos.y, 36);
+  object(c, 'goal', 1, endPos.x, endPos.y, 36, night);
+  gemEmission(c, 'goal', 1, 'objective', endPos.x, endPos.y, 36, night, false, shimmer);
   const actors = game.towers.map(t => ({ ...cellCenter(t.x, t.y), t }));
   for (const e of game.enemies) {
     const p = position(game.path, e.progress);
@@ -162,11 +265,14 @@ export function drawScene(c, game, selected, hover, buildType, flashes, particle
   actors.sort((a, b) => a.y - b.y || a.x - b.x);
   for (const a of actors) {
     if (a.ghost) {
-      c.save(); c.globalAlpha = .5; object(c, 'towers', indexes[buildType], a.x, a.y, 35, TOWER_DROP[buildType] ?? .17); c.restore();
+      c.save(); c.globalAlpha = .5; object(c, 'towers', indexes[buildType], a.x, a.y, 35, night, towerDrop(buildType)); c.restore();
     } else if (a.t) {
       const t = a.t;
-      shadow(c, a.x, a.y, 35); gemLight(c, a.x, a.y, TOWERS[t.type].color);
-      object(c, 'towers', indexes[t.type], a.x, a.y, 35, TOWER_DROP[t.type] ?? .17); gemSpark(c, a.x, a.y, t, time);
+      shadow(c, a.x, a.y, 35);
+      if (!night) gemLight(c, a.x, a.y, TOWERS[t.type].color);
+      object(c, 'towers', indexes[t.type], a.x, a.y, 35, night, towerDrop(t.type));
+      gemEmission(c, 'towers', indexes[t.type], t.type, a.x, a.y, 35, night, false, shimmer);
+      if (!lighting.reducedEffects) gemSpark(c, a.x, a.y, t, time);
       if (selected === t) polygon(c, [{ x: a.x - 3, y: a.y - 35 }, { x: a.x + 3, y: a.y - 35 }, { x: a.x, y: a.y - 31 }], '#72866a');
       for (let i = 0; i < t.level; i++) fill(c, a.x - 5 + i * 3, a.y + 4, 2, 1, '#a28b5d');
     } else {
@@ -174,7 +280,8 @@ export function drawScene(c, game, selected, hover, buildType, flashes, particle
       shadow(c, a.x, a.y, size);
       c.save(); c.translate(a.x, a.y + Math.round(Math.sin(time * 8 + e.id)));
       const breath = Math.sin(game.time * 4 + e.id) * (e.kind === 'boss' ? .025 : .045);
-      c.scale(1 + breath, 1 - breath); object(c, 'enemies', indexes[e.kind], 0, 0, size); c.restore();
+      c.scale(1 + breath, 1 - breath); object(c, 'enemies', indexes[e.kind], 0, 0, size, night);
+      gemEmission(c, 'enemies', indexes[e.kind], e.kind, 0, 0, size, night, true); c.restore();
       if (e.slowUntil > game.time) {
         fill(c, a.x - 6, a.y + 1, 2, 2, '#87bbbf'); fill(c, a.x + 4, a.y, 2, 2, '#87bbbf');
       }
@@ -185,21 +292,41 @@ export function drawScene(c, game, selected, hover, buildType, flashes, particle
     }
   }
   for (const f of flashes) {
-    c.globalAlpha = Math.max(0, 1 - f.age / f.life); c.strokeStyle = f.color; c.lineWidth = f.kind === 'blast' ? 2 : 1;
-    if (f.kind === 'shot') {
-      const a = project(f.x, f.y), b = project(f.tx, f.ty);
-      c.beginPath(); c.moveTo(Math.round(a.x), Math.round(a.y - 19)); c.lineTo(Math.round(b.x), Math.round(b.y - 6)); c.stroke();
-      fill(c, b.x - 1, b.y - 7, 3, 3, '#fff0ce');
-    } else {
-      groundEllipse(c, f.kind === 'blast' ? f.tx : f.x, f.kind === 'blast' ? f.ty : f.y, f.radius * f.age / f.life); c.stroke();
+    const fade = Math.max(0, 1 - f.age / f.life);
+    if (night) {
+      c.save(); c.globalCompositeOperation = 'screen';
+      for (const [width, alpha, color] of [[7, .12, f.color], [3, .45, f.color], [.8, .9, warmLight]]) {
+        c.globalAlpha = night * fade * alpha; c.strokeStyle = color; c.lineWidth = width; flashPath(c, f); c.stroke();
+      }
+      c.restore();
+    }
+    c.globalAlpha = fade; c.strokeStyle = f.color; c.lineWidth = f.kind === 'blast' ? 2 : 1; flashPath(c, f); c.stroke();
+    if (night) { c.globalAlpha = night * fade * .9; c.strokeStyle = warmLight; c.lineWidth = .65; flashPath(c, f); c.stroke(); }
+    const b = project(f.tx, f.ty);
+    if (f.kind !== 'aura') {
+      if (night) halo(c, b.x, b.y - 6, 9, f.color, night * fade * .6);
+      c.globalAlpha = fade; fill(c, b.x - 1, b.y - 7, 3, 3, '#fff0ce');
     }
   }
   c.globalAlpha = 1;
   for (const p of particles) {
     const q = project(p.x, p.y);
-    c.globalAlpha = Math.max(0, 1 - p.age / p.life); fill(c, q.x, q.y + p.z, p.size, p.size, p.color);
+    c.globalAlpha = Math.max(0, 1 - p.age / p.life) * (1 - night * .75); fill(c, q.x, q.y + p.z, p.size, p.size, p.color);
   }
   c.globalAlpha = 1;
+}
+
+function flashPath(c, f) {
+  if (f.kind === 'shot' || f.kind === 'blast') {
+    const a = project(f.x, f.y), b = project(f.tx, f.ty);
+    const gem = GEM_LIGHTS[f.sourceType]?.[0];
+    const sx = gem ? a.x - 21.5 + gem[0] / 512 * 43 : a.x;
+    const sy = gem ? a.y - 38.7 + gem[1] / 512 * 43 : a.y - 6;
+    c.beginPath(); c.moveTo(Math.round(sx), Math.round(sy)); c.lineTo(Math.round(b.x), Math.round(b.y - 6));
+    if (f.kind !== 'blast') return;
+    c.stroke();
+  }
+  groundEllipse(c, f.kind === 'blast' ? f.tx : f.x, f.kind === 'blast' ? f.ty : f.y, f.radius * f.age / f.life);
 }
 
 function shadow(c, x, y, size) {

@@ -1,6 +1,6 @@
 import { CELL, COLS, ROWS } from './engine.mjs';
 
-export const VIEW = Object.freeze({ width: 576, height: 384, halfWidth: 18, halfHeight: 9, originX: 234, originY: 54, depth: 16 });
+export const VIEW = Object.freeze({ width: 576, height: 384, halfWidth: 15, halfHeight: 7.5, originX: 288, originY: 54, depth: 16 });
 
 // Combat remains on its square grid; drawing and pointer input share this view.
 export function project(x, y, elevation = 0) {
