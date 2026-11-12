@@ -1,8 +1,8 @@
 /* yore-tw.com — small game studio entry site.
-   Accent is the Planet Wanderer sky blue (#5F86B4, text #507299); background is a warm off-white (#FAF3E6, HSV 40/8/98);
+   Accent is the Planet Wanderer sky blue (#5F86B4, text #507299); background is a warm off-white (#FCF8E8, HSV 48/8/99);
    primary buttons are the blue too; card shadows use the Souls in Abyss greens (#C9D2C4 on #53695E ink); darks and greys from the same set. */
 :root {
-  --bg: #FAF3E6; --card: #FFFFFF; --line: #E9E3D6; --ink: #343842; --muted: #667681;
+  --bg: #FCF8E8; --card: #FFFFFF; --line: #E9E3D6; --ink: #343842; --muted: #667681;
   --blue: #638EBF; --blue-soft: #C9D6E4; --green: #82947B; --green-ink: #53695E; --green-soft: #C9D2C4;
   --accent: var(--blue); --accent-ink: #507299; --shadow: 0 3px 0 var(--green-soft);
   font-family: "Nunito", "Avenir Next", "Segoe UI", "PingFang TC", "Microsoft JhengHei", "Noto Sans TC", system-ui, sans-serif;
