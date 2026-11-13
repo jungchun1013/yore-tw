@@ -116,3 +116,7 @@ header.top nav .lang { margin-left: 14px; }
 @media (max-width: 480px) { .log-list li { grid-template-columns: 1fr; gap: 2px; } }
 .proj-links { font-weight: 800; color: var(--muted); } .proj-links a { text-decoration: none; }
 .prose h3 a { text-decoration: none; color: inherit; }
+/* how to play + FAQ on game pages */
+.faq { margin: 0; max-width: 44em; }
+.faq dt { font-weight: 900; margin: 14px 0 2px; }
+.faq dd { margin: 0; color: var(--ink); }
