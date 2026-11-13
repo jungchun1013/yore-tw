@@ -20,123 +20,125 @@
   <meta property="og:description" lang="en" content="A pixel editor in the browser. New canvas, pen, fill, mirror, JSON and PNG import and export, your own palette." />
   <meta property="og:image" content="https://yore-tw.com/assets/pixel-editor-cover.png" />
   <link rel="icon" href="../favicon.svg" type="image/svg+xml" />
-  <link rel="stylesheet" href="../style.css" />
-  <script src="../_shared.js"></script>
+    <script src="../_shared.js"></script>
   <style>
-    .wrap { max-width: 1180px; }
-    .ed { display: grid; grid-template-columns: 220px minmax(0, 1fr) 240px; gap: 14px; align-items: start; margin-top: 8px; }
-    .pane { background: var(--card); border-radius: 14px; box-shadow: var(--shadow); padding: 10px; min-width: 0; }
-    .pane h2 { font-size: 13px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 4px 6px 8px; }
+    /* the original editor layout: a dark three-pane app (sprites · canvas · palette) with a header bar; stacks on phones */
+    :root { --bg: #23242a; --card: #2d2f36; --line: #44464f; --ink: #e6e3da; --muted: #a3a7b3; --accent: #9fb8d8; --accent-ink: #638EBF; --sel: #3a3d46; --soft: #353841; }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: "Nunito", "Avenir Next", "Segoe UI", "PingFang TC", "Noto Sans TC", system-ui, sans-serif; font-size: 15px; }
+    body { display: grid; grid-template-columns: 240px minmax(0, 1fr) 250px; grid-template-rows: 56px 1fr; height: 100%; }
+    header.bar { grid-column: 1 / -1; display: flex; align-items: center; gap: 10px; padding: 0 14px; border-bottom: 2px solid var(--line); background: var(--card); }
+    header.bar .brand { display: flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; font-weight: 900; font-size: 16px; white-space: nowrap; }
+    header.bar .brand img { width: 26px; height: 26px; image-rendering: pixelated; }
+    header.bar b { font-size: 15px; white-space: nowrap; color: var(--muted); font-weight: 800; }
+    header.bar .status { margin-left: auto; color: var(--muted); font-weight: 800; white-space: nowrap; font-size: 13px; }
+    header.bar .lang { margin-left: 8px; }
+    .lang { position: relative; }
+    .lang-btn { display: inline-flex; align-items: center; gap: 2px; border: 2px solid var(--line); background: var(--card); color: var(--ink); border-radius: 999px; padding: 5px 6px 5px 8px; cursor: pointer; font: inherit; }
+    .lang-menu { position: absolute; right: 0; top: calc(100% + 8px); margin: 0; padding: 6px; list-style: none; min-width: 128px; background: var(--card); border: 2px solid var(--line); border-radius: 12px; display: none; z-index: 20; }
+    .lang.open .lang-menu { display: block; } .lang-menu a { display: block; padding: 8px 12px; border-radius: 8px; text-decoration: none; color: var(--ink); font-weight: 800; font-size: 14px; }
+    .lang-menu a:hover, .lang-menu a[aria-current] { background: var(--sel); color: var(--accent); }
+    svg.ic { width: 18px; height: 18px; shape-rendering: crispEdges; vertical-align: -4px; }
+    .lang-btn svg.ic { vertical-align: 0; } .lang-btn svg.ic.chev { width: 16px; height: 16px; }
+    aside { border-right: 2px solid var(--line); overflow: auto; padding: 10px; min-width: 0; } aside.right { border-right: 0; border-left: 2px solid var(--line); }
+    aside h2 { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 6px 4px 8px; font-weight: 800; }
+    main { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
     .tb { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+    main > .tb { padding: 8px 12px; border-bottom: 2px solid var(--line); }
+    main > .tb.bottom { border-bottom: 0; border-top: 2px solid var(--line); }
     .tb .sep { width: 2px; height: 24px; background: var(--line); margin: 0 2px; }
-    .tbtn { display: inline-flex; align-items: center; gap: 6px; border: 0; background: var(--bg); color: var(--ink); padding: 7px 11px; border-radius: 999px; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; box-shadow: 0 2px 0 var(--green-soft); }
-    .tbtn:hover { color: var(--accent-ink); } .tbtn.on { background: var(--accent); color: #F6F8FB; box-shadow: 0 2px 0 var(--accent-ink); }
+    .tbtn { display: inline-flex; align-items: center; gap: 6px; border: 2px solid var(--line); background: var(--card); color: var(--ink); padding: 5px 10px; border-radius: 8px; font: inherit; font-weight: 800; font-size: 14px; cursor: pointer; }
+    .tbtn:hover { border-color: var(--muted); } .tbtn.on { background: var(--sel); border-color: var(--accent); color: var(--accent); }
     .tbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .tbtn svg.ic { width: 18px; height: 18px; vertical-align: 0; margin: 0; }
     .tbtn input { display: none; }
-    .cur { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 999px; background: var(--bg); font-size: 13px; font-weight: 900; color: var(--muted); }
-    .cur i { width: 22px; height: 22px; border-radius: 6px; border: 2px solid #0001; display: inline-block; }
-    .cur i.none { background: repeating-conic-gradient(#E6E2D6 0 25%, #FFFFFF 0 50%) 0 0 / 7px 7px; }
-    .stage { display: grid; place-items: center; padding: 14px 6px; overflow: auto; min-height: 320px; }
-    #grid { image-rendering: pixelated; touch-action: none; cursor: crosshair; border-radius: 6px; background: repeating-conic-gradient(#E6E2D6 0 25%, #FFFFFF 0 50%) 0 0 / 16px 16px; max-width: 100%; }
-    .previews { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; padding: 6px 6px 2px; }
-    .previews canvas { image-rendering: pixelated; background: repeating-conic-gradient(#E6E2D6 0 25%, #FFFFFF 0 50%) 0 0 / 8px 8px; border-radius: 4px; }
+    .tbtn select { border: 0; background: transparent; font: inherit; font-weight: 800; color: inherit; }
+    .cur { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 3px; border-radius: 8px; border: 2px solid var(--line); font-size: 13px; font-weight: 900; color: var(--muted); font-family: ui-monospace, Menlo, monospace; }
+    .cur i { width: 22px; height: 22px; border-radius: 4px; border: 1px solid #0004; display: inline-block; }
+    .cur i.none { background: repeating-conic-gradient(var(--line) 0 25%, var(--card) 0 50%) 0 0 / 8px 8px; }
+    .stage { flex: 1; min-height: 0; display: grid; place-items: center; padding: 12px; overflow: auto; }
+    #grid { image-rendering: pixelated; touch-action: none; cursor: crosshair; border: 2px solid var(--line); background: repeating-conic-gradient(var(--sel) 0 25%, var(--card) 0 50%) 0 0 / 16px 16px; max-width: 100%; }
+    .previews { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; padding: 8px 12px; border-top: 2px solid var(--line); }
+    .previews canvas { image-rendering: pixelated; background: repeating-conic-gradient(var(--line) 0 25%, var(--card) 0 50%) 0 0 / 8px 8px; border: 1px solid var(--line); }
     .previews .lbl { display: flex; flex-direction: column; gap: 4px; align-items: center; font-size: 11px; color: var(--muted); font-weight: 800; }
+    .previews .name { margin-left: auto; display: flex; align-items: center; gap: 8px; }
+    .previews input[type=text] { width: 180px; border: 2px solid var(--line); background: var(--bg); border-radius: 8px; padding: 6px 8px; font: inherit; font-weight: 800; color: var(--ink); font-family: ui-monospace, Menlo, monospace; font-size: 13px; }
     .dims { font-size: 13px; color: var(--muted); font-weight: 800; margin-left: auto; font-variant-numeric: tabular-nums; }
-    .list { display: grid; gap: 2px; max-height: 520px; overflow: auto; }
-    .item { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 8px; cursor: pointer; font-weight: 800; font-size: 13px; }
-    .item:hover { background: var(--bg); } .item.on { background: var(--bg); color: var(--accent-ink); }
-    .item canvas { image-rendering: pixelated; width: 28px; height: 28px; flex: none; background: repeating-conic-gradient(#E6E2D6 0 25%, #FFFFFF 0 50%) 0 0 / 7px 7px; border-radius: 4px; }
+    .row { display: flex; gap: 6px; align-items: center; margin: 6px 0 10px; color: var(--muted); font-weight: 800; }
+    .row input[type=number] { width: 60px; border: 2px solid var(--line); background: var(--bg); border-radius: 8px; padding: 5px 8px; font: inherit; font-weight: 800; color: var(--ink); }
+    .list { display: grid; gap: 1px; }
+    .item { display: flex; align-items: center; gap: 8px; padding: 5px 8px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 13px; font-family: ui-monospace, Menlo, monospace; }
+    .item:hover { background: var(--sel); } .item.on { background: var(--sel); color: var(--accent); }
+    .item canvas { image-rendering: pixelated; width: 28px; height: 28px; flex: none; background: repeating-conic-gradient(var(--line) 0 25%, var(--card) 0 50%) 0 0 / 7px 7px; }
     .item span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-    .item.sample { color: var(--muted); font-weight: 700; }
-    .sw { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 8px; cursor: pointer; font-weight: 800; font-size: 13px; }
-    .sw.on { background: var(--bg); color: var(--accent-ink); } .sw i { width: 22px; height: 22px; border-radius: 6px; border: 2px solid #0001; display: inline-block; flex: none; }
-    .sw.eraser i { background: repeating-conic-gradient(#E6E2D6 0 25%, #FFFFFF 0 50%) 0 0 / 7px 7px; }
+    .item.sample { color: var(--muted); }
+    .sw { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 6px; cursor: pointer; font-weight: 700; font-size: 13px; font-family: ui-monospace, Menlo, monospace; }
+    .sw.on { background: var(--sel); color: var(--accent); } .sw i { width: 22px; height: 22px; border: 2px solid var(--line); display: inline-block; flex: none; }
+    .sw.eraser i { background: repeating-conic-gradient(var(--line) 0 25%, var(--card) 0 50%) 0 0 / 7px 7px; }
     .sw input[type=color] { width: 30px; height: 24px; border: 0; background: none; padding: 0; margin-left: auto; cursor: pointer; }
     .sw button { border: 0; background: none; color: var(--muted); cursor: pointer; font: inherit; font-weight: 900; padding: 0 4px; }
-    .sw button:hover { color: var(--accent-ink); }
-    .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin: 6px 0; }
-    .row input[type=number], .row input[type=text] { width: 64px; border: 0; background: var(--bg); border-radius: 8px; padding: 6px 8px; font: inherit; font-weight: 800; color: var(--ink); }
-    .row input[type=text] { width: 100%; }
-    .note { font-size: 13px; color: var(--muted); line-height: 1.5; margin: 8px 6px 2px; }
-    .status { font-size: 13px; color: var(--muted); font-weight: 800; margin: 6px 6px 0; min-height: 18px; }
-    @media (max-width: 900px) { .ed { grid-template-columns: 1fr; } .list { max-height: 160px; display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; } .item { flex: none; } .item span { max-width: 80px; } }
+    .sw button:hover { color: var(--ink); }
+    .note { font-size: 12px; color: var(--muted); line-height: 1.5; margin: 10px 6px 4px; }
+    .note code { font-size: 11px; }
+    @media (max-width: 900px) {
+      body { grid-template-columns: 1fr; grid-template-rows: 56px auto 1fr auto; height: auto; min-height: 100%; }
+      aside { border: 0; border-bottom: 2px solid var(--line); } aside.right { border-top: 2px solid var(--line); border-bottom: 0; }
+      .list { display: flex; gap: 4px; overflow-x: auto; } .item { flex: none; } .item span { max-width: 90px; }
+      .stage { min-height: 320px; }
+    }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <header class="top">
-      <a class="brand" href="../"><img src="../favicon.svg" alt="" />yore.tw</a>
-      <nav><a href="../#games"><span lang="zh">遊戲</span><span lang="en">Games</span></a><a href="../devlog/index.html"><span lang="zh">日誌</span><span lang="en">Devlog</span></a><a href="../about.html"><span lang="zh">關於</span><span lang="en">About</span></a><a href="../contact.html"><span lang="zh">聯絡</span><span lang="en">Contact</span></a><button id="lang" class="lang-btn" type="button">EN</button></nav>
-    </header>
-    <div class="crumbs"><a href="../"><span lang="zh">首頁</span><span lang="en">Home</span></a> / <a href="../#sandbox"><span lang="zh">沙盒</span><span lang="en">Sandbox</span></a> / Pixel Editor</div>
-    <section class="game-head">
-      <h1>Pixel Editor <span lang="zh">像素編輯器</span></h1>
-      <p lang="zh" class="lede">在瀏覽器裡畫像素圖。作品存在這台裝置的瀏覽器裡，可以匯出 JSON 或 PNG 帶走。</p><p lang="en" class="lede">Draw pixel art in the browser. Work is kept in this browser; export JSON or PNG to take it with you.</p>
-    </section>
-
-    <div class="ed">
-      <aside class="pane">
-        <h2><span lang="zh">作品</span><span lang="en">Sprites</span></h2>
-        <div class="tb" style="margin-bottom:8px">
-          <button class="tbtn" id="new" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M19 22h-7v-2h7V10h-6V4H5v8H3V2h12v2h2v2h2v2h2v14h-2zM17 6h-2v2h2V6zM8 19h3v-2H8v-3H6v3H3v2h3v3h2v-3z"/></svg><span lang="zh">新建</span><span lang="en">New</span></button>
-          <label class="tbtn"><input type="file" id="importFile" accept=".json,.png,image/png,application/json" multiple><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M11 5V3h2v2h2v2h2v2h-2V7h-2v10h-2V7H9v2H7V7h2V5h2zM3 15v6h18v-6h-2v4H5v-4H3z"/></svg><span lang="zh">匯入</span><span lang="en">Import</span></label>
-        </div>
-        <div class="row"><input type="number" id="newW" min="1" max="128" value="16" aria-label="width"> × <input type="number" id="newH" min="1" max="128" value="16" aria-label="height"></div>
-        <div class="list" id="list"></div>
-        <p class="note"><span lang="zh">範例是 Souls in Abyss 的圖示，點了會複製一份給你改。</span><span lang="en">Samples are icons from Souls in Abyss; clicking one gives you a copy to edit.</span></p>
-      </aside>
-
-      <main class="pane">
-        <div class="tb">
-          <button class="tbtn on" data-tool="pen" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M18 2h-2v2h-2v2h-2v2h-2v2H8v2H6v2H4v2H2v6h6v-2h2v-2h2v-2h2v-2h2v-2h2v-2h2V8h2V6h-2V4h-2V2zm0 8h-2v2h-2v2h-2v2h-2v2H8v-2H6v-2h2v-2h2v-2h2V8h2V6h2v2h2v2zM6 16H4v4h4v-2H6v-2z"/></svg><span lang="zh">畫筆</span><span lang="en">Pen</span></button>
-          <button class="tbtn" data-tool="eraser" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M5 3H3v18h18V3H5zm14 2v14H5V5h14zm-3 6H8v2h8v-2z"/></svg><span lang="zh">橡皮</span><span lang="en">Eraser</span></button>
-          <button class="tbtn" data-tool="fill" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M8 3h8v2H8V3zm0 2H6v4H4v12h16V9h-2V5h-2v4H8V5zm8 6h2v8H6v-8h2v6h2v-4h2v2h2v-2h2v-2z"/></svg><span lang="zh">填滿</span><span lang="en">Fill</span></button>
-          <button class="tbtn" data-tool="pick" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M13 2h-2v2H9v4H7v4H5v6h2v2h2v2h6v-2h2v-2h2v-6h-2V8h-2V4h-2V2zm0 2v4h2v4h2v6h-2v2H9v-2H7v-6h2V8h2V4h2z"/></svg><span lang="zh">吸色</span><span lang="en">Pick</span></button>
-          <span class="cur" id="cur" title="current colour"><i></i><b></b></span>
-          <span class="sep"></span>
-          <button class="tbtn" id="mirror" type="button"><span lang="zh">左右對稱</span><span lang="en">Mirror</span></button>
-          <button class="tbtn" id="undo" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M8 4h2v2H8V4zm10 6V8H8V6H6v2H4v2h2v2h2v2h2v-2H8v-2h10zm0 8v-8h2v8h-2zm0 0v2h-6v-2h6z"/></svg><span lang="zh">復原</span><span lang="en">Undo</span></button>
-          <button class="tbtn" id="redo" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M16 4h-2v2h2v2H6v2H4v8h2v2h6v-2H6v-8h10v2h-2v2h2v-2h2v-2h2V8h-2V6h-2V4z"/></svg><span lang="zh">重做</span><span lang="en">Redo</span></button>
-          <span class="dims" id="dims"></span>
-        </div>
-        <div class="stage"><canvas id="grid"></canvas></div>
-        <div class="previews">
-          <span class="lbl">1×<canvas id="p1"></canvas></span>
-          <span class="lbl">3×<canvas id="p3"></canvas></span>
-          <span class="lbl">6×<canvas id="p6"></canvas></span>
-        </div>
-        <div class="row"><input type="text" id="name" placeholder="name" aria-label="sprite name"></div>
-        <div class="tb">
-          <button class="tbtn" id="exportJson" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M13 17V3h-2v10H9v-2H7v2h2v2h2v2h2zm8 2v-4h-2v4H5v-4H3v6h18v-2zm-8-6v2h2v-2h2v-2h-2v2h-2z"/></svg>JSON</button>
-          <button class="tbtn" id="exportPng" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M4 3H2v18h20V3H4zm16 2v14H4V5h16zm-6 4h-2v2h-2v2H8v2H6v2h2v-2h2v-2h2v-2h2v2h2v2h2v-2h-2v-2h-2V9zM8 7H6v2h2V7z"/></svg>PNG <select id="pngScale" aria-label="PNG scale" style="border:0;background:transparent;font:inherit;font-weight:800;color:inherit"><option value="1">1×</option><option value="4">4×</option><option value="8" selected>8×</option><option value="16">16×</option></select></button>
-          <button class="tbtn" id="copyJson" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M4 2h11v2H6v13H4V2zm4 4h12v16H8V6zm2 2v12h8V8h-8z"/></svg><span lang="zh">複製 JSON</span><span lang="en">Copy JSON</span></button>
-          <button class="tbtn" id="delete" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M16 2v4h6v2h-2v14H4V8H2V6h6V2h8zm-2 2h-4v2h4V4zm0 4H6v12h12V8h-4zm-5 2h2v8H9v-8zm6 0h-2v8h2v-8z"/></svg><span lang="zh">刪除</span><span lang="en">Delete</span></button>
-        </div>
-        <div class="status" id="status"></div>
-      </main>
-
-      <aside class="pane">
-        <h2><span lang="zh">調色盤</span><span lang="en">Palette</span></h2>
-        <div id="palette"></div>
-        <div class="tb" style="margin-top:8px"><button class="tbtn" id="addColor" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7V4z"/></svg><span lang="zh">新增顏色</span><span lang="en">Add colour</span></button></div>
-        <p class="note"><span lang="zh">每個顏色有一個字母，JSON 裡的 rows 就是這些字母排成的格子，「.」是透明。改顏色會改到整張圖用到它的格子。</span><span lang="en">Each colour has a letter; the JSON rows are a grid of those letters, with "." for transparent. Changing a colour changes every cell that uses it.</span></p>
-      </aside>
+  <header class="bar">
+    <a class="brand" href="../"><img src="../favicon.svg" alt="" />yore.tw</a>
+    <b><span lang="zh">像素編輯器</span><span lang="en">Pixel Editor</span></b>
+    <span class="status" id="status"></span>
+    <button id="lang" class="lang-btn" type="button">EN</button>
+  </header>
+  <aside>
+    <h2><span lang="zh">作品</span><span lang="en">Sprites</span></h2>
+    <div class="tb">
+      <button class="tbtn" id="new" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M19 22h-7v-2h7V10h-6V4H5v8H3V2h12v2h2v2h2v2h2v14h-2zM17 6h-2v2h2V6zM8 19h3v-2H8v-3H6v3H3v2h3v3h2v-3z"/></svg><span lang="zh">新建</span><span lang="en">New</span></button>
+      <label class="tbtn"><input type="file" id="importFile" accept=".json,.png,image/png,application/json" multiple><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M11 5V3h2v2h2v2h2v2h-2V7h-2v10h-2V7H9v2H7V7h2V5h2zM3 15v6h18v-6h-2v4H5v-4H3z"/></svg><span lang="zh">匯入</span><span lang="en">Import</span></label>
     </div>
-
-    <section class="prose">
-      <h2 lang="zh">格式</h2><h2 lang="en">Format</h2>
-      <p lang="zh">JSON 長這樣：<code>{"name":"slime","rows":["..oo..","oGGGGo"],"colors":{"o":"#343842","G":"#53695e"}}</code>。匯入 PNG 時，每個不同的顏色會自動分配一個字母，透明的像素是「.」。匯出 PNG 可選放大倍率，1× 是原尺寸。</p>
-      <p lang="en">JSON looks like this: <code>{"name":"slime","rows":["..oo..","oGGGGo"],"colors":{"o":"#343842","G":"#53695e"}}</code>. Importing a PNG assigns a letter to each distinct colour; transparent pixels become ".". PNG export takes a scale; 1× is the original size.</p>
-      <p lang="zh">作品只存在這個瀏覽器的本機儲存，換裝置或清除網站資料就沒了。要保留請匯出。</p><p lang="en">Work lives only in this browser's local storage. Another device, or clearing site data, loses it. Export to keep it.</p>
-    </section>
-
-    <div class="ad-slot" aria-label="ad"></div>
-    <footer>
-      <div>© 2026 yore.tw</div>
-      <div><a href="../devlog/index.html"><span lang="zh">開發日誌</span><span lang="en">Devlog</span></a> · <a href="../about.html"><span lang="zh">關於</span><span lang="en">About</span></a> · <a href="../contact.html"><span lang="zh">聯絡</span><span lang="en">Contact</span></a> · <a href="../privacy.html"><span lang="zh">隱私權政策</span><span lang="en">Privacy</span></a></div>
-    </footer>
-  </div>
+    <div class="row"><input type="number" id="newW" min="1" max="128" value="16" aria-label="width"> × <input type="number" id="newH" min="1" max="128" value="16" aria-label="height"></div>
+    <div class="list" id="list"></div>
+    <p class="note"><span lang="zh">範例是 Souls in Abyss 的圖示，點了會複製一份給你改。作品存在這個瀏覽器裡，要保留請匯出。</span><span lang="en">Samples are Souls in Abyss icons; clicking one gives you a copy. Work is kept in this browser; export to keep it.</span></p>
+  </aside>
+  <main>
+    <div class="tb">
+      <button class="tbtn on" data-tool="pen" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M18 2h-2v2h-2v2h-2v2h-2v2H8v2H6v2H4v2H2v6h6v-2h2v-2h2v-2h2v-2h2v-2h2v-2h2V8h2V6h-2V4h-2V2zm0 8h-2v2h-2v2h-2v2h-2v2H8v-2H6v-2h2v-2h2v-2h2V8h2V6h2v2h2v2zM6 16H4v4h4v-2H6v-2z"/></svg><span lang="zh">畫筆</span><span lang="en">Pen</span></button>
+      <button class="tbtn" data-tool="eraser" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M5 3H3v18h18V3H5zm14 2v14H5V5h14zm-3 6H8v2h8v-2z"/></svg><span lang="zh">橡皮</span><span lang="en">Eraser</span></button>
+      <button class="tbtn" data-tool="fill" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M8 3h8v2H8V3zm0 2H6v4H4v12h16V9h-2V5h-2v4H8V5zm8 6h2v8H6v-8h2v6h2v-4h2v2h2v-2h2v-2z"/></svg><span lang="zh">填滿</span><span lang="en">Fill</span></button>
+      <button class="tbtn" data-tool="pick" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M13 2h-2v2H9v4H7v4H5v6h2v2h2v2h6v-2h2v-2h2v-6h-2V8h-2V4h-2V2zm0 2v4h2v4h2v6h-2v2H9v-2H7v-6h2V8h2V4h2z"/></svg><span lang="zh">吸色</span><span lang="en">Pick</span></button>
+      <span class="cur" id="cur" title="current colour"><i></i><b></b></span>
+      <span class="sep"></span>
+      <button class="tbtn" id="mirror" type="button"><span lang="zh">左右對稱</span><span lang="en">Mirror</span></button>
+      <button class="tbtn" id="undo" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M8 4h2v2H8V4zm10 6V8H8V6H6v2H4v2h2v2h2v2h2v-2H8v-2h10zm0 8v-8h2v8h-2zm0 0v2h-6v-2h6z"/></svg><span lang="zh">復原</span><span lang="en">Undo</span></button>
+      <button class="tbtn" id="redo" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M16 4h-2v2h2v2H6v2H4v8h2v2h6v-2H6v-8h10v2h-2v2h2v-2h2v-2h2V8h-2V6h-2V4z"/></svg><span lang="zh">重做</span><span lang="en">Redo</span></button>
+      <span class="dims" id="dims"></span>
+    </div>
+    <div class="stage"><canvas id="grid"></canvas></div>
+    <div class="previews">
+      <span class="lbl">1×<canvas id="p1"></canvas></span>
+      <span class="lbl">3×<canvas id="p3"></canvas></span>
+      <span class="lbl">6×<canvas id="p6"></canvas></span>
+      <span class="name"><input type="text" id="name" placeholder="name" aria-label="sprite name"></span>
+    </div>
+    <div class="tb bottom">
+      <button class="tbtn" id="exportJson" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M13 17V3h-2v10H9v-2H7v2h2v2h2v2h2zm8 2v-4h-2v4H5v-4H3v6h18v-2zm-8-6v2h2v-2h2v-2h-2v2h-2z"/></svg>JSON</button>
+      <button class="tbtn" id="exportPng" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M4 3H2v18h20V3H4zm16 2v14H4V5h16zm-6 4h-2v2h-2v2H8v2H6v2h2v-2h2v-2h2v-2h2v2h2v2h2v-2h-2v-2h-2V9zM8 7H6v2h2V7z"/></svg>PNG <select id="pngScale" aria-label="PNG scale"><option value="1">1×</option><option value="4">4×</option><option value="8" selected>8×</option><option value="16">16×</option></select></button>
+      <button class="tbtn" id="copyJson" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M4 2h11v2H6v13H4V2zm4 4h12v16H8V6zm2 2v12h8V8h-8z"/></svg><span lang="zh">複製 JSON</span><span lang="en">Copy JSON</span></button>
+      <button class="tbtn" id="delete" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M16 2v4h6v2h-2v14H4V8H2V6h6V2h8zm-2 2h-4v2h4V4zm0 4H6v12h12V8h-4zm-5 2h2v8H9v-8zm6 0h-2v8h2v-8z"/></svg><span lang="zh">刪除</span><span lang="en">Delete</span></button>
+    </div>
+  </main>
+  <aside class="right">
+    <h2><span lang="zh">調色盤</span><span lang="en">Palette</span></h2>
+    <div id="palette"></div>
+    <div class="tb" style="margin-top:8px"><button class="tbtn" id="addColor" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7V4z"/></svg><span lang="zh">新增顏色</span><span lang="en">Add colour</span></button></div>
+    <p class="note"><span lang="zh">每個顏色一個字母，JSON 的 rows 就是字母排成的格子，「.」是透明。改顏色會改到整張圖用到它的格子。</span><span lang="en">One letter per colour; the JSON rows are a grid of letters, with "." for transparent. Changing a colour changes every cell that uses it.</span></p>
+    <p class="note"><span lang="zh">JSON：<code>{"name":"slime","rows":["..oo..","oGGGGo"],"colors":{"o":"#343842","G":"#53695e"}}</code>。匯入 PNG 時每個顏色自動配一個字母，最大 128×128。匯出 PNG 可選倍率。</span><span lang="en">JSON: <code>{"name":"slime","rows":["..oo..","oGGGGo"],"colors":{"o":"#343842","G":"#53695e"}}</code>. A PNG import assigns a letter per colour, up to 128×128. PNG export takes a scale.</span></p>
+  </aside>
 <script>
 (function () {
   const CATALOG = {"palette":{"o":"#343842","s":"#667681","h":"#bcc5bd","w":"#e3ddc9","g":"#82947b","G":"#53695e","b":"#839da5","p":"#9586a4","P":"#625575","y":"#c1a775","r":"#b47f76","t":"#ac917b","d":"#725e53","k":"#343842"},"icons":{"human":["..oooo..",".otttto.",".twwwwt.",".twkwkw.","..twwt..","..gggg..",".ggyygg.","..g..g.."],"elf":["..gggg..",".gggggg.","twwwwwt.",".wkwkw..","..www...","..GGG...",".GGyGG..","..G.G..."],"dwarf":["..ssss..",".shhhhs.","ssyyyyss",".twkwkt.",".tddddt.","..dddd..",".ssyyss.","..s..s.."],"giant":["..oooo..",".otttto.",".twkwkt.","..twwt..",".GGGGGG.","GGGyyGGG",".GGGGGG.",".GG..GG."],"undead":["..oooo..",".owwwwo.",".wkkwkw.",".wwwwww.","..wkw...",".PPPPP..","..P.P...",".PP.PP.."],"str":["...ttt..","..tttto.",".ttwtto.",".ttttto.","tttttto.","ttttto..",".oooo...","........"],"dex":["......g.",".....gg.",".g..gg..",".gggg...","..ggg...","...gg...","..gg....",".gg....."],"int":[".oooooo.",".wwohhwo",".wwowwwo",".wwowwwo",".wwowwwo",".wwowwwo",".oooooo.","...oo..."],"will":["...pp...","..pwwp..",".pwbbwp.",".pwwwwp.","..pwwp..","...pp...","...yy...","..yyyy.."],"luk":[".gg..gg.","gwwggwwg","gggggggg",".gggggg.","..gggg..","...gg...","...g....","..gg...."],"equip":["..ssss..",".shhhhs.","sshhhhss","sshhhhss",".shhhhs.","..shhs..","...ss...","........"],"pets":[".ww..ww.",".ww..ww.","..wwww..",".wwwwww.",".wkwkw..","..wrw...","...w....","........"],"skills":["...p....","...pp...","..pypp..",".ppyypp.","ppywyppp",".pyyyp..","..ppp...","...p...."],"map":[".oo..oo.","owwoowwo","owwggwwo","owgggwwo","owwgwwwo","owwwgwwo",".oowwoo.","...oo..."],"smith":["...ss...",".ssssss.",".hhhhhh.","..ssss..","...ss...","..ssss..",".ssssss.","........"],"titles":[".y....y.",".yy..yy.",".yyyyyy.","..yyyy..","...yy...","..yyyy..",".yyyyyy.","........"],"rebirth":["..pppp..",".pp..pp.","pp....p.","p...pppp","p....pp.","pp......",".pp..pp.","..pppp.."],"settings":["...ss...",".s.sss.s",".ssssss.","sssoosss","sssoosss",".ssssss.",".s.sss.s","...ss..."],"slot-head":["..ssss..",".shhhhs.","sshhhhss","sshhhhss","ssokkoss",".s....s.","........","........"],"slot-weapon":["......hh",".....hwh","....hwh.","...hwh..","y.hwh...",".yyh....","..yd....",".dd....."],"slot-body":[".ss..ss.","shhsshhs","shhhhhhs",".shhhhs.",".shyyhs.",".shhhhs.",".ssssss.","........"],"slot-hands":[".ss..ss.",".hs..hs.",".hs..hs.","shhsshhs","shhsshhs",".ss..ss.","........","........"],"slot-feet":["..ss.ss.","..hs.hs.","..hs.hs.","..hs.hs.",".hhsshhs",".hhsshhs",".ss..ss.","........"],"slot-acc1":["...yy...","..ywwy..",".yyyyyy.","yy....yy","yy....yy",".yy..yy.","..yyyy..","........"],"slot-acc2":["..yyyy..","..yppy..","...pp...","..pwwp..",".pwbbwp.","..pwwp..","...pp...","........"],"sk-smash":[".....rr.",".s..rr..","shsrr...",".shs....","..shs...",".rrshs..","rr..s...","r......."],"sk-counter":["..ss....",".shs..r.","..shsrr.","...ssr..","..rrrr..","...rrs..","....shs.",".....ss."],"sk-firebolt":["....r...","..r.rr..","..rryr..",".rryyr..","rrywyrr.","rywwwyr.",".ryyyr..","..rrr..."],"sk-icebolt":["...b....",".b.b.b..","..bbb...","bbbbbbbb","..bwb...",".bbbbb..","b..b..b.","...b...."],"sk-lightning":["....yy..","...yy...","..yy....",".yyyyyy.","....yy..","...yy...","..yy....","..y....."],"sk-mastery":[".y....y.","..y..y..","...ss...","..shhs..","...ss...","..y..y..",".y....y.","........"],"sk-lightArms":["...h...h","..hw..hw",".hw..hw.","hw..hw..","yy..yy..","d...d...","........","........"],"sk-mediumArms":["......hh",".....hwh","....hwh.","...hwh..","..hwh...",".yyh....","..d.....",".d......"],"sk-heavyArms":["..ssss..",".shhss..","shhhss..",".shhss..","..dd....","..dd....","..dd....","..dd...."],"sk-tough":[".ss..ss.","shhsshhs","shhhhhhs",".shhhhs.",".shhhhs.","..shhs..","...ss...","........"],"sk-meditation":["...pp...","..pwwp..","...pp...","..pppp..",".pppppp.","...pp...",".pppppp.","pppppppp"],"sk-fortune":["..yyyy..",".ywwyyy.","yywyyyy.","yywyyyyy","yyyyyyyy",".yyyyyy.","..yyyy..","........"],"sk-insight":["...pp...",".ppwwpp.","ppwkkwpp","pwwkkwwp",".ppwwpp.","...pp...","...p....","........"],"arrow":["...ss...","...ss...","...ss...","ss.ss.ss",".ssssss.","..ssss..","...ss...","........"],"pet-pudding":["..dddd..",".dyyyyd.",".yyyyyy.","yywyyyyy","yykyykyy","yyyyyyyy",".yyyyyy.","..yyyy.."],"pet-potcat":["..ssss..",".shhhhs.","ssssssss",".twttwt.",".wkwkwt.","..twwt..",".tttttt.","..t..t.."],"pet-mosskin":["....g...","..ggg...",".GGggG..","GGggggGG","GgwggwgG",".GkkkkG.","..GggG..","..g..g.."],"pet-mimipup":[".d....d.",".dddddd.","dyyyyydd","dwwwwwwd","dwkwkwdd","dwwrrwwd",".dddddd.","..d..d.."],"pet-ember":[".....rr.","....ryr.","..rrrr..",".rwrrwr.",".rkrrkr.","..rrrrrr",".rr..rrr","rrr...r."],"pet-griffy":["..y..y..",".yyyyyy.",".ywyywy.",".ykyyky.","..yyyy..","whyyyyhw",".hhyyhh.","..y..y.."],"pet-nameless":["..P..P..",".PPPPPP.","PPppppPP","PpwppwpP","PppppppP",".PPppPP.","..P..P..",".P....P."],"unknown":["..pppp..",".pwwwpp.","....wpp.","...wpp..","...pp...","........","...pp...","........"],"area-meadow":["......y.",".g......",".gg..g..","..g..gg.","g.g.g.g.",".gggggg.","GGGGGGGG",".GGGGGG."],"area-forest":["...g....","..ggg...",".ggggg..","..GGG...",".GGGGG..","GGGGGGG.","...dd...","..dddd.."],"area-labyrinth":["ssssssss","swwwwwws","swssssws","swswwsws","swsswsws","swwwssws","sssswwws","ssssssss"],"area-mine":["..ssss..",".sskkss.","sskkkkss","skkyykks","skkykkks","skkkkkks","ddkkkkdd","dddddddd"],"area-fen":[".g....g.",".gg...g.","..g..gg.","..g...g.","bbbbbbbb",".bbGGbb.","bbGGGGbb",".bbbbbb."],"area-ruins":[".ss..ss.",".hh..hh.",".hhsshh.",".hhhhhh.",".hh..hh.",".hh..hh.","sshhhhss","ssssssss"],"area-nest":["......w.","....www.",".d..ww..","..dddd..",".dyyyyd.","ddyyyydd",".dddddd.","..dddd.."],"area-abyss":["..PPPP..",".PppppP.","PppPPppP","PpPwwPpP","PpPwwPpP","PppPPppP",".PppppP.","..PPPP.."],"star":["...yy...","...yy...","yyyyyyyy",".yyyyyy.","..yyyy..",".yyyyyy.",".yy..yy.","........"],"heart":[".rr..rr.","rrrrrrrr","rwrrrrrr","rrrrrrrr",".rrrrrr.","..rrrr..","...rr...","........"],"hazard":["...yy...","..yyyy..","..ykky..",".yykkyy.",".yykkyy.","yyyyyyyy","yyykkyyy","........"]},"avatars":{"human":{"rows":["................................","................................","................................",".........abbbbbbbbbbba..........",".........abccccccccbba..........",".........abbbbbbbbbbba..........",".........abbbbbbbbbbba..........",".........abbdddddddbba..........",".........abbdddddddbba..........",".........abbddddddddda..........",".........addeaddddeada..........",".........addaaddddaada..........",".........addaaddddaada..........",".........adddddfddddda..........",".........addddddddddda..........",".........addddggggddda..........",".........aaaaaaaaaaaaa..........","................................","........aaaaaaaaaaaaaaa.........","........ahhhhhhhhhhhhha.........","....aaaaahiihhhhhhhhhhaaaaa.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....aaaaahhhhhhhhhhhjjaaaaa.....","....aaaaakkkkklllkkkkkaaaaa.....","........akkkkklllkkkkka.........",".........kkkkkkkkkkkkk..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........","........mmmmmm..mmmmmm..........","........mmmmmm..mmmmmm..........","........mmmmmm..mmmmmm..........","................................","................................"],"colors":{"a":"#343842","b":"#625953","c":"#897564","d":"#c8ad92","e":"#e3ddc9","f":"#aa8879","g":"#ead0af","h":"#697b80","i":"#85958c","j":"#4c5b60","k":"#725e53","l":"#c1a775","m":"#4b4848"}},"elf":{"rows":["................................","................................","................................",".........abbbbbbbbbbba..........",".........abccccccccbba..........",".........abbbbbbbbbbba..........",".........abbbbbbbbbbba..........",".........addeeeeeeedda..........",".........addeeeeeeedda..........",".......eeeddeeeeeeeeeeee........",".......eeeeefaeeeefaeeee........",".........aeeaaeeeeaaea..........",".........aeeaaeeeeaaea..........",".........aeeeeegeeeeea..........",".........aeeeeeeeeeeea..........",".........aeeeehhhheeea..........",".........aaaaaaaaaaaaa..........","................................","........aaaaaaaaaaaaaaa.........","........aiiiiiiiiiiiiia.........","....aaaaaijjiiiiiiiiiiaaaaa.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aeeaaijjiiiiiiiikkaaeea.....","....aaaaaiiiiiiiiiiikkaaaaa.....","....aaaaalllllmmmlllllaaaaa.....","........alllllmmmllllla.........",".........lllllllllllll..........",".........aiiia...aiiia..........",".........aiiia...aiiia..........",".........aiiia...aiiia..........",".........aiiia...aiiia..........",".........aiiia...aiiia..........",".........aiiia...aiiia..........",".........aiiia...aiiia..........","........nnnnnn..nnnnnn..........","........nnnnnn..nnnnnn..........","........nnnnnn..nnnnnn..........","................................","................................"],"colors":{"a":"#343842","b":"#b6ac88","c":"#d1c7a2","d":"#625953","e":"#c8ad92","f":"#e3ddc9","g":"#aa8879","h":"#ead0af","i":"#53695e","j":"#85958c","k":"#4c5b60","l":"#725e53","m":"#c1a775","n":"#4b4848"}},"dwarf":{"rows":["................................","................................","................................",".........abbbbbbbbbbba..........",".........abccccccccbba..........",".........abbbbbbbbbbba..........",".........abbbbbbbbbbba..........",".........abbdddddddbba..........",".........abbdddddddbba..........",".........abbddddddddda..........",".........addeaddddeada..........",".........addaaddddaada..........",".........addaaddddaada..........",".........adfffffffffda..........",".........adfffffffffda..........",".........adffgfffgffda..........",".........aaffgfffgffaa..........","...........ffgfffgff............","........aaaaaaaaaaaaaaa.........","........ahhhhhhhhhhhhha.........","....aaaaahiihhhhhhhhhhaaaaa.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....aaaaahhhhhhhhhhhjjaaaaa.....","....aaaaakkkkklllkkkkkaaaaa.....","........akkkkklllkkkkka.........",".........kkkkkkkkkkkkk..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........","........mmmmmm..mmmmmm..........","........mmmmmm..mmmmmm..........","........mmmmmm..mmmmmm..........","................................","................................"],"colors":{"a":"#343842","b":"#625953","c":"#897564","d":"#c8ad92","e":"#e3ddc9","f":"#827260","g":"#b09b7b","h":"#697b80","i":"#85958c","j":"#4c5b60","k":"#725e53","l":"#c1a775","m":"#4b4848"}},"giant":{"rows":["................................","................................","................................",".........abbbbbbbbbbba..........",".........abccccccccbba..........",".........abbbbbbbbbbba..........",".........abbbbbbbbbbba..........",".........abbdddddddbba..........",".........abbdddddddbba..........",".........abbddddddddda..........",".........addeaddddeada..........",".........addaaddddaada..........",".........addaaddddaada..........",".........adddddfddddda..........",".........addddddddddda..........",".........addddggggddda..........",".........aaaaaaaaaaaaa..........","................................","........aaaaaaaaaaaaaaa.........","........ahhhhhhhhhhhhha.........","....aaaaahiihhhhhhhhhhaaaaa.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....aaaaahhhhhhhhhhhjjaaaaa.....","....aaaaakkkkklllkkkkkaaaaa.....","........akkkkklllkkkkka.........",".........kkkkkkkkkkkkk..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........","........mmmmmm..mmmmmm..........","........mmmmmm..mmmmmm..........","........mmmmmm..mmmmmm..........","................................","................................"],"colors":{"a":"#343842","b":"#625953","c":"#897564","d":"#c8ad92","e":"#e3ddc9","f":"#aa8879","g":"#ead0af","h":"#697b80","i":"#85958c","j":"#4c5b60","k":"#725e53","l":"#c1a775","m":"#4b4848"}},"undead":{"rows":["................................","................................","................................",".........abbbbbbbbbbba..........",".........abccccccccbba..........",".........abbbbbbbbbbba..........",".........abbbbbbbbbbba..........",".........abbdddddddbba..........",".........abbdddddddbba..........",".........abbddddddddda..........",".........addeaddddeada..........",".........addaaddddaada..........",".........addaaddddaada..........",".........adddddfddddda..........",".........addddddddddda..........",".........addddggggddda..........",".........aaaaaaaaaaaaa..........","................................","........aaaaaaaaaaaaaaa.........","........ahhhhhhhhhhhhha.........","....aaaaahiihhhhhhhhhhaaaaa.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....addaahiihhhhhhhhjjaadda.....","....aaaaahhhhhhhhhhhjjaaaaa.....","....aaaaakkkkklllkkkkkaaaaa.....","........akkkkklllkkkkka.........",".........kkkkkkkkkkkkk..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........",".........ahhha...ahhha..........","........mmmmmm..mmmmmm..........","........mmmmmm..mmmmmm..........","........mmmmmm..mmmmmm..........","................................","................................"],"colors":{"a":"#343842","b":"#625953","c":"#897564","d":"#c7c4ae","e":"#e3ddc9","f":"#aa8879","g":"#ead0af","h":"#625575","i":"#85958c","j":"#4c5b60","k":"#725e53","l":"#c1a775","m":"#4b4848"}}}};
