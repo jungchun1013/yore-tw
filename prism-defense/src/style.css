@@ -71,3 +71,6 @@ footer{flex-wrap:nowrap;align-items:center;gap:12px}.footer-info{min-width:0;fle
 .metrics{display:flex;flex-wrap:nowrap;gap:clamp(12px,2.4vw,34px)}.metrics .metric{flex:0 1 auto}.metric>span>.metric-english{display:inline;font:inherit;color:inherit;letter-spacing:inherit}
 @media(max-width:740px){.metrics{display:flex;justify-content:space-between;gap:8px}}
 @media(max-width:480px){.metric>span>.metric-english{display:none}}
+
+/* English mode (src/lang.js): the metric labels are translated whole, so the English prefix spans are hidden */
+html[lang="en"] .metric-english{display:none}
