@@ -3,19 +3,19 @@ import pathlib, html
 
 # (date, title zh, title en, [(project zh, project en, [zh sentences], [en sentences]), ...])
 POSTS = [
- ("2026-11-02", "第一個 commit", "First commit", [
+ ("2026-11-02", "Meowcaron v45 和入口網站進 repo", "Meowcaron v45 and the entry site enter the repo", [
   ("Meowcaron", "Meowcaron", [
    "Meowcaron v45 和入口網站一起進了 repo。這時候的遊戲已經有店貓可以拍、可以僱貓、四台機器各三級升級、會上門的客人、每隻貓的日誌、離線收益和轉生星星。",
    "入口網站只有一頁，列出遊戲。"],
    ["Meowcaron v45 and the entry site went into the repo together. By this point the game already had a shop cat to pat, cats for hire, four machines with three upgrade tiers each, walk-in customers, a journal page per cat, offline earnings and prestige stars.",
     "The entry site was a single page listing the games."]),
  ]),
- ("2026-11-03", "精靈匯入", "Sprite imports", [
+ ("2026-11-03", "Meowcaron v60：像素編輯器匯入、輸送帶外框", "Meowcaron v60: editor sprite imports, belt frame", [
   ("Meowcaron", "Meowcaron", [
    "v60。精靈可以從線上像素編輯器匯入，輸送帶有了外框，圖層順序的錯誤修掉。"],
    ["v60. Sprites can be imported from the online pixel editor, the conveyor belt got a frame, and layer-order bugs were fixed."]),
  ]),
- ("2026-11-05", "經濟按時段走", "A session-paced economy", [
+ ("2026-11-05", "Meowcaron v61 到 v66：按時段的經濟、偷吃、烤箱溫度", "Meowcaron v61 to v66: session-paced economy, sneak-eating, oven warmth", [
   ("Meowcaron", "Meowcaron", [
    "v61 到 v66，一天六版。",
    "經濟改成按遊玩時段計算。貓會偷吃，烤箱有溫度。第一次點擊就結束偷懶，客人會標記店家。",
@@ -26,7 +26,7 @@ POSTS = [
     "Steel plates went under the machines, icons became paw pads, the rope got longer, and several phone layouts were fixed. Steel tables stand on the floor, a touch deeper than the rack.",
     "Effect bars are pixel now, cats chew, the shelf was tidied, and sound and language moved into settings. The belt runs in front of the packaging machine, and the steam is real particles."]),
  ]),
- ("2026-11-06", "網站上線", "The site goes live", [
+ ("2026-11-06", "yore-tw.com 上線；Meowcaron v67 四步教學", "yore-tw.com goes live; Meowcaron v67 onboarding", [
   ("網站", "Site", [
    "網站搬到 Cloudflare Workers，yore-tw.com 和 www 都接上了。"],
    ["The site moved to Cloudflare Workers, with yore-tw.com and www attached."]),
@@ -38,7 +38,7 @@ POSTS = [
     "Codex redrew the furniture, machines, conveyor and paw icons, with a density pass and UI text changes.",
     "English is the default language. When framed by CrazyGames the game loads their adapter. Upload folder and screenshots refreshed."]),
  ]),
- ("2026-11-07", "第二款遊戲", "A second game", [
+ ("2026-11-07", "Souls in Abyss 開工：白底自動 RPG、祝福與詛咒、理智", "Souls in Abyss begins: white auto-RPG, gifts and curses, sanity", [
   ("Souls in Abyss", "Souls in Abyss", [
    "新遊戲開工，原名 Aeon Brave，是 BWE 那類白底自動 RPG 的結構。當天改名 Souls in Abyss，文案全部換成深淵的語氣：區域、轉生、死亡、旁白。",
    "白色版面，瑪奇式的能力值和年齡成長，紙娃娃，依等級排的技能分頁，Cubic 11 像素字體。",
@@ -50,7 +50,7 @@ POSTS = [
    "放上 AdSense 驗證碼和 ads.txt。廣告位先藏著，等審查過再開。"],
    ["AdSense verification code and ads.txt went up. Ad slots are hidden until the review passes."]),
  ]),
- ("2026-11-08", "最忙的一天", "The busiest day", [
+ ("2026-11-08", "Souls 六十個 commit：創角、裝備盤、鐵匠、地圖、寵物；Planet Wanderer 開工", "Sixty Souls commits: creation, equipment board, smith, map, pals; Planet Wanderer begins", [
   ("Souls in Abyss", "Souls in Abyss", [
    "六十多個 commit。",
    "角色創建：BWE 式橫幅，選種族和年齡，能力表，SAO 式拉丁字體，後來全部改回 Cubic 11。年齡數字浮在人物上方，手機版排成一欄。",
@@ -76,7 +76,7 @@ POSTS = [
    "第三個專案開工。three.js 小星球，一開始就是多場景。木屋、籬笆、長大的樹、碎石小路、石圈遺跡、湖邊岩石。預設是柔和的卡通渲染，像素風可以切換。苔綠和薰衣草的配色，雲影，頂光邊緣。"],
    ["A third project started. A three.js tiny planet, multi-scene from the first commit. A cabin, a fence, grown trees, cobbled paths, a ring ruin, lakeside rocks. Soft cel shading by default, a pixel style as a toggle. Moss and lavender palette, cloud shadows, top-lit edges."]),
  ]),
- ("2026-11-09", "第三種畫面", "A third look", [
+ ("2026-11-09", "Planet Wanderer 上線，第三種渲染 Sky；網站換深淵色票", "Planet Wanderer goes live with the Sky render; site darks from the Abyss palette", [
   ("Planet Wanderer", "Planet Wanderer", [
    "像素風的描邊改在全解析度畫。天空換成虫羊氏那種鋼藍到長春花的漸層，雲是一塊塊的筆觸。第三種渲染叫 Sky：逆光、太陽眩光、光束。",
    "以沙盒的身分上線。Codex 做了一輪美術：旅人、木屋、雲杉，接縫處才混像素。旅人改成窄肩斗篷，加了一隻靈鹿。開發日誌開始記每一輪的指令和結果。"],
@@ -86,7 +86,7 @@ POSTS = [
    "深色和陰影改用 Souls 的色票，馬卡龍的填色留著。▶ → ♥ ✨ 這些符號換成 Pixelarticons 的像素圖示。"],
    ["Darks and shadows now come from the Souls palette; the macaron fills stay. The ▶ → ♥ ✨ glyphs became Pixelarticons pixel icons."]),
  ]),
- ("2026-11-10", "理智的規則", "Rules for sanity", [
+ ("2026-11-10", "Souls 理智規則改版；Planet 靈獸換平滑模型", "Souls sanity rework; Planet spirit animals on smooth models", [
   ("Souls in Abyss", "Souls in Abyss", [
    "找回前幾天被蓋掉的技能開關、背包列、裝備清單、間距和技能顏色。",
    "理智改版：被高於自己等級的敵人殺死才會扣。瘋狂的時候能力有祝福也有詛咒。歸零會昏迷，醒來在草原上，東西變少。瘋狂的暗角最多壓到八成，開場不低於四成五，角色表要看得見。"],
@@ -96,7 +96,7 @@ POSTS = [
    "靈獸改用平滑過的 CC0 模型，材質像守護神咒。鹿身重做好幾輪：Taubin 平滑、深度預通道、瘦長的靜態身體、鹿角重新安在頭骨上，最後決定讓公鹿用模型自己的角，不再嫁接。"],
    ["Spirit animals now use smoothed CC0 base models with a Patronus-like material. The deer body went through several rounds: Taubin relaxation, a depth prepass, slender static bodies, antlers re-seated on the skull, and finally the stag keeps its model's own antlers instead of grafted ones."]),
  ]),
- ("2026-11-11", "改口吻", "A change of voice", [
+ ("2026-11-11", "全站文案改寫、GA 上線、中英分頁；Souls 改名奈落魂迴", "Site copy rewritten, GA on, zh/en split; Souls renamed 奈落魂迴", [
   ("網站", "Site", [
    "Google Analytics 全站上線，三款遊戲也有。",
    "文案全部重寫。拿掉店貓旁白，改成工作室的口吻，首頁和關於頁的字由 Joan 寫，英文從中文翻。",
@@ -113,7 +113,7 @@ POSTS = [
    "像素風改回一倍。池塘裡有錦鯉和蓮花，多了兩頂帳篷，草地安靜一點。"],
    ["The pixel look is back at 1x. The pond has koi and lotus, two canvas tents were added, and the meadow is calmer."]),
  ]),
- ("2026-11-12", "稜光防線上線", "Prism Defense goes live", [
+ ("2026-11-12", "Prism Defense 上線並改深色；網站換藍色強調與地球選單", "Prism Defense goes live and goes dark; site gets the blue accent and globe menu", [
   ("Prism Defense", "Prism Defense", [
    "塔防遊戲上線。六種塔，二十波，三張地圖，十五項永久研究。",
    "整個遊戲改成低飽和的深色。塔縮小到 35px，敵人縮一成。精靈改用自己的輪廓定位，底盤真的踩在格子上，穿光塔再往上兩像素。",
@@ -129,7 +129,7 @@ POSTS = [
     "New colours: the Planet Wanderer sky blue as the accent, an off-white background, borderless cards and buttons, Abyss green for shadows. The language switch is a globe with a dropdown. The site icon is the shop cat. The footer keeps About, Contact and Privacy.",
     "A game controller and a castle icon sit before the section headings."]),
  ]),
- ("2026-11-13", "英文優先", "English first", [
+ ("2026-11-13", "英文改為預設語言；開發日誌上線", "English becomes the default; the devlog goes live", [
   ("網站", "Site", [
    "英文改成預設語言。根網址轉到 /en/，搜尋引擎的 x-default 也指向英文頁。",
    "開發日誌上線，就是這一頁。從第一個 commit 開始，每天一篇。"],
@@ -200,9 +200,37 @@ for i, (date, tzh, ten, groups) in enumerate(posts):
     body += '</p>\n    </article>\n' + FOOT
     (out / (date + '.html')).write_text(body, encoding='utf8')
 
+
+# ---- one page per project: that project's entries only, newest first
+PROJECTS = [
+ ('meowcaron', 'Meowcaron', 'Meowcaron', 'Meowcaron'),
+ ('souls-in-abyss', 'Souls in Abyss', 'Souls in Abyss 奈落魂迴', 'Souls in Abyss'),
+ ('prism-defense', 'Prism Defense', 'Prism Defense 稜光防線', 'Prism Defense'),
+ ('planet-wanderer', 'Planet Wanderer', 'Planet Wanderer 小星球漫遊', 'Planet Wanderer'),
+ ('site', '網站', '網站', 'Site'),
+]
+for slug, key, tzh, ten in PROJECTS:
+    page = HEAD % (GTM, esc(ten + ' devlog | yore game studio'), esc(tzh + ' 每一天的更新紀錄。'), esc('What changed in ' + ten + ', day by day.'), esc(ten + ' devlog | yore game studio'), esc(tzh + ' 每一天的更新紀錄。'), esc('What changed in ' + ten + ', day by day.'))
+    page += '    <article class="doc prose">\n'
+    page += '      <p class="crumbs"><a href="../"><span lang="zh">首頁</span><span lang="en">Home</span></a> / <a href="index.html"><span lang="zh">開發日誌</span><span lang="en">Devlog</span></a></p>\n'
+    page += '      <h1 lang="zh">%s 更新紀錄</h1><h1 lang="en">%s update log</h1>\n' % (esc(tzh), esc(ten))
+    page += '      <p lang="zh">只列這個專案的部分，新的在上面。全部專案看<a href="index.html">開發日誌</a>。</p><p lang="en">This project only, newest first. See the <a href="index.html">devlog</a> for everything.</p>\n'
+    n = 0
+    for date, dzh, den, groups in posts:
+        for pzh, pen, zh, en in groups:
+            if pzh != key: continue
+            n += 1
+            page += '      <h3><a href="%s.html">%s</a></h3>\n' % (date, date)
+            for x in zh: page += '      <p lang="zh">%s</p>\n' % esc(x)
+            for x in en: page += '      <p lang="en">%s</p>\n' % esc(x)
+    page += '    </article>\n' + FOOT
+    (out / (slug + '.html')).write_text(page, encoding='utf8')
+    print('project page', slug, n, 'days')
+
 idx = HEAD % (GTM, 'Devlog | yore game studio', 'yore game studio 的開發日誌。從第一個 commit 開始，每天記下改了什麼。', 'The yore game studio devlog. What changed, day by day, from the first commit on.', 'Devlog | yore game studio', 'yore game studio 的開發日誌。從第一個 commit 開始，每天記下改了什麼。', 'The yore game studio devlog. What changed, day by day, from the first commit on.')
 idx += '    <article class="doc prose">\n      <h1 lang="zh">開發日誌</h1><h1 lang="en">Devlog</h1>\n'
-idx += '      <p lang="zh">每天改了什麼，照 commit 紀錄寫。四個專案：Meowcaron、Souls in Abyss、Prism Defense、Planet Wanderer，還有這個網站。</p><p lang="en">What changed each day, written from the commit log. Four projects: Meowcaron, Souls in Abyss, Prism Defense, Planet Wanderer, and this site.</p>\n'
+idx += '      <p lang="zh">每天改了什麼，照 commit 紀錄寫。</p><p lang="en">What changed each day, written from the commit log.</p>\n'
+idx += '      <p class="proj-links">' + ' · '.join('<a href="%s.html">%s</a>' % (slug, html.escape(ten)) for slug, key, tzh, ten in PROJECTS) + '</p>\n'
 idx += '      <ul class="log-list">\n'
 for date, tzh, ten, groups in posts:
     names = ' · '.join(g[0] for g in groups); names_en = ' · '.join(g[1] for g in groups)

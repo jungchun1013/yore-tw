@@ -34,6 +34,9 @@
     .tbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
     .tbtn svg.ic { width: 18px; height: 18px; vertical-align: 0; margin: 0; }
     .tbtn input { display: none; }
+    .cur { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 4px; border-radius: 999px; background: var(--bg); font-size: 13px; font-weight: 900; color: var(--muted); }
+    .cur i { width: 22px; height: 22px; border-radius: 6px; border: 2px solid #0001; display: inline-block; }
+    .cur i.none { background: repeating-conic-gradient(#E6E2D6 0 25%, #FFFFFF 0 50%) 0 0 / 7px 7px; }
     .stage { display: grid; place-items: center; padding: 14px 6px; overflow: auto; min-height: 320px; }
     #grid { image-rendering: pixelated; touch-action: none; cursor: crosshair; border-radius: 6px; background: repeating-conic-gradient(#E6E2D6 0 25%, #FFFFFF 0 50%) 0 0 / 16px 16px; max-width: 100%; }
     .previews { display: flex; gap: 14px; align-items: flex-end; flex-wrap: wrap; padding: 6px 6px 2px; }
@@ -90,6 +93,7 @@
           <button class="tbtn" data-tool="eraser" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M5 3H3v18h18V3H5zm14 2v14H5V5h14zm-3 6H8v2h8v-2z"/></svg><span lang="zh">橡皮</span><span lang="en">Eraser</span></button>
           <button class="tbtn" data-tool="fill" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M8 3h8v2H8V3zm0 2H6v4H4v12h16V9h-2V5h-2v4H8V5zm8 6h2v8H6v-8h2v6h2v-4h2v2h2v-2h2v-2z"/></svg><span lang="zh">填滿</span><span lang="en">Fill</span></button>
           <button class="tbtn" data-tool="pick" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M13 2h-2v2H9v4H7v4H5v6h2v2h2v2h6v-2h2v-2h2v-6h-2V8h-2V4h-2V2zm0 2v4h2v4h2v6h-2v2H9v-2H7v-6h2V8h2V4h2z"/></svg><span lang="zh">吸色</span><span lang="en">Pick</span></button>
+          <span class="cur" id="cur" title="current colour"><i></i><b></b></span>
           <span class="sep"></span>
           <button class="tbtn" id="mirror" type="button"><span lang="zh">左右對稱</span><span lang="en">Mirror</span></button>
           <button class="tbtn" id="undo" type="button"><svg class="ic" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" viewBox="0 0 24 24"><path d="M8 4h2v2H8V4zm10 6V8H8V6H6v2H4v2h2v2h2v2h2v-2H8v-2h10zm0 8v-8h2v8h-2zm0 0v2h-6v-2h6z"/></svg><span lang="zh">復原</span><span lang="en">Undo</span></button>
@@ -182,6 +186,7 @@
     for (const d of store.sprites) add(d, d.id === (state.sprite && state.sprite.id) ? 'on' : '', () => open(d.id));
     for (const d of Object.values(SAMPLES)) add(d, 'sample', () => { const copy = { id: uid(), name: d.name, rows: d.rows.slice(), colors: { ...d.colors } }; store.sprites.unshift(copy); persist(); open(copy.id); });
   }
+  function updateCur() { const s = state.sprite; const i = $('#cur i'), b = $('#cur b'); if (!s) return; if (state.letter === '.' || !s.colors[state.letter]) { i.className = 'none'; i.style.background = ''; b.textContent = T('透明', 'none'); } else { i.className = ''; i.style.background = s.colors[state.letter]; b.textContent = state.letter + ' ' + s.colors[state.letter]; } }
   function buildPalette() {
     const p = $('#palette'); p.innerHTML = ''; const s = state.sprite; if (!s) return;
     const keys = Object.keys(s.colors);
@@ -195,6 +200,7 @@
       row.querySelector('button').onclick = () => { pushUndo(); delete s.colors[k]; s.rows = s.rows.map(r => r.split(k).join('.')); if (state.letter === k) state.letter = '.'; buildPalette(); render(); save(); };
       p.append(row);
     }
+    updateCur(); const on = p.querySelector('.sw.on'); if (on && on.scrollIntoView) on.scrollIntoView({ block: 'nearest' });
   }
   function setTool(t) { state.tool = t; document.querySelectorAll('[data-tool]').forEach(b => b.classList.toggle('on', b.dataset.tool === t)); }
   function pushUndo() { state.undo.push({ rows: state.sprite.rows.slice(), colors: { ...state.sprite.colors } }); if (state.undo.length > 100) state.undo.shift(); state.redo = []; }
