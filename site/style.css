@@ -120,3 +120,14 @@ header.top nav .lang { margin-left: 14px; }
 .faq { margin: 0; max-width: 44em; }
 .faq dt { font-weight: 900; margin: 14px 0 2px; }
 .faq dd { margin: 0; color: var(--ink); }
+
+/* contact page: the private note form */
+.note-form { display: grid; gap: 14px; margin: 8px 0 20px; }
+.note-form label { display: grid; gap: 6px; font-weight: 700; }
+.note-form textarea, .note-form input { font: inherit; font-size: 16px; padding: 12px 14px; border: 2px solid var(--line, #d7d7cb); border-radius: 12px; background: var(--card); color: inherit; width: 100%; box-sizing: border-box; }
+.note-form textarea { min-height: 150px; resize: vertical; line-height: 1.6; }
+.note-form textarea:focus, .note-form input:focus { outline: none; border-color: var(--blue); }
+.note-form .btn { border: 0; cursor: pointer; font: inherit; font-weight: 900; font-size: 18px; }
+.note-form .btn:disabled { opacity: .6; cursor: default; }
+.note-row { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.note-status { font-weight: 700; }
