@@ -49,7 +49,7 @@ function policy(): void {
   if (s.san > 85) resting = false;
   if (resting) best = AREAS.findIndex((a, i) => a.dread === 0 && (i === best || AREAS[i + 1]?.dread !== 0));
   A.goArea(g, AREAS[best].key);
-  if (s.pets.length && !s.activePet) A.setPet(g, s.pets[0].key);
+  if (s.pets.length && s.activePet === null) A.setPet(g, s.pets[0].uid);
   if (s.age >= 20) { A.pactOffers(g); A.rebirth(g, s.race, 17, 0); }
 }
 

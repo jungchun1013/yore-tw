@@ -1,0 +1,92 @@
+[
+  {
+    "number": 1,
+    "name": "sage",
+    "hex": [
+      "#53695e",
+      "#82947b",
+      "#a8b59a"
+    ]
+  },
+  {
+    "number": 2,
+    "name": "blue",
+    "hex": [
+      "#526d79",
+      "#839da5",
+      "#bcc5bd"
+    ]
+  },
+  {
+    "number": 3,
+    "name": "lavender",
+    "hex": [
+      "#625575",
+      "#9586a4",
+      "#c1b3c6"
+    ]
+  },
+  {
+    "number": 4,
+    "name": "terracotta",
+    "hex": [
+      "#855c59",
+      "#b47f76",
+      "#cfb49a"
+    ]
+  },
+  {
+    "number": 5,
+    "name": "earth",
+    "hex": [
+      "#725e53",
+      "#ac917b",
+      "#cfb49a"
+    ]
+  },
+  {
+    "number": 6,
+    "name": "gold",
+    "hex": [
+      "#ac917b",
+      "#c1a775",
+      "#d9c49b"
+    ]
+  },
+  {
+    "number": 7,
+    "name": "cream",
+    "hex": [
+      "#ac917b",
+      "#cfb49a",
+      "#e3ddc9"
+    ]
+  },
+  {
+    "number": 8,
+    "name": "rose",
+    "hex": [
+      "#855c59",
+      "#b47f76",
+      "#c1b3c6"
+    ]
+  },
+  {
+    "number": 9,
+    "name": "silver",
+    "hex": [
+      "#667681",
+      "#bcc5bd",
+      "#e3ddc9"
+    ]
+  },
+  {
+    "number": 10,
+    "name": "midnight",
+    "hex": [
+      "#343842",
+      "#526d79",
+      "#667681"
+    ]
+  }
+]

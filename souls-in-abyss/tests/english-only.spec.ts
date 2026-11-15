@@ -13,14 +13,13 @@ test('English mode has no Chinese on any screen', async ({ page }) => {
   await page.click('.intro'); await check('creation');
   for (const r of ['human', 'elf', 'dwarf', 'giant', 'undead']) { await page.click(`[data-a="cRace"][data-k="${r}"]`); await check('race ' + r); }
   await page.click('#c-go');
-  await page.evaluate(() => { const g = (window as any).__game; g.fastForward(1200); g.s.age = 20; g.befriend('potcat'); g.s.area = 'abyss'; g.s.san = 10; g.refresh(); g.newMonster(); });
+  await page.evaluate(() => { const g = (window as any).__game; g.fastForward(1200); g.s.age = 20; g.befriend('bloom'); g.s.area = 'abyss'; g.s.san = 10; g.refresh(); g.newMonster(); });
   await page.waitForTimeout(3000);
   for (const k of ['equip', 'pets', 'skills', 'map', 'smith', 'titles', 'settings']) {
     await page.click(`.nav [data-k="${k}"]`);
     if (k === 'skills') for (const tab of ['combat', 'magic', 'passive']) { await page.click(`[data-a="stab"][data-k="${tab}"]`); await check('skills ' + tab); }
     await check('view ' + k);
   }
-  page.once('dialog', d => d.accept());
-  await page.click('[data-a="rebirthOpen"]'); await check('rebirth screen');
+  await page.click('[data-a="rebirthOpen"]'); await page.click('[data-a="rebirthYes"]'); await check('rebirth screen');
   await page.click('#rb-back'); await check('back from rebirth');
 });

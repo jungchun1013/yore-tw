@@ -1,8 +1,10 @@
+import { OLD_PETS, petOf } from '../data/pets';
+import { randomDye } from '../data/creatures';
 import { PRIMARY, type Save, type StatKey } from './types';
 import { makeItem } from './loot';
 
 export const SAVE_KEY = 'soulsinabyss.save';
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 7;
 export const YEAR_SEC = 20 * 60;     // one year of age per 20 real minutes
 export const REBIRTH_AGE = 20;
 export const LEGACY_RATE = 0.1;
@@ -42,6 +44,17 @@ MIGRATIONS[3] = s => { // v3 -> v4: accessories become rings and necklaces in th
     if (!it) continue;
     if (s.equip[it.kind]) s.bag.push(it); else s.equip[it.kind] = it;
   }
+};
+MIGRATIONS[6] = s => { // v6 -> v7: pals are picked up like loot, several of a kind allowed; each gets its own uid and the active one is named by it
+  s.nextUid = s.nextUid || 1;
+  for (const p of (s.pets = s.pets || [])) p.uid = s.nextUid++;
+  s.activePet = s.pets.find((p: any) => p.key === s.activePet)?.uid ?? null;
+};
+MIGRATIONS[5] = s => { // v5 -> v6: pals are now monsters you defeat; old pals become the closest new one, each with a dye
+  const seen = new Set<string>();
+  s.pets = (s.pets || []).map((p: any) => ({ ...p, key: OLD_PETS[p.key] })).filter((p: any) => p.key && !seen.has(p.key) && seen.add(p.key))
+    .map((p: any) => ({ ...p, dye: randomDye(petOf(p.key)!.art) }));
+  s.activePet = s.activePet && OLD_PETS[s.activePet] && s.pets.some((p: any) => p.key === OLD_PETS[s.activePet]) ? OLD_PETS[s.activePet] : (s.pets[0]?.key ?? null);
 };
 MIGRATIONS[4] = s => { // v4 -> v5: the Magic tier is gone; magic items become basic (they keep their affix), higher tiers move down one
   const fix = (it: any) => { if (it && it.rarity > 0) it.rarity -= 1; };

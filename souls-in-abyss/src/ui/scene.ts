@@ -2,8 +2,10 @@ import type { Game, GameEvent } from '../game/engine';
 import { areaOf } from '../data/areas';
 import { pixels } from './icons';
 import { heroPixels } from './hero';
-import { stageOf } from '../data/pets';
-import { sprite } from './sprites';
+import { petOf, stageOf } from '../data/pets';
+import { image, sprite } from './sprites';
+import { heroArtUrl, heroFacesLeft } from './hero-art';
+import { CREATURE_DYES, creatureUrl, glows } from '../data/creatures';
 import { num } from '../core/fmt';
 import { drawLandscape, drawPaintedBattle } from './landscape';
 import { areaShade, rgba } from './world-map';
@@ -15,6 +17,9 @@ import { BattleMotion } from './motion';
  */
 const W = 320, H = 120, S = 2;
 interface Floater { x: number; y: number; text: string; color: string; age: number }
+
+/** How far the battle background is pushed back: share of its colour removed, and the strength of the ink veil over it. */
+const BG_DESAT = 0.3, BG_DIM = 0.15;
 
 export class Scene {
   cv: HTMLCanvasElement;
@@ -81,6 +86,11 @@ export class Scene {
     // the same layer of shade the map lays over this area: the deeper, the heavier
     const shade = areaShade(area.key);
     if (shade[3] > 0) { c.fillStyle = rgba(shade); c.fillRect(0, 0, W, H); }
+    // the background sits back so the hero and the monsters read first: part of its colour is taken out, then a veil of ink.
+    // An area that is already deep in shade gets less of the veil, so it does not go black.
+    c.globalCompositeOperation = 'saturation'; c.globalAlpha = BG_DESAT; c.fillStyle = '#808080'; c.fillRect(0, 0, W, H);
+    c.globalCompositeOperation = 'source-over'; c.globalAlpha = BG_DIM * (1 - shade[3]); c.fillStyle = '#343842'; c.fillRect(0, 0, W, H);
+    c.globalAlpha = 1;
 
     const walking = motion.phase === 'advance' && motion.killAge > .12;
     const stride = walking && !reduced ? Math.sin(motion.killAge * 36) : 0;
@@ -90,22 +100,32 @@ export class Scene {
     const hx = 70 + (reduced ? 0 : this.heroLunge * 14 + stride * 2), hy = 88;
     c.fillStyle = '#30383c'; c.globalAlpha = .25; c.fillRect(hx - 12, hy - 1, 26, 3);
     c.globalAlpha = 1;
-    const hs = sprite('hero.' + s.race);
+    const hs = image(heroArtUrl(s.race));
     c.globalAlpha = down ? Math.max(0, 1 - motion.deathAge / .65) : Math.min(1, motion.reviveAge / .65);
-    if (hs) c.drawImage(hs, hx - 12, hy - 32 + bob, 24, 32);
+    if (hs) {
+      // character art is stored at the canvas's 2x scale like the creatures, so it draws pixel for pixel; it faces right toward the monster
+      const w = Math.round(hs.naturalWidth / S), h = Math.round(hs.naturalHeight / S);
+      c.save(); c.translate(Math.round(hx), 0); if (heroFacesLeft(s.race)) c.scale(-1, 1);
+      c.drawImage(hs, -w / 2, hy + 2 - h + bob, w, h); c.restore();
+    }
     else for (const p of heroPixels(s.race, s.equip)) { // the B-original 24×32 hero, wearing what is equipped
       c.fillStyle = p.color; c.fillRect(Math.round(hx - 12 + p.x), Math.round(hy - 32 + bob) + p.y, 1, 1);
     }
     c.globalAlpha = 1;
 
     // pet
-    const ps = s.pets.find(p => p.key === s.activePet);
+    const ps = s.pets.find(p => p.uid === s.activePet);
     if (ps) {
       const st = stageOf(ps.lvl);
       const px = 40 + (reduced ? 0 : this.petLunge * 20 + stride), py = 88;
       c.globalAlpha = g.petDownFor > 0 ? .3 : 1; // a resting pal fades
-      const img = sprite(`pet.${ps.key}.${st}`);
-      if (img) c.drawImage(img, px - 12, py - 24, 24, 24);
+      const pd = petOf(ps.key), img = pd && image(creatureUrl(pd.art, ps.dye || CREATURE_DYES[pd.art][0]));
+      if (img) {
+        // creature art faces left; a pal stands on the hero's side, so it is mirrored to face right
+        const h = Math.round((24 + st * 4) * 0.8), w = Math.round(img.naturalWidth / img.naturalHeight * h), hop = reduced ? 0 : Math.round(Math.abs(Math.sin(this.t * 5)) * 2);
+        c.save(); c.imageSmoothingEnabled = true; c.translate(Math.round(px), 0); c.scale(-1, 1);
+        c.drawImage(img, -Math.round(w / 2), py + 2 - h - hop, w, h); c.restore();
+      }
       else for (const p of pixels('pet-' + ps.key)) {
         c.fillStyle = p.color;
         const scale = st === 2 ? 2 : 1;
@@ -120,8 +140,20 @@ export class Scene {
       const alpha = m.hp > 0 ? Math.min(1, motion.spawnAge / .2) : Math.max(0, 1 - motion.killAge / .25);
       c.globalAlpha = alpha;
       const sz = 22 * m.def.size, mx = 245 - (reduced ? 0 : this.monLunge * 14) + (reduced ? 0 : Math.max(0, 1 - motion.spawnAge / .3) * 20), my = 88;
-      const img = sprite('mon.' + m.def.key);
-      if (img) c.drawImage(img, mx - sz, my - sz * 2, sz * 2, sz * 2);
+      const img = image(creatureUrl(m.def.art, m.dye));
+      if (img) {
+        // art is stored at the canvas's 2x scale, so it draws pixel for pixel; it already faces left, toward the hero
+        const w = img.naturalWidth / S, h = img.naturalHeight / S;
+        const dx = Math.round(mx - w / 2), dy = Math.round(my + 2 - h + (reduced ? 0 : bob * 0.5));
+        if (glows(m.def.art, m.dye)) {
+          // a creature made of starlight: a soft pale halo behind it, breathing slowly
+          const pulse = reduced ? 0.5 : 0.5 + 0.5 * Math.sin(this.t * 1.6);
+          c.save(); c.globalCompositeOperation = 'lighter'; c.globalAlpha = alpha * (0.18 + 0.14 * pulse);
+          c.shadowColor = '#e3ddc9'; c.shadowBlur = 10 + 6 * pulse; c.drawImage(img, dx, dy, w, h); c.drawImage(img, dx, dy, w, h); c.restore();
+        }
+        if (this.monFlash > 0.5) c.globalAlpha = alpha * 0.55;
+        c.drawImage(img, dx, dy, w, h);
+      }
       else {
         c.fillStyle = this.monFlash > 0.5 ? '#ffffff' : m.def.color;
         c.fillRect(mx - sz / 2, my - sz + bob * 0.5, sz, sz);

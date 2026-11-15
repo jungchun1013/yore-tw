@@ -1,0 +1,819 @@
+{
+  "removed": [
+    {
+      "number": 7,
+      "name": "鐵欄守衛"
+    },
+    {
+      "number": 8,
+      "name": "掉落吊燈"
+    },
+    {
+      "number": 15,
+      "name": "無底井"
+    }
+  ],
+  "creatures": [
+    {
+      "number": 1,
+      "name": "鬼火",
+      "slug": "wisp",
+      "original": "originals/01-wisp.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/18-will-o-wisp-larger-core.png",
+      "variants": [],
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 2,
+      "name": "雷狼",
+      "slug": "thunder-wolf",
+      "original": "originals/02-thunder-wolf.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-delivery-2026-11-15/originals/02-thunder-wolf.png",
+      "variants": [
+        {
+          "color": 1,
+          "file": "variants/02-thunder-wolf/01-sage.png"
+        },
+        {
+          "color": 2,
+          "file": "variants/02-thunder-wolf/02-blue.png"
+        },
+        {
+          "color": 3,
+          "file": "variants/02-thunder-wolf/03-lavender.png"
+        },
+        {
+          "color": 4,
+          "file": "variants/02-thunder-wolf/04-terracotta.png"
+        },
+        {
+          "color": 5,
+          "file": "variants/02-thunder-wolf/05-earth.png"
+        },
+        {
+          "color": 6,
+          "file": "variants/02-thunder-wolf/06-gold.png"
+        },
+        {
+          "color": 7,
+          "file": "variants/02-thunder-wolf/07-cream.png"
+        },
+        {
+          "color": 8,
+          "file": "variants/02-thunder-wolf/08-rose.png"
+        },
+        {
+          "color": 9,
+          "file": "variants/02-thunder-wolf/09-silver.png"
+        },
+        {
+          "color": 10,
+          "file": "variants/02-thunder-wolf/10-midnight.png"
+        }
+      ],
+      "sheet": "sheets/02-thunder-wolf.png",
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 3,
+      "name": "無貌者",
+      "slug": "faceless",
+      "original": "originals/03-faceless.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/20-faceless.png",
+      "variants": [],
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 4,
+      "name": "星之落子",
+      "slug": "star-fallen",
+      "original": "originals/04-star-fallen.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/21-star-fallen.png",
+      "variants": [
+        {
+          "color": 1,
+          "file": "variants/04-star-fallen/01-sage.png"
+        },
+        {
+          "color": 2,
+          "file": "variants/04-star-fallen/02-blue.png"
+        },
+        {
+          "color": 3,
+          "file": "variants/04-star-fallen/03-lavender.png"
+        },
+        {
+          "color": 4,
+          "file": "variants/04-star-fallen/04-terracotta.png"
+        },
+        {
+          "color": 5,
+          "file": "variants/04-star-fallen/05-earth.png"
+        },
+        {
+          "color": 6,
+          "file": "variants/04-star-fallen/06-gold.png"
+        },
+        {
+          "color": 7,
+          "file": "variants/04-star-fallen/07-cream.png"
+        },
+        {
+          "color": 8,
+          "file": "variants/04-star-fallen/08-rose.png"
+        },
+        {
+          "color": 9,
+          "file": "variants/04-star-fallen/09-silver.png"
+        },
+        {
+          "color": 10,
+          "file": "variants/04-star-fallen/10-midnight.png"
+        }
+      ],
+      "sheet": "sheets/04-star-fallen.png",
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 5,
+      "name": "污濁水母",
+      "slug": "jelly",
+      "original": "originals/05-jelly.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/22-jelly-slime.png",
+      "variants": [],
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 6,
+      "name": "兇熊",
+      "slug": "bear",
+      "original": "originals/06-bear.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/23-fierce-bear-clean.png",
+      "variants": [
+        {
+          "color": 1,
+          "file": "variants/06-bear/01-sage.png"
+        },
+        {
+          "color": 2,
+          "file": "variants/06-bear/02-blue.png"
+        },
+        {
+          "color": 3,
+          "file": "variants/06-bear/03-lavender.png"
+        },
+        {
+          "color": 4,
+          "file": "variants/06-bear/04-terracotta.png"
+        },
+        {
+          "color": 5,
+          "file": "variants/06-bear/05-earth.png"
+        },
+        {
+          "color": 6,
+          "file": "variants/06-bear/06-gold.png"
+        },
+        {
+          "color": 7,
+          "file": "variants/06-bear/07-cream.png"
+        },
+        {
+          "color": 8,
+          "file": "variants/06-bear/08-rose.png"
+        },
+        {
+          "color": 9,
+          "file": "variants/06-bear/09-silver.png"
+        },
+        {
+          "color": 10,
+          "file": "variants/06-bear/10-midnight.png"
+        }
+      ],
+      "sheet": "sheets/06-bear.png",
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 9,
+      "name": "低語書",
+      "slug": "book",
+      "original": "originals/09-book.png",
+      "source": "sheets/09-book.png",
+      "variants": [
+        {
+          "color": 1,
+          "file": "variants/09-book/01-sage.png"
+        },
+        {
+          "color": 2,
+          "file": "variants/09-book/02-blue.png"
+        },
+        {
+          "color": 3,
+          "file": "variants/09-book/03-lavender.png"
+        },
+        {
+          "color": 4,
+          "file": "variants/09-book/04-terracotta.png"
+        },
+        {
+          "color": 5,
+          "file": "variants/09-book/05-earth.png"
+        },
+        {
+          "color": 6,
+          "file": "variants/09-book/06-gold.png"
+        },
+        {
+          "color": 7,
+          "file": "variants/09-book/07-cream.png"
+        },
+        {
+          "color": 8,
+          "file": "variants/09-book/08-rose.png"
+        },
+        {
+          "color": 9,
+          "file": "variants/09-book/09-silver.png"
+        },
+        {
+          "color": 10,
+          "file": "variants/09-book/10-midnight.png"
+        }
+      ],
+      "sheet": "sheets/09-book.png",
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。",
+      "status": "使用者已確認無鐵鍊版：移除全部鐵鍊，保留鎖頭。"
+    },
+    {
+      "number": 10,
+      "name": "螺殼客",
+      "slug": "shell-dweller",
+      "original": "originals/10-shell-dweller.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/27-shell-dweller.png",
+      "variants": [
+        {
+          "color": 1,
+          "file": "variants/10-shell-dweller/01-sage.png"
+        },
+        {
+          "color": 2,
+          "file": "variants/10-shell-dweller/02-blue.png"
+        },
+        {
+          "color": 3,
+          "file": "variants/10-shell-dweller/03-lavender.png"
+        },
+        {
+          "color": 4,
+          "file": "variants/10-shell-dweller/04-terracotta.png"
+        },
+        {
+          "color": 5,
+          "file": "variants/10-shell-dweller/05-earth.png"
+        },
+        {
+          "color": 6,
+          "file": "variants/10-shell-dweller/06-gold.png"
+        },
+        {
+          "color": 7,
+          "file": "variants/10-shell-dweller/07-cream.png"
+        },
+        {
+          "color": 8,
+          "file": "variants/10-shell-dweller/08-rose.png"
+        },
+        {
+          "color": 9,
+          "file": "variants/10-shell-dweller/09-silver.png"
+        },
+        {
+          "color": 10,
+          "file": "variants/10-shell-dweller/10-midnight.png"
+        }
+      ],
+      "sheet": "sheets/10-shell-dweller.png",
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 11,
+      "name": "黑狼",
+      "slug": "shadow-wolf",
+      "original": "originals/11-shadow-wolf.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/28-shadow-hoof.png",
+      "variants": [],
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 12,
+      "name": "炭殼甲蟲",
+      "slug": "beetle",
+      "original": "originals/12-beetle.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/29-ember-beetle.png",
+      "variants": [
+        {
+          "color": 1,
+          "file": "variants/12-beetle/01-sage.png"
+        },
+        {
+          "color": 2,
+          "file": "variants/12-beetle/02-blue.png"
+        },
+        {
+          "color": 3,
+          "file": "variants/12-beetle/03-lavender.png"
+        },
+        {
+          "color": 4,
+          "file": "variants/12-beetle/04-terracotta.png"
+        },
+        {
+          "color": 5,
+          "file": "variants/12-beetle/05-earth.png"
+        },
+        {
+          "color": 6,
+          "file": "variants/12-beetle/06-gold.png"
+        },
+        {
+          "color": 7,
+          "file": "variants/12-beetle/07-cream.png"
+        },
+        {
+          "color": 8,
+          "file": "variants/12-beetle/08-rose.png"
+        },
+        {
+          "color": 9,
+          "file": "variants/12-beetle/09-silver.png"
+        },
+        {
+          "color": 10,
+          "file": "variants/12-beetle/10-midnight.png"
+        }
+      ],
+      "sheet": "sheets/12-beetle.png",
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 13,
+      "name": "熔岩蝸牛",
+      "slug": "slag-snail",
+      "original": "originals/13-slag-snail.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-delivery-2026-11-15/originals/13-slag-snail.png",
+      "variants": [
+        {
+          "color": 1,
+          "file": "variants/13-slag-snail/01-sage.png"
+        },
+        {
+          "color": 2,
+          "file": "variants/13-slag-snail/02-blue.png"
+        },
+        {
+          "color": 3,
+          "file": "variants/13-slag-snail/03-lavender.png"
+        },
+        {
+          "color": 4,
+          "file": "variants/13-slag-snail/04-terracotta.png"
+        },
+        {
+          "color": 5,
+          "file": "variants/13-slag-snail/05-earth.png"
+        },
+        {
+          "color": 6,
+          "file": "variants/13-slag-snail/06-gold.png"
+        },
+        {
+          "color": 7,
+          "file": "variants/13-slag-snail/07-cream.png"
+        },
+        {
+          "color": 8,
+          "file": "variants/13-slag-snail/08-rose.png"
+        },
+        {
+          "color": 9,
+          "file": "variants/13-slag-snail/09-silver.png"
+        },
+        {
+          "color": 10,
+          "file": "variants/13-slag-snail/10-midnight.png"
+        }
+      ],
+      "sheet": "sheets/13-slag-snail.png",
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 14,
+      "name": "蝕月貓",
+      "slug": "moon-cat",
+      "original": "originals/14-moon-cat.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/31-eclipse-cat.png",
+      "variants": [
+        {
+          "color": 2,
+          "file": "variants/14-moon-cat/02-blue.png"
+        },
+        {
+          "color": 4,
+          "file": "variants/14-moon-cat/04-terracotta.png"
+        },
+        {
+          "color": 7,
+          "file": "variants/14-moon-cat/07-cream.png"
+        },
+        {
+          "color": 9,
+          "file": "variants/14-moon-cat/09-silver.png"
+        },
+        {
+          "color": 10,
+          "file": "variants/14-moon-cat/10-midnight.png"
+        }
+      ],
+      "sheet": "sheets/14-moon-cat.png",
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 16,
+      "name": "失語鐘",
+      "slug": "bell",
+      "original": "originals/16-bell.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/33-mute-bell.png",
+      "variants": [
+        {
+          "color": 1,
+          "file": "variants/16-bell/01-sage.png"
+        },
+        {
+          "color": 2,
+          "file": "variants/16-bell/02-blue.png"
+        },
+        {
+          "color": 3,
+          "file": "variants/16-bell/03-lavender.png"
+        },
+        {
+          "color": 4,
+          "file": "variants/16-bell/04-terracotta.png"
+        },
+        {
+          "color": 5,
+          "file": "variants/16-bell/05-earth.png"
+        },
+        {
+          "color": 6,
+          "file": "variants/16-bell/06-gold.png"
+        },
+        {
+          "color": 7,
+          "file": "variants/16-bell/07-cream.png"
+        },
+        {
+          "color": 8,
+          "file": "variants/16-bell/08-rose.png"
+        },
+        {
+          "color": 9,
+          "file": "variants/16-bell/09-silver.png"
+        },
+        {
+          "color": 10,
+          "file": "variants/16-bell/10-midnight.png"
+        }
+      ],
+      "sheet": "sheets/16-bell.png",
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 17,
+      "name": "伸出的手",
+      "slug": "hand",
+      "original": "originals/17-hand.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/34-reaching-hand.png",
+      "variants": [
+        {
+          "color": 1,
+          "file": "variants/17-hand/01-sage.png"
+        },
+        {
+          "color": 2,
+          "file": "variants/17-hand/02-blue.png"
+        },
+        {
+          "color": 3,
+          "file": "variants/17-hand/03-lavender.png"
+        },
+        {
+          "color": 4,
+          "file": "variants/17-hand/04-terracotta.png"
+        },
+        {
+          "color": 5,
+          "file": "variants/17-hand/05-earth.png"
+        },
+        {
+          "color": 6,
+          "file": "variants/17-hand/06-gold.png"
+        },
+        {
+          "color": 7,
+          "file": "variants/17-hand/07-cream.png"
+        },
+        {
+          "color": 8,
+          "file": "variants/17-hand/08-rose.png"
+        },
+        {
+          "color": 9,
+          "file": "variants/17-hand/09-silver.png"
+        },
+        {
+          "color": 10,
+          "file": "variants/17-hand/10-midnight.png"
+        }
+      ],
+      "sheet": "sheets/17-hand.png",
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 18,
+      "name": "空座",
+      "slug": "seat",
+      "original": "originals/18-seat.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/35-empty-seat.png",
+      "variants": [
+        {
+          "color": 1,
+          "file": "variants/18-seat/01-sage.png"
+        },
+        {
+          "color": 2,
+          "file": "variants/18-seat/02-blue.png"
+        },
+        {
+          "color": 3,
+          "file": "variants/18-seat/03-lavender.png"
+        },
+        {
+          "color": 4,
+          "file": "variants/18-seat/04-terracotta.png"
+        },
+        {
+          "color": 5,
+          "file": "variants/18-seat/05-earth.png"
+        },
+        {
+          "color": 6,
+          "file": "variants/18-seat/06-gold.png"
+        },
+        {
+          "color": 7,
+          "file": "variants/18-seat/07-cream.png"
+        },
+        {
+          "color": 8,
+          "file": "variants/18-seat/08-rose.png"
+        },
+        {
+          "color": 9,
+          "file": "variants/18-seat/09-silver.png"
+        },
+        {
+          "color": 10,
+          "file": "variants/18-seat/10-midnight.png"
+        }
+      ],
+      "sheet": "sheets/18-seat.png",
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 19,
+      "name": "傾斜天平",
+      "slug": "scales",
+      "original": "originals/19-scales.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-delivery-2026-11-15/originals/19-scales.png",
+      "variants": [
+        {
+          "color": 1,
+          "file": "variants/19-scales/01-sage.png"
+        },
+        {
+          "color": 2,
+          "file": "variants/19-scales/02-blue.png"
+        },
+        {
+          "color": 3,
+          "file": "variants/19-scales/03-lavender.png"
+        },
+        {
+          "color": 4,
+          "file": "variants/19-scales/04-terracotta.png"
+        },
+        {
+          "color": 5,
+          "file": "variants/19-scales/05-earth.png"
+        },
+        {
+          "color": 6,
+          "file": "variants/19-scales/06-gold.png"
+        },
+        {
+          "color": 7,
+          "file": "variants/19-scales/07-cream.png"
+        },
+        {
+          "color": 8,
+          "file": "variants/19-scales/08-rose.png"
+        },
+        {
+          "color": 9,
+          "file": "variants/19-scales/09-silver.png"
+        },
+        {
+          "color": 10,
+          "file": "variants/19-scales/10-midnight.png"
+        }
+      ],
+      "sheet": "sheets/19-scales.png",
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 20,
+      "name": "星群鯨",
+      "slug": "star-whale",
+      "original": "originals/20-star-whale.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/37-constellation-whale.png",
+      "variants": [],
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 21,
+      "name": "門縫",
+      "slug": "gap",
+      "original": "originals/21-gap.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/38-the-gap.png",
+      "variants": [],
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 22,
+      "name": "石蝠",
+      "slug": "bat",
+      "original": "originals/22-bat.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/39-drip-bat.png",
+      "variants": [
+        {
+          "color": 1,
+          "file": "variants/22-bat/01-sage.png"
+        },
+        {
+          "color": 2,
+          "file": "variants/22-bat/02-blue.png"
+        },
+        {
+          "color": 3,
+          "file": "variants/22-bat/03-lavender.png"
+        },
+        {
+          "color": 4,
+          "file": "variants/22-bat/04-terracotta.png"
+        },
+        {
+          "color": 5,
+          "file": "variants/22-bat/05-earth.png"
+        },
+        {
+          "color": 6,
+          "file": "variants/22-bat/06-gold.png"
+        },
+        {
+          "color": 7,
+          "file": "variants/22-bat/07-cream.png"
+        },
+        {
+          "color": 8,
+          "file": "variants/22-bat/08-rose.png"
+        },
+        {
+          "color": 9,
+          "file": "variants/22-bat/09-silver.png"
+        },
+        {
+          "color": 10,
+          "file": "variants/22-bat/10-midnight.png"
+        }
+      ],
+      "sheet": "sheets/22-bat.png",
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 23,
+      "name": "陶壺寄居怪",
+      "slug": "pot-hermit",
+      "original": "originals/23-pot-hermit.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/40-pot-hermit.png",
+      "variants": [
+        {
+          "color": 1,
+          "file": "variants/23-pot-hermit/01-sage.png"
+        },
+        {
+          "color": 2,
+          "file": "variants/23-pot-hermit/02-blue.png"
+        },
+        {
+          "color": 3,
+          "file": "variants/23-pot-hermit/03-lavender.png"
+        },
+        {
+          "color": 4,
+          "file": "variants/23-pot-hermit/04-terracotta.png"
+        },
+        {
+          "color": 5,
+          "file": "variants/23-pot-hermit/05-earth.png"
+        },
+        {
+          "color": 6,
+          "file": "variants/23-pot-hermit/06-gold.png"
+        },
+        {
+          "color": 7,
+          "file": "variants/23-pot-hermit/07-cream.png"
+        },
+        {
+          "color": 8,
+          "file": "variants/23-pot-hermit/08-rose.png"
+        },
+        {
+          "color": 9,
+          "file": "variants/23-pot-hermit/09-silver.png"
+        },
+        {
+          "color": 10,
+          "file": "variants/23-pot-hermit/10-midnight.png"
+        }
+      ],
+      "sheet": "sheets/23-pot-hermit.png",
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 24,
+      "name": "星群鹿",
+      "slug": "star-deer",
+      "original": "originals/24-star-deer.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/41-constellation-deer.png",
+      "variants": [],
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 25,
+      "name": "星群狐",
+      "slug": "star-fox",
+      "original": "originals/25-star-fox.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/42-constellation-fox.png",
+      "variants": [],
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    },
+    {
+      "number": 26,
+      "name": "火狐狸",
+      "slug": "fire-fox",
+      "original": "originals/26-fire-fox.png",
+      "source": "/Users/yore/Documents/side_project/kuso_game/souls-in-abyss/art-reference/redesign/new-creatures-2026-11-15/style-unified-2026-11-15/43-fire-fox.png",
+      "variants": [
+        {
+          "color": 4,
+          "file": "variants/26-fire-fox/04-terracotta.png"
+        },
+        {
+          "color": 6,
+          "file": "variants/26-fire-fox/06-gold.png"
+        },
+        {
+          "color": 7,
+          "file": "variants/26-fire-fox/07-cream.png"
+        },
+        {
+          "color": 9,
+          "file": "variants/26-fire-fox/09-silver.png"
+        },
+        {
+          "color": 10,
+          "file": "variants/26-fire-fox/10-midnight.png"
+        }
+      ],
+      "sheet": "sheets/26-fire-fox.png",
+      "source_note": "本包為現有選定版本；來源路徑僅供追溯，使用本包內相對路徑讀圖。"
+    }
+  ],
+  "original_count": 23,
+  "variant_count": 140,
+  "handoff_note": "最新低語書為無鐵鍊版，已更新所有十色與藍色原色。"
+}

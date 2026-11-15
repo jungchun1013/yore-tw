@@ -18,7 +18,7 @@ export const SOURCES: ModSource[] = [
   { key: 'titles', collect: s => TITLES.filter(t => s.titles.includes(t.key)).flatMap(t => t.mods) },
   {
     key: 'pet', collect: s => {
-      const st = s.pets.find(p => p.key === s.activePet);
+      const st = s.pets.find(p => p.uid === s.activePet);
       const d = st && petOf(st.key);
       return st && d ? d.mods(stageOf(st.lvl), st.bond, s.counters.rebirths) : [];
     },

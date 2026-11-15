@@ -111,9 +111,16 @@ export function goArea(g: Game, key: string): void {
   g.s.area = key; g.resetLoot(); g.newMonster();
 }
 
-export function setPet(g: Game, key: string | null): void {
-  if (key && !g.s.pets.some(p => p.key === key)) return;
-  g.s.activePet = key; g.refresh();
+export function setPet(g: Game, uid: number | null): void {
+  if (uid !== null && !g.s.pets.some(p => p.uid === uid)) return;
+  g.s.activePet = uid; g.refresh();
+}
+
+/** Part with a pal for good. The one travelling with you has to be swapped out first. */
+export function releasePet(g: Game, uid: number): void {
+  const s = g.s, i = s.pets.findIndex(p => p.uid === uid);
+  if (i < 0 || s.activePet === uid) return;
+  s.pets.splice(i, 1); g.refresh();
 }
 
 /** Roll the Abyss's offers once and keep them in the save, so reloading cannot reroll. */

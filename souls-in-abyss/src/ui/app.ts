@@ -1,5 +1,5 @@
 import type { Game, Part } from '../game/engine';
-import { PRIMARY, SLOTS, twoHanded, type Item, type L, type Slot } from '../game/types';
+import { PRIMARY, SLOTS, SLOT_OF, twoHanded, type BagSort, type Item, type L, type PetState, type Slot } from '../game/types';
 import { lang, setLang, t, tr, UI } from '../core/i18n';
 import { clock, gold, num, pct } from '../core/fmt';
 import { derive, armorDef, armorPrt, weaponRange, xpNeed } from '../game/stats';
@@ -9,13 +9,15 @@ import { BAG_SIZE, RARITY, SMITH_BREAK_FROM, SMITH_DROP_FROM, SMITH_MAX, WEIGHTS
 import { MAX_RANK, RANKS, SKILLS, activeRank, canToggle, isOff, rankCost, type Tab as SkillTab } from '../data/skills';
 import { AREAS } from '../data/areas';
 import { AREA_CP, difficulty } from '../game/monsters';
-import { PETS, BOND_MAX, STAGE_LV, petOf, petXpNeed, stageOf } from '../data/pets';
+import { FRIENDLY, BOND_MAX, PAL_SIZE, STAGE_LV, petOf, petXpNeed, stageOf } from '../data/pets';
+import { CREATURE_DYES, creatureUrl } from '../data/creatures';
+import { artSrc } from './sprites';
+import { heroArtUrl, heroFacesLeft } from './hero-art';
 import { TITLES } from '../data/titles';
 import { REBIRTH_AGE, YEAR_SEC, clearSave } from '../game/state';
 import { Scene } from './scene';
 import * as A from '../game/actions';
-import { icon, pixelMarkup } from './icons';
-import { heroMarkup } from './hero';
+import { SILVER, icon, pixelMarkup, silhouetteMarkup } from './icons';
 import { WORLD_MAP_POSITIONS, areaPageBg, mapShadeCss, worldMapRoute } from './world-map';
 import { curseOf, giftOf, type PactDef } from '../data/pacts';
 import { COLLAPSE, SAN_TIERS, deathSanLoss, madness, sanTier } from '../data/sanity';
@@ -26,6 +28,10 @@ const NAV: [View, keyof typeof UI][] = [
   ['equip', 'navEquip'], ['bag', 'navBag'], ['pets', 'navPets'], ['skills', 'navSkills'], ['map', 'navMap'],
   ['smith', 'navSmith'], ['titles', 'navTitles'], ['settings', 'navSettings'],
 ];
+/** Each tab is a coloured index tab (palette light tones); the open one stands taller and its colour runs along the card's top edge. */
+const TAB_COLOR: Record<View, string> = {
+  equip: '#a8b59a', bag: '#bcc5bd', pets: '#d9c49b', skills: '#c1b3c6', map: '#cfb49a', smith: '#9fb4bb', titles: '#e3ccb0', settings: '#b9b3c4',
+};
 const STAT: Record<string, L> = {
   str: { zh: '力量', en: 'STR' }, dex: { zh: '靈巧', en: 'DEX' }, int: { zh: '智力', en: 'INT' }, will: { zh: '意志', en: 'WILL' }, luk: { zh: '幸運', en: 'LUCK' },
   hp: { zh: 'HP', en: 'HP' }, mp: { zh: 'MP', en: 'MP' }, atk: { zh: '攻擊', en: 'ATK' }, atkMin: { zh: '最小攻擊', en: 'Min ATK' }, atkMax: { zh: '最大攻擊', en: 'Max ATK' },
@@ -47,7 +53,13 @@ export class App {
   private view: View = 'equip';
   private slot: Slot | 'all' = 'all';
   private skillTab: SkillTab = 'combat';
-  private rbRace: string; private rbAge = 17; private rbPact = -1;
+  private rbRace: string; private rbAge = 17; private rbPact = -1; private rbOpen = false;
+  /** true while the pact panel is being shown for the first time ever on this device: it fades in after the rest */
+  private rbFirst = false;
+  /** which settings action is waiting for its in-page confirmation (artifact viewers refuse window.confirm) */
+  private armed: '' | 'rebirthOpen' | 'reset' = '';
+  /** uid of the pal whose Part button is waiting for its confirmation */
+  private palArmed = 0;
   private lastHtml: Record<string, string> = {};
   private logEl!: HTMLElement;
   private scene: Scene;
@@ -68,8 +80,10 @@ export class App {
   /** Madness on screen: the edges close in over the whole page and the battle strip sways; at 0 the screen goes black. */
   private madFx(): void {
     const g = this.g, m = madness(g.s.san), st = this.root.querySelector('.stage') as HTMLElement | null;
-    const r = (100 - 55 * m).toFixed(1), a = m > 0 ? (0.3 + 0.5 * m).toFixed(2) : '0'; // never so dark the sheet cannot be read
-    if (this.fx.dataset.v !== r + a) { this.fx.dataset.v = r + a; this.fx.style.setProperty('--vr', r + '%'); this.fx.style.setProperty('--va', a); }
+    // only the corners: the opening stays wide, the colour deepens and the breathing quickens as SAN falls
+    const r = (90 - 8 * m).toFixed(1), a = m > 0 ? (0.4 + 0.35 * m).toFixed(2) : '0', bp = (4 - 2.4 * m).toFixed(2);
+    if (this.fx.dataset.v !== r + a + bp) { this.fx.dataset.v = r + a + bp; this.fx.style.setProperty('--vr', r + '%'); this.fx.style.setProperty('--va', a); this.fx.style.setProperty('--bp', bp + 's'); }
+    this.fx.classList.toggle('on', m > 0);
     if (st) { st.classList.toggle('mad', m > 0.15); st.style.setProperty('--wob', (m * m).toFixed(2)); }
     const on = g.collapsing;
     if (this.black.classList.contains('on') !== on) { this.black.classList.toggle('on', on); if (on) this.black.textContent = tr(COLLAPSE); }
@@ -87,7 +101,7 @@ export class App {
         </div>
         <div class="colM">
         <section class="box monster">
-          <div class="mhead"><span class="lbl">${t('monster')}</span> <b id="m-diff"></b> <span id="m-name"></span></div>
+          <div class="mhead"><b id="m-diff"></b> <span id="m-label" class="mlabel"></span><span id="m-name"></span></div>
           <div class="stage"></div>
           <div class="fight">
             <div class="side-hero">
@@ -104,7 +118,7 @@ export class App {
         <section class="box att" id="att"></section>
         </div>
         <section class="box side">
-          <nav class="nav">${NAV.map(([k, l]) => `<button class="ico" data-a="view" data-k="${k}" title="${t(l)}" aria-label="${t(l)}"><span>${icon(k)}</span></button>`).join('')}</nav>
+          <nav class="nav">${NAV.map(([k, l]) => `<button class="ico" data-a="view" data-k="${k}" title="${t(l)}" aria-label="${t(l)}" style="--tab:${TAB_COLOR[k]}"><span>${icon(k)}</span></button>`).join('')}</nav>
           <div class="vtitle" id="vtitle"></div>
           <div class="view" id="view"></div>
         </section>
@@ -115,8 +129,9 @@ export class App {
   }
 
   private setView(v: View): void {
-    this.view = v;
+    this.view = v; this.palArmed = 0;
     this.root.querySelectorAll('.nav .ico').forEach(b => b.classList.toggle('on', (b as HTMLElement).dataset.k === v));
+    this.root.querySelector<HTMLElement>('.nav')?.style.setProperty('--tab-on', TAB_COLOR[v]);
     const label = NAV.find(n => n[0] === v)![1];
     (this.root.querySelector('#vtitle') as HTMLElement).textContent = t(label);
     (this.root.querySelector('#view') as HTMLElement).className = `view v-${v}`;
@@ -132,6 +147,8 @@ export class App {
     if (!el || (el as HTMLButtonElement).disabled) return;
     const a = el.dataset.a!, k = el.dataset.k || '', uid = Number(el.dataset.uid);
     const g = this.g;
+    // picking an option closes its menu; render() holds the view while a menu is open, so the choice would not show until then
+    if (el.classList.contains('ddopt')) el.closest<HTMLElement>('.ddmenu')!.hidden = true;
     switch (a) {
       case 'view': this.setView(k as View); return;
       case 'slot': this.slot = this.slot === k ? 'all' : (k as Slot); break;
@@ -152,11 +169,16 @@ export class App {
         // on a touch screen the first tap on a map node only shows its tooltip; the second tap goes
         if (this.lastPointer === 'touch' && el.classList.contains('node') && this.tipFor !== el) { this.showTip(el); this.tipByTap = true; return; }
         A.goArea(g, k); break;
-      case 'pet': A.setPet(g, k || null); break;
+      case 'pet': A.setPet(g, uid); this.palArmed = 0; break;
+      case 'palPart': this.palArmed = uid; break;
+      case 'palPartYes': A.releasePet(g, uid); this.palArmed = 0; break;
       case 'ddToggle': { const m = el.parentElement!.querySelector<HTMLElement>('.ddmenu'); if (m) m.hidden = !m.hidden; return; }
       case 'autoSell': g.s.autoSell = Number(k); break;
-      case 'rebirthOpen': if (confirm(t('rebirthConfirm'))) this.rebirthScreen(); return;
-      case 'reset': if (confirm(t('resetConfirm'))) { clearSave(); (window as any).__noSave = true; location.reload(); } return;
+      case 'bagSort': g.s.bagSort = k as BagSort; break;
+      case 'rebirthOpen': case 'reset': this.armed = a as 'rebirthOpen' | 'reset'; break;
+      case 'disarm': this.armed = ''; this.palArmed = 0; break;
+      case 'rebirthYes': this.armed = ''; this.rebirthScreen(); return;
+      case 'resetYes': clearSave(); (window as any).__noSave = true; location.reload(); return;
     }
     this.lastHtml = {};
     this.render();
@@ -195,7 +217,8 @@ export class App {
     const g = this.g, m = g.mon;
     const dif = difficulty(m.cp, g.d.cp);
     this.text('m-diff', tr(dif.name)); (document.getElementById('m-diff') as HTMLElement).style.color = dif.color;
-    this.text('m-name', `${tr(m.def.name)} Lv${m.lvl}`); (document.getElementById('m-name') as HTMLElement).style.color = g.monColor;
+    this.text('m-label', m.label === 'friendly' ? tr(FRIENDLY) : '');
+    this.text('m-name', `${tr(m.name)} Lv${m.lvl}`); (document.getElementById('m-name') as HTMLElement).style.color = g.monColor;
     this.text('m-cp', num(m.cp)); this.text('s-cp', num(g.d.cp));
     this.width('m-hp', m.hp / m.maxHp);
     this.width('s-hp', g.hp / g.d.hp); this.width('s-mp', g.mp / g.d.mp);
@@ -293,8 +316,8 @@ export class App {
   }
 
   private petBoxHtml(): string {
-    const s = this.g.s, p = s.pets.find(x => x.key === s.activePet);
-    if (!p) return `<div class="kv"><span class="lbl">${t('pet')}</span></div><div class="kv"><span class="lbl">${t('lv')}</span></div><div class="kv"><span class="lbl">${t('exp')}</span><div class="line"></div></div>`;
+    const s = this.g.s, p = s.pets.find(x => x.uid === s.activePet);
+    if (!p) return `<div class="kv"><span class="lbl">${t('pet')}</span></div><div class="kv"><span class="lbl">${t('lv')}</span></div><div class="kv"><span class="lbl">${t('exp')}</span><div class="line"></div></div><p class="hint">${t('palHint').replace('{i}', icon('pets', 'gi sm ol'))}</p>`;
     const d = petOf(p.key)!, st = stageOf(p.lvl);
     // text only: the pal itself stands on the equipment board, where it can be tapped.
     // Two columns in the middle, as the user sketched: HP / MP on the left, level / EXP on the right.
@@ -311,7 +334,8 @@ export class App {
   private attHtml(): string {
     const s = this.g.s;
     const rows = SKILLS.filter(k => k.act && activeRank(s, k.key)).map(k => `<div class="kv"><span>${tr(k.name)}</span><span>${pct(k.act!.chance(s.skills[k.key]), 1)}</span></div>`).join('');
-    return `<h3>${t('att')}</h3>${rows}`;
+    // nothing equipped yet: one grey line pointing at the skills tab
+    return `<h3>${t('att')}</h3>${rows || `<p class="hint">${t('attHint').replace('{i}', icon('skills', 'gi sm'))}</p>`}`;
   }
 
   /** Map stats for the area the hero is in, under the map: time, kills, falls, gold, EXP | loot total and by rarity. */
@@ -389,23 +413,31 @@ export class App {
     const cells: [Slot, number, number][] = [
       // 8px between the figure (x 104..176) and the hand cells, and 8px again to the columns
       ['head', 34, 44], ['body', 34, 90], ['legs', 34, 136], ['feet', 34, 182],
-      ['ring', 246, 44], ['neck', 246, 90], ['weapon', 78, 113], ['off', 202, 113],
+      ['ring', 246, 44], ['neck', 246, 90], ['weapon', 78, 90], ['off', 202, 90],
     ];
-    const ico = (name: string, x: number, y: number, sz: number) => `<svg x="${x - sz / 2}" y="${y - sz / 2}" width="${sz}" height="${sz}" viewBox="0 0 16 16" shape-rendering="crispEdges">${pixelMarkup(name)}</svg>`;
+    // an empty slot shows a silver silhouette; a filled one shows the icon in full colour on its rarity colour
+    const ico = (name: string, x: number, y: number, sz: number, color: string | null) => `<svg x="${x - sz / 2}" y="${y - sz / 2}" width="${sz}" height="${sz}" viewBox="0 0 16 16" shape-rendering="crispEdges">${color ? silhouetteMarkup(name, color) : pixelMarkup(name)}</svg>`;
+    // a cell is a square with one small pixel step (2 units) taken off each corner
+    const N = 2, S = CELL - N * 2;
+    const cellPath = (x: number, y: number) => `M${x + N} ${y}h${S}v${N}h${N}v${S}h${-N}v${N}h${-S}v${-N}h${-N}v${-S}h${N}z`;
     const cellSvg = cells.map(([k, x, y]) => {
       const it = s.equip[k], on = this.slot === k, locked = k === 'off' && twoHanded(s.equip.weapon);
       const x0 = x - CELL / 2, y0 = y - CELL / 2;
       const cross = locked ? `<line x1="${x0 + 6}" y1="${y0 + 6}" x2="${x0 + CELL - 6}" y2="${y0 + CELL - 6}"/><line x1="${x0 + CELL - 6}" y1="${y0 + 6}" x2="${x0 + 6}" y2="${y0 + CELL - 6}"/>` : '';
       return `<g class="slot ${on ? 'on' : ''} ${it ? 'full' : ''} ${locked ? 'locked' : ''}" data-a="slot" data-k="${k}" ${it ? `data-tip="item:${it.uid}"` : ''}><title>${locked ? t('twoHanded') : tr(SLOT_NAME[k])}</title>
-        <rect class="cell" x="${x0}" y="${y0}" width="${CELL}" height="${CELL}"/>${locked ? cross : ico('slot-' + k, x, y, 24)}</g>`;
+        <path class="cell" d="${cellPath(x0, y0)}"${it ? ` style="fill:${RARITY[it.rarity].color}"` : ''}/>${locked ? cross : ico('slot-' + k, x, y, 24, it ? null : SILVER)}</g>`;
     }).join('');
     // the pal is not a cell: it stands at its master's feet
-    const pet = s.pets.find(p => p.key === s.activePet);
-    const petSvg = pet ? `<g class="petspr" data-a="petTap"><title>${tr(petOf(pet.key)!.stages[stageOf(pet.lvl)].name)}</title>${ico('pet-' + pet.key, 202, 168, 40)}</g>` : '';
+    const pet = s.pets.find(p => p.uid === s.activePet);
+    // no pal yet: the spirit's body (no flames or orbs) as a silver silhouette keeps the spot
+    // the pal's own art at 1.2x, mirrored to face right like it does in battle; centred between the support and charm
+    // columns (x 224), level with the legs row; labelled underneath
+    const petSvg = pet ? `<g class="petspr" data-a="petTap"><title>${tr(petOf(pet.key)!.stages[stageOf(pet.lvl)].name)}</title><g transform="translate(448 0) scale(-1 1)"><image href="${petSrc(pet)}" x="200" y="122" width="48" height="57" preserveAspectRatio="xMidYMid meet"/></g></g>`
+      : `<g class="petghost"><title>${t('palHint').replace(' {i}', '')}</title><image href="${artSrc('./sprites/pal-shadow.png')}" x="200" y="122" width="48" height="57" preserveAspectRatio="xMidYMid meet"/></g>`;
     return `<svg class="doll" viewBox="0 0 280 240">
-      <text class="cap" x="34" y="16">${t('navEquip')}</text><text class="cap" x="246" y="16">${t('charms')}</text>
-      <text class="cap" x="78" y="89">${t('capAttack')}</text><text class="cap" x="202" y="89">${t('capSupport')}</text>
-      <svg x="92" y="48" width="96" height="128" viewBox="0 0 24 32" shape-rendering="crispEdges" data-avatar="${s.race}">${heroMarkup(s.race, { ...s.equip, weapon: undefined, off: undefined })}</svg>
+      <text class="cap" x="34" y="16">${t('navEquip')}</text><text class="cap" x="246" y="16">${t('charms')}</text><text class="cap" x="224" y="200">${t('pet')}</text>
+      <text class="cap" x="78" y="66">${t('capAttack')}</text><text class="cap" x="202" y="66">${t('capSupport')}</text>
+      <g data-avatar="${s.race}"${heroFacesLeft(s.race) ? ' transform="translate(280 0) scale(-1 1)"' : ''}><image href="${artSrc(heroArtUrl(s.race))}" x="97" y="48" width="86" height="128" preserveAspectRatio="xMidYMax meet" style="image-rendering:pixelated"/></g>
       ${cellSvg}${petSvg}</svg>`;
   }
 
@@ -419,7 +451,7 @@ export class App {
     const ORDER: Slot[] = ['weapon', 'off', 'head', 'body', 'legs', 'feet', 'neck', 'ring'];
     const list = ORDER.map(k => { const it = s.equip[k];
       return `<div class="kv" ${it ? `data-tip="item:${it.uid}"` : ''}><span class="lbl">${tr(SLOT_NAME[k])}</span>${it ? this.itemHtml(it) : '<span class="dim">-</span>'}</div>`; }).join('');
-    const p = s.pets.find(x => x.key === s.activePet), d = p && petOf(p.key);
+    const p = s.pets.find(x => x.uid === s.activePet), d = p && petOf(p.key);
     const pal = p && d ? `<div class="tname">${tr(d.stages[stageOf(p.lvl)].name)} <small class="dim">Lv ${p.lvl}</small></div>
         <div class="tsec">${tr(d.ability)}</div><p class="lore dim">${tr(d.lore)}</p>` : `<p class="dim">${t('noPal')}</p>`;
     return `${this.dollSvg()}${worn}<div class="eqlist"><h4>${t('wornList')}</h4>${list}</div><div class="palcard"><h4>${t('palAlong')}</h4>${pal}</div>`;
@@ -429,13 +461,24 @@ export class App {
   private bagHtml(): string {
     const s = this.g.s;
     // each row: the name, then Equip and Sell; the CP change and the sell price are in the tooltip
-    const bag = s.bag.map(it => `<div class="item" data-tip="item:${it.uid}"><div class="grow">${this.itemHtml(it)}</div><div class="acts">
+    const bag = this.bagSorted().map(it => `<div class="item" data-tip="item:${it.uid}"><div class="grow">${this.itemHtml(it)}</div><div class="acts">
         <button data-a="equip" data-uid="${it.uid}">${t('equip')}</button>
         <button class="ghost" data-a="sell" data-uid="${it.uid}">${t('sell')}</button></div></div>`).join('') || `<p class="dim">${t('empty')}</p>`;
     const opts = RARITY.map((r, i) => [String(i), i === 0 ? '-' : tr(r.name)] as [string, string]);
-    return `<div class="row between baghead"><b>${t('bag')} ${s.bag.length}/${BAG_SIZE}</b>
-        <span class="row"><span class="dim">${t('autoSell')} ${dropdown('autoSell', opts, String(s.autoSell))}</span><button class="ghost" data-a="sellAll">${t('sellAll')}</button></span></div>
+    const sorts: [string, string][] = [['new', t('sortNew')], ['rarity', t('sortRarity')], ['slot', t('sortSlot')], ['cp', t('cp')]];
+    return `<div class="baghead"><div class="row between"><b>${t('bag')} ${s.bag.length}/${BAG_SIZE}</b><button class="ghost wide" data-a="sellAll">${t('sellAll')}</button></div>
+        <div class="row between"><span class="dim">${t('sort')} ${dropdown('bagSort', sorts, s.bagSort || 'new')}</span><span class="dim">${t('autoSell')} ${dropdown('autoSell', opts, String(s.autoSell))}</span></div></div>
       <div class="baglist keepscroll">${bag}</div>`;
+  }
+  /** The bag in the order the player chose to see it; ties stay in pickup order. */
+  private bagSorted(): Item[] {
+    const s = this.g.s, mode = s.bagSort || 'new';
+    if (mode === 'new') return s.bag;
+    const best = (a: Item, b: Item) => b.rarity - a.rarity || b.ilvl - a.ilvl || b.plus - a.plus;
+    if (mode === 'rarity') return s.bag.slice().sort(best);
+    if (mode === 'slot') return s.bag.slice().sort((a, b) => SLOTS.indexOf(SLOT_OF[a.kind]) - SLOTS.indexOf(SLOT_OF[b.kind]) || best(a, b));
+    const gain = new Map(s.bag.map(it => [it, this.cpDelta(it, A.targetSlot(s, it))]));
+    return s.bag.slice().sort((a, b) => gain.get(b)! - gain.get(a)!);
   }
 
   /** Tooltip shared by every [data-tip] element: hover on desktop, tap on touch screens. */
@@ -481,8 +524,8 @@ export class App {
       if (this.tipFor && !this.tipByTap && (tgt === document || (tgt as Element).contains?.(this.tipFor))) hide();
     }, true);
   }
-  private petTip(key: string): string {
-    const p = this.g.s.pets.find(x => x.key === key), d = petOf(key);
+  private petTip(uid: string): string {
+    const p = this.g.s.pets.find(x => x.uid === Number(uid)), d = p && petOf(p.key);
     if (!p || !d) return '';
     const st = stageOf(p.lvl);
     return `<div class="tname">${tr(d.stages[st].name)} <small class="dim">Lv ${p.lvl}</small></div>
@@ -494,9 +537,8 @@ export class App {
     const i = AREAS.findIndex(a => a.key === key); if (i < 0) return '';
     const a = AREAS[i], cp = AREA_CP[i];
     const cls = d.cp >= cp ? 'up' : d.cp >= cp * 0.6 ? 'warn' : 'down';
-    const pals = PETS.filter(p => p.home === a.key && !p.hidden).map(p => s.pets.some(x => x.key === p.key) ? tr(p.stages[0].name) : t('unknown')).join(' · ');
     return `<div class="tname">${tr(a.name)} <small class="dim">Lv ${a.min}–${a.max}</small></div>
-      <div class="tsec">${t('recArea')} <b class="${cls}">${num(cp)}</b> · ${a.dread ? `<span class="madtxt">${t('dread')} -${deathSanLoss(a.min, s.lvl, d.prim.will, d.sanDrain, s.pets.find(p => p.key === s.activePet)?.bond || 0)}</span>` : `<span class="up">${t('safe')}</span>`}${pals ? ` · ${t('pet')}${t('sep')}${pals}` : ''}</div>
+      <div class="tsec">${t('recArea')} <b class="${cls}">${num(cp)}</b> · ${a.dread ? `<span class="madtxt">${t('dread')} -${deathSanLoss(a.min, s.lvl, d.prim.will, d.sanDrain, s.pets.find(p => p.uid === s.activePet)?.bond || 0)}</span>` : `<span class="up">${t('safe')}</span>`}</div>
       <p class="lore">${tr(a.flavor)}</p>
       <div class="tnext">${this.g.s.area === a.key ? t('here') : t('clickGo')}</div>`;
   }
@@ -574,17 +616,19 @@ export class App {
 
   private petsHtml(): string {
     const s = this.g.s;
+    // like the bag: only the pals you have picked up, each its own row; bring one along or part with it
     const owned = s.pets.map(p => {
-      const d = petOf(p.key)!, st = stageOf(p.lvl), on = s.activePet === p.key, next = STAGE_LV[st + 1];
+      const d = petOf(p.key)!, st = stageOf(p.lvl), on = s.activePet === p.uid, next = STAGE_LV[st + 1];
+      const acts = on ? `<span class="dim">${t('active')}</span>`
+        : this.palArmed === p.uid ? `<button class="danger" data-a="palPartYes" data-uid="${p.uid}">${t('palPart')}</button><button data-a="disarm">${t('back')}</button>`
+        : `<button data-a="pet" data-uid="${p.uid}">${t('call')}</button><button class="ghost" data-a="palPart" data-uid="${p.uid}">${t('palPart')}</button>`;
       // the pal's story lives in the icon's tooltip
-      return `<div class="item ${on ? 'here' : ''}"><div class="dot" style="background:${d.stages[st].color}" data-tip="pet:${p.key}">${icon('pet-' + p.key)}</div>
+      return `<div class="item ${on ? 'here' : ''}"><div class="dot art" data-tip="pet:${p.uid}"><img src="${petSrc(p)}" alt=""></div>
         <div class="grow"><div class="iname">${tr(d.stages[st].name)} <small class="dim">Lv ${p.lvl}${next ? ` → Lv ${next}` : ''}</small></div>
-        <div class="istat">${tr(d.ability)}<br><span class="hearts">${hearts(p.bond)}</span></div></div>
-        ${on ? `<span class="dim">${t('active')}</span>` : `<button data-a="pet" data-k="${p.key}">${t('call')}</button>`}</div>`;
-    }).join('');
-    const unknown = PETS.filter(p => !p.hidden && !s.pets.some(x => x.key === p.key)).map(p =>
-      `<div class="item faded"><div class="dot q">${icon('unknown')}</div><div class="grow"><div class="iname">${t('unknownPet')}</div><div class="istat">${t('petHint')}${t('sep')}${tr(AREAS.find(a => a.key === p.home)!.name)}</div></div></div>`).join('');
-    return owned + unknown;
+        <div class="istat">${this.palArmed === p.uid ? t('palPartAsk') : `${tr(d.ability)}<br><span class="hearts">${hearts(p.bond)}</span>`}</div></div>
+        <div class="acts">${acts}</div></div>`;
+    }).join('') || `<p class="dim">${t('palHint').replace(' {i}', '')}</p>`;
+    return `<div class="row between baghead"><b>${t('navPets')} ${s.pets.length}/${PAL_SIZE}</b></div>${owned}`;
   }
 
   private titlesHtml(): string {
@@ -601,18 +645,25 @@ export class App {
   private rebirthScreen(): void {
     const g = this.g, root = this.root;
     this.overlay = true; this.rbPact = -1; this.rbRace = g.s.race;
+    try { this.rbFirst = !localStorage.getItem('souls.pactSeen'); localStorage.setItem('souls.pactSeen', '1'); } catch { this.rbFirst = false; }
     const back = () => { this.overlay = false; this.build(); this.lastHtml = {}; this.setView('equip'); };
     const draw = () => {
-      root.innerHTML = `<div class="create">${banner(true)}
+      // desktop: the picker on the left, the Abyss's offers beside it on the right, nothing below the fold.
+      // phone: the offers stay folded behind a button next to the rebirth button, so they never sit below the picker unseen.
+      const pactBtn = `${t('gift')}／${t('curse')}`;
+      root.innerHTML = `<div class="create rebirth">${banner(true)}
+        <div class="rbgrid ${this.rbOpen ? 'open' : ''}"><div class="rbmain">
         <div class="rbtext"><p class="rblead">${t('rebirthLead')}</p>
         <div class="kv left"><span class="lbl">${t('inherit')}</span><span>${t('inheritList')}</span></div>
         <div class="kv left"><span class="lbl">${t('lose')}</span><span>${t('loseList')}</span></div></div>
-        ${raceAgePicker(this.rbRace, this.rbAge, 'rbRace', 'rbAge')}
-        <div class="rbtext">${this.offersHtml()}</div>
-        <div class="cfoot"><button class="link play" id="rb-go">${t('rebirthDo')}</button><button class="link" id="rb-back">${t('back')}</button></div></div>`;
+        ${raceAgePicker(this.rbRace, this.rbAge, 'rbRace', 'rbAge')}</div>
+        <aside class="rbside ${this.rbFirst ? 'first' : ''}">${this.offersHtml()}</aside></div>
+        <div class="cfoot"><button class="link rbtoggle" data-a="rbToggle" aria-expanded="${this.rbOpen}">${pactBtn}</button><button class="link play" id="rb-go">${t('rebirthDo')}</button><button class="link" id="rb-back">${t('back')}</button></div></div>`;
+      this.rbFirst = false; // a redraw after any click shows the panel at once
       root.querySelectorAll<HTMLElement>('[data-a="rbRace"]').forEach(b => b.onclick = () => { this.rbRace = b.dataset.k!; draw(); });
       root.querySelectorAll<HTMLElement>('[data-a="rbAge"]').forEach(b => b.onclick = () => { this.rbAge = Number(b.dataset.k); draw(); });
       root.querySelectorAll<HTMLElement>('[data-a="rbPact"]').forEach(b => b.onclick = () => { this.rbPact = Number(b.dataset.k); draw(); });
+      root.querySelector<HTMLElement>('[data-a="rbToggle"]')!.onclick = () => { this.rbOpen = !this.rbOpen; draw(); };
       root.querySelector<HTMLElement>('#rb-back')!.onclick = back;
       root.querySelector<HTMLElement>('#rb-go')!.onclick = () => { back(); A.rebirth(g, this.rbRace, this.rbAge, this.rbPact); this.rbPact = -1; this.lastHtml = {}; this.render(); };
     };
@@ -632,43 +683,58 @@ export class App {
     const cards = offers.map(([gk, ck], i) => {
       const gi = giftOf(gk)!, cu = curseOf(ck)!;
       return `<button class="pact ${this.rbPact === i ? 'on' : ''}" data-a="rbPact" data-k="${i}">
-        <span class="gift">${tr(gi.name)}</span><small>${fx(gi)}</small><em>${tr(gi.line)}</em>
-        <span class="curse">${tr(cu.name)}</span><small>${fx(cu)}</small><em>${tr(cu.line)}</em></button>`;
+        <span class="gift">${tr(gi.name)}</span><small>${fx(gi)}</small>
+        <span class="curse">${tr(cu.name)}</span><small>${fx(cu)}</small></button>`;
     }).join('');
     return `<h3>${t('pact')}</h3><p class="dim">${t('offerHead')}</p><div class="pacts">${cards}
       <button class="pact refuse ${this.rbPact === -1 ? 'on' : ''}" data-a="rbPact" data-k="-1">${t('refuse')}</button></div>`;
   }
 
+  /** an in-page yes / back pair in place of window.confirm */
+  private askHtml(q: keyof typeof UI, yes: string, yesLabel: keyof typeof UI): string {
+    return `<p class="ask">${t(q)}<br><button class="danger${yesLabel === 'reset' ? ' wide' : ''}" data-a="${yes}">${t(yesLabel)}</button> <button data-a="disarm">${t('back')}</button></p>`;
+  }
+
   private settingsHtml(): string {
     const ok = this.g.s.age >= REBIRTH_AGE;
     return `<div class="row"><b>${t('language')}</b><button data-a="lang" data-k="zh" ${lang === 'zh' ? 'disabled' : ''}>中文</button><button data-a="lang" data-k="en" ${lang === 'en' ? 'disabled' : ''}>English</button></div>
-      <p><button class="danger" data-a="rebirthOpen" ${ok ? '' : 'disabled'}>${t('navRebirth')}</button>${ok ? '' : ` <span class="dim">${t('rebirthNeed')}</span>`}</p>
-      <p><button class="ghost" data-a="reset">${t('reset')}</button></p>
+      ${this.armed === 'rebirthOpen' ? this.askHtml('rebirthConfirm', 'rebirthYes', 'navRebirth')
+        : `<p><button class="danger" data-a="rebirthOpen" ${ok ? '' : 'disabled'}>${t('navRebirth')}</button>${ok ? '' : ` <span class="dim">${t('rebirthNeed')}</span>`}</p>`}
+      ${this.armed === 'reset' ? this.askHtml('resetConfirm', 'resetYes', 'reset') : `<p><button class="ghost wide" data-a="reset">${t('reset')}</button></p>`}
       <p class="dim">${t('credits')}</p><p class="dim">Original pixel artwork · Souls in Abyss</p>`;
   }
 }
 
+/** The pal's creature art in the dye it joined with. */
+const petSrc = (p: PetState): string => { const d = petOf(p.key)!; return artSrc(creatureUrl(d.art, p.dye || CREATURE_DYES[d.art][0])); };
+
 /** A pixel-styled dropdown: a button showing the choice, a menu of options; picking one fires `action` with data-k. */
 const dropdown = (action: string, items: [string, string][], value: string) => {
   const cur = items.find(([v]) => v === value)?.[1] ?? items[0][1];
-  return `<span class="dd"><button type="button" class="ddbtn" data-a="ddToggle">${cur}${icon('arrow', 'gi sm ddarrow')}</button>
+  // every label is stacked in the same cell, hidden, so the button is as wide as its longest choice whatever is picked
+  const size = items.map(([, l]) => `<i aria-hidden="true">${l}</i>`).join('');
+  return `<span class="dd"><button type="button" class="ddbtn" data-a="ddToggle"><span class="ddlab"><span>${cur}</span>${size}</span>${icon('arrow', 'gi sm ddarrow')}</button>
     <div class="ddmenu" hidden>${items.map(([v, l]) => `<button type="button" class="ddopt ${v === value ? 'on' : ''}" data-a="${action}" data-k="${v}">${l}</button>`).join('')}</div></span>`;
 };
 
-/** Age preview uses the same pixel character as the equipment and battle views. */
-const figure = (h: number) => `<svg class="pict" viewBox="0 0 24 32" style="height:${h}px;width:${h * 0.75}px" shape-rendering="crispEdges" aria-hidden="true">${heroMarkup('human')}</svg>`;
+/** Age preview: the chosen race's character art, taller with each year. One figure; the arrows beside the number step the age. */
+const figure = (h: number, race: string) => `<img class="pict art${heroFacesLeft(race) ? ' flip' : ''}" src="${artSrc(heroArtUrl(race))}" style="height:${h}px" alt="" draggable="false">`;
+const tri = (left: boolean) => `<svg class="tri" viewBox="0 0 8 12" aria-hidden="true"><polygon points="${left ? '8,0 0,6 8,12' : '0,0 8,6 0,12'}"/></svg>`;
 
 /** Race icons (left), age figures (right), and a stat table below. Shared by creation and rebirth. */
 export function raceAgePicker(race: string, age: number, raceAction: string, ageAction: string): string {
   const r = raceOf(race), g = ageGrowth(r, age);
   const list = RACES.map(x => `<button class="rrow ${x.key === race ? 'on' : ''}" data-a="${raceAction}" data-k="${x.key}" title="${tr(x.name)}" aria-pressed="${x.key === race}">
       <span class="rico">${icon(x.key)}</span><span class="rname">${tr(x.name)}</span></button>`).join('');
-  const figs = START_AGES.map(a => `<button class="fig ${a === age ? 'on' : ''}" data-a="${ageAction}" data-k="${a}" title="${t('age')} ${a}" aria-pressed="${a === age}">
-      <span class="agev">${a === age ? `<small>${t('age')}</small>${a}` : ''}</span>${figure(40 + (a - 10) * 3)}</button>`).join('');
+  const lo = START_AGES[0], hi = START_AGES[START_AGES.length - 1];
+  const arrow = (to: number, left: boolean) => `<button type="button" class="agearr" data-a="${ageAction}" data-k="${to}" ${to < lo || to > hi ? 'disabled' : ''} aria-label="${t('age')} ${to}">${tri(left)}</button>`;
+  const figs = `<div class="agepick"><small class="agelbl">${t('age')}</small>
+      <div class="agerow">${arrow(age - 1, true)}<span class="agev">${age}</span>${arrow(age + 1, false)}</div>
+      <div class="fig on">${figure(80 + (age - 10) * 5, race)}</div></div>`;
   const head = PRIMARY.map(k => `<th>${icon(k, 'gi sm')}${tr(STAT[k])}</th>`).join('');
   const row = (o: Record<string, number>, plus: boolean) => PRIMARY.map(k => `<td class="${plus ? 'plus' : ''}">${plus ? '+' : ''}${o[k]}</td>`).join('');
-  return `<div class="picker"><div class="rcol"><div class="rlist">${list}</div><p class="rdesc">${tr(r.name)}${t('sep')}${tr(r.desc)}</p></div><div class="rinfo">
-      <div class="figs">${figs}</div>
+  return `<div class="picker"><div class="rcol"><div class="rlist">${list}</div><p class="rdesc">${tr(r.desc)}</p></div><div class="rinfo">
+      ${figs}
       <table class="sttable"><thead><tr><th></th>${head}</tr></thead>
         <tbody><tr><th>${t('initStat')}</th>${row(r.base, false)}</tr><tr><th>${t('ageGrowth')}</th>${row(g, true)}</tr></tbody></table>
       <p class="dim small center">${t('levelShare')}</p></div></div>`;

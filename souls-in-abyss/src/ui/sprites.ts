@@ -18,12 +18,18 @@ export const ART: Record<string, string> = {
 };
 
 const cache: Record<string, HTMLImageElement> = {};
+/** a page may ship its images inline (the claude.ai preview does): url -> data: URI */
+const inline = (url: string): string => ((window as any).__ART_DATA || {})[url] || url;
+/** Any image by URL, loaded once; null until it has arrived. */
+export function image(url: string): HTMLImageElement | null {
+  if (!cache[url]) { const im = new Image(); im.src = inline(url); cache[url] = im; }
+  return cache[url].complete && cache[url].naturalWidth ? cache[url] : null;
+}
 export function sprite(key: string): HTMLImageElement | null {
   const url = ART[key];
-  if (!url) return null;
-  if (!cache[key]) { const im = new Image(); im.src = url; cache[key] = im; }
-  return cache[key].complete && cache[key].naturalWidth ? cache[key] : null;
+  return url ? image(url) : null;
 }
+export const artSrc = inline;
 
 /** Fetch every painted background up front (the current area first) so switching areas never shows a blank frame. */
 export function preloadArt(first?: string): void {

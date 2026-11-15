@@ -1,0 +1,27 @@
+Create a DIRECTLY DRAWN PIXEL ART character sheet for Souls in Abyss from the attached style-reference.png. Panel 1 of that image is the IDENTITY reference (our approved five races), panel 2 is the PIXEL STYLE target (our finished creature sheet) and panel 3 is the world they stand in. The five characters must come out looking like they were drawn by the same hand, in the same sitting, as the creatures in panel 2.
+
+Preserve the five identities exactly: faces, hair, beards, body builds, race-specific height differences, poses and the original outfits they wear (those outfits are their default gear, do not replace them with other fantasy armor, do not add weapons that are not already there). Do not simply mosaic, downsample, blur or pixel-filter panel 1. Reinterpret every shape as deliberately designed cohesive pixel clusters with clear stair-stepped edges, 1 logical pixel outlines, no anti-aliasing, no watercolor, no painterly softness, no dithering, no microtexture. Each material only 3 flat shade steps, approximately 14-20 colors per character. Think readable low-resolution hand-placed game sprites, not high-resolution illustrations with jagged contours. The floral wolf and the hollow knight in panel 2 are the readability benchmark.
+
+Outlines: soft, material-coloured, only slightly darker than the fill they enclose (ivory cloth gets warm taupe lines, moss and leaves gray-olive, lavender cloth and hair dusty mauve, steel and blue cloth slate blue-gray, leather and wood warm brown, gold ochre). No universal near-black border. Keep genuinely dark features dark: eyes, the undead's hollow eye sockets and jaw, the inside of the hood.
+
+Palette, use these exact swatches as the colour vocabulary and nothing more saturated:
+cream #e3ddc9; gray highlight #bcc5bd; slate #667681;
+sage greens #53695e #82947b #a8b59a;
+dusty blues #526d79 #839da5;
+muted lavenders #625575 #9586a4 #c1b3c6;
+muted golds #c1a775 #d9c49b;
+earth browns and tans #725e53 #ac917b #cfb49a;
+dusty rose/terracotta #855c59 #b47f76;
+deep #343842 for eyes, sockets and cavities only.
+Keep each character's own colour family from panel 1 (human navy-blue and leather, elf cream with blue-gold cloak, dwarf earth browns and steel goggles, orc lavender hair and cloth with sage mantle, undead lavender hood with bone). Do not turn everyone purple.
+
+One clean large sheet on flat warm ivory, exactly five columns, one row, generous separation, no overlapping, no ground patches, no environment, no shadows on the floor. All logical pixel units have the same displayed square size across the whole sheet, the SAME size as in panel 2: the human is about 1.8 times the height of panel 2's owl; the elf slightly taller than the human; the dwarf about 1.4 times the owl; the orc the tallest, about 2.1 times the owl, head fully inside the frame including the top of the curly hair; the undead about 1.5 times the owl. Every figure stands with both feet flat on one shared invisible ground line at the same height across the sheet. Full body visible including hair, hood, pickaxe and lantern, no cropping. Every character faces the viewer's RIGHT in a consistent front three-quarter standing view, relaxed arms slightly away from the torso, no walking stride. Whole sheet readable at roughly 96 logical pixels tall per column.
+
+Exact column order, left to right:
+1) HUMAN: brown tousled hair, cream scarf, navy-blue jacket with leather belts and a rolled bedroll on the back, dark trousers, brown boots.
+2) ELF: long ivory hair in a bun with a small flower-and-leaf hair ornament, long pointed ears, cream dress with a blue cloak trimmed in gold, belt, brown boots.
+3) DWARF: stout, long white beard, leather cap with brass goggles, rugged brown workwear, wide belt, carrying a pickaxe over the shoulder and a small lantern at the hip.
+4) ORC (our code name "giant"): tall, broad and gentle, short lavender curly hair, cream knitted scarf, sage leafy shoulder mantle, lavender shirt, chest strap with a small purple crystal, pack on the back, cream trousers.
+5) UNDEAD: small skeleton, skull face with dark sockets, lavender hooded cloak with leaf trim and a flower at the hood, bone arms and legs showing, small pack.
+
+No text, labels, numbers, frames, UI, watermark. This is a pixel-art character sheet for direct game use; prioritise unmistakably chunky purposeful pixel-art construction, identical pixel density to the creature sheet, and faithful identities over intricate detail.

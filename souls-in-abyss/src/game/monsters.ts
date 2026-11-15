@@ -2,13 +2,19 @@ import { AREAS, type Area, type MonDef } from '../data/areas';
 import type { L } from './types';
 import { pick, irange } from '../core/rng';
 import { cpOf } from './stats';
+import { DYE_WORD, randomDye } from '../data/creatures';
+import { pick as pickOne } from '../core/rng';
 
-export interface Monster { def: MonDef; lvl: number; hp: number; maxHp: number; atk: number; armor: number; prt: number; interval: number; xp: number; gold: number; cp: number }
+/** dye: which colour of the creature art this one wears, rolled at spawn. label: a title it spawned with ("friendly" ones can join you). */
+export interface Monster { def: MonDef; dye: string; name: L; label?: 'friendly'; lvl: number; hp: number; maxHp: number; atk: number; armor: number; prt: number; interval: number; xp: number; gold: number; cp: number }
 
 export function makeMonster(d: MonDef, lvl: number): Monster {
   const hp = (14 + 9 * lvl + 0.45 * lvl * lvl + 0.006 * lvl * lvl * lvl) * d.hp;
+  const dye = d.dyes ? pickOne(d.dyes) : randomDye(d.art);
+  // a monster that carries its colour in its name: 藍花鹿 / Blue Flower Fawn
+  const name: L = d.prefix ? { zh: DYE_WORD[dye].zh + d.name.zh, en: DYE_WORD[dye].en + ' ' + d.name.en } : d.name;
   const m: Monster = {
-    def: d, lvl, hp, maxHp: hp,
+    def: d, dye, name, lvl, hp, maxHp: hp,
     atk: (4 + 2.4 * lvl + 0.03 * lvl * lvl + 0.0004 * lvl * lvl * lvl) * d.atk,
     armor: lvl * 0.4 * d.def,
     prt: d.prt,

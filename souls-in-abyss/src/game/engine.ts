@@ -4,11 +4,12 @@ import { difficulty, spawn, type Monster } from './monsters';
 import { AREAS, areaOf } from '../data/areas';
 import { LEVEL_SHARE, ageGrowth, raceOf } from '../data/races';
 import { SKILLS, type SkillDef, activeRank } from '../data/skills';
-import { PETS, BOND_MAX, BOND_SEC, petOf, petXpNeed, stageOf } from '../data/pets';
+import { PETS, BOND_MAX, BOND_SEC, FRIENDLY, FRIENDLY_CHANCE, PAL_SIZE, petOf, petXpNeed, stageOf } from '../data/pets';
 import { TITLES } from '../data/titles';
 import { FATE_CHANCE, FATE_LINES } from '../data/fate';
 import { BAG_SIZE, DROP_CHANCE, RARITY } from '../data/items';
 import { chance, pick, range, rnd } from '../core/rng';
+import { randomDye } from '../data/creatures';
 import { makeItem, nameOf, rollRarity, sellPrice } from './loot';
 import { REBIRTH_AGE, YEAR_SEC } from './state';
 import { tr } from '../core/i18n';
@@ -43,7 +44,7 @@ export class Game {
   quiet = false;
   private heroT = 0; private monT = 0; private petT = 0;
   private pause = 0; private down = 0;
-  private petDown = 0; private petKey: string | null = null;
+  private petDown = 0; private petKey: number | null = null;
   private madT = 0;
   /** True while the screen is black after SAN hit 0. */
   collapsing = false;
@@ -72,7 +73,8 @@ export class Game {
   }
   private monPart(): Part {
     // when mad, names sometimes come out wrong
-    const name = sanTier(this.s.san) === 2 && chance(0.3) ? tr(pick(GLITCH)) : tr(this.mon.def.name);
+    const base = sanTier(this.s.san) === 2 && chance(0.3) ? tr(pick(GLITCH)) : tr(this.mon.name);
+    const name = this.mon.label === 'friendly' ? tr(FRIENDLY) + base : base;
     return { text: name, color: this.monColor };
   }
   private n(x: number, cls = 'num'): Part { return { text: String(Math.max(0, Math.round(x))), cls }; }
@@ -87,6 +89,9 @@ export class Game {
 
   newMonster(): void {
     this.mon = spawn(areaOf(this.s.area));
+    // a monster that could be a pal sometimes spawns friendly, while you have room for one more; only a friendly one can join you
+    const pal = PETS.find(p => p.mon === this.mon.def.key);
+    if (pal && this.s.pets.length < PAL_SIZE && chance(FRIENDLY_CHANCE)) this.mon.label = 'friendly';
     this.monColor = difficulty(this.mon.cp, this.d.cp).color;
     this.monT = this.mon.interval * 0.8; this.heroT = 0;
     this.emit({ t: 'spawn' });
@@ -98,10 +103,10 @@ export class Game {
   get downFor(): number { return this.down; }
   get petDownFor(): number { return this.petDown; }
   /** The pal's own pools: a share of yours, growing with its stage and bond. */
-  get petMaxHp(): number { const st = this.s.pets.find(p => p.key === this.s.activePet); return st ? this.d.hp * [0.45, 0.6, 0.8][stageOf(st.lvl)] * (1 + st.bond * 0.02) : 0; }
+  get petMaxHp(): number { const st = this.s.pets.find(p => p.uid === this.s.activePet); return st ? this.d.hp * [0.45, 0.6, 0.8][stageOf(st.lvl)] * (1 + st.bond * 0.02) : 0; }
   get petMaxMp(): number { return this.s.activePet ? this.d.mp * 0.6 : 0; }
   private petPart(): Part {
-    const st = this.s.pets.find(p => p.key === this.s.activePet)!;
+    const st = this.s.pets.find(p => p.uid === this.s.activePet)!;
     return { text: tr(petOf(st.key)!.stages[stageOf(st.lvl)].name), cls: 'pet' };
   }
 
@@ -181,7 +186,7 @@ export class Game {
   }
 
   private petAttack(): void {
-    const st = this.s.pets.find(p => p.key === this.s.activePet);
+    const st = this.s.pets.find(p => p.uid === this.s.activePet);
     if (!st) return;
     const d = petOf(st.key)!, stage = stageOf(st.lvl);
     const avg = this.d.atkMin + (this.d.atkMax - this.d.atkMin) * this.d.bal;
@@ -282,7 +287,7 @@ export class Game {
   sanLossHere(): number {
     const s = this.s, a = areaOf(s.area);
     if (!a.dread) return 0;
-    const pet = s.pets.find(p => p.key === s.activePet);
+    const pet = s.pets.find(p => p.uid === s.activePet);
     return deathSanLoss(a.min, s.lvl, this.d.prim.will, this.d.sanDrain, pet ? pet.bond : 0);
   }
   private deathSan(): void {
@@ -393,7 +398,7 @@ export class Game {
   private lastPetTap = 0;
   /** Tapping the pal: it answers with a quip; once a minute the tap also deepens the bond a little. */
   petTap(): boolean {
-    const st = this.s.pets.find(p => p.key === this.s.activePet);
+    const st = this.s.pets.find(p => p.uid === this.s.activePet);
     if (!st) return false;
     const d = petOf(st.key)!;
     this.say(pick(d.quips), [], 'pet');
@@ -403,7 +408,7 @@ export class Game {
   }
 
   private petBondTick(dt: number): void {
-    const st = this.s.pets.find(p => p.key === this.s.activePet);
+    const st = this.s.pets.find(p => p.uid === this.s.activePet);
     if (!st || st.bond >= BOND_MAX) return;
     st.bondT += dt;
     if (st.bondT >= BOND_SEC) {
@@ -414,7 +419,7 @@ export class Game {
   }
 
   private petKill(mlvl: number): void {
-    const st = this.s.pets.find(p => p.key === this.s.activePet);
+    const st = this.s.pets.find(p => p.uid === this.s.activePet);
     if (!st) return;
     const d = petOf(st.key)!;
     st.xp += mlvl >= st.lvl - 5 ? 1 : 0.3;
@@ -431,20 +436,19 @@ export class Game {
 
   private tryBefriend(): void {
     const s = this.s;
-    // the first pal is a sure thing so everyone meets the system early
-    if (s.pets.length === 0 && s.counters.kills >= 25) { this.befriend(PETS[0].key); return; }
-    for (const d of PETS) {
-      if (d.home !== s.area || s.pets.some(p => p.key === d.key)) continue;
-      if (d.needRebirths && s.counters.rebirths < d.needRebirths) continue;
-      if (chance(d.chance * this.d.drop)) { this.befriend(d.key); return; }
-    }
+    // only a friendly monster can join you; your first friendly one always does
+    const m = this.mon, d = PETS.find(p => p.mon === m.def.key);
+    if (m.label !== 'friendly' || !d || s.pets.length >= PAL_SIZE) return;
+    const first = s.pets.length === 0;
+    if (first || chance(d.chance * this.d.drop)) this.befriend(d.key, m.dye);
   }
 
-  befriend(key: string): void {
+  befriend(key: string, dye?: string): void {
     const s = this.s, d = petOf(key);
-    if (!d || s.pets.some(p => p.key === key)) return;
-    s.pets.push({ key, lvl: 1, xp: 0, bond: 0, bondT: 0 });
-    if (!s.activePet) s.activePet = key;
+    if (!d || s.pets.length >= PAL_SIZE) return;
+    const p = { uid: s.nextUid++, key, lvl: 1, xp: 0, bond: 0, bondT: 0, dye: dye || randomDye(d.art) };
+    s.pets.push(p);
+    if (s.activePet === null) s.activePet = p.uid;
     this.refresh();
     this.say({ zh: '{0} 想跟著你走！', en: '{0} wants to come with you!' }, [{ text: tr(d.stages[0].name), cls: 'pet' }], 'pet');
     this.checkTitles();

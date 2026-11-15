@@ -1,3 +1,4 @@
+import { ICON_PX } from './icon-px';
 /**
  * B-style redraw, authored directly on a 16×16 grid.
  * No source-image sampling, enlargement, bevel filter or generated colours.
@@ -201,11 +202,23 @@ draw('star', g => { g.poly([[7,0],[10,5],[15,6],[11,10],[12,15],[7,12],[2,15],[3
 draw('heart', g => { g.poly([[3,2],[5,2],[8,5],[11,2],[13,2],[15,4],[15,7],[13,10],[8,15],[2,10],[0,7],[0,4]],'r'); g.line(2,4,4,3,'T').dot(2,5,'w').line(11,10,8,13,'R'); });
 draw('hazard', g => { g.poly([[7,1],[15,14],[0,14]],'y').rect(7,5,1,5,'o').dot(7,12,'o').line(4,7,2,12,'Y'); });
 draw('unknown', g => { g.rect(5,2,6,1,'p').rect(3,3,2,3,'p').rect(10,3,2,4,'p').line(10,7,7,9,'p').rect(7,9,2,2,'p').rect(7,13,2,2,'p').dot(5,2,'L'); });
+// the user's hand-drawn versions (pixel editor) replace the coded drawings above
+for (const [key, rows] of Object.entries(ICON_PX)) {
+  const px: Pixel[] = [];
+  rows.forEach((row, y) => [...row].forEach((ch, x) => { if (ch !== '.') px.push({ x, y, color: PALETTE[ch] }); }));
+  art[key] = px;
+}
 export const ICON_NAMES = Object.keys(art);
 export function pixels(name: string): Pixel[] { return art[name] || art.unknown; }
 export function pixelMarkup(name: string): string {
   return pixels(name).map(p => `<rect x="${p.x}" y="${p.y}" width="1" height="1" fill="${p.color}"/>`).join('');
 }
+/** The icon's shape in one flat colour (empty slots in silver, filled ones in the item's rarity colour). */
+export function silhouetteMarkup(name: string, color: string): string {
+  return pixels(name).map(p => `<rect x="${p.x}" y="${p.y}" width="1" height="1" fill="${color}"/>`).join('');
+}
+/** Silver from the dye set: empty equipment slots and the empty pal spot. */
+export const SILVER = '#bcc5bd';
 export function icon(name: string, cls = 'gi'): string {
   return `<svg class="${cls}" viewBox="0 0 16 16" shape-rendering="crispEdges" aria-hidden="true" data-icon="${name}">${pixelMarkup(name)}</svg>`;
 }

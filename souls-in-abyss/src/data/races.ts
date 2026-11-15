@@ -39,7 +39,7 @@ export const RACES: Race[] = [
     mods: [], color: '#b86f50',
   },
   {
-    key: 'giant', name: { zh: '巨人', en: 'Giant' }, icon: '巨',
+    key: 'giant', name: { zh: '獸人', en: 'Orc' }, icon: '獸', // the id stays `giant` so old saves keep working
     desc: { zh: '力量與意志。HP +15%。', en: 'Strength and will. HP +15%.' },
     base: { str: 30, dex: 12, int: 10, will: 22, luk: 12 },
     growth: { str: 4, dex: 1, int: 1, will: 3, luk: 0 },

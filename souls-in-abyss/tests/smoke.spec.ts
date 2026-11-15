@@ -8,6 +8,8 @@ const fresh = (lang: string) => {
 test('title, create a hero, fight, and open every view', async ({ page }, info) => {
   const errors: string[] = [];
   page.on('pageerror', e => errors.push(String(e)));
+  // the artifact viewer answers window.confirm with false at once: the game must not depend on it
+  await page.addInitScript(() => { window.confirm = () => false; });
   await page.addInitScript(fresh, 'zh');
   await page.goto('/');
   await page.screenshot({ path: `${SHOTS}/${info.project.name}-title.png` });
@@ -15,9 +17,8 @@ test('title, create a hero, fight, and open every view', async ({ page }, info) 
   await expect(page.locator('.introline').first()).toBeVisible();
   await page.click('.intro');
   await page.click('[data-a="cRace"][data-k="elf"]');
-  await page.click('[data-a="cAge"][data-k="13"]');
   await expect(page.locator('.sttable tbody tr').nth(1).locator('td').nth(1)).toHaveText('+4');
-  await expect(page.locator('.fig.on .agev')).toHaveText('年齡13');
+  await expect(page.locator('.agev')).toHaveText('13');
   await page.hover('#c-go');
   await page.waitForTimeout(300);
   await page.screenshot({ path: `${SHOTS}/${info.project.name}-create.png` });
@@ -69,12 +70,14 @@ test('rebirth with a pact keeps gear and adds legacy', async ({ page }, info) =>
     g.fastForward(300); g.s.age = 20;
     return g.s.equip.weapon.uid;
   });
-  page.once('dialog', d => d.accept());
   await page.click('.nav [data-k="settings"]');
   await page.click('[data-a="rebirthOpen"]');
+  // the in-page confirmation (no window.confirm: artifact viewers refuse it)
+  await page.click('[data-a="rebirthYes"]');
   await page.click('[data-a="rbRace"][data-k="giant"]');
-  await page.click('[data-a="rbAge"][data-k="15"]');
+  await page.click('[data-a="rbAge"][data-k="16"]'); await page.click('[data-a="rbAge"][data-k="15"]');
   await expect(page.locator('.pact')).toHaveCount(4);
+  const fold = page.locator('[data-a="rbToggle"]'); if (await fold.isVisible()) await fold.click(); // phones keep the offers folded
   await page.click('[data-a="rbPact"][data-k="1"]');
   await page.screenshot({ path: `${SHOTS}/${info.project.name}-rebirth.png` });
   const offer = await page.evaluate(() => (window as any).__game.s.offers[1]);

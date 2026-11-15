@@ -6,7 +6,7 @@
   font-display: swap;
 }
 :root {
-  --bg: #dedfd3; --box: #f9f7f0; --line: #d7d7cb; --ink: #343842; --lbl: #343842; --dim: #667681;
+  --bg: #dedfd3; --box: #fbfaf6; --line: #d7d7cb; --ink: #343842; --lbl: #343842; --dim: #667681;
   --gold: #c1a775; --num: 22px; --r-box: 12px; --r-item: 8px; --fs-xs: 13px; --fs-m: 16px; --fs-l: 21px; --fs-xl: 25px; --fs-xxl: 30px; --fs-title: 84px; --fs-title-s: 52px; --slot: 34px; --accent: #625575; --accent-soft: #e8e3ea; --glow1: #625575; --glow2: #9586a4; --glow3: #c4bacd; --glow4: #e8e3ea; --orange: #b47f76; --red: #9c4f47; --blue: #5f7d87; --up: #53695e; --down: #9c4f47; --warn: #a88a55;
   color-scheme: light;
 }
@@ -15,6 +15,11 @@ html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); 
   font: var(--fs-m)/28px Cubic11, "PingFang TC", "Noto Sans TC", sans-serif; }
 button, input, select { font: inherit; color: inherit; }
 button { background: #e3ddc9; border: 0; padding: 6px 14px; cursor: pointer; white-space: nowrap; }
+/* every text button has a fixed width (small in list rows, medium, wide for a long label), so a label, a number or the language never resizes it.
+   Icon tiles, map nodes, text links, tabs and menu rows size by their own rules. */
+:root { --btn-s: 52px; --btn-m: 88px; --btn-l: 152px; }
+button:where(:not(.ico, .cog, .rrow, .fig, .agearr, .node, .link, .up-btn, .ddbtn, .ddopt, .pact, .stab)):where(:not(.cogmenu *)) { width: var(--btn-m); padding-left: 0; padding-right: 0; text-align: center; }
+button.wide { width: var(--btn-l); }
 button:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent); }
 button:disabled { opacity: .45; cursor: default; }
 button.ghost { background: #e3ddc9; } button.danger { background: var(--red); color: #fff; }
@@ -41,7 +46,13 @@ small { font-size: var(--fs-xs); }
 .sheet { grid-area: sheet; display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 0 14px; align-content: start; }
 .sheet .kv.name { grid-column: 1 / -1; } .sheet .kv.name .lbl { min-width: 58px; } .sheet .kv.name > span:last-child { margin-left: 0; }
 .monster { grid-area: monster; } .petbox { grid-area: pet; } .log { grid-area: log; } .att { grid-area: att; overflow-y: auto; }
-.loot { grid-area: loot; } .side { grid-area: side; display: flex; flex-direction: column; padding: 20px 24px; }
+.loot { grid-area: loot; }
+/* grey one-line tips in empty panels */
+.hint { color: var(--dim); font-size: var(--fs-xs); margin-top: 8px; line-height: 1.6; }
+.hint .gi { vertical-align: -3px; }
+/* the pal face is mostly white: a 1px grey ring keeps it visible on the parchment */
+.doll .petghost image { opacity: 1; }
+.gi.ol { filter: drop-shadow(1px 0 0 var(--dim)) drop-shadow(-1px 0 0 var(--dim)) drop-shadow(0 1px 0 var(--dim)) drop-shadow(0 -1px 0 var(--dim)); } .side { grid-area: side; display: flex; flex-direction: column; padding: 20px 24px; }
 
 .kv { display: flex; align-items: center; gap: 10px; min-height: 28px; }
 .kv .lbl { color: var(--lbl); min-width: 48px; }
@@ -103,7 +114,12 @@ small { font-size: var(--fs-xs); }
 .view.v-bag .item { padding: 8px 12px; margin: 6px 0; gap: 8px; }
 .view.v-bag .item .iname { font-size: var(--fs-xs); line-height: 20px; }
 .view.v-bag .item .acts { flex: none; flex-wrap: nowrap; gap: 6px; }
-.view.v-bag .item .acts button { font-size: var(--fs-xs); line-height: 20px; padding: 2px 0; width: 52px; text-align: center; }
+.view.v-bag .item .acts button { font-size: var(--fs-xs); line-height: 20px; padding: 2px 0; width: var(--btn-s); text-align: center; }
+/* pals are listed like the bag: a count, then one row each with two equal buttons */
+.view.v-pets .baghead { margin-bottom: 8px; }
+.view.v-pets .item .acts { flex: none; flex-direction: column; flex-wrap: nowrap; gap: 6px; }
+.view.v-pets .item .iname { white-space: normal; } .view.v-pets .item .iname small { white-space: nowrap; }
+.view.v-pets .item .acts button { font-size: var(--fs-xs); line-height: 20px; padding: 2px 0; width: var(--btn-s); text-align: center; }
 /* equipment: what is worn, and the pal along, under the figure */
 .eqlist, .palcard { margin-top: 16px; } .eqlist h4, .palcard h4 { margin: 0 0 6px; font-size: var(--fs-m); font-weight: normal; color: var(--dim); }
 .eqlist .kv .lbl { min-width: 58px; } .eqlist .kv > span:last-child:not(.lbl) { margin-left: 0; }
@@ -129,7 +145,6 @@ small { font-size: var(--fs-xs); }
 .doll .slot { cursor: pointer; }
 .doll .cell { fill: #e3e0d5; stroke: none; }
 .doll .slot.on .cell { fill: #ddd3df; }
-.doll .slot:not(.full) > svg { opacity: .45; }
 .doll .slot.locked .cell { fill: #d9d4cc; } .doll .slot.locked line { stroke: #b47f76; stroke-width: 2; }
 .doll .cap { fill: var(--dim); font: var(--fs-xs) Cubic11, monospace; text-anchor: middle; }
 .doll .slot text.pr { text-anchor: end; }
@@ -143,7 +158,7 @@ small { font-size: var(--fs-xs); }
 .view .skill.on { background: #53695e; color: #fff; }
 .view .skill[data-a] { cursor: pointer; }
 .view .skill .sico { width: 34px; height: 34px; clip-path: var(--px1); background: #fff; color: var(--ink); display: grid; place-items: center; flex: none; }
-.view .skill .grow { flex: 1; min-width: 0; } .view .skill .up-btn { flex: none; background: #fff; color: var(--ink); border: 0; clip-path: var(--px1); height: 30px; padding: 0 12px; display: inline-flex; align-items: center; gap: 4px; line-height: 1; font-size: var(--fs-m); }
+.view .skill .grow { flex: 1; min-width: 0; } .view .skill .up-btn { flex: none; background: #fff; color: var(--ink); border: 0; clip-path: var(--px1); height: 30px; width: 56px; padding: 0; display: inline-flex; align-items: center; justify-content: center; gap: 4px; line-height: 1; font-size: var(--fs-m); }
 .view .skill.on .sico { color: #53695e; }
 .view .skill .sname { font-size: var(--fs-l); } .skill .istat { color: rgba(255,255,255,.85); }
 .view .skill .up-btn small { font-size: var(--fs-m); }
@@ -187,26 +202,30 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .rrow.on { color: var(--accent); } .rrow.on .rico { background: var(--accent); }
 .rrow:hover:not(:disabled), .rrow:focus-visible { background: none; border: 0; } .rrow:hover:not(.on) .rico { background: #5d6b66; }
 .rinfo { color: #5d6b66; display: flex; flex-direction: column; align-items: center; gap: 12px; }
-.figs { display: grid; grid-template-columns: repeat(8, var(--slot)); align-items: end; justify-content: center; column-gap: 14px; height: 120px; }
-/* every figure gets the same slot, so spacing is even and never depends on the selection */
-.fig { position: relative; width: var(--slot); padding: 0; border: 0; background: none; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; }
-/* floats above the figure so a wider number never shifts the row */
-.fig .agev { position: absolute; bottom: calc(100% + 4px); left: 50%; transform: translateX(-50%); font-size: var(--num); color: var(--accent); display: flex; flex-direction: column; align-items: center; line-height: 1.2; white-space: nowrap; pointer-events: none; }
-.fig .agev small { font-size: var(--fs-xs); color: #9ba39a; letter-spacing: .08em; }
-.fig .pict { fill: #9ba39a; display: block; transition: fill .15s; }
-.fig.on .pict { fill: var(--accent); }
-.fig:hover:not(:disabled), .fig:focus-visible { background: none; border: 0; } .fig:hover:not(.on) .pict { fill: #5d6b66; }
+/* one figure: the age label, the number with its two arrows, then the race art, which grows a little with each year.
+   The block has a fixed height so a taller figure never moves the number or the table. */
+.agepick { display: flex; flex-direction: column; align-items: center; gap: 2px; height: 176px; margin: 0 0 14px; }
+.agelbl { font-size: 20px; color: #9ba39a; letter-spacing: .08em; }
+.agerow { display: flex; align-items: center; gap: 10px; }
+.agerow .agev { font-size: 18px; color: var(--accent); min-width: 2.2ch; text-align: center; line-height: 1.2; }
+.agearr { width: 28px; height: 28px; padding: 0; border: 0; background: none; color: #9ba39a; display: grid; place-items: center; clip-path: none; }
+.agearr .tri { width: 12px; height: 18px; fill: currentColor; display: block; }
+.agearr:hover:not(:disabled), .agearr:focus-visible { background: none; border: 0; color: var(--accent); }
+.agearr:disabled { opacity: .25; }
+.fig { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; flex: 1; }
+.fig .pict { display: block; }
 .sttable { border-collapse: collapse; font-size: var(--num); width: auto; margin: 0 auto; }
 .sttable th, .sttable td { padding: 5px 15px; text-align: center; font-weight: normal; }
+.sttable tbody { font-size: var(--fs-l); } /* the two stat rows one step smaller than the number size */
 .sttable thead th { color: #5d6b66; font-size: var(--fs-l); }
-.sttable thead .gi.sm { display: block; width: 30px; height: 30px; margin: 0 auto 3px; opacity: .8; }
+.sttable thead .gi.sm { display: block; width: 30px; height: 30px; margin: 0 auto .25em; opacity: .8; }
 .sttable tbody th { text-align: right; color: #9ba39a; font-size: var(--fs-l); padding: 5px 12px 5px 0; white-space: nowrap; }
 .sttable td { color: #343842; font-variant-numeric: tabular-nums; }
 .sttable td.plus { color: var(--accent); }
-.center { text-align: center; } .rinfo .small { line-height: 1.7; } .rdesc { margin: 0; color: #5d6b66; text-align: center; font-size: var(--fs-l); }
+.center { text-align: center; } .rinfo .small { line-height: 1.7; } .rdesc { margin: 0; color: #5d6b66; text-align: center; font-size: 18px; }
 .cfoot { display: flex; align-items: center; gap: 40px; margin-top: 6px; }
 .namebox { display: flex; align-items: center; gap: 10px; color: #5d6b66; font-size: var(--fs-l); }
-.namebox input { width: 180px; font-size: var(--fs-l); }
+.namebox input { width: 180px; font-size: var(--fs-l); padding: 8px 12px; }
 
 /* ---------- narrow screens: stack ---------- */
 /* left and middle columns size their boxes independently: the sheet takes what it needs, the log the rest */
@@ -221,7 +240,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
   html, body { font-size: var(--fs-m); }
   .colL, .colM { display: contents; }
   .game { height: auto; grid-template-columns: 1fr 1fr;
-    grid-template-areas: "sheet sheet" "monster monster" "pet pet" "side side" "log log" "att loot"; }
+    grid-template-areas: "sheet sheet" "monster monster" "pet pet" "att att" "side side" "log log"; }
   .sheet { grid-template-columns: 1fr 1fr; }
   .sheet .col:last-child { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
   .side { min-height: 70vh; }
@@ -232,8 +251,6 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
   .rlist { gap: 10px; }
   .rrow .rname { display: none; }
   .rrow .rico { width: 48px; height: 48px; padding: 9px; }
-  .rdesc { font-size: var(--fs-m); }
-  .figs { column-gap: 8px; }
   .sttable th, .sttable td { padding: 5px 8px; }
   .sttable tbody th { padding-right: 7px; }
   .sttable thead th { font-size: var(--fs-m); } .sttable tbody th { font-size: var(--fs-m); }
@@ -250,9 +267,12 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .log .gift { color: #53695e; } .log .curse { color: #625575; }
 /* madness: the Abyss blesses (green) or curses (red) an ability; the numbers jump while SAN is low */
 .sheet .bless { color: var(--up); } .sheet .cursed { color: var(--down); }
-/* the edges close in over the whole page; clicks pass through */
-.madfx { position: fixed; inset: 0; pointer-events: none; z-index: 15; --vr: 100%; --va: 0;
-  background: radial-gradient(ellipse at center, transparent calc(var(--vr) * .55), rgba(29,26,46,var(--va)) var(--vr)); transition: background .8s; }
+/* madness tints the four corners a purple-red that breathes; clicks pass through */
+.madfx { position: fixed; inset: 0; pointer-events: none; z-index: 15; --vr: 90%; --va: 0; --bp: 4s;
+  background: radial-gradient(ellipse at center, transparent calc(var(--vr) * .62), rgba(110,52,98,var(--va)) var(--vr)); }
+.madfx.on { animation: madbreathe var(--bp) ease-in-out infinite; }
+@keyframes madbreathe { 0%, 100% { opacity: .55; } 50% { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .madfx.on { animation: none; } }
 /* only the battle strip sways, so buttons stay where they are */
 .stage.mad { animation: madsway calc(3.2s - 1.6s * var(--wob)) ease-in-out infinite; }
 @keyframes madsway {
@@ -268,7 +288,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .blackout.on { opacity: 1; pointer-events: auto; }
 .pacts { display: grid; grid-template-columns: 1fr; gap: 8px; }
 .pact { text-align: left; white-space: normal; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; background: #f3f0e8; }
-.pact.on { background: var(--accent-soft); }
+.pact.on, .pact.on:hover:not(:disabled) { background: var(--accent); color: #fff; } .pact.on small, .pact.on em, .pact.on .gift, .pact.on .curse { color: #fff; } .pact.on small { opacity: .8; } .pact.on em { opacity: .7; }
 .pact small { color: #667681; } .pact em { font-style: normal; font-size: var(--fs-xs); color: var(--dim); margin-bottom: 4px; }
 .pact.refuse { color: var(--dim); align-items: center; }
 
@@ -338,17 +358,38 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
   background: rgba(52,56,66,.7); clip-path: var(--px2); z-index: -1; }
 .view .mapboard .node.unseen .nico { background: #e3e1da; filter: grayscale(1) brightness(1.05); opacity: 1; }
 .view .mapboard .node.seen .nico { background: #bcc5bd; filter: brightness(.86); }
-.view .mapboard .node.here .nico { background: #f9f7f0; outline: 0; box-shadow: none; }
+.view .mapboard .node.here .nico { background: var(--box); outline: 0; box-shadow: none; }
 /* the icon is clipped to pixel corners, so its frame is a gold staircase square behind it */
 .view .mapboard .node.here::before { width: 52px; height: 52px; background: #c1a775; }
 .view .mapboard .node:not(.here):hover .nico { filter: none; opacity: 1; background: #e3ddc9; }
 
 .rblead { margin: 4px 0 8px; color: var(--lbl); }
 .create .rbtext { width: 100%; max-width: 520px; }
+/* rebirth: the lead and picker stay centred exactly as before; the pact list is a new panel standing to the right of them.
+   Below 1100px there is no room beside, so the panel folds behind a button in the footer. */
+.rbgrid { display: grid; grid-template-columns: 1fr auto 1fr; column-gap: 24px; width: 100%; align-items: start; }
+.rbmain { grid-column: 2; display: flex; flex-direction: column; align-items: center; gap: 18px; min-width: 0; }
+.rbside { grid-column: 3; justify-self: start; width: min(360px, 100%); min-width: 0; }
+.rbside h3 { font-size: 18px; margin-bottom: 2px; color: var(--accent); text-align: center; } .rbside p.dim { margin: 0 0 10px; font-size: var(--fs-m); }
+/* one column of tight cards so the whole list sits above the fold */
+.rbside .pacts { gap: 6px; } .rbside .pact { gap: 0; padding: 6px 10px; } .rbside .pact small { line-height: 1.35; } .rbside .pact .curse { margin-top: 4px; }
+.rbtoggle { display: none; }
+/* the first time the Abyss makes an offer, the familiar rebirth screen appears first and the pact panel fades in beside it */
+.rbside.first { animation: rbfade .7s ease .9s both; }
+@keyframes rbfade { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .rbside.first { animation: none; } }
+@media (max-width: 1100px) {
+  .rbgrid { grid-template-columns: 1fr; justify-items: center; }
+  .rbmain, .rbside { grid-column: 1; }
+  .rbside { display: none; justify-self: center; width: 100%; max-width: 520px; }
+  .rbgrid.open .rbside { display: block; }
+  .rbtoggle { display: inline-block; color: var(--accent); }
+}
 /* pixel dropdown: the button shows the choice, the menu hangs under it with the panel's corners */
 .dd { position: relative; display: inline-block; vertical-align: middle; }
 .ddbtn { background: #efece2; border: 0; height: 28px; padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; line-height: 1; }
 .ddbtn .ddarrow { margin: 0; width: 12px; height: 12px; opacity: .75; }
+.ddlab { display: inline-grid; text-align: left; } .ddlab > * { grid-area: 1 / 1; } .ddlab > i { visibility: hidden; font-style: normal; }
 .ddmenu { position: absolute; right: 0; top: calc(100% + 4px); z-index: 20; min-width: 100%; background: var(--box); border: 2px solid var(--line); clip-path: var(--px2); display: flex; flex-direction: column; padding: 2px 0; }
 .ddmenu[hidden] { display: none; }
 .ddopt { background: none; border: 0; text-align: left; padding: 0 12px; height: 28px; white-space: nowrap; }
@@ -358,7 +399,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .lat { padding-left: 0.17em; }
 
 /* ---------- tooltip (skills) ---------- */
-.tip { position: fixed; z-index: 20; width: 270px; padding: 14px 18px; background: #f9f7f0; color: var(--ink);
+.tip { position: fixed; z-index: 20; width: 270px; padding: 14px 18px; background: var(--box); color: var(--ink);
   border: 2px solid #cfccbf; pointer-events: none; font-size: 14px; line-height: 21px; }
 .tip[hidden] { display: none; }
 /* framed pixel boxes: the box is filled with the frame colour and a 2px-inset copy of the same staircase
@@ -367,7 +408,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .tip { background: #cfccbf; }
 .ddmenu { background: var(--line); }
 .tip::before, .ddmenu::before { content: ''; position: absolute; inset: 2px; z-index: -1; clip-path: var(--px2); }
-.tip::before { background: #f9f7f0; }
+.tip::before { background: var(--box); }
 .ddmenu::before { background: var(--box); }
 .ddmenu { padding: 4px 2px; }
 .tip .tname { font-size: var(--fs-m); color: var(--lbl); margin-bottom: 4px; }
@@ -380,7 +421,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 :root { --px3: polygon(12px 0, 12px 4px, 8px 4px, 8px 8px, 4px 8px, 4px 12px, 0 12px, 0 calc(100% - 12px), 4px calc(100% - 12px), 4px calc(100% - 8px), 8px calc(100% - 8px), 8px calc(100% - 4px), 12px calc(100% - 4px), 12px 100%, calc(100% - 12px) 100%, calc(100% - 12px) calc(100% - 4px), calc(100% - 8px) calc(100% - 4px), calc(100% - 8px) calc(100% - 8px), calc(100% - 4px) calc(100% - 8px), calc(100% - 4px) calc(100% - 12px), 100% calc(100% - 12px), 100% 12px, calc(100% - 4px) 12px, calc(100% - 4px) 8px, calc(100% - 8px) 8px, calc(100% - 8px) 4px, calc(100% - 12px) 4px, calc(100% - 12px) 0); --px2: polygon(8px 0, 8px 4px, 4px 4px, 4px 8px, 0 8px, 0 calc(100% - 8px), 4px calc(100% - 8px), 4px calc(100% - 4px), 8px calc(100% - 4px), 8px 100%, calc(100% - 8px) 100%, calc(100% - 8px) calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) calc(100% - 8px), 100% calc(100% - 8px), 100% 8px, calc(100% - 4px) 8px, calc(100% - 4px) 4px, calc(100% - 8px) 4px, calc(100% - 8px) 0); --px1: polygon(2px 0, 2px 2px, 0 2px, 0 calc(100% - 2px), 2px calc(100% - 2px), 2px 100%, calc(100% - 2px) 100%, calc(100% - 2px) calc(100% - 2px), 100% calc(100% - 2px), 100% 2px, calc(100% - 2px) 2px, calc(100% - 2px) 0); }
 .box { clip-path: var(--px3); }
 .item, .view .skill, .pact, .mapboard, .tip, .cogmenu { clip-path: var(--px2); }
-button:not(.ico):not(.cog):not(.rrow):not(.fig):not(.node):not(.link):not(.up-btn):not(.ddopt), select, input { clip-path: var(--px2); }
+button:not(.ico):not(.cog):not(.rrow):not(.fig):not(.agearr):not(.node):not(.link):not(.up-btn):not(.ddopt), select, input { clip-path: var(--px2); }
 .stab { clip-path: var(--px2); }
 .iname .wt { clip-path: var(--px1); }
 .stage, .scene { border-radius: var(--r-item); overflow: hidden; }
@@ -407,3 +448,41 @@ button:not(.ico):not(.cog):not(.rrow):not(.fig):not(.node):not(.link):not(.up-bt
 .mapboard .node.here .nico, .mapboard .node.sel .nico { transform: none; outline: 2px solid #c1a775; outline-offset: 2px; background: #e3ddc9; }
 .mapboard .node.here .nname, .mapboard .node.sel .nname { background: #e3ddc9; color: #625575; }
 .mapboard .node:focus-visible .nico { outline: 3px solid #e3ddc9; }
+
+/* pal list: the pal's own art, mirrored to face right as in battle */
+.dot.art { background: none !important; width: 44px; height: 44px; padding: 0; clip-path: none; }
+.dot.art img { max-width: 100%; max-height: 100%; transform: scaleX(-1); image-rendering: auto; }
+/* creation / rebirth: the race's character art, drawn as stored (pixel for pixel at 2x) */
+.fig .pict.art { width: auto; max-width: none; image-rendering: auto; }
+.fig .pict.art.flip { transform: scaleX(-1); }
+/* the narrowest phones (≤ 360px): tighter boxes and label columns so the sheet's two columns fit */
+@media (max-width: 360px) {
+  .box { padding: 16px 12px; }
+  .sheet { column-gap: 8px; }
+  .kv { gap: 6px; }
+  .col .kv .lbl, .kv .lbl { min-width: 40px; }
+}
+/* race name on its own line above its description */
+@media (max-width: 360px) {
+  .sttable th, .sttable td { padding: 4px 5px; }
+  .sttable tbody th { font-size: var(--fs-xs); }
+}
+/* a long monster name (a label, or an English name) wraps instead of being cut off */
+.mhead { white-space: normal; overflow: visible; }
+.sttable thead th { white-space: nowrap; }
+/* the friendly label sits before the monster's name, in the calm green */
+.mhead .mlabel { color: var(--up); }
+/* the monster line (difficulty, label, name, level) sits at the right, above the monster */
+.mhead { text-align: right; }
+/* nav tabs stand on the card's top edge, edge to edge, with the page showing between them: closed tabs are the
+   card's own paper; the open one stands taller in its colour and joins a band of that colour along the card's top */
+.side { --tabh: 50px; --tabl: 40px; padding-top: 0; clip-path: none; background: linear-gradient(to bottom, transparent var(--tabh), var(--box) var(--tabh)); }
+.nav { display: flex; gap: 4px; align-items: flex-end; height: calc(var(--tabh) + 4px); margin: 0 -24px 16px; border-bottom: 4px solid var(--tab-on, #a8b59a); }
+.nav .ico { flex: 1 1 0; min-width: 0; height: 100%; display: flex; align-items: flex-end; }
+.nav .ico span { width: 100%; height: var(--tabl); background: var(--box); clip-path: polygon(0 4px, 4px 4px, 4px 0, calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px, 100% 100%, 0 100%); transition: height .12s; }
+.nav .ico span .gi { width: 28px; height: 28px; }
+.nav .ico:hover:not(.on) span { background: color-mix(in srgb, var(--tab) 45%, var(--box)); height: 44px; }
+.nav .ico.on span { background: var(--tab); height: var(--tabh); }
+@media (max-width: 900px) { .side { --tabh: 46px; --tabl: 36px; } .nav .ico span .gi { width: 24px; height: 24px; } }
+@media (max-width: 360px) { .nav { margin: 0 -12px 12px; } }
+@media (prefers-reduced-motion: reduce) { .nav .ico span { transition: none; } }

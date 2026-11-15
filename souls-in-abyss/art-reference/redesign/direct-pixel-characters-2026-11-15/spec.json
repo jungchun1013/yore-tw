@@ -1,0 +1,16 @@
+{
+  "mode": "built-in image_gen",
+  "attach": ["style-reference.png"],
+  "prompt_file": "prompt.txt",
+  "sheet": { "columns": ["human", "elf", "dwarf", "giant", "undead"], "rows": 1, "background": "flat warm ivory", "facing": "right", "ground": "one shared line" },
+  "art_names": { "giant": "orc" },
+  "height_vs_owl": { "human": 1.8, "elf": 1.9, "dwarf": 1.4, "giant": 2.1, "undead": 1.5 },
+  "game": {
+    "owl_units": 32,
+    "human_units": 58,
+    "canvas_scale": 2,
+    "output": "souls-in-abyss/public/sprites/hero/<race>.png (RGBA, stored at 2x the battle strip like public/sprites/mon)",
+    "loader": "src/ui/hero-art.ts heroArtUrl(race); FACES_LEFT becomes empty once every figure faces right"
+  },
+  "palette": ["#e3ddc9", "#bcc5bd", "#667681", "#53695e", "#82947b", "#a8b59a", "#526d79", "#839da5", "#625575", "#9586a4", "#c1b3c6", "#c1a775", "#d9c49b", "#725e53", "#ac917b", "#cfb49a", "#855c59", "#b47f76", "#343842"]
+}

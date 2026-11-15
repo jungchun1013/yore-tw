@@ -25,6 +25,7 @@ export const ARMOR_KINDS: Kind[] = ['head', 'body', 'legs', 'feet'];
 export const SLOT_OF: Record<Kind, Slot> = { weapon: 'weapon', shield: 'off', head: 'head', body: 'body', legs: 'legs', feet: 'feet', ring: 'ring', neck: 'neck' };
 export const twoHanded = (it: Item | undefined | null): boolean => !!it && it.kind === 'weapon' && it.weight === 'heavy';
 
+export type BagSort = 'new' | 'rarity' | 'slot' | 'cp';
 export interface Item {
   uid: number;
   kind: Kind;
@@ -36,7 +37,9 @@ export interface Item {
   name: number;      // index into the name pool of its kind/weight
 }
 
-export interface PetState { key: string; lvl: number; xp: number; bond: number; bondT: number }
+/** dye: the colour of the monster that joined you (data/creatures.ts). */
+/** one pal you picked up; `uid` tells apart two of the same kind */
+export interface PetState { uid: number; key: string; lvl: number; xp: number; bond: number; bondT: number; dye?: string }
 
 export interface Counters {
   kills: number; deaths: number; rebirths: number; bestPlus: number;
@@ -65,10 +68,11 @@ export interface Save {
   peakLvl?: number;                  // highest level this life; levels lost to a collapse give no AP when regained
   visited?: string[];               // areas this soul has stood in (missing in older saves: just the current one)
   pets: PetState[];
-  activePet: string | null;
+  activePet: number | null;      // uid of the pal travelling with you
   titles: string[];
   counters: Counters;
   autoSell: number;       // drops below this rarity are sold on pickup
+  bagSort?: BagSort;      // how the bag page lists items; the bag itself stays in pickup order
   san: number;                        // sanity, 0..SAN_MAX
   pact: [string, string] | null;      // gift + curse for this life
   offers: [string, string][] | null;  // what the Abyss offers at the next rebirth

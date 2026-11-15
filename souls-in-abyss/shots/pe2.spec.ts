@@ -1,0 +1,30 @@
+import { test, expect } from '@playwright/test';
+test('codex', async ({ page }) => {
+  const errs: string[] = []; page.on('pageerror', e => errs.push(String(e)));
+  await page.setViewportSize({ width: 1280, height: 860 });
+  await page.goto('file://' + process.env.PE + '/souls-pixel-editor.html'); await page.waitForTimeout(400);
+  await page.click('.item[title^="花鹿幼獸"]'); await page.waitForTimeout(200);
+  await page.screenshot({ path: process.env.PE + '/c1.png' });
+  await page.click('.item[title^="獅鷲"]'); await page.waitForTimeout(200);
+  await page.screenshot({ path: process.env.PE + '/c2.png' });
+  await page.click('.item[title^="精靈 ·"]'); await page.waitForTimeout(200);
+  await page.screenshot({ path: process.env.PE + '/c3.png' });
+  expect(errs).toEqual([]);
+});
+test('zoom', async ({ page }) => {
+  const errs: string[] = []; page.on('pageerror', e => errs.push(String(e)));
+  await page.setViewportSize({ width: 1280, height: 860 });
+  await page.goto('file://' + process.env.PE + '/souls-pixel-editor.html'); await page.waitForTimeout(400);
+  await page.click('.item[title^="獅鷲"]'); await page.waitForTimeout(200);
+  const w0 = (await page.locator('#grid').boundingBox())!.width;
+  await page.click('#zoomIn'); await page.click('#zoomIn'); await page.click('#zoomIn');
+  const w1 = (await page.locator('#grid').boundingBox())!.width;
+  const box = (await page.locator('.stage').boundingBox())!;
+  await page.mouse.move(box.x + 200, box.y + 200); await page.keyboard.down('Control'); await page.mouse.wheel(0, -100); await page.keyboard.up('Control');
+  await page.waitForTimeout(100);
+  const w2 = (await page.locator('#grid').boundingBox())!.width;
+  console.log('widths', w0, w1, w2, await page.textContent('#zoomv'));
+  await page.screenshot({ path: process.env.PE + '/z1.png' });
+  await page.keyboard.press('0');
+  expect(w1).toBeGreaterThan(w0); expect(w2).toBeGreaterThan(w1); expect(errs).toEqual([]);
+});
