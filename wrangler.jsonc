@@ -11,12 +11,12 @@
   // Feedback storage. Create the namespace once (`wrangler kv namespace create FEEDBACK`, or Workers & Pages → KV in the dashboard),
   // paste its id below and set the secret ADMIN_TOKEN (`wrangler secret put ADMIN_TOKEN`). Until then /api/feedback answers 503
   // and the in-game dialog falls back to the e-mail address.
-  // "kv_namespaces": [{ "binding": "FEEDBACK", "id": "PASTE_NAMESPACE_ID" }],
+  "kv_namespaces": [{ "binding": "FEEDBACK", "id": "54d1fb473ea3404cb0cd4c4cfd8244ac" }],
   // Mail: enable Email Routing on yore-tw.com (dashboard → Email → Email Routing), add and verify your personal address as a
   // destination, then uncomment the binding and set the address as a secret so it stays out of the repo:
   //   wrangler secret put MAIL_TO      (your personal inbox, the verified destination)
-  // "send_email": [{ "name": "MAIL" }],
-  // "vars": { "MAIL_FROM": "feedback@yore-tw.com" },
+  "send_email": [{ "name": "MAIL" }],
+  "vars": { "MAIL_FROM": "feedback@yore-tw.com" },
   // custom domains are attached on deploy (the zone yore-tw.com lives in the same Cloudflare account)
   "routes": [
     { "pattern": "yore-tw.com", "custom_domain": true },
