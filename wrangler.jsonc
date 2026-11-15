@@ -1,10 +1,17 @@
 {
-  // Cloudflare Workers project "yore-tw": serves dist-site/, assembled by `npm run site` from site/ plus the game builds (no Worker code).
+  // Cloudflare Workers project "yore-tw": serves dist-site/, assembled by `npm run site` from site/ plus the game builds,
+  // and one small API (worker/index.js): POST /api/feedback, the players' private messages to the author.
   "name": "yore-tw",
+  "main": "worker/index.js",
   "compatibility_date": "2026-11-01",
   // dist-site/ is gitignored, so `wrangler deploy` builds it first (Cloudflare Workers Builds runs that deploy)
   "build": { "command": "npm run site" },
-  "assets": { "directory": "./dist-site", "not_found_handling": "404-page" },
+  // static files first; the Worker only sees requests that match no file (the /api/ routes)
+  "assets": { "directory": "./dist-site", "not_found_handling": "404-page", "binding": "ASSETS" },
+  // Feedback storage. Create the namespace once (`wrangler kv namespace create FEEDBACK`, or Workers & Pages → KV in the dashboard),
+  // paste its id below and set the secret ADMIN_TOKEN (`wrangler secret put ADMIN_TOKEN`). Until then /api/feedback answers 503
+  // and the in-game dialog falls back to the e-mail address.
+  // "kv_namespaces": [{ "binding": "FEEDBACK", "id": "PASTE_NAMESPACE_ID" }],
   // custom domains are attached on deploy (the zone yore-tw.com lives in the same Cloudflare account)
   "routes": [
     { "pattern": "yore-tw.com", "custom_domain": true },

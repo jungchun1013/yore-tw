@@ -40,7 +40,7 @@ small { font-size: var(--fs-xs); }
 /* desktop: a fixed 1280x800 canvas laid out in px, scaled to fill the window (up or down, same shape), centred. --s is set by app.ts on resize. */
 .game {
   display: grid; gap: 20px; padding: 8px 12px 14px; width: 1280px; height: 800px; box-sizing: border-box;
-  grid-template-columns: 852px 384px; /* 12 + 852 + 20 + 384 + 12 = 1280 */
+  grid-template-columns: 828px 408px; /* 12 + 828 + 20 + 408 + 12 = 1280 */
   grid-template-rows: minmax(0, 1fr);
   grid-template-areas: "colL side";
   transform: scale(var(--s, 1)); transform-origin: top center; margin: 0 auto;
@@ -83,7 +83,7 @@ small { font-size: var(--fs-xs); }
 .stage { margin: 0 0 10px; }
 .fight .kv { min-height: 0; line-height: 1.2; font-size: var(--fs-m); } .fight .fname { line-height: 1.2; }
 /* the battle card breathes at the sides: wider padding than the other cards */
-.hero .tbody { padding-left: 20px; padding-right: 20px; } /* 852 - 40 = 812 of content */
+.hero .tbody { padding-left: 20px; padding-right: 20px; } /* 828 - 40 = 788 of content */
 .battle .tbody { padding-left: 40px; padding-right: 40px; } /* battle picture, table and log inset 20px further than the info card */
 /* the battle pane fills its card: the picture takes whatever height the table leaves, keeping its 8:3 shape */
 .scene { height: 100%; max-width: 100%; width: auto; margin: 0 auto; display: block; image-rendering: pixelated; aspect-ratio: 320 / 120; }
@@ -554,3 +554,17 @@ button:not(.ico):not(.ttab):not(.cog):not(.rrow):not(.fig):not(.agearr):not(.nod
 /* right panel: the scrollbar sits in the card's own 24px padding, outside the rows, so skill, bag and pal rows are all the same width whether or not a list scrolls */
 .side .view { margin-right: -24px; padding-right: 12px; scrollbar-gutter: stable; }
 .side .view.v-bag { padding-right: 0; } .side .view.v-bag .baghead { margin-right: 24px; } .side .view.v-bag .baglist { padding-right: 12px; scrollbar-gutter: stable; }
+
+/* left cards: the closed tab is the same hue as the open one, greyer and a little darker (feedback 2026-11-16: cream vs colour read as two unrelated things) */
+.tabbed .ttab:not(.on) span { background: var(--tab-off, var(--tab)); color: #e3ddc9; }
+.tabbed .ttab:hover:not(.on) span { background: color-mix(in srgb, var(--tab) 50%, var(--tab-off)); color: #fff; }
+
+/* report dialog: a card in the middle of a dimmed page */
+.reportwrap { position: fixed; inset: 0; z-index: 40; background: rgba(52, 56, 66, .45); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.report { width: min(480px, 100%); padding: 20px 24px 22px; }
+.report h3 { margin-bottom: 4px; } .report .dim { margin: 0 0 12px; font-size: var(--fs-m); line-height: 1.6; }
+.report label.f { display: grid; gap: 4px; margin-bottom: 12px; color: var(--lbl); font-size: var(--fs-m); }
+.report textarea, .report input { width: 100%; box-sizing: border-box; font: inherit; color: var(--ink); background: #efece2; border: 0; padding: 8px 10px; clip-path: var(--px2); resize: vertical; }
+.report textarea { min-height: 110px; line-height: 1.5; }
+.report textarea:focus-visible, .report input:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 0; }
+.report .row { gap: 10px; } .report #rp-status { font-size: var(--fs-m); }

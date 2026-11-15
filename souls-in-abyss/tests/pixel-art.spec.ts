@@ -44,9 +44,11 @@ test('pixel icons and the equipment board respond to equipping and removing armo
 });
 
 test('every creature dye exists and each pal is a monster with art', async ({ request }) => {
-  for (const [art, dyes] of Object.entries(CREATURE_DYES)) for (const dye of dyes) {
-    const r = await request.get(creatureUrl(art, dye).replace('./', '/'));
-    expect(r.status(), `${art}/${dye}`).toBe(200);
+  test.setTimeout(180000); // 300+ files since the 2026-11-15 batch: fetched eight at a time
+  const urls = Object.entries(CREATURE_DYES).flatMap(([art, dyes]) => dyes.map(dye => [`${art}/${dye}`, creatureUrl(art, dye).replace('./', '/')] as const));
+  for (let i = 0; i < urls.length; i += 8) {
+    const rs = await Promise.all(urls.slice(i, i + 8).map(async ([name, u]) => [name, (await request.get(u)).status()] as const));
+    for (const [name, st] of rs) expect(st, name).toBe(200);
   }
   for (const p of PETS) {
     const mon = AREAS.find(a => a.key === p.home)!.mons.find(m => m.key === p.mon);

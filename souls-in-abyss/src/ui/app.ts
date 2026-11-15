@@ -30,8 +30,10 @@ const NAV: [View, keyof typeof UI][] = [
   ['smith', 'navSmith'], ['titles', 'navTitles'], ['settings', 'navSettings'],
 ];
 type HeroTab = 'info' | 'equip'; type BattleTab = 'scene' | 'log';
-const HERO_TABS: [HeroTab, keyof typeof UI, string][] = [['info', 'tabInfo', '#a8b59a'], ['equip', 'navEquip', '#9fb4bb']];
-const BATTLE_TABS: [BattleTab, keyof typeof UI, string][] = [['scene', 'tabBattle', '#cfb49a'], ['log', 'tabLog', '#e3ccb0']];
+/** the palette's mid tone under each light tab colour (sage 82947b under a8b59a, earth ac917b under cfb49a) */
+const TAB_OFF: Record<string, string> = { '#a8b59a': '#82947b', '#cfb49a': '#ac917b' };
+const HERO_TABS: [HeroTab, keyof typeof UI, string][] = [['info', 'tabInfo', '#a8b59a'], ['equip', 'navEquip', '#a8b59a']];
+const BATTLE_TABS: [BattleTab, keyof typeof UI, string][] = [['scene', 'tabBattle', '#cfb49a'], ['log', 'tabLog', '#cfb49a']];
 /** Each tab is a coloured index tab (palette light tones); the open one stands taller and its colour runs along the card's top edge. */
 const TAB_COLOR: Record<View, string> = {
   equip: '#a8b59a', bag: '#bcc5bd', pets: '#d9c49b', skills: '#c1b3c6', map: '#cfb49a', smith: '#9fb4bb', titles: '#e3ccb0', settings: '#b9b3c4',
@@ -101,7 +103,7 @@ export class App {
     // battle bars carry no numbers: the log already reports every hit, and big numbers would squeeze the bars
     const bar = (id: string, cls: string, lbl: string) =>
       `<div class="kv bar"><span class="lbl">${lbl}</span><div class="line"><div id="${id}" class="${cls}"></div></div></div>`;
-    const ttabs = (tabs: [string, keyof typeof UI, string][], action: string, on: string) => `<nav class="nav tabs" style="--tab-on:${tabs.find(x => x[0] === on)![2]}">${tabs.map(([k, l, c]) => `<button class="ttab ${k === on ? 'on' : ''}" data-a="${action}" data-k="${k}" style="--tab:${c}"><span>${t(l)}</span></button>`).join('')}</nav>`;
+    const ttabs = (tabs: [string, keyof typeof UI, string][], action: string, on: string) => `<nav class="nav tabs" style="--tab-on:${tabs.find(x => x[0] === on)![2]}">${tabs.map(([k, l, c]) => `<button class="ttab ${k === on ? 'on' : ''}" data-a="${action}" data-k="${k}" style="--tab:${c};--tab-off:${TAB_OFF[c] || c}"><span>${t(l)}</span></button>`).join('')}</nav>`;
     this.root.innerHTML = `
       <div class="game">
         <div class="colL">
@@ -199,6 +201,7 @@ export class App {
       case 'bagSort': g.s.bagSort = k as BagSort; break;
       case 'rebirthOpen': case 'reset': this.armed = a as 'rebirthOpen' | 'reset'; break;
       case 'disarm': this.armed = ''; this.palArmed = 0; break;
+      case 'report': this.reportDialog(); return;
       case 'rebirthYes': this.armed = ''; this.rebirthScreen(); return;
       case 'resetYes': clearSave(); (window as any).__noSave = true; location.reload(); return;
     }
@@ -688,7 +691,7 @@ export class App {
     const draw = () => {
       // desktop: the picker on the left, the Abyss's offers beside it on the right, nothing below the fold.
       // phone: the offers stay folded behind a button next to the rebirth button, so they never sit below the picker unseen.
-      const pactBtn = `${t('gift')}／${t('curse')}`;
+      const pactBtn = lang === 'zh' ? `${t('gift')}／${t('curse')}` : `${t('gift')} / ${t('curse')}`; // the full-width slash is Chinese punctuation
       root.innerHTML = `<div class="create rebirth">${banner(true)}
         <div class="rbgrid ${this.rbOpen ? 'open' : ''}"><div class="rbmain">
         <div class="rbtext"><p class="rblead">${t('rebirthLead')}</p>
@@ -729,6 +732,39 @@ export class App {
   }
 
   /** an in-page yes / back pair in place of window.confirm */
+  /** A private message to the author: an in-page dialog that posts to /api/feedback (the site's Worker). Nothing is shown publicly. */
+  private reportDialog(): void {
+    const g = this.g, s = g.s;
+    const box = document.createElement('div'); box.className = 'reportwrap';
+    box.innerHTML = `<div class="report box" role="dialog" aria-label="${t('report')}">
+      <h3>${t('report')}</h3><p class="dim">${t('reportLead')}</p>
+      <label class="f"><span>${t('reportMsg')}</span><textarea id="rp-msg" maxlength="2000" rows="5"></textarea></label>
+      <label class="f"><span>${t('reportContact')}</span><input id="rp-contact" maxlength="120"></label>
+      <input id="rp-hp" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px">
+      <div class="row"><button class="wide" id="rp-send">${t('reportSend')}</button><button class="ghost" id="rp-close">${t('back')}</button><span class="dim" id="rp-status"></span></div></div>`;
+    this.root.appendChild(box);
+    const close = () => box.remove();
+    box.addEventListener('click', e => { if (e.target === box) close(); });
+    box.querySelector<HTMLElement>('#rp-close')!.onclick = close;
+    (box.querySelector('#rp-msg') as HTMLTextAreaElement).focus();
+    box.querySelector<HTMLButtonElement>('#rp-send')!.onclick = async () => {
+      const msg = (box.querySelector('#rp-msg') as HTMLTextAreaElement).value.trim();
+      const status = box.querySelector<HTMLElement>('#rp-status')!, btn = box.querySelector<HTMLButtonElement>('#rp-send')!;
+      if (msg.length < 2) { status.textContent = t('reportMsg'); return; }
+      btn.disabled = true; status.textContent = '…';
+      const meta = { lvl: s.lvl, age: s.age, race: s.race, area: s.area, cp: Math.round(g.d.cp), rebirths: s.counters.rebirths, san: Math.round(s.san) };
+      try {
+        const r = await fetch(new URL('/api/feedback', location.origin.startsWith('http') ? location.origin : 'https://yore-tw.com').toString(), {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ game: 'souls-in-abyss', lang, msg, contact: (box.querySelector('#rp-contact') as HTMLInputElement).value.trim(), hp: (box.querySelector('#rp-hp') as HTMLInputElement).value, page: location.href.slice(0, 300), meta }),
+        });
+        if (r.status === 429) { status.textContent = t('reportRate'); btn.disabled = false; return; }
+        if (!r.ok) throw new Error(String(r.status));
+        status.textContent = t('reportSent'); setTimeout(close, 1200);
+      } catch { status.textContent = t('reportFail'); btn.disabled = false; }
+    };
+  }
+
   private askHtml(q: keyof typeof UI, yes: string, yesLabel: keyof typeof UI): string {
     return `<p class="ask">${t(q)}<br><button class="danger${yesLabel === 'reset' ? ' wide' : ''}" data-a="${yes}">${t(yesLabel)}</button> <button data-a="disarm">${t('back')}</button></p>`;
   }
@@ -739,6 +775,7 @@ export class App {
       ${this.armed === 'rebirthOpen' ? this.askHtml('rebirthConfirm', 'rebirthYes', 'navRebirth')
         : `<p><button class="danger" data-a="rebirthOpen" ${ok ? '' : 'disabled'}>${t('navRebirth')}</button>${ok ? '' : ` <span class="dim">${t('rebirthNeed')}</span>`}</p>`}
       ${this.armed === 'reset' ? this.askHtml('resetConfirm', 'resetYes', 'reset') : `<p><button class="ghost wide" data-a="reset">${t('reset')}</button></p>`}
+      <p><button class="ghost wide" data-a="report">${t('report')}</button></p>
       <p class="dim">${t('credits')}</p><p class="dim">Original pixel artwork · Souls in Abyss</p>`;
   }
 }
