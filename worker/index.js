@@ -65,7 +65,10 @@ async function feedback(request, env, url, ctx) {
     country: request.headers.get('CF-IPCountry') || '',
   };
   await env.FEEDBACK.put(`msg:${id}`, JSON.stringify(entry), { expirationTtl: KEEP_DAYS * 86400 });
-  if (env.MAIL && env.MAIL_FROM && env.MAIL_TO) ctx.waitUntil(mail(env, entry).catch(() => {}));
+  // mail is best-effort; what went wrong (or that mail is not configured) is written back onto the KV entry so the inbox shows it
+  const mailed = !env.MAIL ? 'no MAIL binding' : !env.MAIL_FROM ? 'no MAIL_FROM' : !env.MAIL_TO ? 'no MAIL_TO secret' : '';
+  if (mailed) { entry.mail = mailed; await env.FEEDBACK.put(`msg:${id}`, JSON.stringify(entry), { expirationTtl: KEEP_DAYS * 86400 }); }
+  else ctx.waitUntil(mail(env, entry).then(() => 'sent', err => `error: ${err && err.message || err}`).then(r => { entry.mail = r; return env.FEEDBACK.put(`msg:${id}`, JSON.stringify(entry), { expirationTtl: KEEP_DAYS * 86400 }); }));
   return json({ ok: true, id }, 202, request);
 }
 
