@@ -18,7 +18,7 @@ button { background: #e3ddc9; border: 0; padding: 6px 14px; cursor: pointer; whi
 /* every text button has a fixed width (small in list rows, medium, wide for a long label), so a label, a number or the language never resizes it.
    Icon tiles, map nodes, text links, tabs and menu rows size by their own rules. */
 :root { --btn-s: 52px; --btn-m: 88px; --btn-l: 152px; }
-button:where(:not(.ico, .cog, .rrow, .fig, .agearr, .node, .link, .up-btn, .ddbtn, .ddopt, .pact, .stab)):where(:not(.cogmenu *)) { width: var(--btn-m); padding-left: 0; padding-right: 0; text-align: center; }
+button:where(:not(.ico, .ttab, .cog, .rrow, .fig, .agearr, .node, .link, .up-btn, .ddbtn, .ddopt, .pact, .stab)):where(:not(.cogmenu *)) { width: var(--btn-m); padding-left: 0; padding-right: 0; text-align: center; }
 button.wide { width: var(--btn-l); }
 button:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent); }
 button:disabled { opacity: .45; cursor: default; }
@@ -36,16 +36,29 @@ h3 { margin: 0 0 6px; font-weight: normal; font-size: var(--fs-xl); color: var(-
 small { font-size: var(--fs-xs); }
 
 /* ---------- main layout: BWE's three columns ---------- */
+/* two columns, 2.5:1 (user's layout 2026-11-15): hero box, pal + skill boxes, battle box | side panel */
+/* desktop: a fixed 1280x800 canvas laid out in px, scaled to fill the window (up or down, same shape), centred. --s is set by app.ts on resize. */
 .game {
-  display: grid; gap: 16px; padding: 14px; height: 100vh; max-width: 1400px; margin: 0 auto;
-  grid-template-columns: 1.3fr 0.78fr 0.85fr;
+  display: grid; gap: 20px; padding: 8px 12px 14px; width: 1280px; height: 800px; box-sizing: border-box;
+  grid-template-columns: 852px 384px; /* 12 + 852 + 20 + 384 + 12 = 1280 */
   grid-template-rows: minmax(0, 1fr);
-  grid-template-areas: "colL colM side";
+  grid-template-areas: "colL side";
+  transform: scale(var(--s, 1)); transform-origin: top center; margin: 0 auto;
 }
+#app:has(> .game) { width: 100%; height: 100vh; overflow: hidden; padding-top: calc((100vh - 800px * var(--s, 1)) / 2); box-sizing: border-box; } /* letterboxed in the middle of the window */
 .box { background: var(--box); border: 0; border-bottom: 4px solid var(--line); padding: 20px 24px; min-width: 0; min-height: 0; }
-.sheet { grid-area: sheet; display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 0 14px; align-content: start; }
+.sheet { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 0 14px; align-content: start; }
 .sheet .kv.name { grid-column: 1 / -1; } .sheet .kv.name .lbl { min-width: 58px; } .sheet .kv.name > span:last-child { margin-left: 0; }
-.monster { grid-area: monster; } .petbox { grid-area: pet; } .log { grid-area: log; } .att { grid-area: att; overflow-y: auto; }
+.att { overflow-y: auto; }
+.eqgrid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 0.55fr); gap: 0 24px; align-items: stretch; }
+/* the figure sits in the middle of its column, both ways */
+.eqgrid > div:first-child { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; } .eqgrid .doll { margin: 0 auto 0 0; } /* the figure sits at the left of its column */
+.sheet { grid-template-columns: 232px 202px 202px; justify-content: start; column-gap: 40px; } /* three fixed columns, packed left; the pal moved to the equipment page */
+.sheet .palinfo .tsec { margin-top: 6px; color: var(--ink); } .sheet .palinfo .lore { margin: 2px 0 0; font-size: var(--fs-xs); line-height: 1.6; }
+.fight .side-pal:empty { visibility: hidden; }
+.fight .fname { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; line-height: 28px; }
+.fight .fname > span { display: inline; }
+.fight .side-mon .fname { display: flex; justify-content: space-between; gap: 8px; } .fight .side-mon .fname > span:first-child { overflow: hidden; text-overflow: ellipsis; }
 .loot { grid-area: loot; }
 /* grey one-line tips in empty panels */
 .hint { color: var(--dim); font-size: var(--fs-xs); margin-top: 8px; line-height: 1.6; }
@@ -67,8 +80,14 @@ small { font-size: var(--fs-xs); }
 .mhead { margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .mhead .lbl { color: var(--lbl); margin-right: 6px; }
 .mhead b { font-weight: normal; margin-right: 6px; }
-.stage { margin: 4px 0 14px; }
-.scene { width: 100%; display: block; image-rendering: pixelated; aspect-ratio: 320 / 120; }
+.stage { margin: 0 0 10px; }
+.fight .kv { min-height: 0; line-height: 1.2; font-size: var(--fs-m); } .fight .fname { line-height: 1.2; }
+/* the battle card breathes at the sides: wider padding than the other cards */
+.hero .tbody { padding-left: 20px; padding-right: 20px; } /* 852 - 40 = 812 of content */
+.battle .tbody { padding-left: 40px; padding-right: 40px; } /* battle picture, table and log inset 20px further than the info card */
+/* the battle pane fills its card: the picture takes whatever height the table leaves, keeping its 8:3 shape */
+.scene { height: 100%; max-width: 100%; width: auto; margin: 0 auto; display: block; image-rendering: pixelated; aspect-ratio: 320 / 120; }
+#battlepane { display: flex; flex-direction: column; } #battlepane .stage { flex: 1; min-height: 0; display: flex; justify-content: center; } #battlepane .fight { flex: none; }
 .petname { color: #a8657a; } .hearts { color: #b47f76; letter-spacing: 1px; font-size: var(--fs-xs); }
 
 /* blacksmith rules and section headings; pal sprite beside its numbers */
@@ -104,15 +123,15 @@ small { font-size: var(--fs-xs); }
 .ico.on span { background: #83957b; }
 .ico:hover:not(.on) span { background: #9ba39a; }
 .ico:hover, .ico:hover:not(:disabled) { background: none; } /* beat the generic button hover, which painted a ring around the tile */
-.vtitle { font-size: var(--fs-xl); color: var(--lbl); margin: 16px 2px 12px; }
+.vtitle { font-size: var(--fs-xl); color: var(--lbl); margin: 0 2px 12px; }
 .view { flex: 1; overflow-y: auto; padding-right: 4px; }
 /* bag: the count, auto-sell and sell-all stay put; only the items scroll */
 .view.v-bag { display: flex; flex-direction: column; overflow: hidden; padding-right: 0; }
 .view.v-bag .baghead { flex: none; position: relative; z-index: 2; }
 .view.v-bag .baglist { flex: 1; min-height: 0; overflow-y: auto; padding-right: 4px; }
 /* compact rows: smaller name, two equal buttons lined up on the right */
-.view.v-bag .item { padding: 8px 12px; margin: 6px 0; gap: 8px; }
-.view.v-bag .item .iname { font-size: var(--fs-xs); line-height: 20px; }
+.view.v-bag .item { padding: 14px 16px; margin: 8px 0; gap: 12px; } /* 56px rows, 8px apart, like the skill rows */
+.view.v-bag .item .iname { font-size: var(--fs-m); line-height: 28px; position: relative; top: 1px; } /* 16px; nudged 1px down to sit level with the buttons */
 .view.v-bag .item .acts { flex: none; flex-wrap: nowrap; gap: 6px; }
 .view.v-bag .item .acts button { font-size: var(--fs-xs); line-height: 20px; padding: 2px 0; width: var(--btn-s); text-align: center; }
 /* pals are listed like the bag: a count, then one row each with two equal buttons */
@@ -121,7 +140,8 @@ small { font-size: var(--fs-xs); }
 .view.v-pets .item .iname { white-space: normal; } .view.v-pets .item .iname small { white-space: nowrap; }
 .view.v-pets .item .acts button { font-size: var(--fs-xs); line-height: 20px; padding: 2px 0; width: var(--btn-s); text-align: center; }
 /* equipment: what is worn, and the pal along, under the figure */
-.eqlist, .palcard { margin-top: 16px; } .eqlist h4, .palcard h4 { margin: 0 0 6px; font-size: var(--fs-m); font-weight: normal; color: var(--dim); }
+.eqlist, .palcard, .attlist { margin-top: 16px; } .eqgrid .palcard { margin-top: 0; } .eqgrid .palcard .tsec { margin-top: 6px; } .eqgrid .palcard .lore { margin: 2px 0 0; font-size: var(--fs-xs); line-height: 1.6; } .eqlist h4, .palcard h4, .attlist h4 { margin: 0 0 6px; font-size: var(--fs-m); font-weight: normal; color: var(--dim); }
+.attlist .kv { font-size: inherit; } .attlist .kv > span:last-child { margin-left: auto; }
 .eqlist .kv .lbl { min-width: 58px; } .eqlist .kv > span:last-child:not(.lbl) { margin-left: 0; }
 .view.v-bag .baghead { margin-bottom: 8px; } .eqlist .iname { display: inline-flex; align-items: center; gap: 4px; }
 .palcard .tname { font-size: var(--fs-l); } .palcard .lore { margin: 4px 0 0; }
@@ -154,13 +174,13 @@ small { font-size: var(--fs-xs); }
 .stab { border: 0; background: none; font-size: var(--fs-m); padding: 4px 0; color: var(--lbl); }
 .stab.on { color: #fff; background: var(--accent); }
 /* a skill row is pale with dark text; an equipped combat or magic skill turns deep green with white text */
-.view .skill { display: flex; align-items: center; gap: 12px; padding: 12px 16px; margin: 8px 0; background: #eeece3; color: var(--ink); }
+.view .skill { display: flex; align-items: center; gap: 12px; padding: 11px 16px; margin: 8px 0; background: #eeece3; color: var(--ink); } /* 11 + 34 + 11 = 56, same as a bag row */
 .view .skill.on { background: #53695e; color: #fff; }
 .view .skill[data-a] { cursor: pointer; }
 .view .skill .sico { width: 34px; height: 34px; clip-path: var(--px1); background: #fff; color: var(--ink); display: grid; place-items: center; flex: none; }
 .view .skill .grow { flex: 1; min-width: 0; } .view .skill .up-btn { flex: none; background: #fff; color: var(--ink); border: 0; clip-path: var(--px1); height: 30px; width: 56px; padding: 0; display: inline-flex; align-items: center; justify-content: center; gap: 4px; line-height: 1; font-size: var(--fs-m); }
 .view .skill.on .sico { color: #53695e; }
-.view .skill .sname { font-size: var(--fs-l); } .skill .istat { color: rgba(255,255,255,.85); }
+.view .skill .sname { font-size: 18px; } .skill .istat { color: rgba(255,255,255,.85); }
 .view .skill .up-btn small { font-size: var(--fs-m); }
 .view .skill.on .up-btn { color: #53695e; }
 
@@ -229,22 +249,44 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 
 /* ---------- narrow screens: stack ---------- */
 /* left and middle columns size their boxes independently: the sheet takes what it needs, the log the rest */
-.colL, .colM { display: flex; flex-direction: column; gap: 16px; min-height: 0; min-width: 0; }
-.colL { grid-area: colL; } .colM { grid-area: colM; }
-.colL .sheet, .colM .monster, .colM .petbox, .colM .loot { flex: none; }
-.colL .log { flex: 1; min-height: 0; }
-.colM { overflow-y: auto; }
-.colM .att { flex: 1 0 auto; min-height: 96px; }
+.colL { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; grid-area: colL; } /* 8px between the info card and the battle tabs; the battle card takes what is left */
+.colL .hero { flex: none; } .colL .hero .tbody { flex: none; min-height: 306px; height: auto; display: grid; } /* both pages share one cell: the card is as tall as the taller page, so switching tabs never moves anything */
+.colL .hero .tbody > .pane { grid-area: 1 / 1; } .colL .hero .tbody > .pane[hidden] { visibility: hidden; pointer-events: none; }
+.colL .hero #sheet[hidden] { display: grid !important; } .colL .hero #equippane[hidden] { display: block !important; }
+.colL .hero .pane { overflow: visible; } .colL .hero .pane { overflow-y: auto; }
+.eqgrid .doll { max-width: 314px; } .eqgrid .kv { min-height: 24px; } .eqgrid .eqlist, .eqgrid .attlist { margin-top: 0; } .eqgrid .palcard { margin-left: -3em; margin-right: 3em; } /* shifted left, same width as its track, so nothing spills into the next column */
+.eqgrid .attlist { margin-left: -3em; } /* the last column may grow left: its rates stay flush with the card's content edge */
+.eqgrid .palcard .kv { min-height: 24px; } .eqgrid .palcard .kv > span:last-child:not(.lbl) { margin-left: auto; text-align: right; } .attlist .kv > span:last-child { margin-right: 0; } /* user-tuned offsets 2026-11-15 */
+.colL .battle { flex: 1; min-height: 0; display: flex; flex-direction: column; } .colL .battle .tbody { flex: 1; min-height: 0; } /* the battle card takes whatever height is left; the picture grows to fill it above the table */ /* 270px picture + 10px + four 20px rows + padding */
+.colL .battle .log { display: flex; flex-direction: column; }
+/* tabbed boxes share the side panel's folder tabs; text tabs are a fixed width so a longer word never widens one */
+.nav .ttab { flex: 0 0 150px; min-width: 0; height: 100%; display: flex; align-items: flex-end; padding: 0; border: 0; background: none; }
+.nav .ttab span { width: 100%; height: var(--tabl); background: var(--box); clip-path: polygon(0 4px, 4px 4px, 4px 0, calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px, 100% 100%, 0 100%); display: grid; place-items: center; font-size: var(--fs-l); color: var(--lbl); transition: height .12s; }
+.nav .ttab:hover:not(.on) span { background: color-mix(in srgb, var(--tab) 45%, var(--box)); height: 44px; }
+.nav .ttab.on span { background: var(--tab); height: var(--tabh); color: #fff; }
+.nav .ttab:hover:not(:disabled), .nav .ttab:focus-visible { background: none; border: 0; }
+.pane[hidden] { display: none !important; }
 
 @media (max-width: 900px) {
   html, body { font-size: var(--fs-m); }
-  .colL, .colM { display: contents; }
-  .game { height: auto; grid-template-columns: 1fr 1fr;
-    grid-template-areas: "sheet sheet" "monster monster" "pet pet" "att att" "side side" "log log"; }
+  .game { width: auto; height: auto; transform: none; } #app:has(> .game) { height: auto; overflow: visible; }
+  .side { max-height: none; }
+  .colL { display: contents; }
+  .game { height: auto; grid-template-columns: 1fr; grid-template-areas: "hero" "battle" "side"; }
+  .hero { grid-area: hero; } .battle { grid-area: battle; }
+  .sheet .palinfo { grid-column: 1 / -1; }
+  .fight { grid-template-columns: 1fr 1fr 0 1fr; gap: 0 8px; } .fight .kv { font-size: 14px; gap: 6px; } .fight .lbl, .fight .kv.bar .lbl { min-width: 26px; } .fight .kv .v { min-width: 0; }
+  .tbody, .battle .tbody { padding: 14px 12px 16px; }
+  .scene { height: auto; width: 100%; } #battlepane .stage { flex: none; display: block; }
+  .game { padding: 8px; gap: 8px; } .colL { gap: 8px; }
+  .colL .battle { min-height: 0; }
+  .eqgrid { grid-template-columns: 1.15fr 1fr; gap: 0 12px; } .eqgrid > div:first-child { grid-column: 1 / -1; } .eqlist .kv .lbl { white-space: nowrap; min-width: 0; margin-right: 4px; } .eqlist .kv { gap: 6px; }
+  .eqgrid .attlist, .eqgrid .eqlist { margin-left: 0; } .attlist .kv > span:last-child { margin-right: 0; }
+  .colL .hero .tbody { height: auto; flex: none; }
   .sheet { grid-template-columns: 1fr 1fr; }
   .sheet .col:last-child { grid-column: 1 / -1; display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
   .side { min-height: 70vh; }
-  .log { height: 240px; }
+  .colL .battle .log { height: 300px; }
   .nav { grid-template-columns: repeat(8, 1fr); }
   .ico span { width: 30px; height: 30px; font-size: var(--fs-m); }
   .picker { gap: 16px; }
@@ -313,12 +355,14 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .gi.star { color: #cfccbf; opacity: 1; } .gi.star.on { color: var(--accent); }
 
 /* ---------- battle panel: your bars left, the monster's right ---------- */
-.fight { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+.fight { display: grid; grid-template-columns: 1fr 1fr 40px 1fr; gap: 0 18px; }
+.fight .side-mon { grid-column: 4; } /* an empty track between the pal and the enemy, so the three columns stay the same width */
 .fight .kv.bar .lbl { min-width: 40px; }
 .petgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; } .petgrid .kv .lbl { min-width: 40px; }
 .fight .kv .v { margin-left: 8px; min-width: 64px; text-align: right; font-size: var(--fs-xs); color: var(--dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .fight .side-mon .kv .v { min-width: 0; }
-.fight .kv.cp .v, .fight .side-mon .kv.cp .v { margin-left: auto; font-size: var(--fs-m); color: var(--accent); }
+.fight .kv.cp .v, .fight .side-mon .kv.cp .v { margin-left: auto; font-size: inherit; color: var(--accent); }
+.fight .lbl { min-width: 40px; }
 .sheet .kv.bar .v { margin-left: 8px; font-size: var(--fs-xs); color: var(--dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
 .sheet .col .kv.bar .line { min-width: 60px; }
 
@@ -418,10 +462,10 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .view .skill { min-height: 52px; cursor: default; }
 
 /* ---------- pixel-style rounded corners: a 4px staircase instead of a curve ---------- */
-:root { --px3: polygon(12px 0, 12px 4px, 8px 4px, 8px 8px, 4px 8px, 4px 12px, 0 12px, 0 calc(100% - 12px), 4px calc(100% - 12px), 4px calc(100% - 8px), 8px calc(100% - 8px), 8px calc(100% - 4px), 12px calc(100% - 4px), 12px 100%, calc(100% - 12px) 100%, calc(100% - 12px) calc(100% - 4px), calc(100% - 8px) calc(100% - 4px), calc(100% - 8px) calc(100% - 8px), calc(100% - 4px) calc(100% - 8px), calc(100% - 4px) calc(100% - 12px), 100% calc(100% - 12px), 100% 12px, calc(100% - 4px) 12px, calc(100% - 4px) 8px, calc(100% - 8px) 8px, calc(100% - 8px) 4px, calc(100% - 12px) 4px, calc(100% - 12px) 0); --px2: polygon(8px 0, 8px 4px, 4px 4px, 4px 8px, 0 8px, 0 calc(100% - 8px), 4px calc(100% - 8px), 4px calc(100% - 4px), 8px calc(100% - 4px), 8px 100%, calc(100% - 8px) 100%, calc(100% - 8px) calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) calc(100% - 8px), 100% calc(100% - 8px), 100% 8px, calc(100% - 4px) 8px, calc(100% - 4px) 4px, calc(100% - 8px) 4px, calc(100% - 8px) 0); --px1: polygon(2px 0, 2px 2px, 0 2px, 0 calc(100% - 2px), 2px calc(100% - 2px), 2px 100%, calc(100% - 2px) 100%, calc(100% - 2px) calc(100% - 2px), 100% calc(100% - 2px), 100% 2px, calc(100% - 2px) 2px, calc(100% - 2px) 0); }
+:root { --px0: polygon(1px 0, calc(100% - 1px) 0, calc(100% - 1px) 1px, 100% 1px, 100% calc(100% - 1px), calc(100% - 1px) calc(100% - 1px), calc(100% - 1px) 100%, 1px 100%, 1px calc(100% - 1px), 0 calc(100% - 1px), 0 1px, 1px 1px); --px3b: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 4px) calc(100% - 12px), calc(100% - 4px) calc(100% - 8px), calc(100% - 8px) calc(100% - 8px), calc(100% - 8px) calc(100% - 4px), calc(100% - 12px) calc(100% - 4px), calc(100% - 12px) 100%, 12px 100%, 12px calc(100% - 4px), 8px calc(100% - 4px), 8px calc(100% - 8px), 4px calc(100% - 8px), 4px calc(100% - 12px), 0 calc(100% - 12px)); --px3: polygon(12px 0, 12px 4px, 8px 4px, 8px 8px, 4px 8px, 4px 12px, 0 12px, 0 calc(100% - 12px), 4px calc(100% - 12px), 4px calc(100% - 8px), 8px calc(100% - 8px), 8px calc(100% - 4px), 12px calc(100% - 4px), 12px 100%, calc(100% - 12px) 100%, calc(100% - 12px) calc(100% - 4px), calc(100% - 8px) calc(100% - 4px), calc(100% - 8px) calc(100% - 8px), calc(100% - 4px) calc(100% - 8px), calc(100% - 4px) calc(100% - 12px), 100% calc(100% - 12px), 100% 12px, calc(100% - 4px) 12px, calc(100% - 4px) 8px, calc(100% - 8px) 8px, calc(100% - 8px) 4px, calc(100% - 12px) 4px, calc(100% - 12px) 0); --px2: polygon(8px 0, 8px 4px, 4px 4px, 4px 8px, 0 8px, 0 calc(100% - 8px), 4px calc(100% - 8px), 4px calc(100% - 4px), 8px calc(100% - 4px), 8px 100%, calc(100% - 8px) 100%, calc(100% - 8px) calc(100% - 4px), calc(100% - 4px) calc(100% - 4px), calc(100% - 4px) calc(100% - 8px), 100% calc(100% - 8px), 100% 8px, calc(100% - 4px) 8px, calc(100% - 4px) 4px, calc(100% - 8px) 4px, calc(100% - 8px) 0); --px1: polygon(2px 0, 2px 2px, 0 2px, 0 calc(100% - 2px), 2px calc(100% - 2px), 2px 100%, calc(100% - 2px) 100%, calc(100% - 2px) calc(100% - 2px), 100% calc(100% - 2px), 100% 2px, calc(100% - 2px) 2px, calc(100% - 2px) 0); }
 .box { clip-path: var(--px3); }
 .item, .view .skill, .pact, .mapboard, .tip, .cogmenu { clip-path: var(--px2); }
-button:not(.ico):not(.cog):not(.rrow):not(.fig):not(.agearr):not(.node):not(.link):not(.up-btn):not(.ddopt), select, input { clip-path: var(--px2); }
+button:not(.ico):not(.ttab):not(.cog):not(.rrow):not(.fig):not(.agearr):not(.node):not(.link):not(.up-btn):not(.ddopt), select, input { clip-path: var(--px2); }
 .stab { clip-path: var(--px2); }
 .iname .wt { clip-path: var(--px1); }
 .stage, .scene { border-radius: var(--r-item); overflow: hidden; }
@@ -476,13 +520,37 @@ button:not(.ico):not(.cog):not(.rrow):not(.fig):not(.agearr):not(.node):not(.lin
 .mhead { text-align: right; }
 /* nav tabs stand on the card's top edge, edge to edge, with the page showing between them: closed tabs are the
    card's own paper; the open one stands taller in its colour and joins a band of that colour along the card's top */
-.side { --tabh: 50px; --tabl: 40px; padding-top: 0; clip-path: none; background: linear-gradient(to bottom, transparent var(--tabh), var(--box) var(--tabh)); }
+/* a tabbed box: the tabs stand on a transparent strip; the card under them is an ordinary rounded card with its own padding */
+.side { max-height: 778px; } /* 800 - 8 top - 14 bottom */
+.side, .tabbed { --tabh: 50px; --tabl: 40px; padding: 0; clip-path: none; background: none; border-bottom: 0; display: flex; flex-direction: column; }
+.side .nav, .tabbed .nav { margin: 0; flex: none; }
+.tbody { background: var(--box); clip-path: var(--px3b); border-bottom: 4px solid var(--line); padding: 16px 24px 20px; min-width: 0; min-height: 0; flex: 1; display: flex; flex-direction: column; }
+.tbody > .pane { flex: 1; min-height: 0; }
 .nav { display: flex; gap: 4px; align-items: flex-end; height: calc(var(--tabh) + 4px); margin: 0 -24px 16px; border-bottom: 4px solid var(--tab-on, #a8b59a); }
 .nav .ico { flex: 1 1 0; min-width: 0; height: 100%; display: flex; align-items: flex-end; }
+.nav .ttab { flex: 0 0 150px; }
 .nav .ico span { width: 100%; height: var(--tabl); background: var(--box); clip-path: polygon(0 4px, 4px 4px, 4px 0, calc(100% - 4px) 0, calc(100% - 4px) 4px, 100% 4px, 100% 100%, 0 100%); transition: height .12s; }
 .nav .ico span .gi { width: 28px; height: 28px; }
 .nav .ico:hover:not(.on) span { background: color-mix(in srgb, var(--tab) 45%, var(--box)); height: 44px; }
 .nav .ico.on span { background: var(--tab); height: var(--tabh); }
-@media (max-width: 900px) { .side { --tabh: 46px; --tabl: 36px; } .nav .ico span .gi { width: 24px; height: 24px; } }
+@media (max-width: 900px) { .side { --tabh: 46px; --tabl: 36px; } .nav .ico span .gi { width: 28px; height: 28px; } }
 @media (max-width: 360px) { .nav { margin: 0 -12px 12px; } }
 @media (prefers-reduced-motion: reduce) { .nav .ico span { transition: none; } }
+
+/* touch devices wider than 900px (tablets, big phones) keep the compact battle table too */
+@media (pointer: coarse) and (min-width: 901px) { .fight { grid-template-columns: 1fr 1fr 0 1fr; gap: 0 8px; } .fight .kv { font-size: 14px; } .battle .tbody { padding-left: 24px; padding-right: 24px; } }
+
+/* bag buttons look like the skill rank-up button: white block, px1 corners, light violet on hover (both) */
+.view.v-bag .item button { width: 56px; height: 30px; padding: 0; font-size: 17px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; } /* the default button colours; hover goes light violet like the skill button */
+.view.v-bag .item button:hover:not(:disabled), .view .skill .up-btn:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent); }
+
+/* bag and skill buttons: corners inset by just 1px */
+.view.v-bag .item button, .view .skill .up-btn { clip-path: var(--px0) !important; } /* the generic button rule's long :not() chain outranks these selectors */
+
+/* bag rows: the same 12px between the icon and the name as between a skill's icon and its name */
+.view.v-bag .item .iname { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; position: relative; } .view.v-bag .item .iname .item-icon { margin: 0; }
+
+
+/* right panel: the scrollbar sits in the card's own 24px padding, outside the rows, so skill, bag and pal rows are all the same width whether or not a list scrolls */
+.side .view { margin-right: -24px; padding-right: 12px; scrollbar-gutter: stable; }
+.side .view.v-bag { padding-right: 0; } .side .view.v-bag .baghead { margin-right: 24px; } .side .view.v-bag .baglist { padding-right: 12px; scrollbar-gutter: stable; }

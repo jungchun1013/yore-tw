@@ -15,7 +15,7 @@ for (const w of [360, 393]) test('views en ' + w, async ({ page }) => {
   await page.setViewportSize({ width: w, height: 800 });
   await page.goto('/'); await page.click('#t-play'); await page.click('.intro'); await page.click('#c-go'); await page.waitForTimeout(800);
   for (const k of ['equip','bag','pets','skills','map','smith','titles','settings']) { await page.click(`.nav [data-k="${k}"]`); await page.waitForTimeout(200);
-    const v = await page.evaluate(() => [document.documentElement.scrollWidth, [...document.querySelectorAll('#view *, .sheet *, .att *, .petbox *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1 || e.scrollWidth > e.clientWidth + 2 && getComputedStyle(e).overflow === 'hidden').map(e => (e.className || e.tagName) + ':' + (e.textContent || '').slice(0, 20)).slice(0, 4)]);
+    const v = await page.evaluate(() => [document.documentElement.scrollWidth, [...document.querySelectorAll('#view *, .sheet *, .eqgrid *, .fight *')].filter(e => e.getBoundingClientRect().right > innerWidth + 1 || e.scrollWidth > e.clientWidth + 2 && getComputedStyle(e).overflow === 'hidden').map(e => (e.className || e.tagName) + ':' + (e.textContent || '').slice(0, 20)).slice(0, 4)]);
     console.log(w, k, JSON.stringify(v));
   }
   await page.click('.nav [data-k="equip"]'); await page.screenshot({ path: `${process.env.OUT}/en-${w}.png`, fullPage: true });

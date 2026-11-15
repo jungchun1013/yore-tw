@@ -1,5 +1,5 @@
 import { PRIMARY, type Item, type L, type Save } from './types';
-import { derive, xpNeed, type Derived } from './stats';
+import { cpOf, derive, xpNeed, type Derived } from './stats';
 import { difficulty, spawn, type Monster } from './monsters';
 import { AREAS, areaOf } from '../data/areas';
 import { LEVEL_SHARE, ageGrowth, raceOf } from '../data/races';
@@ -105,6 +105,14 @@ export class Game {
   /** The pal's own pools: a share of yours, growing with its stage and bond. */
   get petMaxHp(): number { const st = this.s.pets.find(p => p.uid === this.s.activePet); return st ? this.d.hp * [0.45, 0.6, 0.8][stageOf(st.lvl)] * (1 + st.bond * 0.02) : 0; }
   get petMaxMp(): number { return this.s.activePet ? this.d.mp * 0.6 : 0; }
+  /** The pal's combat power on the same scale as the hero's and the monster's: its average hit per second against its own HP. */
+  get petCp(): number {
+    const st = this.s.pets.find(p => p.uid === this.s.activePet);
+    if (!st) return 0;
+    const avg = this.d.atkMin + (this.d.atkMax - this.d.atkMin) * this.d.bal;
+    const hit = avg * (0.12 + st.lvl * 0.006) * [1, 1.5, 2.2][stageOf(st.lvl)] * this.d.petPower;
+    return cpOf(hit / PET_INTERVAL, this.petMaxHp);
+  }
   private petPart(): Part {
     const st = this.s.pets.find(p => p.uid === this.s.activePet)!;
     return { text: tr(petOf(st.key)!.stages[stageOf(st.lvl)].name), cls: 'pet' };

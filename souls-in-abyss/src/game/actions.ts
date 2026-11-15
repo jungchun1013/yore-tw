@@ -10,7 +10,7 @@ import { CURSES, GIFTS, PACT_OFFERS, giftOf, curseOf, type Pact } from '../data/
 import { sellPrice, nameOf } from './loot';
 import { LEGACY_RATE, REBIRTH_AGE, SAN_MAX, zeroStats } from './state';
 import { PRIMARY } from './types';
-import { lang, tr } from '../core/i18n';
+import { heroName, lang, tr } from '../core/i18n';
 
 /** Where an item would go. */
 export function targetSlot(_s: Save, it: Item): Slot { return SLOT_OF[it.kind]; }
@@ -152,7 +152,7 @@ export function rebirth(g: Game, race: string, age: number, pact = -1): boolean 
   s.san = SAN_MAX;
   s.area = 'meadow';
   g.refresh(); g.hp = g.d.hp; g.mp = g.d.mp; g.resetLoot(); g.newMonster();
-  g.say({ zh: `${s.name} 的靈魂沉入深淵，又浮了上來。（第 ${s.counters.rebirths} 次）`, en: `${s.name}'s soul sinks into the Abyss and surfaces again. (#${s.counters.rebirths})` }, [], 'fate');
+  g.say({ zh: `${heroName(s.name)} 的靈魂沉入深淵，又浮了上來。（第 ${s.counters.rebirths} 次）`, en: `${heroName(s.name)}'s soul sinks into the Abyss and surfaces again. (#${s.counters.rebirths})` }, [], 'fate');
   if (s.pact) {
     const gi = giftOf(s.pact[0])!, cu = curseOf(s.pact[1])!;
     g.say({ zh: '深淵低語：{0}', en: 'The Abyss whispers: {0}' }, [{ text: gi.line[lang], cls: 'gift' }], 'fate');

@@ -29,7 +29,9 @@ test('title, create a hero, fight, and open every view', async ({ page }, info) 
   await page.waitForTimeout(2500);
   const s = await page.evaluate(() => (window as any).__game.s);
   expect(s.counters.kills).toBeGreaterThan(20);
+  await page.click('.battle .ttab[data-k="log"]'); // the log is the battle card's second tab
   await expect(page.locator('#log p').first()).toBeVisible();
+  await page.click('.battle .ttab[data-k="scene"]');
 
   for (const k of ['pets', 'skills', 'map', 'smith', 'titles', 'settings', 'equip']) {
     await page.click(`.nav [data-k="${k}"]`);

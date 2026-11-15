@@ -43,7 +43,7 @@ export const UI = {
   prt: { zh: '保護', en: 'PRT' },
   spd: { zh: '攻速', en: 'SPD' },
   monster: { zh: '怪物', en: 'MONSTER' },
-  pet: { zh: '夥伴', en: 'Pet' },
+  pet: { zh: '夥伴', en: 'Pal' },
   petRest: { zh: '休息中', en: 'resting' },
   bond: { zh: '羈絆', en: 'Bond' },
   att: { zh: '技能發動', en: 'ATT.' },
@@ -56,6 +56,7 @@ export const UI = {
   capSupport: { zh: '輔助', en: 'Support' },
   twoHanded: { zh: '雙手持', en: 'Two-handed' },
   navBag: { zh: '背包', en: 'Bag' },
+  tabInfo: { zh: '資訊', en: 'Info' }, tabBattle: { zh: '戰鬥', en: 'Battle' }, tabLog: { zh: '紀錄', en: 'Log' },
   navPets: { zh: '夥伴', en: 'Pals' },
   navSkills: { zh: '技能', en: 'Skills' },
   navMap: { zh: '地圖', en: 'Map' },
@@ -144,3 +145,7 @@ export const UI = {
 } satisfies Record<string, L>;
 
 export const t = (k: keyof typeof UI): string => UI[k][lang];
+
+/** The default hero name follows the language: a hero still called by it reads as 奧雷里亞諾 in Chinese and Aureliano in English. */
+export const DEFAULT_NAME = { zh: '奧雷里亞諾', en: 'Aureliano' } as const;
+export const heroName = (name: string): string => (name === DEFAULT_NAME.zh || name === DEFAULT_NAME.en) ? DEFAULT_NAME[lang] : name;

@@ -1,6 +1,6 @@
 import type { Game, Part } from '../game/engine';
 import { PRIMARY, SLOTS, SLOT_OF, twoHanded, type BagSort, type Item, type L, type PetState, type Slot } from '../game/types';
-import { lang, setLang, t, tr, UI } from '../core/i18n';
+import { lang, setLang, t, tr, UI, DEFAULT_NAME, heroName } from '../core/i18n';
 import { clock, gold, num, pct } from '../core/fmt';
 import { derive, armorDef, armorPrt, weaponRange, xpNeed } from '../game/stats';
 import { nameOf, sellPrice } from '../game/loot';
@@ -24,10 +24,14 @@ import { COLLAPSE, SAN_TIERS, deathSanLoss, madness, sanTier } from '../data/san
 import { SAN_MAX } from '../game/state';
 
 type View = 'equip' | 'bag' | 'pets' | 'skills' | 'map' | 'smith' | 'titles' | 'settings';
+// the equipment page lives in the hero box on the left (its own tab beside the sheet); the side panel keeps the rest
 const NAV: [View, keyof typeof UI][] = [
-  ['equip', 'navEquip'], ['bag', 'navBag'], ['pets', 'navPets'], ['skills', 'navSkills'], ['map', 'navMap'],
+  ['bag', 'navBag'], ['pets', 'navPets'], ['skills', 'navSkills'], ['map', 'navMap'],
   ['smith', 'navSmith'], ['titles', 'navTitles'], ['settings', 'navSettings'],
 ];
+type HeroTab = 'info' | 'equip'; type BattleTab = 'scene' | 'log';
+const HERO_TABS: [HeroTab, keyof typeof UI, string][] = [['info', 'tabInfo', '#a8b59a'], ['equip', 'navEquip', '#9fb4bb']];
+const BATTLE_TABS: [BattleTab, keyof typeof UI, string][] = [['scene', 'tabBattle', '#cfb49a'], ['log', 'tabLog', '#e3ccb0']];
 /** Each tab is a coloured index tab (palette light tones); the open one stands taller and its colour runs along the card's top edge. */
 const TAB_COLOR: Record<View, string> = {
   equip: '#a8b59a', bag: '#bcc5bd', pets: '#d9c49b', skills: '#c1b3c6', map: '#cfb49a', smith: '#9fb4bb', titles: '#e3ccb0', settings: '#b9b3c4',
@@ -50,7 +54,8 @@ const modText = (m: { key: string; add?: number; mul?: number }) =>
   `${tr(STAT[m.key] || { zh: m.key, en: m.key })} +${m.add !== undefined ? (PCT_KEYS.has(m.key) ? pct(m.add, 1) : m.add) : pct(m.mul!, 1)}`;
 
 export class App {
-  private view: View = 'equip';
+  private view: View = 'bag';
+  private heroTab: HeroTab = 'info'; private battleTab: BattleTab = 'scene';
   private slot: Slot | 'all' = 'all';
   private skillTab: SkillTab = 'combat';
   private rbRace: string; private rbAge = 17; private rbPact = -1; private rbOpen = false;
@@ -68,6 +73,9 @@ export class App {
     this.rbRace = g.s.race;
     this.scene = new Scene(g);
     this.build();
+    // desktop canvas: the 1280x800 layout scales to fill the window (up or down, keeping its shape); phones use the flowing layout
+    const fit = () => { const s = window.innerWidth > 900 ? Math.min(window.innerWidth / 1280, window.innerHeight / 800) : 1; document.documentElement.style.setProperty('--s', s.toFixed(4)); };
+    fit(); window.addEventListener('resize', fit);
     this.root.addEventListener('click', e => this.onClick(e));
     this.installTips();
     this.root.addEventListener('change', e => this.onChange(e));
@@ -93,34 +101,46 @@ export class App {
     // battle bars carry no numbers: the log already reports every hit, and big numbers would squeeze the bars
     const bar = (id: string, cls: string, lbl: string) =>
       `<div class="kv bar"><span class="lbl">${lbl}</span><div class="line"><div id="${id}" class="${cls}"></div></div></div>`;
+    const ttabs = (tabs: [string, keyof typeof UI, string][], action: string, on: string) => `<nav class="nav tabs" style="--tab-on:${tabs.find(x => x[0] === on)![2]}">${tabs.map(([k, l, c]) => `<button class="ttab ${k === on ? 'on' : ''}" data-a="${action}" data-k="${k}" style="--tab:${c}"><span>${t(l)}</span></button>`).join('')}</nav>`;
     this.root.innerHTML = `
       <div class="game">
         <div class="colL">
-        <section class="box sheet" id="sheet"></section>
-        <section class="box log"><div class="loglist" id="log"></div></section>
-        </div>
-        <div class="colM">
-        <section class="box monster">
-          <div class="mhead"><b id="m-diff"></b> <span id="m-label" class="mlabel"></span><span id="m-name"></span></div>
+        <section class="box hero tabbed">
+          ${ttabs(HERO_TABS, 'htab', this.heroTab)}
+          <div class="tbody">
+          <div class="sheet pane" id="sheet" ${this.heroTab === 'info' ? '' : 'hidden'}></div>
+          <div class="view v-equip pane" id="equippane" ${this.heroTab === 'equip' ? '' : 'hidden'}></div>
+          </div>
+        </section>
+        <section class="box battle tabbed">
+          ${ttabs(BATTLE_TABS, 'btab', this.battleTab)}
+          <div class="tbody">
+          <div class="pane monster" id="battlepane" ${this.battleTab === 'scene' ? '' : 'hidden'}>
           <div class="stage"></div>
           <div class="fight">
             <div class="side-hero">
+              <div class="kv fname"><span id="h-name"></span></div>
               <div class="kv cp"><span class="lbl">${t('cp')}</span><span id="s-cp" class="v"></span></div>
               ${bar('s-hp', 'red', t('hp'))}${bar('s-mp', 'blue', t('mp'))}
             </div>
+            <div class="side-pal" id="palbars"></div>
             <div class="side-mon">
+              <div class="kv fname"><span><span id="m-label" class="mlabel"></span><span id="m-name"></span></span><span id="m-diff" class="diff"></span></div>
               <div class="kv cp"><span class="lbl">${t('cp')}</span><span id="m-cp" class="v"></span></div>
               ${bar('m-hp', 'red', t('hp'))}
             </div>
           </div>
+          </div>
+          <div class="pane log" id="logpane" ${this.battleTab === 'log' ? '' : 'hidden'}><div class="loglist" id="log"></div></div>
+          </div>
         </section>
-        <section class="box petbox" id="petbox"></section>
-        <section class="box att" id="att"></section>
         </div>
         <section class="box side">
           <nav class="nav">${NAV.map(([k, l]) => `<button class="ico" data-a="view" data-k="${k}" title="${t(l)}" aria-label="${t(l)}" style="--tab:${TAB_COLOR[k]}"><span>${icon(k)}</span></button>`).join('')}</nav>
+          <div class="tbody">
           <div class="vtitle" id="vtitle"></div>
           <div class="view" id="view"></div>
+          </div>
         </section>
       </div>`;
     this.root.querySelector('.stage')!.appendChild(this.scene.cv);
@@ -130,8 +150,8 @@ export class App {
 
   private setView(v: View): void {
     this.view = v; this.palArmed = 0;
-    this.root.querySelectorAll('.nav .ico').forEach(b => b.classList.toggle('on', (b as HTMLElement).dataset.k === v));
-    this.root.querySelector<HTMLElement>('.nav')?.style.setProperty('--tab-on', TAB_COLOR[v]);
+    this.root.querySelectorAll('.side .nav .ico').forEach(b => b.classList.toggle('on', (b as HTMLElement).dataset.k === v));
+    this.root.querySelector<HTMLElement>('.side .nav')?.style.setProperty('--tab-on', TAB_COLOR[v]);
     const label = NAV.find(n => n[0] === v)![1];
     (this.root.querySelector('#vtitle') as HTMLElement).textContent = t(label);
     (this.root.querySelector('#view') as HTMLElement).className = `view v-${v}`;
@@ -151,6 +171,8 @@ export class App {
     if (el.classList.contains('ddopt')) el.closest<HTMLElement>('.ddmenu')!.hidden = true;
     switch (a) {
       case 'view': this.setView(k as View); return;
+      case 'htab': this.heroTab = k as HeroTab; this.tabTo('.hero', k); break;
+      case 'btab': this.battleTab = k as BattleTab; this.tabTo('.battle', k); break;
       case 'slot': this.slot = this.slot === k ? 'all' : (k as Slot); break;
       case 'stab': this.skillTab = k as SkillTab; break;
       case 'lang': setLang(k as 'zh' | 'en'); location.reload(); return;
@@ -184,6 +206,14 @@ export class App {
     this.render();
   }
 
+  /** Flip a tabbed box: the clicked tab stands up, the band takes its colour, its pane shows. */
+  private tabTo(box: string, k: string): void {
+    const b = this.root.querySelector<HTMLElement>(box)!;
+    b.querySelectorAll<HTMLElement>('.ttab').forEach(x => x.classList.toggle('on', x.dataset.k === k));
+    const on = b.querySelector<HTMLElement>('.ttab.on'); if (on) b.querySelector<HTMLElement>('.tabs')!.style.setProperty('--tab-on', on.style.getPropertyValue('--tab'));
+    b.querySelectorAll<HTMLElement>('.pane').forEach(pn => { pn.hidden = !pn.id.startsWith(k === 'info' ? 'sheet' : k === 'equip' ? 'equippane' : k === 'scene' ? 'battlepane' : 'logpane'); });
+    if (k === 'log') this.logEl.scrollTop = this.logEl.scrollHeight;
+  }
   private onChange(e: Event): void {
     const el = e.target as HTMLInputElement | HTMLSelectElement;
     if (el.dataset.a === 'rbAge') { this.rbAge = Number(el.value); this.lastHtml = {}; this.render(); }
@@ -216,9 +246,10 @@ export class App {
     this.scene.draw(dt);
     const g = this.g, m = g.mon;
     const dif = difficulty(m.cp, g.d.cp);
-    this.text('m-diff', tr(dif.name)); (document.getElementById('m-diff') as HTMLElement).style.color = dif.color;
+    this.text('h-name', heroName(g.s.name));
     this.text('m-label', m.label === 'friendly' ? tr(FRIENDLY) : '');
-    this.text('m-name', `${tr(m.name)} Lv${m.lvl}`); (document.getElementById('m-name') as HTMLElement).style.color = g.monColor;
+    this.text('m-name', tr(m.name)); (document.getElementById('m-name') as HTMLElement).style.color = g.monColor;
+    this.text('m-diff', tr(dif.name)); (document.getElementById('m-diff') as HTMLElement).style.color = dif.color;
     this.text('m-cp', num(m.cp)); this.text('s-cp', num(g.d.cp));
     this.width('m-hp', m.hp / m.maxHp);
     this.width('s-hp', g.hp / g.d.hp); this.width('s-mp', g.mp / g.d.mp);
@@ -250,8 +281,8 @@ export class App {
     if (this.overlay) return;
     this.shadePage();
     this.put('sheet', this.sheetHtml());
-    this.put('petbox', this.petBoxHtml());
-    this.put('att', this.attHtml());
+    this.put('equippane', this.equipHtml()); // always laid out (invisible when the info tab is open) so the card is the taller of the two pages
+    this.put('palbars', this.palBarsHtml());
     // an open dropdown must not be replaced under the player's finger: hold the view until it closes
     const busy = !!document.querySelector('#view .ddmenu:not([hidden])');
     if (!busy) this.put('view', this.viewHtml());
@@ -291,7 +322,7 @@ export class App {
       return `<div class="kv"><span class="lbl">${icon(k, 'gi sm')}${tr(STAT[k])}</span><span class="val ${v > b ? 'boost' : 'stat'}${mad(k)}">${v}</span><span class="dim">(${b})</span></div>`;
     };
     // the name gets a row of its own: a title will prefix it (「XXXX 的奧雷里亞諾」) and must not squeeze the first column
-    return `<div class="kv name"><span class="lbl">${t('name')}</span><span>${esc(s.name)}</span></div>
+    return `<div class="kv name"><span class="lbl">${t('name')}</span><span>${esc(heroName(s.name))}</span></div>
       <div class="col">
         <div class="kv"><span class="lbl">${t('race')}</span><span>${tr(r.name)}</span></div>
         <div class="kv"><span class="lbl">${t('age')}</span><span>${s.age} <small class="dim">${clock(YEAR_SEC - s.ageT)}</small></span></div>
@@ -315,20 +346,25 @@ export class App {
       </div>`;
   }
 
-  private petBoxHtml(): string {
+  /** The pal's name, HP and MP beside the hero's bars in the battle box; empty when nobody walks along. */
+  private palBarsHtml(): string {
     const s = this.g.s, p = s.pets.find(x => x.uid === s.activePet);
-    if (!p) return `<div class="kv"><span class="lbl">${t('pet')}</span></div><div class="kv"><span class="lbl">${t('lv')}</span></div><div class="kv"><span class="lbl">${t('exp')}</span><div class="line"></div></div><p class="hint">${t('palHint').replace('{i}', icon('pets', 'gi sm ol'))}</p>`;
+    if (!p) return '';
     const d = petOf(p.key)!, st = stageOf(p.lvl);
-    // text only: the pal itself stands on the equipment board, where it can be tapped.
-    // Two columns in the middle, as the user sketched: HP / MP on the left, level / EXP on the right.
     const bar = (id: string, cls: string, lbl: string) => `<div class="kv bar"><span class="lbl">${lbl}</span><div class="line"><div id="${id}" class="${cls}"></div></div></div>`;
     const rest = this.g.petDownFor > 0 ? ` <small class="dim">${t('petRest')}</small>` : '';
-    return `<div class="kv"><span class="lbl">${t('pet')}</span><span class="petname">${tr(d.stages[st].name)}${rest}</span></div>
-      <div class="petgrid">
-        ${bar('p-hp', 'red', t('hp'))}<div class="kv"><span class="lbl">${t('lv')}</span><span>${p.lvl}</span></div>
-        ${bar('p-mp', 'blue', t('mp'))}<div class="kv"><span class="lbl">${t('exp')}</span><div class="line"><div class="grey" style="width:${(p.xp / petXpNeed(p.lvl) * 100).toFixed(0)}%"></div></div></div>
-      </div>
-      <div class="kv"><span class="lbl">${t('bond')}</span><span class="hearts">${hearts(p.bond)}</span></div>`;
+    return `<div class="kv fname"><span class="petname">${tr(d.stages[st].name)}${rest}</span></div><div class="kv cp"><span class="lbl">${t('cp')}</span><span class="v">${num(this.g.petCp)}</span></div>${bar('p-hp', 'red', t('hp'))}${bar('p-mp', 'blue', t('mp'))}`;
+  }
+  /** The pal on the info page: who walks with you, level and EXP, bond, what it does. */
+  private palCardHtml(): string {
+    const s = this.g.s, p = s.pets.find(x => x.uid === s.activePet);
+    if (!p) return `<div class="kv"><span class="lbl">${t('pet')}</span><span class="dim">-</span></div><p class="hint">${t('palHint').replace('{i}', icon('pets', 'gi sm ol'))}</p>`;
+    const d = petOf(p.key)!, st = stageOf(p.lvl);
+    return `<div class="kv"><span class="lbl">${t('pet')}</span><span class="petname">${tr(d.stages[st].name)}</span></div>
+      <div class="kv"><span class="lbl">${t('lv')}</span><span>${p.lvl}</span></div>
+      <div class="kv bar"><span class="lbl">${t('exp')}</span><div class="line"><div class="grey" style="width:${(p.xp / petXpNeed(p.lvl) * 100).toFixed(0)}%"></div></div></div>
+      <div class="kv"><span class="lbl">${t('bond')}</span><span class="hearts">${hearts(p.bond)}</span></div>
+      <div class="tsec">${tr(d.ability)}</div><p class="lore dim">${tr(d.lore)}</p>`;
   }
 
   private attHtml(): string {
@@ -454,7 +490,9 @@ export class App {
     const p = s.pets.find(x => x.uid === s.activePet), d = p && petOf(p.key);
     const pal = p && d ? `<div class="tname">${tr(d.stages[stageOf(p.lvl)].name)} <small class="dim">Lv ${p.lvl}</small></div>
         <div class="tsec">${tr(d.ability)}</div><p class="lore dim">${tr(d.lore)}</p>` : `<p class="dim">${t('noPal')}</p>`;
-    return `${this.dollSvg()}${worn}<div class="eqlist"><h4>${t('wornList')}</h4>${list}</div><div class="palcard"><h4>${t('palAlong')}</h4>${pal}</div>`;
+    void pal;
+    void list; // the worn list went away: the slot tooltips on the figure already say what is worn
+    return `<div class="eqgrid"><div>${this.dollSvg()}${worn}</div><div class="palcard">${this.palCardHtml()}</div><div class="attlist">${this.attHtml().replace('<h3>', '<h4>').replace('</h3>', '</h4>')}</div></div>`;
   }
 
   /** Bag page: every carried item with its CP change, equip and sell, plus auto-sell and sell-all. */
@@ -646,7 +684,7 @@ export class App {
     const g = this.g, root = this.root;
     this.overlay = true; this.rbPact = -1; this.rbRace = g.s.race;
     try { this.rbFirst = !localStorage.getItem('souls.pactSeen'); localStorage.setItem('souls.pactSeen', '1'); } catch { this.rbFirst = false; }
-    const back = () => { this.overlay = false; this.build(); this.lastHtml = {}; this.setView('equip'); };
+    const back = () => { this.overlay = false; this.build(); this.lastHtml = {}; this.setView(this.view); };
     const draw = () => {
       // desktop: the picker on the left, the Abyss's offers beside it on the right, nothing below the fold.
       // phone: the offers stay folded behind a button next to the rebirth button, so they never sit below the picker unseen.
@@ -760,7 +798,7 @@ function bindCog(root: HTMLElement): void {
 
 /** Title banner, then creation. */
 export function creation(root: HTMLElement, done: (name: string, race: string, age: number) => void): void {
-  let race = 'elf', age = 13, name = lang === 'zh' ? '奧雷里亞諾' : 'Aureliano'; // after One Hundred Years of Solitude
+  let race = 'elf', age = 13, name: string = DEFAULT_NAME[lang]; // after One Hundred Years of Solitude
   const titleScreen = () => {
     root.innerHTML = `<div class="titlescreen">${banner()}<button class="link play" id="t-play">${t('play')}</button></div>${cogHtml()}`;
     root.querySelector<HTMLElement>('#t-play')!.onclick = intro;
@@ -786,7 +824,7 @@ export function creation(root: HTMLElement, done: (name: string, race: string, a
     bindCog(root);
     root.querySelectorAll<HTMLElement>('[data-a="cRace"]').forEach(b => b.onclick = () => { keep(); race = b.dataset.k!; draw(); });
     root.querySelectorAll<HTMLElement>('[data-a="cAge"]').forEach(b => b.onclick = () => { keep(); age = Number(b.dataset.k); draw(); });
-    root.querySelector<HTMLElement>('#c-go')!.onclick = () => { keep(); done((name.trim() || (lang === 'zh' ? '奧雷里亞諾' : 'Aureliano')).slice(0, 12), race, age); };
+    root.querySelector<HTMLElement>('#c-go')!.onclick = () => { keep(); done((name.trim() || DEFAULT_NAME[lang]).slice(0, 12), race, age); };
   };
   const keep = () => { name = (root.querySelector('#c-name') as HTMLInputElement).value; };
   titleScreen();
