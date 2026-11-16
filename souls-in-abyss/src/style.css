@@ -40,7 +40,7 @@ small { font-size: var(--fs-xs); }
 /* desktop: a fixed 1280x800 canvas laid out in px, scaled to fill the window (up or down, same shape), centred. --s is set by app.ts on resize. */
 .game {
   display: grid; gap: 20px; padding: 8px 12px 14px; width: 1280px; height: 800px; box-sizing: border-box;
-  grid-template-columns: 828px 408px; /* 12 + 828 + 20 + 408 + 12 = 1280 */
+  grid-template-columns: 808px 428px; /* 12 + 808 + 20 + 428 + 12 = 1280 */
   grid-template-rows: minmax(0, 1fr);
   grid-template-areas: "colL side";
   transform: scale(var(--s, 1)); transform-origin: top center; margin: 0 auto;
@@ -50,10 +50,15 @@ small { font-size: var(--fs-xs); }
 .sheet { display: grid; grid-template-columns: 1.15fr 1fr 1fr; gap: 0 14px; align-content: start; }
 .sheet .kv.name { grid-column: 1 / -1; } .sheet .kv.name .lbl { min-width: 58px; } .sheet .kv.name > span:last-child { margin-left: 0; }
 .att { overflow-y: auto; }
-.eqgrid { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 0.55fr); gap: 0 24px; align-items: stretch; }
+.eqgrid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr) minmax(0, 0.6fr); gap: 0; align-items: stretch; } /* no em shifts: each list column starts right after its divider */
+.eqgrid .palcard, .eqgrid .attlist { position: relative; padding-left: 20px; margin-left: 0; } .eqgrid .palcard { padding-right: 20px; } /* the pal text stops 20px before the next divider */ /* the same half-height dividers as the info page */
 /* the figure sits in the middle of its column, both ways */
 .eqgrid > div:first-child { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; } .eqgrid .doll { margin: 0 auto 0 0; } /* the figure sits at the left of its column */
-.sheet { grid-template-columns: 232px 202px 202px; justify-content: start; column-gap: 40px; } /* three fixed columns, packed left; the pal moved to the equipment page */
+.sheet { grid-template-columns: 1.5fr 1.2fr 1fr; column-gap: 0; } /* 1.5 : 1.2 : 1 across the card */
+/* the same thin grey line between the info page's columns as in the battle table; 20px of air on each side of it */
+.sheet .col { padding: 0 2em; position: relative; } .sheet .kv.name + .col { padding-left: 0; }
+/* dividers: a grey line half the column's height, centred (info page, equipment page, battle table) */
+.sheet .col + .col::before, .eqgrid .palcard::before, .eqgrid .attlist::before { content: ''; position: absolute; left: 0; top: 25%; height: 50%; width: 2px; background: var(--line); } /* three fixed columns, packed left; the pal moved to the equipment page */
 .sheet .palinfo .tsec { margin-top: 6px; color: var(--ink); } .sheet .palinfo .lore { margin: 2px 0 0; font-size: var(--fs-xs); line-height: 1.6; }
 .fight .side-pal:empty { visibility: hidden; }
 .fight .fname { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: block; line-height: 28px; }
@@ -83,7 +88,7 @@ small { font-size: var(--fs-xs); }
 .stage { margin: 0 0 10px; }
 .fight .kv { min-height: 0; line-height: 1.2; font-size: var(--fs-m); } .fight .fname { line-height: 1.2; }
 /* the battle card breathes at the sides: wider padding than the other cards */
-.hero .tbody { padding-left: 20px; padding-right: 20px; } /* 828 - 40 = 788 of content */
+.hero .tbody { padding-left: 20px; padding-right: 20px; } /* 808 - 40 = 768 of content */
 .battle .tbody { padding-left: 40px; padding-right: 40px; } /* battle picture, table and log inset 20px further than the info card */
 /* the battle pane fills its card: the picture takes whatever height the table leaves, keeping its 8:3 shape */
 .scene { height: 100%; max-width: 100%; width: auto; margin: 0 auto; display: block; image-rendering: pixelated; aspect-ratio: 320 / 120; }
@@ -130,10 +135,11 @@ small { font-size: var(--fs-xs); }
 .view.v-bag .baghead { flex: none; position: relative; z-index: 2; }
 .view.v-bag .baglist { flex: 1; min-height: 0; overflow-y: auto; padding-right: 4px; }
 /* compact rows: smaller name, two equal buttons lined up on the right */
-.view.v-bag .item { padding: 14px 16px; margin: 8px 0; gap: 12px; } /* 56px rows, 8px apart, like the skill rows */
-.view.v-bag .item .iname { font-size: var(--fs-m); line-height: 28px; position: relative; top: 1px; } /* 16px; nudged 1px down to sit level with the buttons */
+.view.v-bag .item, .view.v-smith .item { padding: 14px 12px; margin: 8px 0; gap: 12px; } /* 56px rows, 8px apart, like the skill rows */
+.view.v-bag .item .iname, .view.v-smith .item .iname { font-size: var(--fs-m); line-height: 28px; position: relative; top: 3px; } /* the pixel font sits high in its line box: text down 3px, icon only 1px */
+.view.v-bag .item .iname .item-icon, .view.v-smith .item .iname .item-icon { position: relative; top: -2px; } /* 16px; nudged 1px down to sit level with the buttons */
 .view.v-bag .item .acts { flex: none; flex-wrap: nowrap; gap: 6px; }
-.view.v-bag .item .acts button { font-size: var(--fs-xs); line-height: 20px; padding: 2px 0; width: var(--btn-s); text-align: center; }
+/* (bag action buttons: see the shared bag/smith button rule near the end of this file) */
 /* pals are listed like the bag: a count, then one row each with two equal buttons */
 .view.v-pets .baghead { margin-bottom: 8px; }
 .view.v-pets .item .acts { flex: none; flex-direction: column; flex-wrap: nowrap; gap: 6px; }
@@ -141,7 +147,7 @@ small { font-size: var(--fs-xs); }
 .view.v-pets .item .acts button { font-size: var(--fs-xs); line-height: 20px; padding: 2px 0; width: var(--btn-s); text-align: center; }
 /* equipment: what is worn, and the pal along, under the figure */
 .eqlist, .palcard, .attlist { margin-top: 16px; } .eqgrid .palcard { margin-top: 0; } .eqgrid .palcard .tsec { margin-top: 6px; } .eqgrid .palcard .lore { margin: 2px 0 0; font-size: var(--fs-xs); line-height: 1.6; } .eqlist h4, .palcard h4, .attlist h4 { margin: 0 0 6px; font-size: var(--fs-m); font-weight: normal; color: var(--dim); }
-.attlist .kv { font-size: inherit; } .attlist .kv > span:last-child { margin-left: auto; }
+.attlist .kv { font-size: inherit; white-space: nowrap; } .attlist .kv > span:last-child { margin-left: auto; }
 .eqlist .kv .lbl { min-width: 58px; } .eqlist .kv > span:last-child:not(.lbl) { margin-left: 0; }
 .view.v-bag .baghead { margin-bottom: 8px; } .eqlist .iname { display: inline-flex; align-items: center; gap: 4px; }
 .palcard .tname { font-size: var(--fs-l); } .palcard .lore { margin: 4px 0 0; }
@@ -254,8 +260,7 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .colL .hero .tbody > .pane { grid-area: 1 / 1; } .colL .hero .tbody > .pane[hidden] { visibility: hidden; pointer-events: none; }
 .colL .hero #sheet[hidden] { display: grid !important; } .colL .hero #equippane[hidden] { display: block !important; }
 .colL .hero .pane { overflow: visible; } .colL .hero .pane { overflow-y: auto; }
-.eqgrid .doll { max-width: 314px; } .eqgrid .kv { min-height: 24px; } .eqgrid .eqlist, .eqgrid .attlist { margin-top: 0; } .eqgrid .palcard { margin-left: -3em; margin-right: 3em; } /* shifted left, same width as its track, so nothing spills into the next column */
-.eqgrid .attlist { margin-left: -3em; } /* the last column may grow left: its rates stay flush with the card's content edge */
+.eqgrid .doll { max-width: 314px; } .eqgrid .kv { min-height: 24px; } .eqgrid .eqlist, .eqgrid .attlist { margin-top: 0; }
 .eqgrid .palcard .kv { min-height: 24px; } .eqgrid .palcard .kv > span:last-child:not(.lbl) { margin-left: auto; text-align: right; } .attlist .kv > span:last-child { margin-right: 0; } /* user-tuned offsets 2026-11-15 */
 .colL .battle { flex: 1; min-height: 0; display: flex; flex-direction: column; } .colL .battle .tbody { flex: 1; min-height: 0; } /* the battle card takes whatever height is left; the picture grows to fill it above the table */ /* 270px picture + 10px + four 20px rows + padding */
 .colL .battle .log { display: flex; flex-direction: column; }
@@ -274,8 +279,12 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
   .colL { display: contents; }
   .game { height: auto; grid-template-columns: 1fr; grid-template-areas: "hero" "battle" "side"; }
   .hero { grid-area: hero; } .battle { grid-area: battle; }
-  .sheet .palinfo { grid-column: 1 / -1; }
-  .fight { grid-template-columns: 1fr 1fr 0 1fr; gap: 0 8px; } .fight .kv { font-size: 14px; gap: 6px; } .fight .lbl, .fight .kv.bar .lbl { min-width: 26px; } .fight .kv .v { min-width: 0; }
+  .sheet .palinfo { grid-column: 1 / -1; } .sheet .col { padding: 0; border-left: 0; } .sheet .col + .col::before, .eqgrid .palcard::before, .eqgrid .attlist::before { display: none; }
+  /* phones: the two hero pages are not stacked in one cell (the equipment page is long there), the hidden one is simply gone */
+  .colL .hero .tbody { display: block !important; min-height: 0 !important; height: auto !important; } .colL .hero .tbody > .pane[hidden], .colL .hero #sheet[hidden], .colL .hero #equippane[hidden] { display: none !important; visibility: hidden; }
+  .eqgrid .palcard, .eqgrid .attlist { padding-left: 0; }
+  .fight { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 0 minmax(0, 1fr) !important; gap: 0 10px !important; } .fight > div { min-width: 0; }
+  .fight .kv .v { min-width: 0 !important; margin-left: auto !important; } .fight .lbl, .fight .kv.bar .lbl { min-width: 0 !important; } /* the desktop rules below this block would otherwise win */ .fight .vsep { display: none; } .fight .side-mon .fname { flex-wrap: wrap; } .fight .kv .lbl { flex: none; } .fight .kv { font-size: 14px; gap: 6px; } .fight .lbl, .fight .kv.bar .lbl { min-width: 26px; } .fight .kv .v { min-width: 0; }
   .tbody, .battle .tbody { padding: 14px 12px 16px; }
   .scene { height: auto; width: 100%; } #battlepane .stage { flex: none; display: block; }
   .game { padding: 8px; gap: 8px; } .colL { gap: 8px; }
@@ -355,8 +364,9 @@ button.play:hover, button.play:focus-visible { color: #fff; background: none; bo
 .gi.star { color: #cfccbf; opacity: 1; } .gi.star.on { color: var(--accent); }
 
 /* ---------- battle panel: your bars left, the monster's right ---------- */
-.fight { display: grid; grid-template-columns: 1fr 1fr 40px 1fr; gap: 0 18px; }
-.fight .side-mon { grid-column: 4; } /* an empty track between the pal and the enemy, so the three columns stay the same width */
+.fight { display: grid; grid-template-columns: 1fr 1fr 1em minmax(0, 1.25fr); gap: 0 18px; }
+.fight .vsep { grid-column: 3; grid-row: 1 / 5; width: 2px; height: 50%; align-self: center; background: var(--line); margin: 0 auto; } /* a thin grey line in a 2em track between the pal and the enemy */
+.fight .side-mon { grid-column: 4; } /* the enemy column is a little wider for long names */
 .fight .kv.bar .lbl { min-width: 40px; }
 .petgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; } .petgrid .kv .lbl { min-width: 40px; }
 .fight .kv .v { margin-left: 8px; min-width: 64px; text-align: right; font-size: var(--fs-xs); color: var(--dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -541,14 +551,14 @@ button:not(.ico):not(.ttab):not(.cog):not(.rrow):not(.fig):not(.agearr):not(.nod
 @media (pointer: coarse) and (min-width: 901px) { .fight { grid-template-columns: 1fr 1fr 0 1fr; gap: 0 8px; } .fight .kv { font-size: 14px; } .battle .tbody { padding-left: 24px; padding-right: 24px; } }
 
 /* bag buttons look like the skill rank-up button: white block, px1 corners, light violet on hover (both) */
-.view.v-bag .item button { width: 56px; height: 30px; padding: 0; font-size: 17px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; } /* the default button colours; hover goes light violet like the skill button */
-.view.v-bag .item button:hover:not(:disabled), .view .skill .up-btn:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent); }
+.view.v-bag .item button, .view.v-bag .item .acts button, .view.v-smith .item button, .view.v-smith .item .acts button { width: 56px; height: 30px; padding: 0; font-size: 16px; line-height: 1; display: inline-flex; align-items: center; justify-content: center; } /* the default button colours; hover goes light violet like the skill button */
+.view.v-bag .item button:hover:not(:disabled), .view.v-smith .item button:hover:not(:disabled), .view .skill .up-btn:hover:not(:disabled) { background: var(--accent-soft); color: var(--accent); }
 
 /* bag and skill buttons: corners inset by just 1px */
-.view.v-bag .item button, .view .skill .up-btn { clip-path: var(--px0) !important; } /* the generic button rule's long :not() chain outranks these selectors */
+.view.v-bag .item button, .view.v-smith .item button, .view .skill .up-btn { clip-path: var(--px0) !important; } /* the generic button rule's long :not() chain outranks these selectors */
 
 /* bag rows: the same 12px between the icon and the name as between a skill's icon and its name */
-.view.v-bag .item .iname { display: inline-flex; align-items: center; gap: 8px; font-size: 15px; position: relative; } .view.v-bag .item .iname .item-icon { margin: 0; }
+.view.v-bag .item .iname, .view.v-smith .item .iname { display: inline-flex; align-items: center; gap: 12px; font-size: 18px; position: relative; } /* same as a skill name */ .view.v-bag .item .iname .item-icon, .view.v-smith .item .iname .item-icon { margin: 0; }
 
 
 /* right panel: the scrollbar sits in the card's own 24px padding, outside the rows, so skill, bag and pal rows are all the same width whether or not a list scrolls */
@@ -568,3 +578,7 @@ button:not(.ico):not(.ttab):not(.cog):not(.rrow):not(.fig):not(.agearr):not(.nod
 .report textarea { min-height: 110px; line-height: 1.5; }
 .report textarea:focus-visible, .report input:focus-visible { outline: 3px solid var(--accent-soft); outline-offset: 0; }
 .report .row { gap: 10px; } .report #rp-status { font-size: var(--fs-m); }
+
+/* smith rows: the same row as the bag; the chance and the cost button sit together on the right; the price button is wider for 5-digit sums */
+.view.v-smith .item .acts button { width: 80px; }
+.view.v-smith .item .acts { display: inline-flex; align-items: center; gap: 10px; }

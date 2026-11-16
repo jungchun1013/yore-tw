@@ -53,12 +53,12 @@ for (const lang of ['zh', 'en']) test(`text buttons keep a fixed width (${lang})
   const widths = (sel: string) => page.locator(sel).evaluateAll((n: HTMLElement[]) => n.filter(b => b.offsetWidth).map(b => ({ w: Math.round(b.getBoundingClientRect().width), fits: b.scrollWidth <= b.clientWidth + 1 })));
   const all = async (sel: string, w: number) => { const got = await widths(sel); expect(got.length).toBeGreaterThan(0); for (const g of got) expect(g).toEqual({ w, fits: true }); };
   await page.click('.nav [data-k="bag"]');
-  await all('#view .item .acts button', 52);
+  await all('#view .item .acts button', 56); // bag rows match the skill rows (2026-11-16)
   await all('#view [data-a="sellAll"]', 152);
   await page.click('.nav [data-k="pets"]');
   await all('#view .item .acts button', 52);
   await page.click('.nav [data-k="smith"]');
-  await all('#view [data-a="smith"]', 88); // the price does not size the button
+  await all('#view [data-a="smith"]', 80); // the price does not size the button
   await page.click('.nav [data-k="settings"]');
   await all('#view [data-a="lang"], #view [data-a="rebirthOpen"]', 88);
   await all('#view [data-a="reset"]', 152);

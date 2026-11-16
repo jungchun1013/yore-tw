@@ -126,6 +126,7 @@ export class App {
               ${bar('s-hp', 'red', t('hp'))}${bar('s-mp', 'blue', t('mp'))}
             </div>
             <div class="side-pal" id="palbars"></div>
+            <div class="vsep" aria-hidden="true"></div>
             <div class="side-mon">
               <div class="kv fname"><span><span id="m-label" class="mlabel"></span><span id="m-name"></span></span><span id="m-diff" class="diff"></span></div>
               <div class="kv cp"><span class="lbl">${t('cp')}</span><span id="m-cp" class="v"></span></div>

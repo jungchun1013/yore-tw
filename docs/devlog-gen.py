@@ -135,6 +135,33 @@ POSTS = [
    "開發日誌上線，就是這一頁。從第一個 commit 開始，每天一篇。"],
    ["English is now the default. The root URL goes to /en/, and the x-default hint for search engines points at the English pages.",
     "The devlog went live, this page included. One entry per day, from the first commit on."]),
+ ]), ("2026-11-14", "每個遊戲頁加截圖；奈落魂迴的待辦表", "Screenshots on every game page; a backlog for Souls in Abyss", [
+  ("網站", "Site", [
+   "每個遊戲頁在 FAQ 前面多了一排截圖。",
+   "奈落魂迴的頁面列出接下來要做的事，不再只有「持續更新」四個字。"],
+   ["Each game page now shows a row of screenshots before its FAQ.",
+    "The Souls in Abyss page lists what is coming next instead of a bare \"updates continue\"."]),
+ ]),
+ ("2026-11-15", "奈落魂迴：像素人物、23 隻新生物、兩欄版面", "Souls in Abyss: pixel heroes, 23 new creatures, a two-column page", [
+  ("Souls in Abyss", "Souls in Abyss", [
+   "五個種族的人物重畫成和怪物、地圖同一種像素風；原本是插畫縮小的，站在怪物旁邊明顯比較軟。",
+   "新增 23 隻生物，加上原本的 17 隻共 40 隻，每隻有自己的色違；名字前面帶顏色（藍花鹿、綠大蠍）。火靈拆成草、火、水、天、光、闇六系，同一張圖靠顏色分。三隻一直沒有圖的怪（小樹人、巴西利斯克、深潛者）先拿掉。",
+   "巨人改名獸人。建角畫面改成一個人像加左右箭頭選年齡；轉生畫面的契約放在旁邊，第一次轉生時淡入。",
+   "遊戲頁從三欄改成兩欄：左邊是資訊／裝備和戰鬥／紀錄兩張 tab 卡，右邊是背包、夥伴、技能、地圖、鍛造、稱號、設定。桌機固定 1280×800 等比縮放，手機維持直向堆疊。夥伴有自己的戰力。"],
+   ["The five races were redrawn in the same pixel style as the creatures and the map; they used to be downsized illustrations and looked soft next to a monster.",
+    "23 new creatures join the original 17 for 40 in all, each with its own colour variants, and a colour word now leads the name (Blue Flower Fawn, Green Giant Scorpion). The flame spirit became six families (grass, fire, water, sky, light, dark) told apart by colour. Three monsters that never had art (sapling treant, basilisk, deep one) are out for now.",
+    "Giant is now Orc. Character creation shows one figure with arrows for the age; on rebirth the pact offers stand beside the picker and fade in the first time.",
+    "The game page went from three columns to two: Info/Equipment and Battle/Log as tabbed cards on the left, the bag, pals, skills, map, smithy, titles and settings on the right. Desktop is a fixed 1280×800 canvas scaled to the window; phones still stack. Pals have a combat power of their own."]),
+ ]),
+ ("2026-11-16", "回報入口：遊戲內和聯絡頁都能私訊作者", "A feedback entry: message the author from the game or the contact page", [
+  ("網站", "Site", [
+   "遊戲設定頁多了「回報問題」，聯絡頁多了一個表單。寫的內容只有作者看得到，不是公開留言板；留下聯絡方式才會收到回覆。",
+   "後面是站的 Worker 收信，存一份備份、轉寄到作者信箱，180 天後自動刪除。同一個 IP 一小時最多五則。"],
+   ["The game's settings page has a \"Report a problem\" button and the contact page a form. What you write goes to the author only; it is not a public board, and you hear back only if you leave a contact.",
+    "Behind it the site's Worker keeps a copy, forwards each message to the author's inbox and deletes entries after 180 days. Five messages per hour per address."]),
+  ("Souls in Abyss", "Souls in Abyss", [
+   "兩欄版面細修：tab 同色系（開啟的亮、關閉的暗）、欄與欄之間一條短灰線、背包和鍛造的物品列同高同字級、右欄捲軸移到卡片邊。"],
+   ["Small passes on the two-column page: tabs in one hue per card (open light, closed dark), a short grey rule between columns, bag and smithy rows at one height and size, the right panel's scrollbar moved into the card edge."]),
  ]),
 ]
 
