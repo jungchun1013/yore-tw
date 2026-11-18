@@ -70,7 +70,7 @@ function fireOne(run: Run, o: OwnedWeapon, n: WeaponNumbers, i: number, total: n
     case 'lantern': {
       const t = randomTarget(run, Math.min(run.viewW, run.viewH) * 0.55);
       const x = t ? t.x : p.x + (run.rng() - 0.5) * 300, y = t ? t.y : p.y + (run.rng() - 0.5) * 300;
-      shot(run, 'lantern', 'strike', 'skyLantern', x, y, { dmg, life: 0.42, a: 46 * area, knock: 60 });
+      shot(run, 'lantern', 'strike', 'brush', x, y, { dmg, life: 0.42, a: 46 * area, knock: 60 });
       break;
     }
     case 'poe': {

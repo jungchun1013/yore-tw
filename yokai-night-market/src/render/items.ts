@@ -75,10 +75,9 @@ const doll: Draw = (c) => {
   dot(c, 0, -17, 1.2, '#d8493a');
 };
 
-const skyLantern: Draw = (c) => {
-  blob(c, [-8, -22, 0, -25, 8, -22, 6.5, -5, -6.5, -5], '#f6a13a', 1.8);
-  c.globalAlpha = 0.8; ell(c, 0, -12, 3.6, 5, '#fff2b0', 0); c.globalAlpha = 1;
-  rr(c, -5.5, -5.6, 11, 2.6, 1, '#8a3a34', 1.4);
+const brush: Draw = (c) => {
+  rr(c, -2, -27, 4, 15, 1.4, '#a8683f', 1.5); rr(c, -2.8, -13, 5.6, 3, 0.8, '#e9b949', 1.2);
+  blob(c, [-3.4, -10, 3.4, -10, 2, -3, 0, 0, -2, -3], '#33283c', 1.4);
 };
 
 const crescent = (c: C, x: number, y: number, r: number, rot: number, fill: string): void => {
@@ -87,14 +86,16 @@ const crescent = (c: C, x: number, y: number, r: number, rot: number, fill: stri
   c.restore();
 };
 
-const cat: Draw = (c) => {
-  ell(c, 0, -8.5, 9, 8.5, '#fbf6ea');
-  poly(c, [-9, -22, -8.5, -29, -3.5, -25], '#fbf6ea', 1.6); poly(c, [9, -22, 8.5, -29, 3.5, -25], '#fbf6ea', 1.6);
-  ell(c, 0, -19, 9.4, 7.8, '#fbf6ea');
-  ell(c, 8.5, -22, 3, 4.2, '#fbf6ea', 1.6);
-  rr(c, -6, -13.4, 12, 2.6, 1, '#d8493a', 1.3); dot(c, 0, -11, 2, '#e9b949');
-  eyes(c, 0, -19.5, 3.6, 1.6); smile(c, 0, -17.4, 1.7, 1.1);
-  ell(c, 0, -5.5, 3.6, 4.4, '#e9b949', 1.4);
+const tiger: Draw = (c) => {
+  ell(c, 0, -8.5, 9, 8.5, '#f0a03c');
+  ell(c, -9, -24, 3.6, 3.6, '#f0a03c', 1.6); ell(c, 9, -24, 3.6, 3.6, '#f0a03c', 1.6);
+  ell(c, 0, -19, 9.6, 8, '#f0a03c');
+  for (const x of [-2.6, 0, 2.6]) line(c, [x, -26.4, x, -23.6], INK, 1.5);
+  line(c, [-9, -19, -6, -18.6], INK, 1.5); line(c, [9, -19, 6, -18.6], INK, 1.5);
+  ell(c, 0, -16.2, 4.6, 3.2, '#fff3e0', 1.2);
+  eyes(c, 0, -20, 3.8, 1.6); dot(c, 0, -17.4, 1.1, '#e8616b');
+  rr(c, -6, -12.6, 12, 2.6, 1, '#d8493a', 1.3);
+  ell(c, 0, -5.5, 3.8, 3.8, '#e9b949', 1.4); rr(c, -1.1, -6.6, 2.2, 2.2, 0.3, '#8f6420', 0.8);
 };
 
 const coin: Draw = (c) => { ell(c, 0, -7, 6.4, 6.4, '#e9b949', 1.6); rr(c, -1.8, -8.8, 3.6, 3.6, 0.4, '#8f6420', 1); };
@@ -107,7 +108,7 @@ export const ITEMS: Record<string, Art> = {
   cracker: { w: 14, h: 22, draw: (c) => { for (const y of [-17, -11, -5]) rr(c, -2.6, y - 2.5, 5.2, 5, 1.2, '#d8493a', 1.3); line(c, [0, -20, 2, -23], INK, 1.2); dot(c, 2.5, -23.5, 1.6, '#f7e27a'); } },
   rocket: { w: 20, h: 10, draw: (c) => { c.translate(0, -5); line(c, [-9, 0, 2, 0], '#d9b77a', 1.6); rr(c, -1, -2.4, 8, 4.8, 1.4, '#d8493a', 1.3); poly(c, [7, -2.4, 10, 0, 7, 2.4], '#e9b949', 1.2); flame(c, -8, 3, 2.4, 5, '#f6a13a', '#fff2b0', 0); } },
   salt: { w: 8, h: 8, draw: (c) => { ell(c, 0, -4, 2.6, 2.6, '#fff', 1.2); } },
-  skyLantern: { w: 22, h: 28, draw: skyLantern },
+  brush: { w: 14, h: 30, draw: brush },
   poeA: { w: 22, h: 22, draw: (c) => crescent(c, 0, -15, 9, 0, '#c8483a') },
   poeB: { w: 22, h: 22, draw: (c) => crescent(c, 0, -15, 9, 0, '#e8616b') },
   pellet: { w: 14, h: 14, draw: (c) => { ell(c, 0, -7, 4.6, 4.6, '#f2a7b5', 1.6); dot(c, -1.2, -8.2, 1.4, '#fff'); } },
@@ -144,7 +145,7 @@ export const ITEMS: Record<string, Art> = {
   } },
   i_foxfire: { w: 36, h: 36, draw: (c) => { flame(c, 0, -5, 11, 27, '#5fa7e8', '#eafcff'); eyes(c, 0, -11, 2.8, 1.5); } },
   i_salt: { w: 36, h: 36, draw: (c) => { ell(c, 0, -8, 13, 4.6, '#3f6fa8'); blob(c, [-9, -9, 0, -27, 9, -9, 0, -7], '#fff'); dot(c, -9, -22, 1.2, '#fff'); dot(c, 9, -25, 1.2, '#fff'); dot(c, 11, -17, 1, '#fff'); } },
-  i_lantern: { w: 36, h: 36, draw: (c) => { c.translate(0, -1); c.scale(1.3, 1.3); skyLantern(c); } },
+  i_lantern: { w: 36, h: 36, draw: (c) => { c.save(); c.translate(-3, -1); c.rotate(0.5); c.translate(-6, 0); c.scale(1.25, 1.25); brush(c); c.restore(); const pts: number[] = []; for (let i = 0; i < 10; i++) { const a = (i / 10) * TAU - Math.PI / 2, r = i % 2 ? 3 : 7; pts.push(9 + Math.cos(a) * r, -26 + Math.sin(a) * r); } poly(c, pts, '#f7e27a', 1.4); } },
   i_poe: { w: 36, h: 36, draw: (c) => { crescent(c, -4, -22, 11, -0.5, '#c8483a'); crescent(c, 5, -17, 11, 2.5, '#e8616b'); } },
   i_sword: { w: 36, h: 36, draw: (c) => {
     c.translate(0, -18); c.rotate(-Math.PI / 4);
@@ -170,8 +171,8 @@ export const ITEMS: Record<string, Art> = {
   } },
   i_geta: { w: 36, h: 36, draw: (c) => { c.translate(0, -16); c.rotate(-0.2); rr(c, -6, 2, 3.6, 9, 1, '#8a5a3a', 1.6); rr(c, 5, 2, 3.6, 9, 1, '#8a5a3a', 1.6); rr(c, -14, -4, 28, 7, 3, '#c98a5a'); curve(c, -9, -3.5, -1, -13, 2, -3.5, '#d8493a', 2.4); curve(c, 2, -3.5, 5, -12, 10, -4, '#d8493a', 2.4); } },
   i_turtle: { w: 36, h: 36, draw: (c) => { ell(c, 0, -10, 15, 8, '#7fb46a'); ell(c, 0, -13, 11.5, 8.5, '#d8392f'); ell(c, 0, -13, 5.5, 4, null, 1.3); for (const a of [0.6, 2.5, 3.8, 5.7]) line(c, [Math.cos(a) * 5.5, -13 + Math.sin(a) * 4, Math.cos(a) * 10, -13 + Math.sin(a) * 7.4], INK, 1.2); } },
-  i_omamori: { w: 36, h: 36, draw: (c) => { curve(c, -3, -27, 0, -36, 3, -27, '#fbf6ea', 2); poly(c, [-8, -22, -5, -27, 5, -27, 8, -22, 8, -3, -8, -3], '#3f6fa8'); rr(c, -3.6, -19, 7.2, 12, 1, '#fbf6ea', 1.3); line(c, [0, -17, 0, -9.5], '#3f6fa8', 1.4); dot(c, 0, -25.5, 1.6, '#e9b949'); } },
-  i_maneki: { w: 36, h: 36, draw: (c) => { c.translate(0, -1); c.scale(1.15, 1.15); cat(c); } },
+  i_omamori: { w: 36, h: 36, draw: (c) => { ell(c, 0, -19, 13, 12.5, '#3f8f8a'); for (const a of [3.5, 4.1, 4.7, 5.3, 5.9]) ell(c, Math.cos(a) * 12.5, -19 + Math.sin(a) * 12, 3.2, 3.2, '#e9b949', 1.4); ell(c, -5, -22, 3, 3.2, '#fff', 1.2); ell(c, 5, -22, 3, 3.2, '#fff', 1.2); dot(c, -5, -21.6, 1.3, INK); dot(c, 5, -21.6, 1.3, INK); ell(c, 0, -17.5, 2.6, 1.8, '#d8493a', 1.2); rr(c, -16, -13.6, 30, 3, 1, '#d8dbe4', 1.4); rr(c, 12, -15.6, 3, 7, 1, '#8f6420', 1.3); } },
+  i_maneki: { w: 36, h: 36, draw: (c) => { c.translate(0, -1); c.scale(1.15, 1.15); tiger(c); } },
   i_pouch: { w: 36, h: 36, draw: (c) => { curve(c, -6, -22, 0, -38, 6, -22, '#e9b949', 1.8); blob(c, [-6, -22, 6, -22, 10.5, -6, 0, -2, -10.5, -6], '#d8392f'); rr(c, -6.5, -24, 13, 3.6, 1.2, '#e9b949', 1.4); ell(c, 0, -11.5, 3.6, 3.6, '#e9b949', 1.3); } },
   i_crane: { w: 36, h: 36, draw: (c) => { poly(c, [-2, -12, -15, -27, 2, -19], '#fbf6ea'); poly(c, [-2, -12, 14, -30, 3, -12], '#f2a7b5'); poly(c, [-8, -8, 3, -19, 8, -8, 0, -5], '#fbf6ea'); poly(c, [-8, -8, -15, -3, -5, -6.5], '#fbf6ea'); poly(c, [6, -10, 12, -19, 15, -15.5, 12.5, -15.5], '#fbf6ea'); } },
 
@@ -184,8 +185,6 @@ export const ITEMS: Record<string, Art> = {
 
 // ---- stage props. `flat` props lie on the ground and are drawn under everything. ----
 export interface PropArt extends Art { flat?: boolean; light?: number }
-
-const pine = (c: C): void => { rr(c, -3, -20, 6, 20, 2, '#6a4a34'); for (const [x, y, r] of [[-12, -26, 11], [10, -30, 12], [0, -42, 13]]) blob(c, [x - r, y, x - r * 0.5, y - r * 0.7, x + r * 0.5, y - r * 0.7, x + r, y, x, y + r * 0.35], '#3f6a4f'); };
 
 export const PROPS: Record<string, PropArt> = {
   torii: { w: 100, h: 88, draw: (c) => {
@@ -201,7 +200,56 @@ export const PROPS: Record<string, PropArt> = {
     ell(c, -3, -29, 9, 8.5, '#b4b6c2'); for (const a of [2.4, 3.3, 4.2, 5.1]) ell(c, -3 + Math.cos(a) * 9, -29 + Math.sin(a) * 8.5, 3, 3, '#9a9ca8', 1.5);
     eyes(c, -4, -30, 3.2, 1.6); line(c, [-7, -25, -1, -25], INK, 1.6); rr(c, -10, -12.5, 4.6, 4, 1.4, '#a8aab6', 1.5);
   } },
-  pine: { w: 54, h: 60, draw: pine },
+  phoenix: { w: 96, h: 96, draw: (c) => {
+    curve(c, 0, 0, -6, -30, 4, -52, INK, 9); curve(c, 0, 0, -6, -30, 4, -52, '#6a4a34', 5.6);
+    curve(c, 2, -40, 16, -50, 24, -60, INK, 6); curve(c, 2, -40, 16, -50, 24, -60, '#6a4a34', 3.4);
+    for (const [x, y, rx] of [[-22, -62, 24], [22, -68, 24], [0, -80, 26]]) blob(c, [x - rx, y, x - rx * 0.5, y - 12, x + rx * 0.5, y - 12, x + rx, y, x, y + 8], '#3f7a4f', 2.2);
+    for (const [x, y] of [[-30, -66], [-16, -70], [-4, -64], [10, -74], [26, -72], [34, -66], [-8, -86], [6, -84], [16, -64], [-22, -60]]) { dot(c, x, y, 3.4, '#e8553d'); dot(c, x + 1, y - 1, 1.3, '#f6a13a'); }
+  } },
+  hayashi: { w: 124, h: 150, light: 1, draw: (c) => {
+    rr(c, -54, -128, 108, 128, 2, '#d9c7a3', 2.6);
+    rr(c, -58, -134, 116, 8, 2, '#c4b08a', 2.4);
+    line(c, [30, -134, 30, -150], INK, 2); poly(c, [30, -150, 42, -146, 30, -142], '#fbf6ea', 1.4);
+    rr(c, -40, -143, 2.6, 9, 0.6, '#c8483a', 1.2); rr(c, -29, -143, 2.6, 9, 0.6, '#c8483a', 1.2); rr(c, -43, -145, 20, 2.8, 0.8, '#c8483a', 1.2);
+    for (let row = 0; row < 4; row++) {
+      const y = -120 + row * 22;
+      line(c, [-54, y + 17, 54, y + 17], '#a8946e', 1.6);
+      for (let col = 0; col < 6; col++) { const x = -46 + col * 16.4; rr(c, x, y, 10, 13, 1, (row * 5 + col * 3) % 7 < 2 ? '#f7d774' : '#3d4a66', 1.5); }
+    }
+    for (const x of [-44, -14, 16]) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, -18); c.arc(x + 12, -18, 12, Math.PI, 0); c.lineTo(x + 24, 0); c.closePath(); fs(c, '#33283c', 2); }
+    rr(c, -54, -34, 108, 4, 1, '#8a6a45', 1.6);
+  } },
+  redgate: { w: 116, h: 84, draw: (c) => {
+    rr(c, -54, -52, 108, 52, 1.5, '#b8483f', 2.6);
+    line(c, [-54, -12, 54, -12], '#8a3a34', 2);
+    blob(c, [-60, -62, 60, -62, 56, -50, -56, -50], '#5a6478', 2.4);
+    for (let x = -50; x <= 50; x += 10) line(c, [x, -60, x, -52], '#3d4a66', 1.3);
+    rr(c, -24, -78, 48, 18, 1.5, '#b8483f', 2.4); blob(c, [-30, -84, 30, -84, 27, -75, -27, -75], '#5a6478', 2.2);
+    c.beginPath(); c.moveTo(-13, 0); c.lineTo(-13, -30); c.arc(0, -30, 13, Math.PI, 0); c.lineTo(13, 0); c.closePath(); fs(c, '#33283c', 2.2);
+    rr(c, -15, -70, 30, 9, 1, '#f3ead8', 1.6); line(c, [-10, -65.5, 10, -65.5], INK, 1.6);
+  } },
+  swordlion: { w: 70, h: 74, draw: (c) => {
+    rr(c, -30, -66, 60, 66, 1.5, '#e9e2d0', 2.4);
+    rr(c, -30, -14, 60, 14, 1, '#a8483f', 2); for (const x of [-15, 0, 15]) line(c, [x, -14, x, 0], '#7a2f2c', 1.3); line(c, [-30, -7, 30, -7], '#7a2f2c', 1.3);
+    blob(c, [-34, -72, 34, -72, 31, -63, -31, -63], '#a8483f', 2.2);
+    ell(c, 0, -40, 15, 14.5, '#3f8f8a', 2.2);
+    for (const a of [3.4, 3.95, 4.5, 4.95, 5.5, 6.05]) ell(c, Math.cos(a) * 14.5, -40 + Math.sin(a) * 14, 3.6, 3.6, '#e9b949', 1.5);
+    ell(c, -6, -43.5, 3.4, 3.6, '#fff', 1.3); ell(c, 6, -43.5, 3.4, 3.6, '#fff', 1.3); dot(c, -6, -43, 1.5, INK); dot(c, 6, -43, 1.5, INK);
+    line(c, [-10.5, -48.5, -3, -47], INK, 2); line(c, [10.5, -48.5, 3, -47], INK, 2);
+    ell(c, 0, -38.5, 3, 2, '#d8493a', 1.3);
+    rr(c, -19, -34.6, 36, 3.4, 1, '#d8dbe4', 1.5); rr(c, 14, -37, 3.4, 8.4, 1, '#8f6420', 1.4);
+  } },
+  pandan: { w: 84, h: 82, draw: (c) => {
+    for (const x of [-9, 0, 9]) { line(c, [x * 0.4, -24, x, 0], INK, 4.4); line(c, [x * 0.4, -24, x, 0], '#8a6a45', 2.4); }
+    line(c, [0, -22, 2, -44], INK, 7.4); line(c, [0, -22, 2, -44], '#8a6a45', 4.6);
+    for (const [cx, cy] of [[-16, -50], [18, -54], [2, -64]]) for (let i = 0; i < 7; i++) { const a = -Math.PI + (i / 6) * Math.PI, r = 22; poly(c, [cx - Math.sin(a) * 2.6, cy + Math.cos(a) * 2.6, cx + Math.cos(a) * r, cy + Math.sin(a) * r * 0.9, cx + Math.sin(a) * 2.6, cy - Math.cos(a) * 2.6], i % 2 ? '#5f9a5a' : '#7fb46a', 1.5); }
+    ell(c, 10, -40, 6.5, 7.5, '#f08a3a', 1.8); line(c, [5, -42, 15, -38], '#b85a1c', 1.1); line(c, [5, -37.5, 15, -42.5], '#b85a1c', 1.1);
+  } },
+  saltpile: { w: 70, h: 46, draw: (c) => {
+    blob(c, [-26, -3, -12, -26, 0, -36, 12, -26, 26, -3, 0, 1], '#f4f6f8', 2.2);
+    curve(c, 3, -31, 12, -18, 18, -6, '#c9d2dc', 2.4); curve(c, -6, -26, -12, -16, -16, -8, '#ffffff', 2);
+    line(c, [22, -30, 34, -1], INK, 3.6); line(c, [22, -30, 34, -1], '#b98d52', 1.8); rr(c, 27, -4, 14, 3.4, 1, '#8a6a45', 1.4);
+  } },
   slab: { w: 70, h: 40, flat: true, draw: (c) => { c.globalAlpha = 0.55; rr(c, -30, -34, 26, 14, 4, '#6d7389', 1.2); rr(c, 0, -36, 28, 15, 4, '#646a80', 1.2); rr(c, -20, -17, 30, 14, 4, '#5f657a', 1.2); c.globalAlpha = 1; } },
 
   stall: { w: 92, h: 78, light: 1, draw: (c) => {
@@ -257,32 +305,8 @@ export const PROPS: Record<string, PropArt> = {
   } },
   crate: { w: 38, h: 32, draw: (c) => { rr(c, -16, -26, 32, 26, 2, '#c98a5a', 2.2); line(c, [-16, -17.5, 16, -17.5], INK, 1.5); line(c, [-16, -8.5, 16, -8.5], INK, 1.5); rr(c, -16, -26, 5, 26, 1, '#a8683f', 1.6); rr(c, 11, -26, 5, 26, 1, '#a8683f', 1.6); } },
 
-  bamboo: { w: 60, h: 110, draw: (c) => {
-    for (const [x, h, t, col] of [[-14, 92, -0.07, '#5f9a5a'], [2, 104, 0.02, '#7fae6a'], [16, 84, 0.1, '#6aa562']] as const) {
-      c.save(); c.translate(x, 0); c.rotate(t);
-      rr(c, -3.4, -h, 6.8, h, 2.5, col, 2);
-      for (let y = -h + 14; y < -4; y += 15) line(c, [-3, y, 3, y], '#3f6a45', 1.5);
-      for (const [y, s] of [[-h + 10, 1], [-h + 24, -1], [-h + 40, 1]]) poly(c, [s * 3, y, s * 16, y - 7, s * 11, y + 2], '#9ccf7f', 1.4);
-      c.restore();
-    }
-  } },
   rock: { w: 46, h: 32, draw: (c) => { blob(c, [-19, -4, -16, -20, -2, -28, 14, -22, 19, -5, 0, 0], '#7c7e8a', 2.2); curve(c, -10, -18, -2, -23, 8, -19, '#a8aab6', 2); blob(c, [-19, -9, -10, -13, -3, -9, -12, -4], '#5f8a5a', 1.4); } },
-  jizo: { w: 28, h: 44, draw: (c) => {
-    blob(c, [-8, -24, 8, -24, 10, -1, -10, -1], '#a8aab6'); ell(c, 0, -30, 9, 8.6, '#b4b6c2');
-    blob(c, [-8.5, -23, 0, -26, 8.5, -23, 6, -15, 0, -13, -6, -15], '#d8493a', 1.6);
-    curve(c, -5, -31, -3.5, -29.5, -2, -31, INK, 1.4); curve(c, 2, -31, 3.5, -29.5, 5, -31, INK, 1.4); smile(c, 0, -27.6, 1.8, 1.2);
-  } },
   fern: { w: 44, h: 26, flat: true, draw: (c) => { c.globalAlpha = 0.8; for (const [x, y, r] of [[-12, -10, 0.4], [0, -14, 0], [12, -10, -0.4], [-5, -6, 0.9], [7, -5, -0.9]]) ell(c, x, y, 9, 3.6, '#4f8a55', 1.2, r); c.globalAlpha = 1; } },
 
-  noren: { w: 80, h: 66, light: 1, draw: (c) => {
-    rr(c, -36, -62, 5, 62, 1.5, '#6a4a34', 2.2); rr(c, 31, -62, 5, 62, 1.5, '#6a4a34', 2.2);
-    rr(c, -40, -64, 80, 5, 1.5, '#4a3b34', 2.2);
-    for (let i = 0; i < 3; i++) { const x = -30 + i * 20.5; rr(c, x, -59, 19, 28, 1.5, '#3f6fa8', 2); c.beginPath(); c.arc(x + 9.5, -46, 4.6, 0, TAU); fs(c, '#fbf6ea', 0); for (const dx of [-2.6, 0, 2.6]) curve(c, x + 9.5 + dx, -51, x + 8.5 + dx, -55, x + 10.5 + dx, -57.5, '#fbf6ea', 1.2); }
-  } },
-  spring: { w: 80, h: 50, flat: true, light: 0, draw: (c) => {
-    blob(c, [-34, -22, -22, -40, 6, -44, 30, -36, 35, -18, 18, -5, -14, -4], '#7c7e8a', 2.2);
-    blob(c, [-27, -22, -18, -35, 5, -38, 25, -32, 28, -19, 14, -10, -11, -9], '#8fd3ec', 1.6);
-    c.globalAlpha = 0.7; curve(c, -10, -26, -4, -30, 2, -26, '#eafcff', 1.6); curve(c, 6, -20, 12, -24, 18, -20, '#eafcff', 1.6); c.globalAlpha = 1;
-  } },
   bucket: { w: 30, h: 26, draw: (c) => { poly(c, [-10, -17, 10, -17, 8, -1, -8, -1], '#d9b07a', 2); line(c, [-9.6, -13, 9.6, -13], '#8a6a45', 1.8); line(c, [-8.6, -5, 8.6, -5], '#8a6a45', 1.8); ell(c, 0, -17, 10, 3, '#cfeaf2', 1.8); rr(c, 3, -21, 9, 4, 1.5, '#fbf6ea', 1.4); } },
 };

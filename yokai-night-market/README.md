@@ -1,6 +1,6 @@
 # 百鬼夜市 Yokai Night Market
 
-A survivors-style action game: walk a Japanese-era Taiwanese town at night, let your charms and firecrackers fire on their own, and last fifteen minutes until dawn. Chapter 1 has six stages.
+A survivors-style action game set in Tainan around 1930: walk from the shrine approach to Anping at night, let your charms and firecrackers fire on their own, pick one of three upgrades each level, and last fifteen minutes until dawn. Chapter 1 has six stages.
 
 Plain TypeScript and Canvas 2D, no engine and no asset files. Sprites are drawn in code at load; sound is synthesised with WebAudio.
 
@@ -13,24 +13,38 @@ npm run sim -w yokai-night-market      # headless balance run, see below
 
 ## Content
 
-| Stage | Yokai | Boss |
-|---|---|---|
-| 鳥居參道 Torii Approach | 提燈妖, 人魂, 唐傘小僧, 不倒翁 | 燈籠大將 |
-| 廟口夜市 Temple Night Market | 碗公妖, 紅白袋妖, 小燈猴, 竹籤鬼 | 燈猴 |
-| 日式老宿舍 Old Dormitory | 一目小僧, 垢嘗, 椅仔姑, 座敷童子 | 金魅 |
-| 糖廠鐵道 Sugar Mill Railway | 煤煙鬼, 水牛魂, 輪入道, 甘蔗妖 | 朧五分車 |
-| 霧山竹林 Misty Bamboo Hills | 魔神仔, 木靈, 小天狗, 竹篙鬼 | 魔神仔王 |
-| 溫泉街 Hot Spring Street | 水鬼, 貓又, 河童, 湯桶妖 | 虎姑婆 |
+| Stage | Setting | Yokai | Boss |
+|---|---|---|---|
+| 臺南神社參道 | Shrine grounds across from the Confucius Temple, beside the Butokuden (1936) | 提燈妖, 人魂, 唐傘小僧, 不倒翁 | 燈籠大將 |
+| 末廣町銀座 | Hayashi Department Store (1932, rooftop Suehiro shrine) and the Sakariba stalls | 碗公妖, 茄芷袋妖, 小燈猴, 竹籤鬼 | 林投姐 |
+| 鶯料理 | The ryotei beside the weather observatory | 一目小僧, 垢嘗, 椅仔姑, 座敷童子 | 金魅 |
+| 糖廠鐵道 | Cane fields and the narrow-gauge sugar line after the Chianan Canal (1930) | 煤煙鬼, 水牛魂, 輪入道, 甘蔗妖 | 朧五分車 |
+| 孔廟・大南門 | The red walls of the Confucius Temple, where the Shrine of Chastity stands | 魔神仔, 木靈, 椅仔姑, 竹篙鬼 | 陳守娘 |
+| 安平 | Sword lions, salt pans, screw pines, the end of the canal (opened 1926) | 水鬼, 貓又, 河童, 蚵桶妖 | 大鯤 |
 
-The creatures come from public Japanese and Taiwanese folklore; the designs, names of items and all art are made for this game.
+Japanese yokai sit around the places the Japanese built (shrine, ryotei, railway); local spirits hold the older quarters. Deities are never enemies: they appear only as tools (魁星筆, 筊杯, 虎爺, 劍獅, the 蜂炮 of Yanshui). The two famous ghosts are bosses you lay to rest, and the stage tag reads 已安魂. All designs and art are made for this game.
 
-- 9 weapons, 6 levels each, each with an evolution unlocked by carrying its paired passive at max level and opening an offering box: 符札 → 千枚札, 鞭炮 → 蜂炮, 筊杯 → 三聖筊 and so on (`src/data/weapons.ts`).
+- 9 weapons, 6 levels each, each with an evolution unlocked by carrying its paired passive at max level and opening an offering box: 符札 → 千枚札, 鞭炮 → 蜂炮, 魁星筆 → 魁星點斗, 筊杯 → 三聖筊 and so on (`src/data/weapons.ts`).
 - 10 passives (`src/data/passives.ts`), 5 weapon slots and 5 passive slots per run.
-- 3 characters: 小滿 from the start, 阿燈 after 2 stages cleared, 雲平 after 4.
+- 3 characters: 小滿 (shrine apprentice) from the start, 阿燈 (a 五條港 kid just past his sixteenth-year rite) after 2 stages cleared, 雲平 (a Butokuden kendo student) after 4.
 - 11 permanent ema upgrades bought with coins. Coins are kept when a run is lost.
 - Run timeline: elites at 4:00, 8:00 and 11:00 (each drops an offering box), a night parade at 6:00 and 10:30, an encirclement at 7:30 and 12:00, the boss at 13:00, dawn at 15:00. Surviving to dawn clears the stage; beating the boss is optional.
 - zh-TW and English, chosen from the browser language and switchable on the title screen.
 - Keyboard (arrows / WASD, 1–4 to pick an upgrade, Esc to pause) and a floating touch stick.
+
+## Sources for the setting
+
+Folklore is retold in one or two lines in the codex; where versions differ the common one is used and no real person from the 1920s-30s canal case is named.
+
+- 林百貨: opened 5 Dec 1932 in 末廣町, known as 五層樓仔, with a rooftop shrine (末廣社). https://en.wikipedia.org/wiki/Hayashi_Department_Store , https://spectralcodex.com/tainan-hayashi-department-store/ , https://www.cna.com.tw/news/aloc/201610160026.aspx
+- 臺南州廳 1916, 武德殿 1936 beside the Confucius Temple and the shrine's outer garden, 鶯料理. https://www.thenewslens.com/article/96054 , https://www.tsunagujapan.com/zh-hant/butokuden/
+- 陳守娘: recorded in 劉家謀《海音詩》(1855) and 連橫《臺灣通史》; blue-green light, the fight with 廣澤尊王, Guanyin's mediation, tablet in the 節孝祠. https://news.pts.org.tw/article/589810 , https://www.thenewslens.com/article/121049
+- 林投姐: late-Qing Tainan, site near today's 民族路 / 西門路. https://www.thenewslens.com/article/121048 , https://www.storm.mg/article/331258
+- 臺南運河 opened 25 Apr 1926. https://news.ltn.com.tw/news/life/paper/1738548
+- 安平劍獅 (the navy-shield origin is folk explanation, not documented history). https://www.taipeitimes.com/News/feat/archives/2019/08/16/2003720558
+- 鹽水蜂炮: a Guangxu-era plague and 關聖帝君's procession. https://www.gvm.com.tw/article/17542
+- 做十六歲 and the 五條港 dock workers. https://www.cna.com.tw/news/aloc/201808170117.aspx
+- 烏山頭水庫 and 嘉南大圳 completed 1930. https://www.taipeitimes.com/News/feat/archives/2019/12/06/2003727042
 
 ## Layout
 
@@ -56,13 +70,13 @@ To replace the art: every sprite is looked up by key through `spr()` in `src/ren
 
 `npm run sim -w yokai-night-market -- <meta 0..1> <runs> <stages> <hero>` plays whole runs with the bot, which backs away from what is close, walks to pickups and takes upgrades at random. It is a weak player, so its clear rate is a floor.
 
-Figures from 5 runs with 小滿 (2026-11-18):
+Clears out of 5 runs with 小滿 (2026-11-18):
 
-| Ema bought | 1 | 2 | 3 | 4 | 5 | 6 |
+| Ema bought | 神社 | 末廣町 | 鶯料理 | 糖廠 | 孔廟 | 安平 |
 |---|---|---|---|---|---|---|
-| none | 3/5 | 2/5 | 0/5 | 0/5 | 0/5 | 0/5 |
-| half | 5/5 | 5/5 | 4/5 | 1/5 | 1/5 | 1/5 |
-| all | 5/5 | 5/5 | 3/5 | 5/5 | 2/5 | 1/5 |
+| none | 3 | 3 | 0 | 0 | 0 | 0 |
+| half | 5 | 5 | 4 | 1 | 1 | 1 |
+| all | 5 | 5 | 3 | 5 | 2 | 1 |
 
 ## Save
 

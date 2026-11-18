@@ -72,6 +72,13 @@ const GROUND: Record<string, (c: CanvasRenderingContext2D, r: () => number) => v
     for (let i = 0; i < 46; i++) { const x = r() * TILE, y = r() * TILE, rx = 12 + r() * 26, ry = 8 + r() * 16, col = cols[Math.floor(r() * cols.length)], a = r() * 3; wrap(c, x, y, () => { c.beginPath(); c.ellipse(0, 0, rx, ry, a, 0, TAU); c.fillStyle = col; c.fill(); }); }
     for (let i = 0; i < 70; i++) { const x = r() * TILE, y = r() * TILE, a = r() * 3, col = r() < 0.3 ? '#8a7a4a' : '#4f7a55'; wrap(c, x, y, () => { c.beginPath(); c.ellipse(0, 0, 3.4, 1.4, a, 0, TAU); c.fillStyle = col; c.fill(); }); }
   },
+  sand: (c, r) => {
+    c.fillStyle = '#463f37'; c.fillRect(0, 0, TILE, TILE);
+    for (let i = 0; i < 9; i++) { const y = r() * TILE, a = 6 + r() * 6; c.beginPath(); c.moveTo(0, y); for (let x = 0; x <= TILE; x += 32) c.quadraticCurveTo(x + 16, y + (x / 32 % 2 ? a : -a), x + 32, y); c.strokeStyle = 'rgba(255,240,210,0.045)'; c.lineWidth = 3; c.stroke(); }
+    for (let i = 0; i < 260; i++) { c.fillStyle = r() < 0.5 ? 'rgba(255,240,210,0.07)' : 'rgba(0,0,0,0.13)'; const s2 = 1 + r() * 1.5; c.fillRect(r() * TILE, r() * TILE, s2, s2); }
+    for (let i = 0; i < 12; i++) { const x = r() * TILE, y = r() * TILE, a = r() * 3; wrap(c, x, y, () => { c.rotate(a); c.beginPath(); c.ellipse(0, 0, 4.2, 2.4, 0, 0, TAU); c.fillStyle = 'rgba(222,216,204,0.5)'; c.fill(); }); }
+    for (let i = 0; i < 3; i++) { const x = r() * TILE, y = r() * TILE, a = r() * 3; wrap(c, x, y, () => { c.rotate(a); rrPath(c, -9, -5, 18, 10, 1.5); c.fillStyle = 'rgba(150,74,62,0.28)'; c.fill(); }); }
+  },
   cobble: (c, r) => {
     c.fillStyle = '#262e3c'; c.fillRect(0, 0, TILE, TILE);
     const cols = ['#343f51', '#313b4c', '#384456', '#2f394a'];
