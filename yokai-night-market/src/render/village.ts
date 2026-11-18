@@ -1,7 +1,7 @@
 // The fox spirit and the village pieces from the user's character and environment briefs.
 import type { DollDef, Pose } from './doll';
 import { MAPLE, P, hanging, tier } from './dolls';
-import { type C, blob, blossom, curve, dot, ell, line, pat, poly, rr, tone } from './kit';
+import { type C, blob, blossom, chibiEye, curve, dot, ell, line, pat, poly, rr, tone } from './kit';
 
 // ---------------------------------------------------------------- 狐狸精
 
@@ -46,14 +46,7 @@ export const FOX_SPIRIT: DollDef = {
       c.globalAlpha = 0.5; ell(c, -10, -8.4, 3.4, 2, P.coral, 0); ell(c, 10, -8.4, 3.4, 2, P.coral, 0); c.globalAlpha = 1;
       // fox markings at the outer corners of the eyes
       poly(c, [-13.8, -10, -10.6, -12.6, -12.2, -7.8], P.verm, 0); poly(c, [13.8, -10, 10.6, -12.6, 12.2, -7.8], P.verm, 0);
-      for (const s of [-1, 1]) {
-        ell(c, s * 6.8, -12, 4.2, 5.2, P.paper);
-        ell(c, s * 6.8, -11.6, 3.7, 4.7, '#c7832e');
-        c.beginPath(); c.ellipse(s * 6.8, -12.6, 3.7, 3.6, 0, Math.PI, 0); c.fillStyle = '#8a4f1e'; c.fill();
-        ell(c, s * 6.8, -11, 1.5, 2.6, '#2a1a1c', 0);
-        dot(c, s * 6.8 - 1.3, -13.8, 1.6, '#fff'); dot(c, s * 6.8 + 1.3, -9.6, 0.7, '#fff');
-        c.beginPath(); c.ellipse(s * 6.8, -11.8, 4.5, 5.4, 0, Math.PI * 1.1, Math.PI * 1.9); c.lineWidth = 1.6; c.strokeStyle = '#4a2e22'; c.lineCap = 'round'; c.stroke();
-      }
+      chibiEye(c, -6.6, -11.4, -1, '#d08a2e', '#6a3814'); chibiEye(c, 6.6, -11.4, 1, '#d08a2e', '#6a3814');
       c.beginPath(); c.moveTo(-2.2, -6.2); c.quadraticCurveTo(-1.1, -4.6, 0, -6); c.quadraticCurveTo(1.1, -4.6, 2.2, -6.2); c.lineWidth = 1; c.strokeStyle = '#7a3a30'; c.stroke();
     } },
     { id: 'hairB', parent: 'head', at: [0, -17], z: 0, box: [-22, -24, 22, 16], draw: (c) => {

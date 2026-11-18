@@ -533,3 +533,29 @@ export function paperFill(c: C, x: number, y: number, w: number, h: number, col:
   c.fillStyle = col; c.fillRect(x, y, w, h);
   c.save(); c.globalAlpha = 0.5; c.fillStyle = grainPattern(c); c.fillRect(x, y, w, h); c.restore();
 }
+
+// A chibi eye as ONE cut piece: a dark eye shape whose top edge is the lash line (with a small
+// flick at the outer corner), and everything inside it printed on that same sheet: an iris
+// that darkens towards the top, the pupil, a lower glint and two catchlights. One sheet means
+// one edge and one shadow, so it stays clean at small sizes. `s` is -1 for the left eye.
+export function chibiEye(c: C, x: number, y: number, s: number, iris: string, irisDk: string, k = 1): void {
+  const w = 3.9 * k, h = 4.9 * k;
+  sheet(c);
+  c.beginPath();
+  c.moveTo(x - s * w * 1.0, y - h * 0.15);
+  c.bezierCurveTo(x - s * w * 1.0, y - h * 0.95, x + s * w * 0.6, y - h * 1.15, x + s * w * 1.25, y - h * 0.85);
+  c.lineTo(x + s * w * 1.0, y - h * 0.45);
+  c.bezierCurveTo(x + s * w * 1.05, y + h * 0.75, x + s * w * 0.4, y + h * 1.0, x, y + h * 1.0);
+  c.bezierCurveTo(x - s * w * 0.65, y + h * 1.0, x - s * w * 1.0, y + h * 0.55, x - s * w * 1.0, y - h * 0.15);
+  c.closePath();
+  c.fillStyle = '#2b1b1e'; c.fill();
+  if (stack && stack.top === c && stack.tmp && !stack.craft) { c.lineWidth = 0.6; c.strokeStyle = '#1e1214'; c.stroke(); }
+  // printed iris with a vertical gradient, inset from the dark rim
+  const g = c.createLinearGradient(x, y - h * 0.55, x, y + h * 0.85);
+  g.addColorStop(0, irisDk); g.addColorStop(0.55, iris); g.addColorStop(1, tone(iris, 0.35));
+  c.beginPath(); c.ellipse(x, y + h * 0.18, w * 0.78, h * 0.68, 0, 0, TAU); c.fillStyle = g; c.fill();
+  c.beginPath(); c.ellipse(x, y + h * 0.12, w * 0.36, h * 0.42, 0, 0, TAU); c.fillStyle = '#24161a'; c.fill();
+  c.beginPath(); c.ellipse(x, y + h * 0.62, w * 0.5, h * 0.16, 0, 0, TAU); c.fillStyle = tone(iris, 0.55); c.fill();
+  c.beginPath(); c.ellipse(x - s * w * 0.32, y - h * 0.22, w * 0.3, h * 0.27, -0.4 * s, 0, TAU); c.fillStyle = '#fffaf2'; c.fill();
+  c.beginPath(); c.arc(x + s * w * 0.38, y + h * 0.42, w * 0.13, 0, TAU); c.fillStyle = '#fffaf2'; c.fill();
+}

@@ -2,7 +2,7 @@
 // outlined in a darker tone of its own colour, a cel fold on its lower edge, printed
 // traditional patterns, small soft shadows. Units are logical pixels; the root pin is at the feet.
 import type { DollDef, Pose } from './doll';
-import { type C, blob, blossom, curve, dot, ell, line, pat, poly, rr, tone } from './kit';
+import { type C, blob, blossom, chibiEye, curve, dot, ell, line, pat, poly, rr, tone } from './kit';
 
 export const P = {
   verm: '#d65640', vermDk: '#b2402f', coral: '#ee9a8a', pink: '#f2b8bf', pinkMd: '#e996a3', pinkDk: '#d27486',
@@ -26,18 +26,6 @@ function foot(c: C): void {
   ell(c, 0, 1.8, 3.2, 2.4, P.paper);
   rr(c, -3.5, 3.4, 7, 1.9, 0.9, P.woodDk);
   line(c, [-1.2, 0.3, 0.4, 2.6], P.verm, 1);
-}
-
-function animeEye(c: C, x: number, y: number, s: number): void {
-  ell(c, x, y, 4.2, 5.2, P.paper);
-  ell(c, x, y + 0.4, 3.7, 4.7, '#a14c38');
-  c.beginPath(); c.ellipse(x, y - 0.6, 3.7, 3.6, 0, Math.PI, 0); c.fillStyle = '#6a3028'; c.fill();
-  ell(c, x, y + 0.9, 1.7, 2.2, '#2a1a1c', 0);
-  c.beginPath(); c.ellipse(x, y + 2.8, 2.6, 1.3, 0, 0, Math.PI); c.fillStyle = '#e08a5a'; c.fill();
-  dot(c, x - s * 1.3, y - 1.8, 1.6, '#fff'); dot(c, x + s * 1.3, y + 2, 0.7, '#fff');
-  // lash line: follows the top of the eye itself, so the look stays round and soft
-  c.beginPath(); c.ellipse(x, y + 0.2, 4.5, 5.4, 0, Math.PI * 1.1, Math.PI * 1.9); c.lineWidth = 1.7; c.strokeStyle = P.hair; c.lineCap = 'round'; c.stroke();
-  line(c, [x + s * 4.2, y - 2.2, x + s * 5.4, y - 3.2], P.hair, 1.1);
 }
 
 export const MIKO: DollDef = {
@@ -72,7 +60,7 @@ export const MIKO: DollDef = {
       ell(c, -16, -14, 2.5, 3.2, P.skin); ell(c, 16, -14, 2.5, 3.2, P.skin);
       ell(c, 0, -17, 17, 15.5, P.skin);
       c.globalAlpha = 0.5; ell(c, -10, -8.6, 3.4, 2, P.coral, 0); ell(c, 10, -8.6, 3.4, 2, P.coral, 0); c.globalAlpha = 1;
-      animeEye(c, -6.8, -11.6, -1); animeEye(c, 6.8, -11.6, 1);
+      chibiEye(c, -6.6, -11.4, -1, '#b0583e', '#5a2420'); chibiEye(c, 6.6, -11.4, 1, '#b0583e', '#5a2420');
       c.beginPath(); c.moveTo(-1.6, -6.6); c.quadraticCurveTo(0, -4.2, 1.6, -6.6); c.closePath(); c.fillStyle = '#b8483e'; c.fill();
     } },
     { id: 'hairB', parent: 'head', at: [0, -17], z: 0, box: [-22, -26, 22, 14], draw: (c) => {
