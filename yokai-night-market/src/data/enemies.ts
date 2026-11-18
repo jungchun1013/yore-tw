@@ -33,6 +33,12 @@ const list: EnemyDef[] = [
   { id: 'nekomata', name: { zh: '貓又', en: 'Nekomata' }, lore: { zh: '漁港裡活太久的老貓，尾巴分成了兩條。', en: 'A harbour cat that lived so long its tail split in two.' }, hp: 10, dmg: 11, speed: 100, r: 10, xp: 1, ai: 'chase' },
   { id: 'oke', name: { zh: '蚵桶妖', en: 'Oyster Bucket' }, lore: { zh: '剛燙過蚵仔的木桶，冒著熱氣一蹦一蹦。', en: 'A wooden bucket fresh from scalding oysters, steaming as it bounces.' }, hp: 95, dmg: 15, speed: 62, r: 15, xp: 5, ai: 'hop', heavy: 0.6 },
 
+  // added 2026-11-18 (art by Codex; they stay out of play until their pictures exist)
+  { id: 'kuroneko', name: { zh: '黑貓', en: 'Black Cat' }, lore: { zh: '夜裡從屋簷跳下來的黑貓，專跟著燈籠光走。', en: 'A black cat that drops from the eaves at night and follows the lantern light.' }, hp: 12, dmg: 7, speed: 104, r: 10, xp: 1, ai: 'chase' },
+  { id: 'hebi', name: { zh: '小青蛇', en: 'Little Green Snake' }, lore: { zh: '甘蔗田裡的小青蛇，在蔗葉之間左右鑽。', en: 'A small green snake that weaves left and right between the cane leaves.' }, hp: 10, dmg: 8, speed: 82, r: 9, xp: 1, ai: 'float' },
+  { id: 'fengshi', name: { zh: '風獅爺', en: 'Wind Lion' }, lore: { zh: '立在村口鎮風煞的石獅，海風大的晚上會自己走動，吐出一陣風。', en: 'A stone lion set at the village edge to hold back ill winds. On gusty nights it walks, and breathes out a squall.' }, hp: 140, dmg: 13, speed: 34, r: 16, xp: 6, ai: 'shoot', heavy: 0.8, shot: { cd: 3, speed: 160, range: 260 } },
+  { id: 'bixi', name: { zh: '贔屭', en: 'Bixi' }, lore: { zh: '赤崁樓前馱著御碑的石龜。相傳第十座的底座運上岸時掉進了海裡。', en: 'The stone tortoises carrying imperial steles at Chihkan Tower. The base of the tenth is said to have fallen into the sea as it was landed.' }, hp: 260, dmg: 15, speed: 26, r: 18, xp: 8, ai: 'chase', heavy: 0.9 },
+
   // bosses
   { id: 'b_toro', name: { zh: '燈籠大將', en: 'Lantern General' }, lore: { zh: '臺南神社參道上最老的那盞大燈籠，所有提燈妖都聽它的。', en: 'The oldest lantern on the approach to Tainan Shrine. Every lantern imp answers to it.' }, hp: 2600, dmg: 16, speed: 46, r: 34, xp: 60, ai: 'boss', heavy: 0.95, boss: { moves: ['ring', 'summon', 'dash'], minion: 'chochin' } },
   { id: 'b_lintou', name: { zh: '林投姐', en: 'Sister Lintou' }, lore: { zh: '清末府城的寡婦，被騙光家產後在林投樹下自盡。傳說她夜裡拿紙錢買肉粽，地點就在今天的民族路、西門路一帶。', en: 'A widow of late-Qing Tainan, cheated of everything, who died under a screw-pine tree. She is said to buy rice dumplings at night with spirit money, near today\'s Minzu and Ximen roads.' }, hp: 4200, dmg: 18, speed: 58, r: 32, xp: 80, ai: 'boss', heavy: 0.95, boss: { moves: ['aimed', 'summon', 'dash', 'ring'], minion: 'fukuro' } },

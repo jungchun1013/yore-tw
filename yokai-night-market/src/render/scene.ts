@@ -4,7 +4,7 @@ import type { Run } from '../game/world';
 import { PROPS } from './items';
 import { type Sprite, INK, TAU, flashOf, hash } from './kit';
 import { TILE, groundTile, spr } from './sprites';
-import { FOODS } from './paperAtlas';
+import { FOODS, hasArt } from './paperAtlas';
 import { PUPPETS } from './puppet';
 
 type Ctx = CanvasRenderingContext2D;
@@ -146,6 +146,19 @@ export function render(c: Ctx, run: Run, v: View, clock: number): void {
     else push(y, 3, null, x, key);
   }
 
+  // back trees: sparse, under everything
+  const backs = (run.stage.trees?.back ?? []).filter(hasArt);
+  if (backs.length) {
+    const C = 520;
+    for (let gx = Math.floor((left - 200) / C); gx * C < left + vw + 200; gx++) for (let gy = Math.floor((top - 60) / C); gy * C < top + vh + 260; gy++) {
+      if (hash(gx * 17 + 3, gy * 29 + run.stageIndex) > 0.7) continue;
+      const k = backs[Math.floor(hash(gx * 5, gy * 7 + 11) * backs.length)];
+      const x = gx * C + hash(gx, gy * 3 + 5) * (C - 120) + 60, y = gy * C + hash(gx * 9, gy) * (C - 120) + 60;
+      if (Math.abs(x) < 120 && Math.abs(y) < 120) continue;
+      push(y, 3, null, x, k);
+    }
+  }
+
   // burning ground
   for (const s of run.shots) if (s.mode === 'zone') drawFire(c, s.x, s.y, s.r, run.t + s.x, s.kind === 'fire2', Math.min(1, (s.life - s.age) * 3, s.age * 6));
 
@@ -209,6 +222,21 @@ export function render(c: Ctx, run: Run, v: View, clock: number): void {
   for (const b of run.bullets) {
     const s = spr(b.kind);
     c.drawImage(s.c, b.x - s.w / 2, b.y - s.h / 2, s.w, s.h);
+  }
+
+  // front trees: a few big canopies over the field, see-through when the player is under one
+  const fronts = (run.stage.trees?.front ?? []).filter(hasArt);
+  if (fronts.length) {
+    const C = 900;
+    for (let gx = Math.floor((left - 300) / C); gx * C < left + vw + 300; gx++) for (let gy = Math.floor((top - 100) / C); gy * C < top + vh + 400; gy++) {
+      if (hash(gx * 23 + 1, gy * 31 + run.stageIndex * 7) > 0.45) continue;
+      const k = fronts[Math.floor(hash(gx * 3 + 1, gy * 5) * fronts.length)];
+      const s = spr(k), x = gx * C + hash(gx * 11, gy * 13) * (C - 200) + 100, y = gy * C + hash(gx * 7, gy * 17) * (C - 200) + 100;
+      const near = Math.abs(x - p.x) < s.w * 0.7 && p.y < y + 20 && p.y > y - s.h * 1.4;
+      c.globalAlpha = near ? 0.35 : 0.92;
+      put(c, s, x, y, 1, 1.4, 1.4);
+      c.globalAlpha = 1;
+    }
   }
 
   // effects

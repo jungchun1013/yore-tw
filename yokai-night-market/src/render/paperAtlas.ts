@@ -1,3 +1,4 @@
+import { PENDING_ART } from '../data/art';
 import type { Sprite } from './kit';
 
 /** Runtime atlas extraction preserves generated alpha; gameplay still uses foot anchors. */
@@ -49,11 +50,17 @@ const TAINAN: [string, number][] = [
   ['brickHouse', 120], ['woodHouse', 100], ['swordLionWall', 46], ['lantern', 40], ['tileFlower', 22], ['censer', 30],
   ['miko', 50], ['fox', 52],
   ['danzai', 24], ['milkfish', 24], ['wagui', 17], ['pengbing', 24], ['dango', 24],
+  // monsters and trees requested 2026-11-18; used once Codex's pictures are cut into public/art/tainan
+  ['kuroneko', 34], ['hebi', 26], ['fengshi', 52], ['bixi', 46], ['lurou', 24],
+  ['banyan', 170], ['flameTree', 160],
 ];
 
 export async function loadTainanArt(): Promise<void> {
   // One failed picture must not cost the others: it is skipped and that key keeps its drawn sprite.
-  const results = await Promise.allSettled(TAINAN.map(async ([key, height]) => {
+  // index.json lists the pictures that exist, so nothing is requested that would 404
+  let have: Set<string>;
+  try { have = new Set((await (await fetch(`${import.meta.env.BASE_URL}art/tainan/index.json`)).json()) as string[]); } catch { return; }
+  const results = await Promise.allSettled(TAINAN.filter(([key]) => have.has(key)).map(async ([key, height]) => {
     const img = await new Promise<HTMLImageElement>((resolve, reject) => {
       const im = new Image();
       im.onload = () => resolve(im);
@@ -64,13 +71,19 @@ export async function loadTainanArt(): Promise<void> {
     cv.getContext('2d')!.drawImage(img, 0, 0);
     const w = height * cv.width / cv.height;
     atlas.set(key, { c: cv, w, h: height, ox: w / 2, oy: height - 1 });
+    PENDING_ART.delete(key);
   }));
+  refreshFoods();
   const failed = results.filter((r) => r.status === 'rejected').length;
   if (failed) console.warn(`${failed} Tainan sprites did not load; their drawn versions are used instead`);
 }
 
 // Heal pickups show one of these. Coffin toast is left out: it is a postwar dish and the game is set around 1930.
-export const FOODS = ['danzai', 'milkfish', 'wagui', 'pengbing', 'dango'];
+const ALL_FOODS = ['danzai', 'milkfish', 'wagui', 'pengbing', 'dango', 'lurou'];
+export const FOODS: string[] = ['heal'];
+export function refreshFoods(): void { FOODS.length = 0; for (const f of ALL_FOODS) if (atlas.has(f)) FOODS.push(f); if (!FOODS.length) FOODS.push('heal'); }
+
+export function hasArt(key: string): boolean { return atlas.has(key); }
 
 export function atlasSprite(key: string): Sprite | undefined {
   if (key.startsWith('hero:miko:')) key = 'miko';

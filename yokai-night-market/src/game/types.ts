@@ -99,6 +99,8 @@ export interface StageDef {
   rate: number;             // population multiplier
   ground: string;           // key for the renderer
   props: string[];
+  // trees scattered under everything (back) and a few large ones over the play field (front)
+  trees?: { back: string[]; front: string[] };
 }
 
 export interface HeroDef {

@@ -1,4 +1,5 @@
 // Spawning, enemy AI, boss moves and enemy bullets.
+import { PENDING_ART } from '../data/art';
 import { ENEMY } from '../data/enemies';
 import { BOSS_AT, ELITE_AT, PARADE_AT, RING_AT } from '../data/stages';
 import type { Enemy, EnemyDef } from './types';
@@ -31,7 +32,7 @@ function ringPoint(run: Run, extra = 40): [number, number] {
 function pickRoster(run: Run): EnemyDef {
   const m = run.t / 60;
   let total = 0;
-  const live = run.stage.roster.filter((r) => m >= r.from && (r.to === undefined || m < r.to));
+  const live = run.stage.roster.filter((r) => m >= r.from && (r.to === undefined || m < r.to) && !PENDING_ART.has(r.id));
   for (const r of live) total += r.w;
   let roll = run.rng() * total;
   for (const r of live) { roll -= r.w; if (roll <= 0) return ENEMY[r.id]; }
