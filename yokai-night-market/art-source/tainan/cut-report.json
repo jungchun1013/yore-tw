@@ -1,0 +1,362 @@
+{
+ "chihkan": {
+  "sheet": "buildings-flat-v2.png",
+  "height": 150,
+  "px": [
+   356,
+   450
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "shennong": {
+  "sheet": "buildings-flat-v2.png",
+  "height": 130,
+  "px": [
+   305,
+   390
+  ],
+  "parts": 1,
+  "dropped": 1
+ },
+ "hayashi": {
+  "sheet": "buildings-flat-v2.png",
+  "height": 170,
+  "px": [
+   337,
+   510
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "confucius": {
+  "sheet": "buildings-flat-v2.png",
+  "height": 120,
+  "px": [
+   313,
+   360
+  ],
+  "parts": 1,
+  "dropped": 1
+ },
+ "machiya": {
+  "sheet": "buildings-flat-v2.png",
+  "height": 130,
+  "px": [
+   310,
+   390
+  ],
+  "parts": 1,
+  "dropped": 3
+ },
+ "noodleStall": {
+  "sheet": "buildings-flat-v2.png",
+  "height": 84,
+  "px": [
+   254,
+   252
+  ],
+  "parts": 1,
+  "dropped": 1
+ },
+ "vendor": {
+  "sheet": "people-flat-v2.png",
+  "height": 50,
+  "px": [
+   86,
+   150
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "snackGirl": {
+  "sheet": "people-flat-v2.png",
+  "height": 50,
+  "px": [
+   83,
+   150
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "yukataGirl": {
+  "sheet": "people-flat-v2.png",
+  "height": 50,
+  "px": [
+   94,
+   150
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "postman": {
+  "sheet": "people-flat-v2.png",
+  "height": 50,
+  "px": [
+   74,
+   150
+  ],
+  "parts": 1,
+  "dropped": 2
+ },
+ "fisherBoy": {
+  "sheet": "people-flat-v2.png",
+  "height": 50,
+  "px": [
+   91,
+   150
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "musician": {
+  "sheet": "people-flat-v2.png",
+  "height": 50,
+  "px": [
+   91,
+   150
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "mazu": {
+  "sheet": "deities.png",
+  "height": 62,
+  "px": [
+   117,
+   186
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "tudigong": {
+  "sheet": "deities.png",
+  "height": 58,
+  "px": [
+   128,
+   174
+  ],
+  "parts": 1,
+  "dropped": 1
+ },
+ "yuelao": {
+  "sheet": "deities.png",
+  "height": 58,
+  "px": [
+   121,
+   174
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "huye": {
+  "sheet": "deities.png",
+  "height": 46,
+  "px": [
+   108,
+   138
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "qiye": {
+  "sheet": "deities.png",
+  "height": 68,
+  "px": [
+   122,
+   204
+  ],
+  "parts": 1,
+  "dropped": 1
+ },
+ "baye": {
+  "sheet": "deities.png",
+  "height": 62,
+  "px": [
+   128,
+   186
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "swordLionSpirit": {
+  "sheet": "spirits.png",
+  "height": 50,
+  "px": [
+   125,
+   150
+  ],
+  "parts": 1,
+  "dropped": 1
+ },
+ "banyanSpirit": {
+  "sheet": "spirits.png",
+  "height": 56,
+  "px": [
+   143,
+   168
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "turtleSpirit": {
+  "sheet": "spirits.png",
+  "height": 46,
+  "px": [
+   113,
+   138
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "kasa": {
+  "sheet": "spirits.png",
+  "height": 46,
+  "px": [
+   110,
+   138
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "chochin": {
+  "sheet": "spirits.png",
+  "height": 40,
+  "px": [
+   83,
+   120
+  ],
+  "parts": 1,
+  "dropped": 2
+ },
+ "nekomata": {
+  "sheet": "spirits.png",
+  "height": 38,
+  "px": [
+   98,
+   114
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "swordLionWall": {
+  "sheet": "decor.png",
+  "height": 54,
+  "px": [
+   152,
+   162
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "lanternString": {
+  "sheet": "decor.png",
+  "height": 46,
+  "px": [
+   136,
+   138
+  ],
+  "parts": 1,
+  "dropped": 1
+ },
+ "ridge": {
+  "sheet": "decor.png",
+  "height": 44,
+  "px": [
+   153,
+   132
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "tileWindow": {
+  "sheet": "decor.png",
+  "height": 66,
+  "px": [
+   144,
+   198
+  ],
+  "parts": 1,
+  "dropped": 1
+ },
+ "festivalGate": {
+  "sheet": "decor.png",
+  "height": 84,
+  "px": [
+   216,
+   252
+  ],
+  "parts": 1,
+  "dropped": 1
+ },
+ "altar": {
+  "sheet": "decor.png",
+  "height": 54,
+  "px": [
+   125,
+   162
+  ],
+  "parts": 3,
+  "dropped": 0
+ },
+ "danzai": {
+  "sheet": "food.png",
+  "height": 24,
+  "px": [
+   63,
+   72
+  ],
+  "parts": 2,
+  "dropped": 0
+ },
+ "milkfish": {
+  "sheet": "food.png",
+  "height": 24,
+  "px": [
+   74,
+   72
+  ],
+  "parts": 1,
+  "dropped": 1
+ },
+ "wagui": {
+  "sheet": "food.png",
+  "height": 24,
+  "px": [
+   86,
+   72
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "coffinToast": {
+  "sheet": "food.png",
+  "height": 24,
+  "px": [
+   72,
+   72
+  ],
+  "parts": 1,
+  "dropped": 0
+ },
+ "pengbing": {
+  "sheet": "food.png",
+  "height": 24,
+  "px": [
+   75,
+   72
+  ],
+  "parts": 1,
+  "dropped": 1
+ },
+ "dango": {
+  "sheet": "food.png",
+  "height": 24,
+  "px": [
+   72,
+   72
+  ],
+  "parts": 1,
+  "dropped": 0
+ }
+}

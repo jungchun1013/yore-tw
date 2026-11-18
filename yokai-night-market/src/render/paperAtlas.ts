@@ -41,9 +41,46 @@ export async function loadPaperAtlas(): Promise<void> {
     atlas.set(key, { c: out, w, h: height, ox: w / 2, oy: height - 1 });
   }
 }
+// Single sprites cut from Codex's six Tainan concept sheets (public/art/tainan, see sprites.json).
+// [key, in-game height in logical px]. A key that matches an existing sprite key replaces it.
+const TAINAN: [string, number][] = [
+  ['chihkan', 150], ['shennong', 130], ['hayashi', 170], ['confucius', 120], ['machiya', 130], ['noodleStall', 84],
+  ['vendor', 50], ['snackGirl', 50], ['yukataGirl', 50], ['postman', 50], ['fisherBoy', 50], ['musician', 50],
+  ['mazu', 62], ['tudigong', 58], ['yuelao', 58], ['huye', 46], ['qiye', 68], ['baye', 62],
+  ['swordLionSpirit', 50], ['banyanSpirit', 34], ['turtleSpirit', 46], ['kasa', 46], ['chochin', 40], ['nekomata', 38],
+  ['swordLionWall', 54], ['lanternString', 46], ['ridge', 44], ['tileWindow', 66], ['festivalGate', 84], ['altar', 54],
+  ['danzai', 24], ['milkfish', 24], ['wagui', 24], ['coffinToast', 24], ['pengbing', 24], ['dango', 24],
+];
+
+export async function loadTainanArt(): Promise<void> {
+  // One failed picture must not cost the others: it is skipped and that key keeps its drawn sprite.
+  const results = await Promise.allSettled(TAINAN.map(async ([key, height]) => {
+    const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = () => reject(new Error(`could not load ${key}`));
+      im.src = `${import.meta.env.BASE_URL}art/tainan/${key}.png`;
+    });
+    const cv = document.createElement('canvas'); cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+    cv.getContext('2d')!.drawImage(img, 0, 0);
+    const w = height * cv.width / cv.height;
+    atlas.set(key, { c: cv, w, h: height, ox: w / 2, oy: height - 1 });
+  }));
+  const failed = results.filter((r) => r.status === 'rejected').length;
+  if (failed) console.warn(`${failed} Tainan sprites did not load; their drawn versions are used instead`);
+}
+
+// Heal pickups show one of these. Coffin toast is left out: it is a postwar dish and the game is set around 1930.
+export const FOODS = ['danzai', 'milkfish', 'wagui', 'pengbing', 'dango'];
+
 export function atlasSprite(key: string): Sprite | undefined {
   if (key.startsWith('hero:miko:')) key = 'miko';
   // Preserve enemies' identity and building functions. Other assets retain the procedural renderer.
-  const aliases: Record<string, string> = { phoenix: 'maple', andon: 'stoneLantern' };
+  const aliases: Record<string, string> = {
+    phoenix: 'maple', andon: 'stoneLantern',
+    // Tainan set: yokai, stage props and two passive icons
+    kodama: 'banyanSpirit', lanterns: 'lanternString', swordlion: 'swordLionWall', redgate: 'confucius',
+    i_maneki: 'huye', i_omamori: 'swordLionSpirit', i_heal: 'danzai', heal: 'danzai',
+  };
   return atlas.get(aliases[key] ?? key);
 }

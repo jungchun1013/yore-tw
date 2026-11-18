@@ -4,6 +4,7 @@ import type { Run } from '../game/world';
 import { PROPS } from './items';
 import { type Sprite, INK, TAU, flashOf, hash } from './kit';
 import { TILE, groundTile, spr } from './sprites';
+import { FOODS } from './paperAtlas';
 
 type Ctx = CanvasRenderingContext2D;
 export interface View { w: number; h: number; zoom: number; dpr: number }
@@ -157,7 +158,7 @@ export function render(c: Ctx, run: Run, v: View, clock: number): void {
     if (it.kind === 0) drawEnemy(c, run, it.ref as Enemy);
     else if (it.kind === 1) {
       const pk = it.ref as Pickup;
-      const key = pk.kind === 'gem' ? gemKey(pk) : pk.kind;
+      const key = pk.kind === 'gem' ? gemKey(pk) : pk.kind === 'heal' ? FOODS[Math.floor(hash(Math.round(pk.x), Math.round(pk.y)) * FOODS.length)] : pk.kind;
       const bob = pk.kind === 'gem' || pk.kind === 'coin' ? 0 : Math.sin(run.t * 4 + pk.x) * 2;
       const grow = Math.min(1, pk.age * 6);
       put(c, spr(key), pk.x, pk.y - bob, 1, grow, grow);

@@ -1,0 +1,118 @@
+{
+  "style": "台南與日式和紙疊層幻想美術",
+  "tool": "built-in image_gen",
+  "sources": [
+    {
+      "title": "赤崁文化園區",
+      "url": "https://www.twtainan.net/zh-tw/attractions/detail/802/"
+    },
+    {
+      "title": "林百貨",
+      "url": "https://www.hayashi.com.tw/"
+    },
+    {
+      "title": "府城隍廟神祇",
+      "url": "https://www.twcitygod.org.tw/?noamp=mobile&page_id=76"
+    },
+    {
+      "title": "大天后宮",
+      "url": "https://www.twtainan.net/zh-tw/attractions/detail/675/"
+    },
+    {
+      "title": "棺材板",
+      "url": "https://twtainan.net/zh-tw/shop/consume/1116/"
+    }
+  ],
+  "notes": [
+    "Concept sheets, not historically exact reconstructions or animation-ready sprites.",
+    "Banyan, sword-lion and bixi spirits are original fantasy interpretations.",
+    "Coffin toast is a postwar element; not for a strict 1930 setting.",
+    "Alpha preserved as generated; some sheets need background cleanup before individual sprite extraction."
+  ],
+  "sets": [
+    {
+      "key": "buildings",
+      "title": "府城與日式建築",
+      "names": [
+        "赤崁樓意象",
+        "神農街屋",
+        "林百貨意象",
+        "台南孔廟門庭意象",
+        "日式木造町屋",
+        "擔仔麵攤"
+      ],
+      "detail": "TOP ROW left: Tainan Chihkan Tower-inspired compact two-level red-pillared pavilion with layered traditional southern Chinese sweeping terracotta roofs on a brick plinth, must look Taiwanese not a Japanese shrine. Middle: Shennong Street narrow two-story Taiwanese old shophouse, faded turquoise wooden shutters, cream plaster above red brick, dark curved tiles, small lantern. Right: Hayashi Department Store-inspired 1930s Tainan modernist five-story beige tiled building, rounded corner facade, rows of tall rectangular windows, simple flat roof, absolutely NOT a pagoda. BOTTOM ROW left: Tainan Confucius Temple-inspired vermilion courtyard entrance with traditional swallowtail terracotta roof, green ceramic trim, paired solid red doors, no torii. Middle: small Japanese wooden machiya shop, indigo tiled roof, shoji windows, coral noren curtains and paper lantern. Right: Taiwanese danzai noodle vendor's wooden shoulder-pole stand, two baskets joined by bamboo pole, steaming stock pot and tiny bowls; no people.",
+      "prompt": "Use case: stylized-concept. Create a game-ready transparent sprite contact sheet for a charming Taiwan/Tainan meets Japanese fantasy paper-theater game. EXACTLY SIX independent objects in a strict THREE COLUMN by TWO ROW grid on a square 1536x1536 canvas. Each object entirely inside its own cell with generous 12% padding on ALL sides, clear empty transparent gutters; no touching between cells, no clipping, no labels, no lettering, no background, no floor or external ground shadows. Front-facing slight three-quarter 2.5D view, full silhouette visible. Consistent photographed handmade kirie cut-paper craft: distinctly separate layers of thick matte washi cardstock with visible fine fibers, cut edges, 1–3mm foam-spacer depth and small warm contact shadows. Large simple readable shapes plus delicate cut-paper details, charming rounded silhouettes, cream, vermilion, coral, sage, mustard and deep indigo. Saturated warm darker shadows, upper-left soft light. NOT clay or plastic, NOT plush, NOT glossy 3D, NOT black outlines, NOT flat vectors, NOT photorealistic people. All six objects equally polished, unified art direction matching a premium cute paper diorama. TOP ROW left: Tainan Chihkan Tower-inspired compact two-level red-pillared pavilion with layered traditional southern Chinese sweeping terracotta roofs on a brick plinth, must look Taiwanese not a Japanese shrine. Middle: Shennong Street narrow two-story Taiwanese old shophouse, faded turquoise wooden shutters, cream plaster above red brick, dark curved tiles, small lantern. Right: Hayashi Department Store-inspired 1930s Tainan modernist five-story beige tiled building, rounded corner facade, rows of tall rectangular windows, simple flat roof, absolutely NOT a pagoda. BOTTOM ROW left: Tainan Confucius Temple-inspired vermilion courtyard entrance with traditional swallowtail terracotta roof, green ceramic trim, paired solid red doors, no torii. Middle: small Japanese wooden machiya shop, indigo tiled roof, shoji windows, coral noren curtains and paper lantern. Right: Taiwanese danzai noodle vendor's wooden shoulder-pole stand, two baskets joined by bamboo pole, steaming stock pot and tiny bowls; no people."
+    },
+    {
+      "key": "people",
+      "title": "府城街坊人物",
+      "names": [
+        "擔仔麵攤主",
+        "花布點心姑娘",
+        "日式浴衣少女",
+        "郵便小哥",
+        "安平漁家少年",
+        "廟埕樂師"
+      ],
+      "detail": "SIX full-body adorable human chibi paper dolls, head about 45 percent of height, tiny rounded bodies and short limbs, beautiful expressive eyes and layered hair. TOP ROW left: smiling Taiwanese noodle vendor, short dark hair, indigo cotton shirt, rolled sleeves, cream apron, holding ladle. Middle: Taiwanese young woman in cream traditional blouse and coral skirt with subtle floral textile accents, dark bob and flower pin, holding bamboo tray of pastries. Right: Japanese yukata girl, sage yukata with coral maple motifs, mustard obi, dark hair bun, folded fan. BOTTOM ROW left: friendly 1930s civilian postal messenger boy, navy peaked cap and simple jacket, khaki shoulder satchel, no military badges or weapon. Middle: Anping fisher boy, straw hat, cream shirt and indigo shorts, woven fish basket with small silver fish. Right: Taiwanese temple courtyard musician, coral mandarin-collar jacket, dark cropped trousers, small gong and mallet. Varied hairstyles and faces; no modern plastic items.",
+      "prompt": "Use case: stylized-concept. Create a game-ready transparent sprite contact sheet for a charming Taiwan/Tainan meets Japanese fantasy paper-theater game. EXACTLY SIX independent objects in a strict THREE COLUMN by TWO ROW grid on a square 1536x1536 canvas. Each object entirely inside its own cell with generous 12% padding on ALL sides, clear empty transparent gutters; no touching between cells, no clipping, no labels, no lettering, no background, no floor or external ground shadows. Front-facing slight three-quarter 2.5D view, full silhouette visible. Consistent photographed handmade kirie cut-paper craft: distinctly separate layers of thick matte washi cardstock with visible fine fibers, cut edges, 1–3mm foam-spacer depth and small warm contact shadows. Large simple readable shapes plus delicate cut-paper details, charming rounded silhouettes, cream, vermilion, coral, sage, mustard and deep indigo. Saturated warm darker shadows, upper-left soft light. NOT clay or plastic, NOT plush, NOT glossy 3D, NOT black outlines, NOT flat vectors, NOT photorealistic people. All six objects equally polished, unified art direction matching a premium cute paper diorama. SIX full-body adorable human chibi paper dolls, head about 45 percent of height, tiny rounded bodies and short limbs, beautiful expressive eyes and layered hair. TOP ROW left: smiling Taiwanese noodle vendor, short dark hair, indigo cotton shirt, rolled sleeves, cream apron, holding ladle. Middle: Taiwanese young woman in cream traditional blouse and coral skirt with subtle floral textile accents, dark bob and flower pin, holding bamboo tray of pastries. Right: Japanese yukata girl, sage yukata with coral maple motifs, mustard obi, dark hair bun, folded fan. BOTTOM ROW left: friendly 1930s civilian postal messenger boy, navy peaked cap and simple jacket, khaki shoulder satchel, no military badges or weapon. Middle: Anping fisher boy, straw hat, cream shirt and indigo shorts, woven fish basket with small silver fish. Right: Taiwanese temple courtyard musician, coral mandarin-collar jacket, dark cropped trousers, small gong and mallet. Varied hairstyles and faces; no modern plastic items."
+    },
+    {
+      "key": "deities",
+      "title": "神明與守護紙偶",
+      "names": [
+        "媽祖",
+        "土地公",
+        "月老",
+        "虎爺",
+        "七爺",
+        "八爺"
+      ],
+      "detail": "Six respectful, warm, charming full-body chibi devotional paper-doll interpretations, NOT horror enemies. Recognizable Taiwanese folk deity iconography, ornament simplified for game readability. TOP ROW left: Mazu, serene benevolent female face, elaborate golden phoenix crown with delicate hanging bead strips, coral and vermilion embroidered ceremonial robe, hands holding ritual tablet, no Japanese fox ears. Middle: Tudigong Earth God, kind elderly face, full white beard, soft gold traditional official hat and mustard robe, wooden staff and gold ingot. Right: Yue Lao matchmaker, elderly smiling face with white hair and beard, coral robe, holding a large red thread spool and small marriage register. BOTTOM ROW left: Hu Ye tiger guardian, adorable golden-yellow tiger seated on four paws, deep indigo stripes, round eyes, little red neck scarf; animal not human. Middle: Seventh Lord Xie Bi'an, slim taller white-robed guardian with tall white ceremonial hat, pale friendly face, folded fan; no lettering on hat, no gore. Right: Eighth Lord Fan Wujiu, shorter stockier guardian in indigo-black robe with tall dark ceremonial hat, dark brown face with dignified eyebrows, ritual tablet, no lettering and no horror. All with clearly separated washi paper layers, respectfully stylized not replicas of a particular temple statue.",
+      "prompt": "Use case: stylized-concept. Create a game-ready transparent sprite contact sheet for a charming Taiwan/Tainan meets Japanese fantasy paper-theater game. EXACTLY SIX independent objects in a strict THREE COLUMN by TWO ROW grid on a square 1536x1536 canvas. Each object entirely inside its own cell with generous 12% padding on ALL sides, clear empty transparent gutters; no touching between cells, no clipping, no labels, no lettering, no background, no floor or external ground shadows. Front-facing slight three-quarter 2.5D view, full silhouette visible. Consistent photographed handmade kirie cut-paper craft: distinctly separate layers of thick matte washi cardstock with visible fine fibers, cut edges, 1–3mm foam-spacer depth and small warm contact shadows. Large simple readable shapes plus delicate cut-paper details, charming rounded silhouettes, cream, vermilion, coral, sage, mustard and deep indigo. Saturated warm darker shadows, upper-left soft light. NOT clay or plastic, NOT plush, NOT glossy 3D, NOT black outlines, NOT flat vectors, NOT photorealistic people. All six objects equally polished, unified art direction matching a premium cute paper diorama. Six respectful, warm, charming full-body chibi devotional paper-doll interpretations, NOT horror enemies. Recognizable Taiwanese folk deity iconography, ornament simplified for game readability. TOP ROW left: Mazu, serene benevolent female face, elaborate golden phoenix crown with delicate hanging bead strips, coral and vermilion embroidered ceremonial robe, hands holding ritual tablet, no Japanese fox ears. Middle: Tudigong Earth God, kind elderly face, full white beard, soft gold traditional official hat and mustard robe, wooden staff and gold ingot. Right: Yue Lao matchmaker, elderly smiling face with white hair and beard, coral robe, holding a large red thread spool and small marriage register. BOTTOM ROW left: Hu Ye tiger guardian, adorable golden-yellow tiger seated on four paws, deep indigo stripes, round eyes, little red neck scarf; animal not human. Middle: Seventh Lord Xie Bi'an, slim taller white-robed guardian with tall white ceremonial hat, pale friendly face, folded fan; no lettering on hat, no gore. Right: Eighth Lord Fan Wujiu, shorter stockier guardian in indigo-black robe with tall dark ceremonial hat, dark brown face with dignified eyebrows, ritual tablet, no lettering and no horror. All with clearly separated washi paper layers, respectfully stylized not replicas of a particular temple statue."
+    },
+    {
+      "key": "spirits",
+      "title": "台日妖怪與原創精靈",
+      "names": [
+        "安平劍獅精靈（原創）",
+        "榕樹精靈（原創）",
+        "赤崁石龜精靈（原創）",
+        "唐傘小僧",
+        "提燈小僧",
+        "貓又"
+      ],
+      "detail": "Six adorable FULL BODY fantasy creature paper puppets. TOP ROW left: original Anping sword-lion guardian spirit, a round vermilion lion mask-like head, teal curly mane and mustard eyebrows, holding a SHORT HORIZONTAL SWORD gently across its mouth, tiny four-legged cream body, a protective folkloric-inspired design not a claim of traditional monster. Middle: original Taiwan banyan spirit, small crooked woody trunk body with warm face, paper aerial-root beard, broad tiered sage foliage head and tiny twig arms. Right: original Chihkan bixi stone-turtle spirit, squat sage-gray turtle with cheerful face and a rounded inscribed-stele-shaped blank slab on its shell, textured layered paper not literal stone. BOTTOM ROW left: Japanese karakasa one-eyed umbrella yokai, mustard oil-paper umbrella with visible ribs, one central eye, small coral tongue, one sandal foot. Middle: Japanese chochin lantern yokai, coral pleated lantern, single big eye, short tongue, tiny indigo feet and handle. Right: Japanese nekomata, adorable cream-and-indigo calico cat with EXACTLY TWO gracefully curling tails, red neck ribbon and small bell. No scary violence, no writing, no extra objects.",
+      "prompt": "Use case: stylized-concept. Create a game-ready transparent sprite contact sheet for a charming Taiwan/Tainan meets Japanese fantasy paper-theater game. EXACTLY SIX independent objects in a strict THREE COLUMN by TWO ROW grid on a square 1536x1536 canvas. Each object entirely inside its own cell with generous 12% padding on ALL sides, clear empty transparent gutters; no touching between cells, no clipping, no labels, no lettering, no background, no floor or external ground shadows. Front-facing slight three-quarter 2.5D view, full silhouette visible. Consistent photographed handmade kirie cut-paper craft: distinctly separate layers of thick matte washi cardstock with visible fine fibers, cut edges, 1–3mm foam-spacer depth and small warm contact shadows. Large simple readable shapes plus delicate cut-paper details, charming rounded silhouettes, cream, vermilion, coral, sage, mustard and deep indigo. Saturated warm darker shadows, upper-left soft light. NOT clay or plastic, NOT plush, NOT glossy 3D, NOT black outlines, NOT flat vectors, NOT photorealistic people. All six objects equally polished, unified art direction matching a premium cute paper diorama. Six adorable FULL BODY fantasy creature paper puppets. TOP ROW left: original Anping sword-lion guardian spirit, a round vermilion lion mask-like head, teal curly mane and mustard eyebrows, holding a SHORT HORIZONTAL SWORD gently across its mouth, tiny four-legged cream body, a protective folkloric-inspired design not a claim of traditional monster. Middle: original Taiwan banyan spirit, small crooked woody trunk body with warm face, paper aerial-root beard, broad tiered sage foliage head and tiny twig arms. Right: original Chihkan bixi stone-turtle spirit, squat sage-gray turtle with cheerful face and a rounded inscribed-stele-shaped blank slab on its shell, textured layered paper not literal stone. BOTTOM ROW left: Japanese karakasa one-eyed umbrella yokai, mustard oil-paper umbrella with visible ribs, one central eye, small coral tongue, one sandal foot. Middle: Japanese chochin lantern yokai, coral pleated lantern, single big eye, short tongue, tiny indigo feet and handle. Right: Japanese nekomata, adorable cream-and-indigo calico cat with EXACTLY TWO gracefully curling tails, red neck ribbon and small bell. No scary violence, no writing, no extra objects."
+    },
+    {
+      "key": "decor",
+      "title": "廟埕與夜市裝飾",
+      "names": [
+        "安平劍獅壁飾",
+        "廟口燈籠串",
+        "燕尾屋脊剪黏",
+        "花磚窗景",
+        "日式祭典燈架",
+        "供桌與香爐"
+      ],
+      "detail": "Six independent modular environment decoration game props. TOP ROW left: Anping sword-lion wall ornament, round red lion face, turquoise curled mane, mustard eyebrows, short sword held horizontally in mouth, mounted on tiny cream masonry tile; not a full animal. Middle: strand of three Taiwanese temple vermilion and mustard round lanterns with tassels, linked by a curved rope, blank panels without text. Right: Taiwanese swallowtail roof ridge fragment with colorful cut-paper jian-nian floral and dragon-shaped ceramic mosaic decoration, distinct curled tips, brick red tiles and teal accents, small readable standalone architectural prop. BOTTOM ROW left: Taiwanese heritage wall fragment with patterned turquoise/coral floral ceramic tiles, cream plaster and a small iron-barred arched window represented by separate indigo paper strips. Middle: Japanese festival wooden lantern rack with two hanging cream chochin, small shimenawa rice rope and white zigzag shide paper strips, no torii. Right: Taiwanese temple offering table made from red wood, central bronze-colored matte paper incense burner with three thin incense sticks and restrained curling paper smoke, two orange fruit offerings and two red candles; all one compact prop.",
+      "prompt": "Use case: stylized-concept. Create a game-ready transparent sprite contact sheet for a charming Taiwan/Tainan meets Japanese fantasy paper-theater game. EXACTLY SIX independent objects in a strict THREE COLUMN by TWO ROW grid on a square 1536x1536 canvas. Each object entirely inside its own cell with generous 12% padding on ALL sides, clear empty transparent gutters; no touching between cells, no clipping, no labels, no lettering, no background, no floor or external ground shadows. Front-facing slight three-quarter 2.5D view, full silhouette visible. Consistent photographed handmade kirie cut-paper craft: distinctly separate layers of thick matte washi cardstock with visible fine fibers, cut edges, 1–3mm foam-spacer depth and small warm contact shadows. Large simple readable shapes plus delicate cut-paper details, charming rounded silhouettes, cream, vermilion, coral, sage, mustard and deep indigo. Saturated warm darker shadows, upper-left soft light. NOT clay or plastic, NOT plush, NOT glossy 3D, NOT black outlines, NOT flat vectors, NOT photorealistic people. All six objects equally polished, unified art direction matching a premium cute paper diorama. Six independent modular environment decoration game props. TOP ROW left: Anping sword-lion wall ornament, round red lion face, turquoise curled mane, mustard eyebrows, short sword held horizontally in mouth, mounted on tiny cream masonry tile; not a full animal. Middle: strand of three Taiwanese temple vermilion and mustard round lanterns with tassels, linked by a curved rope, blank panels without text. Right: Taiwanese swallowtail roof ridge fragment with colorful cut-paper jian-nian floral and dragon-shaped ceramic mosaic decoration, distinct curled tips, brick red tiles and teal accents, small readable standalone architectural prop. BOTTOM ROW left: Taiwanese heritage wall fragment with patterned turquoise/coral floral ceramic tiles, cream plaster and a small iron-barred arched window represented by separate indigo paper strips. Middle: Japanese festival wooden lantern rack with two hanging cream chochin, small shimenawa rice rope and white zigzag shide paper strips, no torii. Right: Taiwanese temple offering table made from red wood, central bronze-colored matte paper incense burner with three thin incense sticks and restrained curling paper smoke, two orange fruit offerings and two red candles; all one compact prop."
+    },
+    {
+      "key": "food",
+      "title": "台南小吃與日式點心",
+      "names": [
+        "擔仔麵",
+        "虱目魚湯",
+        "碗粿",
+        "棺材板（戰後）",
+        "椪餅",
+        "日式糰子"
+      ],
+      "detail": "Six beautifully readable food item sprites, each on its own small cream ceramic plate or bowl recreated ENTIRELY AS STACKED PAPER. TOP ROW left: Tainan danzai noodles in small shallow blue-rim bowl, thin yellow noodles, braised minced pork, a single curled shrimp and cilantro, subtle paper steam. Middle: milkfish soup in round cream bowl, recognizably pale silver-skinned fish belly pieces, ginger strips and scallions in clear broth represented by pale layered translucent-looking PAPER, not glossy liquid. Right: Taiwanese wa gui savory rice pudding, smooth ivory rice cake in shallow bowl, brown sauce, shiitake mushroom and tiny dried shrimp topping. BOTTOM ROW left: Tainan coffin toast, thick golden rectangular fried bread box filled with cream vegetable stew, small lid leaning to one side, green peas and orange carrot cubes; not an actual coffin. Middle: two Taiwanese peng-bing puff pastries, round thin golden-brown domed hollow pastries, one broken to reveal airy hollow interior and thin flaky paper edges, very faint red decorative stamp WITHOUT lettering. Right: Japanese hanami dango, two bamboo skewers each with three round pastel pink cream and sage dumplings on a little indigo tray. No faces on foods, no labels, no photoreal edible texture; visible paper craft construction.",
+      "prompt": "Use case: stylized-concept. Create a game-ready transparent sprite contact sheet for a charming Taiwan/Tainan meets Japanese fantasy paper-theater game. EXACTLY SIX independent objects in a strict THREE COLUMN by TWO ROW grid on a square 1536x1536 canvas. Each object entirely inside its own cell with generous 12% padding on ALL sides, clear empty transparent gutters; no touching between cells, no clipping, no labels, no lettering, no background, no floor or external ground shadows. Front-facing slight three-quarter 2.5D view, full silhouette visible. Consistent photographed handmade kirie cut-paper craft: distinctly separate layers of thick matte washi cardstock with visible fine fibers, cut edges, 1–3mm foam-spacer depth and small warm contact shadows. Large simple readable shapes plus delicate cut-paper details, charming rounded silhouettes, cream, vermilion, coral, sage, mustard and deep indigo. Saturated warm darker shadows, upper-left soft light. NOT clay or plastic, NOT plush, NOT glossy 3D, NOT black outlines, NOT flat vectors, NOT photorealistic people. All six objects equally polished, unified art direction matching a premium cute paper diorama. Six beautifully readable food item sprites, each on its own small cream ceramic plate or bowl recreated ENTIRELY AS STACKED PAPER. TOP ROW left: Tainan danzai noodles in small shallow blue-rim bowl, thin yellow noodles, braised minced pork, a single curled shrimp and cilantro, subtle paper steam. Middle: milkfish soup in round cream bowl, recognizably pale silver-skinned fish belly pieces, ginger strips and scallions in clear broth represented by pale layered translucent-looking PAPER, not glossy liquid. Right: Taiwanese wa gui savory rice pudding, smooth ivory rice cake in shallow bowl, brown sauce, shiitake mushroom and tiny dried shrimp topping. BOTTOM ROW left: Tainan coffin toast, thick golden rectangular fried bread box filled with cream vegetable stew, small lid leaning to one side, green peas and orange carrot cubes; not an actual coffin. Middle: two Taiwanese peng-bing puff pastries, round thin golden-brown domed hollow pastries, one broken to reveal airy hollow interior and thin flaky paper edges, very faint red decorative stamp WITHOUT lettering. Right: Japanese hanami dango, two bamboo skewers each with three round pastel pink cream and sage dumplings on a little indigo tray. No faces on foods, no labels, no photoreal edible texture; visible paper craft construction."
+    }
+  ]
+}
