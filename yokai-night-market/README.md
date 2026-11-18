@@ -1,3 +1,5 @@
+> **Codex 獨立紙藝比較版**：執行 `npm run dev`，開啟 http://127.0.0.1:5204/?atelier 看展示／對照，或 http://127.0.0.1:5204/ 玩新版。範圍與限制見 [ART-DIRECTION.md](ART-DIRECTION.md)。以下保留原遊戲說明。
+
 # 百鬼夜市 Yokai Night Market
 
 A survivors-style action game set in Tainan around 1930: walk from the shrine approach to Anping at night, let your charms and firecrackers fire on their own, pick one of three upgrades each level, and last fifteen minutes until dawn. Chapter 1 has six stages.

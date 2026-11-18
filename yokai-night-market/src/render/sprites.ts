@@ -1,9 +1,11 @@
+import { atlasSprite, paperMode } from './paperAtlas';
 // Sprite registry (built lazily) and the six ground tiles.
 import { ITEMS, PROPS, heroArt, type Art } from './items';
-import { type Sprite, TAU, hash, rrPath, sprite } from './kit';
+import { type Sprite, TAU, hash, rrPath, sprite, piece, setPaperStyle } from './kit';
 import { YOKAI } from './yokai';
 
 const cache = new Map<string, Sprite>();
+const crafted = new Map<string, Sprite>();
 
 function artOf(key: string): Art | undefined {
   if (key.startsWith('hero:')) { const [, id, f] = key.split(':'); return heroArt(id, Number(f)); }
@@ -11,6 +13,21 @@ function artOf(key: string): Art | undefined {
 }
 
 export function spr(key: string): Sprite {
+  const paper = paperMode ? atlasSprite(key) : undefined;
+  if (paper) return paper;
+  if (paperMode) {
+    let s = crafted.get(key);
+    if (!s) {
+      const a = artOf(key) ?? ITEMS.salt;
+      setPaperStyle('craft'); s = piece(-a.w / 2, -a.h, a.w / 2, 0, a.draw); setPaperStyle('clean');
+      crafted.set(key,s);
+    }
+    return s;
+  }
+  return legacySprite(key);
+}
+
+export function legacySprite(key: string): Sprite {
   let s = cache.get(key);
   if (!s) {
     const a = artOf(key) ?? ITEMS.salt;
@@ -103,7 +120,20 @@ export function groundTile(key: string): HTMLCanvasElement {
     t.width = t.height = TILE * 2;
     const c = t.getContext('2d')!;
     c.scale(2, 2);
-    (GROUND[key] ?? GROUND.stone)(c, rnd(key.length * 131 + key.charCodeAt(0)));
+    if (paperMode && key === 'stone') {
+      c.fillStyle = '#eee2c7'; c.fillRect(0,0,TILE,TILE);
+      const random = rnd(827);
+      paper(c,random,'rgba(160,120,70,0.015)');
+      // Scattered cut slabs leave broad quiet paper between them for combat readability.
+      for (let i = 0; i < 4; i++) {
+        const x = 20 + random()*210, y = 20 + random()*210;
+        wrap(c,x,y,() => {
+          c.save(); c.rotate((random()-.5)*.4);
+          c.shadowColor = '#b7976b55'; c.shadowOffsetY = 1.5; c.shadowBlur = 1;
+          rrPath(c,-15,-7,30,14,2); c.fillStyle = '#dfd1b4'; c.fill(); c.restore();
+        });
+      }
+    } else (GROUND[key] ?? GROUND.stone)(c, rnd(key.length * 131 + key.charCodeAt(0)));
     tiles.set(key, t);
   }
   return t;

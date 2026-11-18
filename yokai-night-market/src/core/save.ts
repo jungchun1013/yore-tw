@@ -16,7 +16,7 @@ export interface Save {
   runs: number;
 }
 
-const KEY = 'yokai-night-market.save.v1';
+const KEY = 'yokai-night-market-paper.save.v1';
 
 export function freshSave(): Save {
   return { v: 1, coins: 0, meta: {}, cleared: [], bossDown: [], best: [], seen: [], hero: 'miko', lang: null, sound: true, music: true, runs: 0 };

@@ -193,3 +193,26 @@ button.choice:hover { background: #fff; box-shadow: 0 0 0 3px var(--gold); }
   .dmg-name { width: 84px; }
   .btn.big { min-width: 180px; }
 }
+
+/* Independent paper-art study. Native links and controls also work on touch. */
+.atelier-ui { position:fixed; inset:0; pointer-events:none; z-index:20; }
+.atelier-ui header { position:absolute; inset:30px 4vw auto; display:flex; justify-content:space-between; align-items:center; gap:12px; }
+.atelier-ui small { font:10px var(--sans); letter-spacing:.22em; color:#94765d; }
+.atelier-ui h1 { font:38px var(--serif); letter-spacing:.13em; margin-top:8px; }
+.atelier-ui h1 span { font:12px var(--sans); letter-spacing:.2em; margin-left:20px; color:#9a6e54; }
+.atelier-ui a { pointer-events:auto; color:#754c3c; text-decoration:none; font-size:13px; padding:12px 0; border-bottom:1px solid #c9b391; }
+.atelier-ui footer { position:absolute; inset:auto 4vw 28px; display:flex; justify-content:space-between; align-items:flex-end; gap:18px; }
+.atelier-caption p { font:24px var(--serif); margin:10px 0; }
+.atelier-caption span { font-size:12px; color:#94765d; }
+.atelier-controls { pointer-events:auto; text-align:right; }
+.atelier-controls div { display:flex; gap:5px; }
+.atelier-controls button { min-height:40px; padding:8px 15px; border:1px solid #c5b08f; background:#f7edda; color:#72513f; font:12px var(--sans); box-shadow:1px 3px 0 #dac6a7; border-radius:3px; cursor:pointer; }
+.atelier-controls button[aria-pressed=true] { background:#a84e3c; color:#fff6e5; border-color:#a84e3c; }
+.atelier-controls a { display:inline-block; font-size:11px; margin-top:5px; padding-bottom:5px; }
+.atelier-controls label { font-size:12px; padding-top:10px; }
+.atelier-controls label:not([hidden]) { display:flex; align-items:center; gap:10px; }
+.atelier-controls input { accent-color:#a84e3c; }
+@media(max-width:700px) {
+ .atelier-ui header { top:23px; align-items:flex-start; }.atelier-ui h1 { font-size:28px; }.atelier-ui h1 span { display:block; margin:6px 0; font-size:10px; }.atelier-ui header a { font-size:11px; white-space:nowrap; }
+ .atelier-ui footer { bottom:22px; flex-direction:column; align-items:flex-start; }.atelier-caption p { font-size:20px; }.atelier-controls { text-align:left; }.atelier-controls button { padding:8px 12px; }.atelier-ui small { font-size:8px; letter-spacing:.12em; }
+}

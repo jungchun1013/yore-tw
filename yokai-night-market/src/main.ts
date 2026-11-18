@@ -1,3 +1,4 @@
+import { loadPaperAtlas, paperMode } from './render/paperAtlas';
 import './style.css';
 import { setMusic, setSound, sfx, startMusic, stopMusic, unlockAudio } from './core/audio';
 import { defaultLang, getLang, setLang, t } from './core/i18n';
@@ -211,16 +212,20 @@ initHud(hud, () => setPaused(true));
 initInput(field);
 hudVisible(false);
 document.title = t('title');
-if (params.has('compare') || params.has('fox')) {
-  // art comparison pages; the game itself does not start
-  void import('./render/compare').then((m) => (params.has('fox') ? m.foxPage(canvas) : m.comparePage(canvas)));
-} else if (params.has('doll')) {
-  // art review page for the jointed paper dolls; the game itself does not start
-  void import('./render/dollPreview').then((m) => m.dollPreview(canvas));
+async function boot(): Promise<void> {
+if (paperMode || params.has('atelier')) {
+  try { await loadPaperAtlas(); } catch (error) { console.error('Paper artwork failed to load', error); }
+}
+if (params.has('atelier')) {
+  field.style.display = 'none';
+  await import('./render/atelier').then(m => m.atelier(canvas));
 } else {
   showTitle(save, actions);
   requestAnimationFrame(frame);
 }
+
+}
+void boot();
 
 if (debug) {
   // test and tuning hooks: window.__ynm.fast(60) plays 60 seconds with the bot, synchronously

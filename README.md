@@ -6,7 +6,7 @@ One repo, three independent parts. The root only holds the shared tooling (Vite 
 |---|---|---|
 | `meowcaron/` | Meowcaron 🐱🍪 — cat macaron idle clicker (Phaser). Also shipped to CrazyGames. | `npm run dev -w meowcaron` → http://localhost:5173 |
 | `souls-in-abyss/` | Souls in Abyss 輪迴無止盡 — Battle-Without-End style auto RPG. | `npm run dev -w souls-in-abyss` → http://localhost:5180 |
-| `yokai-night-market/` | 百鬼夜市 Yokai Night Market — 15-minute survivors-style action game, six stages (canvas, no engine). | `npm run dev -w yokai-night-market` → http://localhost:5200 |
+| `yokai-night-market/` | 百鬼夜市 Yokai Night Market — 15-minute survivors-style action game, six stages (canvas, no engine). | `npm run dev -w yokai-night-market` → http://127.0.0.1:5204 (`?atelier` for the art showcase) |
 | `site/` | yore-tw.com entry pages (index, about, privacy, assets). Static, no build. | open the files |
 
 Each game has its own README, tests, sim and docs inside its folder.
