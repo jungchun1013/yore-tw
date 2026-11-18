@@ -58,8 +58,8 @@ function finish(st: Stack): void {
   const top = st.top;
   top.save(); top.setTransform(1, 0, 0, 1, 0, 0);
   top.globalCompositeOperation = 'source-atop';
-  top.fillStyle = grainPattern(top); top.fillRect(0, 0, cv.width, cv.height);
-  for (const [dx, dy, col, a] of [[-0.45, -0.45, '#3a2014', 0.16], [0.4, 0.4, '#fff6e0', 0.2]] as const) {
+  top.globalAlpha = 0.45; top.fillStyle = grainPattern(top); top.fillRect(0, 0, cv.width, cv.height); top.globalAlpha = 1;
+  for (const [dx, dy, col, a] of [[0, -1.7, '#4a2416', 0.14], [0, 0.9, '#fffaf0', 0.22]] as const) {
     // the band of the shape left over after removing a shifted copy of itself is one cut edge
     t.globalCompositeOperation = 'source-over';
     t.clearRect(0, 0, cv.width, cv.height);
@@ -84,22 +84,12 @@ function press(st: Stack): void {
   sil.globalCompositeOperation = 'source-in';
   sil.fillStyle = SHADE; sil.fillRect(0, 0, cv.width, cv.height);
   if (st.tmp) {
-    // light from the upper left. The sheet sits on a thin foam pad: a wide soft shadow
-    // (a ring of faint offset copies), then a tight contact shadow right under the cut.
-    for (let i = 0; i < 10; i++) {
-      const a = (i / 10) * TAU;
-      out.globalAlpha = 0.03; out.drawImage(sil.canvas, (1.1 + Math.cos(a) * 0.9) * R, (1.9 + Math.sin(a) * 0.9) * R);
+    // a small, soft shadow just under the sheet, light from above
+    for (let i = 0; i < 6; i++) {
+      const a = (i / 6) * TAU;
+      out.globalAlpha = 0.035; out.drawImage(sil.canvas, (0.3 + Math.cos(a) * 0.45) * R, (0.9 + Math.sin(a) * 0.45) * R);
     }
-    out.globalAlpha = 0.16; out.drawImage(sil.canvas, 0.4 * R, 0.7 * R);
-    // the cut edge of the card: the sheet's own colours, darkened, stepped down to the right
-    const t = st.tmp;
-    t.globalCompositeOperation = 'source-over';
-    t.clearRect(0, 0, cv.width, cv.height);
-    t.drawImage(cv, 0, 0);
-    t.globalCompositeOperation = 'source-atop';
-    t.fillStyle = 'rgba(60,32,18,0.5)'; t.fillRect(0, 0, cv.width, cv.height);
-    out.globalAlpha = 1;
-    for (let k = 3; k >= 1; k--) out.drawImage(t.canvas, 0.2 * k * R, 0.32 * k * R);
+    out.globalAlpha = 0.1; out.drawImage(sil.canvas, 0.1 * R, 0.4 * R);
   } else {
     out.globalAlpha = 0.13; out.drawImage(sil.canvas, 0.9 * R, 1.9 * R);
     out.globalAlpha = 0.3; out.drawImage(sil.canvas, 0.35 * R, 0.75 * R);
@@ -188,6 +178,7 @@ export function fs(c: C, fill: string | null, lw = 2): void {
   if (fill) {
     if (lw > 0) sheet(c);
     c.fillStyle = fill; c.fill();
+    if (lw > 0 && stack && stack.top === c && stack.tmp) { c.lineWidth = 0.75; c.strokeStyle = tone(fill, -0.32); c.stroke(); }
   } else if (lw > 0) { c.lineWidth = lw * LINE; c.strokeStyle = INK; c.stroke(); }
 }
 
@@ -198,43 +189,7 @@ function strip(c: C, col: string, lw: number): void {
   c.lineWidth = col === INK ? lw * 0.85 : lw; c.strokeStyle = col; c.stroke();
 }
 
-// True while drawing card parts (not the old flat sprites): their sheets get hand-cut edges.
-function handCut(c: C, lw: number): boolean {
-  return lw > 0 && !!stack && stack.top === c && stack.tmp !== null;
-}
-
-let cutSeed = 11;
-// Traces a closed outline with the small wander of a blade guided by hand. `size` scales the
-// wander so small pieces (eyes) stay neat.
-function roughPath(c: C, pts: number[], size: number): void {
-  cutSeed = (cutSeed * 48271) % 2147483647;
-  const p1 = (cutSeed % 997) / 997 * TAU, p2 = (cutSeed % 389) / 389 * TAU, p3 = (cutSeed % 173) / 173 * TAU;
-  const amp = 0.34 * Math.min(1, size / 9);
-  const n = pts.length / 2;
-  c.beginPath();
-  let s = 0, first = true;
-  for (let i = 0; i < n; i++) {
-    const x0 = pts[i * 2], y0 = pts[i * 2 + 1], x1 = pts[((i + 1) % n) * 2], y1 = pts[((i + 1) % n) * 2 + 1];
-    const len = Math.hypot(x1 - x0, y1 - y0), steps = Math.max(1, Math.ceil(len / 1.4));
-    const nx = len ? -(y1 - y0) / len : 0, ny = len ? (x1 - x0) / len : 0;
-    for (let k = 0; k < steps; k++) {
-      const u = k / steps, d = s + u * len;
-      const w = amp * (Math.sin(d * 0.7 + p1) * 0.55 + Math.sin(d * 1.9 + p2) * 0.3 + Math.sin(d * 4.3 + p3) * 0.15);
-      const x = x0 + (x1 - x0) * u + nx * w, y = y0 + (y1 - y0) * u + ny * w;
-      if (first) { c.moveTo(x, y); first = false; } else c.lineTo(x, y);
-    }
-    s += len;
-  }
-  c.closePath();
-}
-
 export function ell(c: C, x: number, y: number, rx: number, ry: number, fill: string | null, lw = 2, rot = 0): void {
-  if (fill && handCut(c, lw)) {
-    const n = Math.max(20, Math.ceil((Math.PI * (rx + ry)) / 1.6)), pts: number[] = [];
-    const cr = Math.cos(rot), sr = Math.sin(rot);
-    for (let i = 0; i < n; i++) { const a = (i / n) * TAU, ex = Math.cos(a) * rx, ey = Math.sin(a) * ry; pts.push(x + ex * cr - ey * sr, y + ex * sr + ey * cr); }
-    roughPath(c, pts, Math.min(rx, ry) * 2); fs(c, fill, lw); return;
-  }
   c.beginPath(); c.ellipse(x, y, rx, ry, rot, 0, TAU); fs(c, fill, lw);
 }
 
@@ -250,22 +205,10 @@ export function rrPath(c: C, x: number, y: number, w: number, h: number, r: numb
 }
 
 export function rr(c: C, x: number, y: number, w: number, h: number, r: number, fill: string | null, lw = 2): void {
-  if (fill && handCut(c, lw)) {
-    r = Math.min(r, w / 2, h / 2);
-    const pts: number[] = [];
-    const corner = (cx: number, cy: number, a0: number): void => { for (let i = 0; i <= 5; i++) { const a = a0 + (i / 5) * (Math.PI / 2); pts.push(cx + Math.cos(a) * r, cy + Math.sin(a) * r); } };
-    corner(x + w - r, y + r, -Math.PI / 2); corner(x + w - r, y + h - r, 0); corner(x + r, y + h - r, Math.PI / 2); corner(x + r, y + r, Math.PI);
-    roughPath(c, pts, Math.min(w, h)); fs(c, fill, lw); return;
-  }
   rrPath(c, x, y, w, h, r); fs(c, fill, lw);
 }
 
 export function poly(c: C, pts: number[], fill: string | null, lw = 2, close = true): void {
-  if (fill && close && handCut(c, lw)) {
-    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-    for (let i = 0; i < pts.length; i += 2) { x0 = Math.min(x0, pts[i]); x1 = Math.max(x1, pts[i]); y0 = Math.min(y0, pts[i + 1]); y1 = Math.max(y1, pts[i + 1]); }
-    roughPath(c, pts, Math.min(x1 - x0, y1 - y0)); fs(c, fill, lw); return;
-  }
   c.beginPath();
   c.moveTo(pts[0], pts[1]);
   for (let i = 2; i < pts.length; i += 2) c.lineTo(pts[i], pts[i + 1]);
@@ -276,18 +219,6 @@ export function poly(c: C, pts: number[], fill: string | null, lw = 2, close = t
 // Smooth closed shape through the given points.
 export function blob(c: C, pts: number[], fill: string | null, lw = 2): void {
   const n = pts.length / 2;
-  if (fill && handCut(c, lw)) {
-    // sample the smooth curve, then cut along it by hand
-    const out: number[] = [];
-    for (let i = 0; i < n; i++) {
-      const xp = (pts[((i + n - 1) % n) * 2] + pts[i * 2]) / 2, yp = (pts[((i + n - 1) % n) * 2 + 1] + pts[i * 2 + 1]) / 2;
-      const xn = (pts[i * 2] + pts[((i + 1) % n) * 2]) / 2, yn = (pts[i * 2 + 1] + pts[((i + 1) % n) * 2 + 1]) / 2;
-      for (let k = 0; k < 6; k++) { const u = k / 6, a = (1 - u) * (1 - u), b = 2 * u * (1 - u), d = u * u; out.push(a * xp + b * pts[i * 2] + d * xn, a * yp + b * pts[i * 2 + 1] + d * yn); }
-    }
-    let x0 = Infinity, x1 = -Infinity, y0 = Infinity, y1 = -Infinity;
-    for (let i = 0; i < out.length; i += 2) { x0 = Math.min(x0, out[i]); x1 = Math.max(x1, out[i]); y0 = Math.min(y0, out[i + 1]); y1 = Math.max(y1, out[i + 1]); }
-    roughPath(c, out, Math.min(x1 - x0, y1 - y0)); fs(c, fill, lw); return;
-  }
   c.beginPath();
   for (let i = 0; i < n; i++) {
     const x0 = pts[i * 2], y0 = pts[i * 2 + 1], x1 = pts[((i + 1) % n) * 2], y1 = pts[((i + 1) % n) * 2 + 1];
@@ -297,6 +228,62 @@ export function blob(c: C, pts: number[], fill: string | null, lw = 2): void {
   }
   c.closePath();
   fs(c, fill, lw);
+}
+
+// A darker or lighter version of a #rrggbb colour (k < 0 darkens), for outlines and folds.
+export function tone(hex: string, k: number): string {
+  if (hex[0] !== '#' || hex.length !== 7) return hex;
+  const n = parseInt(hex.slice(1), 16);
+  const f = (v: number): number => Math.round(k < 0 ? v * (1 + k) : v + (255 - v) * k);
+  return `rgb(${f((n >> 16) & 255)},${f((n >> 8) & 255)},${f(n & 255)})`;
+}
+
+// Prints a traditional pattern over the sheet being drawn, and only over it. Call right after
+// the shape it decorates. `s` is the pattern scale in logical pixels.
+export function pat(c: C, kind: 'seigaiha' | 'sakura' | 'stripes' | 'dots' | 'asanoha', col: string, s = 4, alpha = 1): void {
+  c.save();
+  c.globalCompositeOperation = 'source-atop';
+  c.globalAlpha = alpha;
+  c.strokeStyle = col; c.fillStyle = col; c.lineWidth = Math.max(0.5, s * 0.12);
+  const R = 140;
+  if (kind === 'seigaiha') {
+    for (let row = 0, y = -R; y < R; row++, y += s * 0.55) for (let x = -R + (row % 2) * s; x < R; x += s * 2) {
+      for (const k of [1, 0.7, 0.4]) { c.beginPath(); c.arc(x, y, s * k, Math.PI, 0); c.stroke(); }
+    }
+  } else if (kind === 'sakura') {
+    for (let row = 0, y = -R; y < R; row++, y += s * 2.2) for (let x = -R + (row % 2) * s * 1.6; x < R; x += s * 3.2) flower(c, x, y, s * 0.55, col);
+  } else if (kind === 'stripes') {
+    for (let x = -R; x < R; x += s * 2) c.fillRect(x, -R, s, R * 2);
+  } else if (kind === 'dots') {
+    for (let row = 0, y = -R; y < R; row++, y += s) for (let x = -R + (row % 2) * s * 0.5; x < R; x += s) { c.beginPath(); c.arc(x, y, s * 0.16, 0, TAU); c.fill(); }
+  } else {
+    for (let row = 0, y = -R; y < R; row++, y += s * 1.73) for (let x = -R + (row % 2) * s; x < R; x += s * 2) {
+      for (let k = 0; k < 6; k++) { const a = (k / 6) * TAU; c.beginPath(); c.moveTo(x, y); c.lineTo(x + Math.cos(a) * s, y + Math.sin(a) * s); c.stroke(); }
+    }
+  }
+  c.restore();
+}
+
+// A five-petal cherry blossom, printed (no sheet of its own).
+export function flower(c: C, x: number, y: number, r: number, col: string): void {
+  c.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const a = (i / 5) * TAU - Math.PI / 2, a0 = a - 0.55, a1 = a + 0.55;
+    c.moveTo(x, y);
+    c.quadraticCurveTo(x + Math.cos(a0) * r * 1.2, y + Math.sin(a0) * r * 1.2, x + Math.cos(a - 0.1) * r, y + Math.sin(a - 0.1) * r);
+    c.lineTo(x + Math.cos(a) * r * 0.8, y + Math.sin(a) * r * 0.8);
+    c.lineTo(x + Math.cos(a + 0.1) * r, y + Math.sin(a + 0.1) * r);
+    c.quadraticCurveTo(x + Math.cos(a1) * r * 1.2, y + Math.sin(a1) * r * 1.2, x, y);
+  }
+  c.fillStyle = col; c.fill();
+}
+
+// A cherry blossom as its own small cut sheet, with a printed centre.
+export function blossom(c: C, x: number, y: number, r: number, col: string, eye = '#e9b949'): void {
+  sheet(c);
+  flower(c, x, y, r, col);
+  if (stack && stack.top === c && stack.tmp) { c.lineWidth = 0.5; c.strokeStyle = tone(col, -0.25); c.stroke(); }
+  c.beginPath(); c.arc(x, y, r * 0.22, 0, TAU); c.fillStyle = eye; c.fill();
 }
 
 export function line(c: C, pts: number[], col = INK, lw = 2): void {
@@ -376,5 +363,5 @@ export function hash(x: number, y: number): number {
 // Fills a rectangle with a colour plus the washi grain, for paper backdrops.
 export function paperFill(c: C, x: number, y: number, w: number, h: number, col: string): void {
   c.fillStyle = col; c.fillRect(x, y, w, h);
-  c.fillStyle = grainPattern(c); c.fillRect(x, y, w, h);
+  c.save(); c.globalAlpha = 0.5; c.fillStyle = grainPattern(c); c.fillRect(x, y, w, h); c.restore();
 }

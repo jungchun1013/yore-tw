@@ -54,9 +54,9 @@ export class Doll {
       // the part floats on a foam pad: a soft shadow (a ring of faint copies) falls down-right,
       // further for parts mounted higher in the stack
       for (let i = 0; i < 6; i++) {
-        const a = (i / 6) * Math.PI * 2, r = lift * 0.6 * k;
-        c.setTransform(b.m.a, b.m.b, b.m.c, b.m.d, b.m.e + ex + lift * 0.8 * k + Math.cos(a) * r, b.m.f + ey + lift * 1.5 * k + Math.sin(a) * r);
-        c.globalAlpha = 0.04;
+        const a = (i / 6) * Math.PI * 2, r = lift * 0.35 * k;
+        c.setTransform(b.m.a, b.m.b, b.m.c, b.m.d, b.m.e + ex + lift * 0.25 * k + Math.cos(a) * r, b.m.f + ey + lift * 0.8 * k + Math.sin(a) * r);
+        c.globalAlpha = 0.03;
         c.drawImage(b.shade, -s.ox, -s.oy, s.w, s.h);
       }
       c.globalAlpha = 1;
