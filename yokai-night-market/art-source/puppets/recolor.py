@@ -28,7 +28,7 @@ def recolor(path_in, path_out):
 
     out = hsv.copy()
     # clothes: blue-violet, same shading
-    out[:, :, 0] = np.where(red, 250 / 360 * 255, out[:, :, 0])
+    out[:, :, 0] = np.where(red, 230 / 360 * 255, out[:, :, 0])
     out[:, :, 1] = np.where(red, np.clip(S * 0.5, 0, 1) * 255, out[:, :, 1])
     out[:, :, 2] = np.where(red, np.clip(V * 0.8, 0, 1) * 255, out[:, :, 2])
     # hair: light brown, keeping the fibre texture through the value channel
