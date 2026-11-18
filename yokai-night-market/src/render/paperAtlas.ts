@@ -85,6 +85,7 @@ export function hasArt(key: string): boolean { return atlas.has(key); }
 export function atlasSprite(key: string): Sprite | undefined {
   if (key.startsWith('hero:miko:')) key = 'miko';
   else if (key.startsWith('hero:sayo:')) key = 'sayo';
+  else if (key.startsWith('hero:fox:')) key = 'fox';
   // Preserve enemies' identity and building functions. Other assets retain the procedural renderer.
   const aliases: Record<string, string> = {
     phoenix: 'maple', andon: 'stoneLantern',

@@ -34,6 +34,16 @@ export const HEROES: HeroDef[] = [
     unlockStage: 0,
   },
   {
+    // layout preview only: name, text and ability are placeholders until the user decides them
+    id: 'fox',
+    name: { zh: '狐狸（暫名）', en: 'Fox (working name)' },
+    title: { zh: '—', en: '—' },
+    desc: { zh: '能力未定', en: 'Ability not decided' },
+    weapon: 'ofuda',
+    bonus: {},
+    unlockStage: 0,
+  },
+  {
     id: 'deng',
     name: { zh: '阿燈', en: 'A-Deng' },
     title: { zh: '五條港囝仔', en: 'Five Channels Kid' },

@@ -24,7 +24,7 @@ export interface Stats {
 
 export type WeaponId = 'ofuda' | 'shikigami' | 'furin' | 'cracker' | 'foxfire' | 'salt' | 'lantern' | 'poe' | 'sword';
 export type PassiveId = 'sake' | 'taiko' | 'ramune' | 'incense' | 'geta' | 'turtle' | 'omamori' | 'maneki' | 'pouch' | 'crane';
-export type HeroId = 'miko' | 'sayo' | 'deng' | 'unpei';
+export type HeroId = 'miko' | 'sayo' | 'fox' | 'deng' | 'unpei';
 
 export interface WeaponNumbers {
   dmg: number;
