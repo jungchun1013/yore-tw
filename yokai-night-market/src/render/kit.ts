@@ -15,7 +15,7 @@ export const RES = 3;   // sprite supersampling
 
 export interface Sprite { c: HTMLCanvasElement; w: number; h: number; ox: number; oy: number; flash?: HTMLCanvasElement; url?: string }
 
-interface Stack { top: C; out: C; sil: C }
+interface Stack { top: C; out: C; sil: C; res: number; rim: number }
 let stack: Stack | null = null;
 
 // Presses the sheet being drawn onto the stack, with its shadows, and starts a fresh one.
@@ -26,9 +26,17 @@ function press(st: Stack): void {
   sil.drawImage(cv, 0, 0);
   sil.globalCompositeOperation = 'source-in';
   sil.fillStyle = SHADE; sil.fillRect(0, 0, cv.width, cv.height);
-  st.out.globalAlpha = 0.13; st.out.drawImage(sil.canvas, 0.9 * RES, 1.9 * RES);
-  st.out.globalAlpha = 0.3; st.out.drawImage(sil.canvas, 0.35 * RES, 0.75 * RES);
-  st.out.globalAlpha = 1; st.out.drawImage(cv, 0, 0);
+  const R = st.res;
+  st.out.globalAlpha = 0.13; st.out.drawImage(sil.canvas, 0.9 * R, 1.9 * R);
+  st.out.globalAlpha = 0.3; st.out.drawImage(sil.canvas, 0.35 * R, 0.75 * R);
+  st.out.globalAlpha = 1;
+  if (st.rim > 0) {
+    // the white core of the card shows as a thin rim around every cut piece
+    sil.fillStyle = '#fffaf0'; sil.fillRect(0, 0, cv.width, cv.height);
+    const d = st.rim * R;
+    for (let i = 0; i < 12; i++) st.out.drawImage(sil.canvas, Math.cos((i / 12) * TAU) * d, Math.sin((i / 12) * TAU) * d);
+  }
+  st.out.drawImage(cv, 0, 0);
   st.top.save(); st.top.setTransform(1, 0, 0, 1, 0, 0); st.top.clearRect(0, 0, cv.width, cv.height); st.top.restore();
 }
 
@@ -53,11 +61,36 @@ export function sprite(w: number, h: number, draw: (c: C) => void, pad = 5): Spr
   top.translate(W / 2, H - pad);
   top.lineJoin = 'round'; top.lineCap = 'round';
   const prev = stack;
-  stack = { top, out, sil };
+  stack = { top, out, sil, res: RES, rim: 0 };
   draw(top);
   press(stack);
   stack = prev;
   return { c: out.canvas, w: W, h: H, ox: W / 2, oy: H - pad };
+}
+
+// One jointed part of a paper doll: drawn around its pivot (the origin), inside the given box.
+export function piece(x0: number, y0: number, x1: number, y1: number, draw: (c: C) => void, res = RES, rim = 0.5): Sprite {
+  const pad = 4, W = x1 - x0 + pad * 2, H = y1 - y0 + pad * 2;
+  const pw = Math.ceil(W * res), ph = Math.ceil(H * res);
+  const out = layer(pw, ph), top = layer(pw, ph), sil = layer(pw, ph);
+  top.scale(res, res);
+  top.translate(pad - x0, pad - y0);
+  top.lineJoin = 'round'; top.lineCap = 'round';
+  const prev = stack;
+  stack = { top, out, sil, res, rim };
+  draw(top);
+  press(stack);
+  stack = prev;
+  return { c: out.canvas, w: W, h: H, ox: pad - x0, oy: pad - y0 };
+}
+
+// A flat silhouette of a sprite in the shadow colour, used for the shadow a part casts on the parts under it.
+export function shadeOf(s: Sprite): HTMLCanvasElement {
+  const c = layer(s.c.width, s.c.height);
+  c.drawImage(s.c, 0, 0);
+  c.globalCompositeOperation = 'source-in';
+  c.fillStyle = SHADE; c.fillRect(0, 0, s.c.width, s.c.height);
+  return c.canvas;
 }
 
 export function flashOf(s: Sprite): HTMLCanvasElement {

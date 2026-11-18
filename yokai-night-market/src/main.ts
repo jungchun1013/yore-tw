@@ -211,8 +211,13 @@ initHud(hud, () => setPaused(true));
 initInput(field);
 hudVisible(false);
 document.title = t('title');
-showTitle(save, actions);
-requestAnimationFrame(frame);
+if (params.has('doll')) {
+  // art review page for the jointed paper dolls; the game itself does not start
+  void import('./render/dollPreview').then((m) => m.dollPreview(canvas));
+} else {
+  showTitle(save, actions);
+  requestAnimationFrame(frame);
+}
 
 if (debug) {
   // test and tuning hooks: window.__ynm.fast(60) plays 60 seconds with the bot, synchronously
