@@ -1,36 +1,63 @@
-// Small vector drawing kit. Every sprite is drawn once into an offscreen canvas in a
-// "paper sticker" style: flat fills, one dark outline, round joins.
+// Paper-doll drawing kit.
+//
+// Nothing here is outlined. A sprite is a stack of cut paper sheets: every filled shape
+// (and every thick strip) is its own sheet laid on top of the ones before it, and each sheet
+// drops a tight contact shadow plus a softer one onto whatever lies beneath. Volume comes only
+// from that stacking order, so a draw function should go back to front: far limbs, body,
+// head, hair, then what is glued on the face. Thin lines and dots are "printed" on the sheet
+// that is currently on top and cast no shadow.
 export type C = CanvasRenderingContext2D;
 export const TAU = Math.PI * 2;
 export const INK = '#5a3a2e';
-const LINE = 0.72; // outlines are kept thin so shapes read as cut paper
-export const RES = 3; // sprite supersampling
+const LINE = 0.72;      // printed line weight
+const SHADE = '#5a3626'; // colour of the shadow one sheet casts on the next
+export const RES = 3;   // sprite supersampling
 
 export interface Sprite { c: HTMLCanvasElement; w: number; h: number; ox: number; oy: number; flash?: HTMLCanvasElement; url?: string }
 
-// The draw callback works in logical pixels with the origin at the feet (bottom centre), y up negative.
-export function sprite(w: number, h: number, draw: (c: C) => void, pad = 4): Sprite {
+interface Stack { top: C; out: C; sil: C }
+let stack: Stack | null = null;
+
+// Presses the sheet being drawn onto the stack, with its shadows, and starts a fresh one.
+function press(st: Stack): void {
+  const cv = st.top.canvas, sil = st.sil;
+  sil.globalCompositeOperation = 'source-over';
+  sil.clearRect(0, 0, cv.width, cv.height);
+  sil.drawImage(cv, 0, 0);
+  sil.globalCompositeOperation = 'source-in';
+  sil.fillStyle = SHADE; sil.fillRect(0, 0, cv.width, cv.height);
+  st.out.globalAlpha = 0.13; st.out.drawImage(sil.canvas, 0.9 * RES, 1.9 * RES);
+  st.out.globalAlpha = 0.3; st.out.drawImage(sil.canvas, 0.35 * RES, 0.75 * RES);
+  st.out.globalAlpha = 1; st.out.drawImage(cv, 0, 0);
+  st.top.save(); st.top.setTransform(1, 0, 0, 1, 0, 0); st.top.clearRect(0, 0, cv.width, cv.height); st.top.restore();
+}
+
+// Starts a new sheet above everything drawn so far. Filled shapes call this themselves;
+// call it by hand only to lift a group of printed marks onto its own layer.
+export function sheet(c: C): void {
+  if (stack && stack.top === c) press(stack);
+}
+
+function layer(w: number, h: number): C {
   const cv = document.createElement('canvas');
+  cv.width = w; cv.height = h;
+  return cv.getContext('2d')!;
+}
+
+// The draw callback works in logical pixels with the origin at the feet (bottom centre), y up negative.
+export function sprite(w: number, h: number, draw: (c: C) => void, pad = 5): Sprite {
   const W = w + pad * 2, H = h + pad * 2;
-  cv.width = Math.ceil(W * RES); cv.height = Math.ceil(H * RES);
-  const art = document.createElement('canvas');
-  art.width = cv.width; art.height = cv.height;
-  const c = art.getContext('2d')!;
-  c.scale(RES, RES);
-  c.translate(W / 2, H - pad);
-  c.lineJoin = 'round'; c.lineCap = 'round';
-  draw(c);
-  // a soft offset silhouette under the art, like one sheet of paper lying on another
-  const sil = document.createElement('canvas');
-  sil.width = cv.width; sil.height = cv.height;
-  const sc = sil.getContext('2d')!;
-  sc.drawImage(art, 0, 0);
-  sc.globalCompositeOperation = 'source-in';
-  sc.fillStyle = '#6a4632'; sc.fillRect(0, 0, sil.width, sil.height);
-  const out = cv.getContext('2d')!;
-  out.globalAlpha = 0.3; out.drawImage(sil, 0.7 * RES, 1.5 * RES);
-  out.globalAlpha = 1; out.drawImage(art, 0, 0);
-  return { c: cv, w: W, h: H, ox: W / 2, oy: H - pad };
+  const pw = Math.ceil(W * RES), ph = Math.ceil(H * RES);
+  const out = layer(pw, ph), top = layer(pw, ph), sil = layer(pw, ph);
+  top.scale(RES, RES);
+  top.translate(W / 2, H - pad);
+  top.lineJoin = 'round'; top.lineCap = 'round';
+  const prev = stack;
+  stack = { top, out, sil };
+  draw(top);
+  press(stack);
+  stack = prev;
+  return { c: out.canvas, w: W, h: H, ox: W / 2, oy: H - pad };
 }
 
 export function flashOf(s: Sprite): HTMLCanvasElement {
@@ -40,7 +67,7 @@ export function flashOf(s: Sprite): HTMLCanvasElement {
     const c = cv.getContext('2d')!;
     c.drawImage(s.c, 0, 0);
     c.globalCompositeOperation = 'source-atop';
-    c.fillStyle = '#ffffff';
+    c.fillStyle = '#ff8a6a';
     c.fillRect(0, 0, cv.width, cv.height);
     s.flash = cv;
   }
@@ -52,9 +79,21 @@ export function urlOf(s: Sprite): string {
   return s.url;
 }
 
+// Fills the current path. A shape given a line weight is a cut sheet of its own (the weight is
+// only a flag now: sheets have no outline); weight 0 prints the fill on the sheet below.
+// With no fill, the path is printed as a thin line.
 export function fs(c: C, fill: string | null, lw = 2): void {
-  if (fill) { c.fillStyle = fill; c.fill(); }
-  if (lw > 0) { c.lineWidth = lw * LINE; c.strokeStyle = INK; c.stroke(); }
+  if (fill) {
+    if (lw > 0) sheet(c);
+    c.fillStyle = fill; c.fill();
+  } else if (lw > 0) { c.lineWidth = lw * LINE; c.strokeStyle = INK; c.stroke(); }
+}
+
+// A stroke: thick coloured strokes are paper strips (their own sheet), thin ones are printed.
+function strip(c: C, col: string, lw: number): void {
+  if (col === INK && lw >= 4) return;          // old outline underlay, not part of the paper logic
+  if (col !== INK && lw >= 2.4) sheet(c);
+  c.lineWidth = col === INK ? lw * 0.85 : lw; c.strokeStyle = col; c.stroke();
 }
 
 export function ell(c: C, x: number, y: number, rx: number, ry: number, fill: string | null, lw = 2, rot = 0): void {
@@ -102,12 +141,12 @@ export function line(c: C, pts: number[], col = INK, lw = 2): void {
   c.beginPath();
   c.moveTo(pts[0], pts[1]);
   for (let i = 2; i < pts.length; i += 2) c.lineTo(pts[i], pts[i + 1]);
-  c.lineWidth = lw; c.strokeStyle = col; c.stroke();
+  strip(c, col, lw);
 }
 
 export function curve(c: C, x0: number, y0: number, cx: number, cy: number, x1: number, y1: number, col = INK, lw = 2): void {
   c.beginPath(); c.moveTo(x0, y0); c.quadraticCurveTo(cx, cy, x1, y1);
-  c.lineWidth = lw; c.strokeStyle = col; c.stroke();
+  strip(c, col, lw);
 }
 
 export function dot(c: C, x: number, y: number, r: number, col: string): void {

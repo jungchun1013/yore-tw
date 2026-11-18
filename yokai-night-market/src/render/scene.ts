@@ -19,9 +19,9 @@ function push(y: number, kind: number, ref: unknown, x = 0, key = ''): void {
   itemCount++;
 }
 
-function put(c: Ctx, s: Sprite, x: number, y: number, flip = 1, sx = 1, sy = 1, img: CanvasImageSource = s.c): void {
-  if (flip === 1 && sx === 1 && sy === 1) { c.drawImage(img, x - s.ox, y - s.oy, s.w, s.h); return; }
-  c.save(); c.translate(x, y); c.scale(flip * sx, sy);
+function put(c: Ctx, s: Sprite, x: number, y: number, flip = 1, sx = 1, sy = 1, img: CanvasImageSource = s.c, rot = 0): void {
+  if (flip === 1 && sx === 1 && sy === 1 && rot === 0) { c.drawImage(img, x - s.ox, y - s.oy, s.w, s.h); return; }
+  c.save(); c.translate(x, y); if (rot) c.rotate(rot); c.scale(flip * sx, sy);
   c.drawImage(img, -s.ox, -s.oy, s.w, s.h);
   c.restore();
 }
@@ -44,7 +44,9 @@ function gemKey(p: Pickup): string {
 function drawEnemy(c: Ctx, run: Run, e: Enemy): void {
   const s = spr(e.def.id);
   const wob = e.def.ai === 'still' ? 0 : Math.sin(run.t * 9 + e.uid * 1.3);
-  let sy = 1 + wob * 0.045, sx = 1 - wob * 0.03, lift = 0;
+  // a paper doll on a stick: it rocks around its feet, it does not squash
+  const rock = wob * (e.boss ? 0.035 : 0.075);
+  let sy = 1, sx = 1, lift = 0;
   if (e.def.ai === 'hop') { const ph = e.t % 0.9; if (ph < 0.45) lift = Math.sin((ph / 0.45) * Math.PI) * 9; }
   if (e.def.ai === 'float' || e.def.id === 'suiki' || e.def.id === 'ushi') lift = 4 + Math.sin(run.t * 3 + e.uid) * 2.5;
   const k = e.elite ? 1.55 : 1;
@@ -57,10 +59,10 @@ function drawEnemy(c: Ctx, run: Run, e: Enemy): void {
     c.beginPath(); c.ellipse(e.x, e.y - 2, e.r * 1.25, e.r * 0.55, 0, 0, TAU); c.strokeStyle = '#f7c948'; c.lineWidth = 2.5; c.stroke();
     c.restore();
   }
-  put(c, s, x, e.y - lift, e.face, sx, sy, e.flash > 0 ? flashOf(s) : s.c);
+  put(c, s, x, e.y - lift, e.face, sx, sy, e.flash > 0 ? flashOf(s) : s.c, rock);
   if (winding) {
     c.save(); c.globalAlpha = 0.35 + Math.sin(run.t * 30) * 0.2; c.globalCompositeOperation = 'lighter';
-    put(c, s, x, e.y - lift, e.face, sx, sy, flashOf(s));
+    put(c, s, x, e.y - lift, e.face, sx, sy, flashOf(s), rock);
     c.restore();
   }
   if (e.elite && e.hp < e.maxHp) {
@@ -76,7 +78,7 @@ function drawPlayer(c: Ctx, run: Run): void {
   const s = spr(`hero:${run.hero.id}:${frame}`);
   if (p.inv > 0 && p.hurt > 0.12 && Math.floor(run.t * 20) % 2 === 0) c.globalAlpha = 0.45;
   const bob = p.moving ? Math.abs(Math.sin(run.t * 14)) * 1.6 : Math.sin(run.t * 3) * 0.5;
-  put(c, s, p.x, p.y - bob, p.face, 1, 1, p.hurt < 0.12 ? flashOf(s) : s.c);
+  put(c, s, p.x, p.y - bob, p.face, 1, 1, p.hurt < 0.12 ? flashOf(s) : s.c, p.moving ? Math.sin(run.t * 14) * 0.07 : 0);
   c.globalAlpha = 1;
   if (p.hp < p.maxHp) {
     const w = 30, y = p.y + 7;

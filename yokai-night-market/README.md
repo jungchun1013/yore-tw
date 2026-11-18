@@ -4,6 +4,12 @@ A survivors-style action game set in Tainan around 1930: walk from the shrine ap
 
 Plain TypeScript and Canvas 2D, no engine and no asset files. Sprites are drawn in code at load; sound is synthesised with WebAudio.
 
+## Paper-doll art
+
+Everything on screen is built the way a paper doll is: no outlines, only cut sheets stacked back to front. In `src/render/kit.ts` every filled shape, and every thick coloured strip, becomes its own sheet; when the next sheet is laid on top the previous one is pressed onto the stack with a tight contact shadow and a softer wide one. Volume comes only from that order, so a draw function goes far limbs, body, head, hair, then what is glued on the face. Thin lines and dots are printed on whichever sheet is on top and cast no shadow. `sheet(c)` lifts a group of printed marks onto a layer of its own.
+
+The stack is flattened once into a sprite, so drawing costs the same as before. In motion a figure rocks around its feet like a doll on a stick; it never squashes. Colours follow washi paper: cream grounds with a faint wave pattern, vermilion, mustard, olive, teal and brown.
+
 ```
 npm run dev -w yokai-night-market      # http://localhost:5200  (add ?debug for the test hooks)
 npm run build -w yokai-night-market
@@ -56,7 +62,7 @@ src/game/     the simulation: no DOM, fixed 60 Hz step, seeded rng
   enemies.ts  spawning, AI, boss moves, bullets
   run.ts      createRun / step / level-up choices / offering boxes
   bot.ts      steering bot for the sim, the tests and the menu background
-src/render/   kit.ts (vector helpers), yokai.ts, items.ts (heroes, shots, icons, props), sprites.ts (cache + ground tiles), scene.ts
+src/render/   kit.ts (stacked paper sheets), yokai.ts, items.ts (heroes, shots, icons, props), sprites.ts (cache + ground tiles), scene.ts
 src/ui/       DOM menus (screens.ts) and the HUD (hud.ts)
 src/core/     save, i18n, audio, input
 sim/          headless balance run
