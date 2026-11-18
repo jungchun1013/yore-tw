@@ -37,8 +37,8 @@ def recolor(path_in, path_out):
         lo, hi = np.percentile(vh, 5), np.percentile(vh, 95)
         t = np.clip((V - lo) / max(1e-3, hi - lo), 0, 1)
         out[:, :, 0] = np.where(hair, 28 / 360 * 255, out[:, :, 0])
-        out[:, :, 1] = np.where(hair, (0.46 - 0.06 * t) * 255, out[:, :, 1])
-        out[:, :, 2] = np.where(hair, (0.64 + 0.2 * t) * 255, out[:, :, 2])
+        out[:, :, 1] = np.where(hair, (0.42 - 0.06 * t) * 255, out[:, :, 1])
+        out[:, :, 2] = np.where(hair, (0.78 + 0.16 * t) * 255, out[:, :, 2])
     rgb2 = np.array(Image.fromarray(out.clip(0, 255).astype(np.uint8), 'HSV').convert('RGB'))
     a[:, :, :3] = rgb2
     Image.fromarray(a).save(path_out, optimize=True)
