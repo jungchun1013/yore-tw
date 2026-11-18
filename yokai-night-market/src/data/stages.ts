@@ -22,7 +22,7 @@ export const STAGES: StageDef[] = [
     boss: 'b_toro',
     hpMul: 1, dmgMul: 1, rate: 1,
     ground: 'stone',
-    props: ['torii', 'komainu', 'phoenix', 'slab', 'festivalGate', 'machiya', 'yukataGirl', 'huye'],
+    props: ['torii', 'komainu', 'phoenix', 'slab', 'machiya', 'woodHouse', 'censer'],
   },
   {
     id: 'ginza',
@@ -39,7 +39,7 @@ export const STAGES: StageDef[] = [
     boss: 'b_lintou',
     hpMul: 1.35, dmgMul: 1.1, rate: 1.1,
     ground: 'asphalt',
-    props: ['stall', 'lanterns', 'hayashi', 'noodleStall', 'shennong', 'vendor', 'snackGirl', 'manhole'],
+    props: ['stall', 'lanterns', 'hayashi', 'noodleStall', 'shennong', 'brickHouse', 'manhole'],
   },
   {
     id: 'ryotei',
@@ -56,7 +56,7 @@ export const STAGES: StageDef[] = [
     boss: 'b_kinmei',
     hpMul: 1.75, dmgMul: 1.2, rate: 1.15,
     ground: 'tatami',
-    props: ['shoji', 'chabudai', 'andon', 'zabuton', 'yukataGirl'],
+    props: ['shoji', 'chabudai', 'andon', 'zabuton'],
   },
   {
     id: 'rail',
@@ -73,7 +73,7 @@ export const STAGES: StageDef[] = [
     boss: 'b_train',
     hpMul: 2.2, dmgMul: 1.3, rate: 1.2,
     ground: 'gravel',
-    props: ['rail', 'cane', 'signal', 'crate', 'postman', 'tudigong'],
+    props: ['rail', 'cane', 'signal', 'crate'],
   },
   {
     id: 'temple',
@@ -90,7 +90,7 @@ export const STAGES: StageDef[] = [
     boss: 'b_shouniang',
     hpMul: 2.7, dmgMul: 1.4, rate: 1.25,
     ground: 'moss',
-    props: ['redgate', 'chihkan', 'phoenix', 'ridge', 'altar', 'turtleSpirit', 'musician', 'yuelao', 'qiye', 'baye'],
+    props: ['redgate', 'chihkan', 'phoenix', 'rock', 'censer', 'tileFlower'],
   },
   {
     id: 'anping',
@@ -107,6 +107,6 @@ export const STAGES: StageDef[] = [
     boss: 'b_kun',
     hpMul: 3.3, dmgMul: 1.5, rate: 1.3,
     ground: 'sand',
-    props: ['swordlion', 'pandan', 'saltpile', 'bucket', 'tileWindow', 'fisherBoy', 'mazu'],
+    props: ['swordlion', 'pandan', 'saltpile', 'bucket', 'brickHouse', 'tileFlower'],
   },
 ];

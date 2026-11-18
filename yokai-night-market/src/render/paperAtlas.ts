@@ -44,12 +44,11 @@ export async function loadPaperAtlas(): Promise<void> {
 // Single sprites cut from Codex's six Tainan concept sheets (public/art/tainan, see sprites.json).
 // [key, in-game height in logical px]. A key that matches an existing sprite key replaces it.
 const TAINAN: [string, number][] = [
+  // approved 2026-11-18: Codex redraw v3 buildings, and the ink-print sheet (buildings, decor, the two characters, food)
   ['chihkan', 150], ['shennong', 130], ['hayashi', 170], ['confucius', 120], ['machiya', 130], ['noodleStall', 84],
-  ['vendor', 50], ['snackGirl', 50], ['yukataGirl', 50], ['postman', 50], ['fisherBoy', 50], ['musician', 50],
-  ['mazu', 62], ['tudigong', 58], ['yuelao', 58], ['huye', 46], ['qiye', 68], ['baye', 62],
-  ['swordLionSpirit', 50], ['banyanSpirit', 34], ['turtleSpirit', 46], ['kasa', 46], ['chochin', 40], ['nekomata', 38],
-  ['swordLionWall', 54], ['lanternString', 46], ['ridge', 44], ['tileWindow', 66], ['festivalGate', 84], ['altar', 54],
-  ['danzai', 24], ['milkfish', 24], ['wagui', 24], ['coffinToast', 24], ['pengbing', 24], ['dango', 24],
+  ['brickHouse', 120], ['woodHouse', 100], ['swordLionWall', 46], ['lantern', 40], ['tileFlower', 22], ['censer', 30],
+  ['miko', 50], ['fox', 52],
+  ['danzai', 24], ['milkfish', 24], ['wagui', 24], ['pengbing', 24], ['dango', 24],
 ];
 
 export async function loadTainanArt(): Promise<void> {
@@ -79,8 +78,7 @@ export function atlasSprite(key: string): Sprite | undefined {
   const aliases: Record<string, string> = {
     phoenix: 'maple', andon: 'stoneLantern',
     // Tainan set: yokai, stage props and two passive icons
-    kodama: 'banyanSpirit', lanterns: 'lanternString', swordlion: 'swordLionWall', redgate: 'confucius',
-    i_maneki: 'huye', i_omamori: 'swordLionSpirit', i_heal: 'danzai', heal: 'danzai',
+    lanterns: 'lantern', swordlion: 'swordLionWall', redgate: 'confucius', i_heal: 'danzai', heal: 'danzai',
   };
   return atlas.get(aliases[key] ?? key);
 }

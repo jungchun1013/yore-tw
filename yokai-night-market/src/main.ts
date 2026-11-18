@@ -220,6 +220,10 @@ if (paperMode || params.has('atelier')) {
 if (params.has('atelier')) {
   field.style.display = 'none';
   await import('./render/atelier').then(m => m.atelier(canvas));
+} else if (params.has('puppet')) {
+  // review page for a detachable puppet; the game itself does not start
+  field.style.display = 'none';
+  await import('./render/puppetPreview').then((m) => m.puppetPreview(canvas, params.get('puppet') || 'test-miko'));
 } else {
   showTitle(save, actions);
   requestAnimationFrame(frame);
