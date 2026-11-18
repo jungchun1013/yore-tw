@@ -160,7 +160,7 @@ export const CHOCHIN: DollDef = {
 
 // One cloud tier of a canopy: a row of round lobes on a flat-ish base, like the cut-paper
 // foliage in the references. Lobes are joined into a single outline so the tier is one sheet.
-function tier(c: C, cx: number, cy: number, w: number, h: number, col: string): void {
+export function tier(c: C, cx: number, cy: number, w: number, h: number, col: string): void {
   const n = Math.max(3, Math.round(w / 8)), pts: number[] = [];
   pts.push(cx + w, cy + h * 0.15);
   pts.push(cx + w * 0.55, cy + h * 0.45, cx - w * 0.55, cy + h * 0.45);
@@ -283,7 +283,7 @@ export const SHOP: DollDef = {
   pose: (t): Pose => ({ noren: { r: Math.sin(t * 1.6) * 0.03 }, lanternL: { r: Math.sin(t * 1.9) * 0.12 }, lanternR: { r: Math.sin(t * 1.9 + 1) * 0.12 } }),
 };
 
-function hanging(c: C): void {
+export function hanging(c: C): void {
   line(c, [0, 0, 0, 3], P.hair, 0.8);
   rr(c, -3, 2.4, 6, 1.8, 0.6, P.hair);
   ell(c, 0, 9, 5, 6, P.verm);

@@ -4,7 +4,7 @@
 // is cut and layered on its own (see `piece` in kit.ts), keeps its own white card rim, and is
 // drawn separately every frame: it turns around its pin, and it drops a shadow on whatever parts
 // lie under it. Nothing is ever redrawn or deformed to animate; a pose is only angles and offsets.
-import { type C, type Sprite, piece, shadeOf } from './kit';
+import { type C, type Sprite, getPaperStyle, piece, shadeOf } from './kit';
 
 export interface PartDef {
   id: string;
@@ -24,11 +24,12 @@ export class Doll {
   private parts: Built[] = [];
   private order: Built[];
   private chain: Built[];
+  private craft = getPaperStyle() === 'craft';
 
   constructor(private def: DollDef, res: number) {
     for (const p of def.parts) {
       const spr = piece(p.box[0], p.box[1], p.box[2], p.box[3], p.draw, res);
-      this.parts.push({ def: p, spr, shade: shadeOf(spr), parent: p.parent ? def.parts.findIndex((q) => q.id === p.parent) : -1, m: new DOMMatrix() });
+      this.parts.push({ def: p, spr, shade: shadeOf(spr, getPaperStyle() === 'craft' ? res * 1.6 : 0), parent: p.parent ? def.parts.findIndex((q) => q.id === p.parent) : -1, m: new DOMMatrix() });
     }
     this.order = this.parts.slice().sort((a, b) => a.def.z - b.def.z);
     // parents must be placed before their children, whatever order the parts were listed in
@@ -53,7 +54,12 @@ export class Doll {
       // the shadow falls in a fixed screen direction, further for parts that sit higher
       // the part floats on a foam pad: a soft shadow (a ring of faint copies) falls down-right,
       // further for parts mounted higher in the stack
-      for (let i = 0; i < 6; i++) {
+      if (this.craft) {
+        // foam pad: one blurred shadow, further down-right for parts mounted higher
+        c.setTransform(b.m.a, b.m.b, b.m.c, b.m.d, b.m.e + ex + lift * 0.55 * k, b.m.f + ey + lift * 1.1 * k);
+        c.globalAlpha = 0.3;
+        c.drawImage(b.shade, -s.ox, -s.oy, s.w, s.h);
+      } else for (let i = 0; i < 6; i++) {
         const a = (i / 6) * Math.PI * 2, r = lift * 0.35 * k;
         c.setTransform(b.m.a, b.m.b, b.m.c, b.m.d, b.m.e + ex + lift * 0.25 * k + Math.cos(a) * r, b.m.f + ey + lift * 0.8 * k + Math.sin(a) * r);
         c.globalAlpha = 0.03;

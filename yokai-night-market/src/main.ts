@@ -211,7 +211,10 @@ initHud(hud, () => setPaused(true));
 initInput(field);
 hudVisible(false);
 document.title = t('title');
-if (params.has('doll')) {
+if (params.has('compare') || params.has('fox')) {
+  // art comparison pages; the game itself does not start
+  void import('./render/compare').then((m) => (params.has('fox') ? m.foxPage(canvas) : m.comparePage(canvas)));
+} else if (params.has('doll')) {
   // art review page for the jointed paper dolls; the game itself does not start
   void import('./render/dollPreview').then((m) => m.dollPreview(canvas));
 } else {
