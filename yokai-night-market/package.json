@@ -1,0 +1,14 @@
+{
+  "name": "yokai-night-market",
+  "version": "0.1.0",
+  "private": true,
+  "description": "百鬼夜市 Yokai Night Market: a 15-minute survivors-style action game set in a Japanese-era Taiwanese town. Independent from the other games; tooling (Vite, TypeScript, Playwright) comes from the workspace root.",
+  "scripts": {
+    "dev": "vite --host --port 5200",
+    "build": "tsc --noEmit -p . && vite build",
+    "preview": "vite preview --port 4200",
+    "sim": "esbuild sim/simulate.ts --bundle --platform=node --target=node16 --outfile=.sim/simulate.cjs --log-level=warning && node .sim/simulate.cjs",
+    "test": "playwright test",
+    "typecheck": "tsc --noEmit -p ."
+  }
+}

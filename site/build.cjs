@@ -11,7 +11,7 @@ const ROOT = path.resolve(__dirname, '..');
 const SRC = __dirname;
 const OUT = path.join(ROOT, 'dist-site');
 const HOST = 'https://yore-tw.com';
-const GAMES = ['meowcaron', 'souls-in-abyss', 'planet-wanderer', 'prism-defense'];
+const GAMES = ['meowcaron', 'souls-in-abyss', 'planet-wanderer', 'prism-defense', 'yokai-night-market'];
 const LANGS = {
   zh: { html: 'zh-TW', hreflang: 'zh-Hant', prefix: '/zh', locale: 'zh_TW', name: '中文', menuLabel: '語言' },
   en: { html: 'en', hreflang: 'en', prefix: '/en', locale: 'en_US', name: 'English', menuLabel: 'Language' },
