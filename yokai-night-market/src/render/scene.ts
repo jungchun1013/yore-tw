@@ -87,15 +87,15 @@ function drawPlayer(c: Ctx, run: Run): void {
 
 function drawFire(c: Ctx, x: number, y: number, r: number, t: number, gold: boolean, fade: number): void {
   c.save();
-  c.globalAlpha = 0.28 * fade;
-  c.beginPath(); c.ellipse(x, y, r, r * 0.7, 0, 0, TAU); c.fillStyle = gold ? '#f6a13a' : '#5fa7e8'; c.fill();
+  c.globalAlpha = 0.34 * fade;
+  c.beginPath(); c.ellipse(x, y, r, r * 0.7, 0, 0, TAU); c.fillStyle = gold ? '#f6a13a' : '#4f9fc8'; c.fill();
   c.globalAlpha = 0.85 * fade;
   const n = Math.max(3, Math.round(r / 11));
   for (let i = 0; i < n; i++) {
     const a = (i / n) * TAU + 0.7, rr = r * 0.55, fx = x + Math.cos(a) * rr, fy = y + Math.sin(a) * rr * 0.7;
     const h = 13 + Math.sin(t * 9 + i * 2.1) * 4;
     c.beginPath(); c.moveTo(fx, fy - h); c.quadraticCurveTo(fx + 6, fy - 2, fx, fy + 2); c.quadraticCurveTo(fx - 6, fy - 2, fx, fy - h);
-    c.fillStyle = gold ? '#ffd27a' : '#bfe6ff'; c.fill();
+    c.fillStyle = gold ? '#ffe9a8' : '#e6f6ff'; c.fill();
   }
   c.restore();
 }
@@ -138,7 +138,7 @@ export function render(c: Ctx, run: Run, v: View, clock: number): void {
   for (const s of run.shots) if (s.mode === 'zone') drawFire(c, s.x, s.y, s.r, run.t + s.x, s.kind === 'fire2', Math.min(1, (s.life - s.age) * 3, s.age * 6));
 
   // shadows
-  c.fillStyle = 'rgba(12,10,24,0.32)';
+  c.fillStyle = 'rgba(106,70,50,0.22)';
   for (const e of run.enemies) shadow(c, e.x, e.y, e.r * (e.elite ? 1.5 : 1) * 0.9);
   shadow(c, p.x, p.y, 10);
   for (const s of run.shots) if (s.mode === 'lob') shadow(c, s.x, s.y, 5);
@@ -179,9 +179,9 @@ export function render(c: Ctx, run: Run, v: View, clock: number): void {
       case 'lob': { const t = s.age / s.life; spin(c, spr(s.kind), s.x, s.y - 12 - Math.sin(t * Math.PI) * 46, s.age * 10); break; }
       case 'pulse': {
         const a = 1 - s.age / s.life;
-        c.save(); c.globalAlpha = a * 0.9; c.lineWidth = 3 + a * 3; c.strokeStyle = s.slow > 0 ? '#f7c948' : '#bfe6ff';
+        c.save(); c.globalAlpha = a * 0.9; c.lineWidth = 3 + a * 3; c.strokeStyle = s.slow > 0 ? '#e0a93a' : '#3f9aa8';
         c.beginPath(); c.ellipse(s.x, s.y - 4, s.r, s.r * 0.86, 0, 0, TAU); c.stroke();
-        c.globalAlpha = a * 0.16; c.fillStyle = '#bfe6ff'; c.fill();
+        c.globalAlpha = a * 0.14; c.fillStyle = '#7fc8d0'; c.fill();
         c.restore();
         break;
       }
@@ -204,7 +204,7 @@ export function render(c: Ctx, run: Run, v: View, clock: number): void {
     const t = f.t / f.life;
     switch (f.kind) {
       case 'ring':
-        c.save(); c.globalAlpha = (1 - t) * 0.8; c.strokeStyle = '#fff6e8'; c.lineWidth = 4 * (1 - t) + 1;
+        c.save(); c.globalAlpha = (1 - t) * 0.8; c.strokeStyle = '#d8503a'; c.lineWidth = 4 * (1 - t) + 1;
         c.beginPath(); c.ellipse(f.x, f.y, f.v * t, f.v * t * 0.86, 0, 0, TAU); c.stroke(); c.restore();
         break;
       case 'pop': {
@@ -219,12 +219,12 @@ export function render(c: Ctx, run: Run, v: View, clock: number): void {
         c.save(); c.translate(f.x, f.y); c.scale(f.a, 1); c.globalAlpha = (1 - t) * 0.6;
         const r = f.v;
         c.beginPath(); c.moveTo(-r * 0.6, -r * 0.5); c.quadraticCurveTo(r * 1.25, 0, -r * 0.6, r * 0.5); c.quadraticCurveTo(r * 0.55, 0, -r * 0.6, -r * 0.5);
-        c.fillStyle = '#fff6e8'; c.fill(); c.strokeStyle = '#f2a7b5'; c.lineWidth = 2; c.stroke();
+        c.fillStyle = '#fffaf0'; c.fill(); c.strokeStyle = '#e8616b'; c.lineWidth = 2; c.stroke();
         c.restore();
         break;
       }
       case 'puff':
-        c.save(); c.globalAlpha = (1 - t) * 0.7; c.fillStyle = '#e9dfc8';
+        c.save(); c.globalAlpha = (1 - t) * 0.6; c.fillStyle = '#b89a78';
         for (let i = 0; i < 4; i++) { const a = i * 1.57 + f.x; c.beginPath(); c.arc(f.x + Math.cos(a) * f.v * t, f.y - 6 + Math.sin(a) * f.v * t * 0.7, Math.max(0.5, f.v * 0.4 * (1 - t)), 0, TAU); c.fill(); }
         c.restore();
         break;
@@ -250,19 +250,19 @@ export function render(c: Ctx, run: Run, v: View, clock: number): void {
   }
   c.globalAlpha = 1;
 
-  // night: darken toward the edges, warm light where lamps stand
+  // warm paper vignette, and a little lamp light where lamps stand
   c.setTransform(v.dpr, 0, 0, v.dpr, 0, 0);
   const R = Math.hypot(v.w, v.h) / 2;
   const g = c.createRadialGradient(v.w / 2, v.h / 2, R * 0.22, v.w / 2, v.h / 2, R);
-  g.addColorStop(0, 'rgba(18,14,40,0)'); g.addColorStop(1, 'rgba(14,10,34,0.62)');
+  g.addColorStop(0, 'rgba(150,90,50,0)'); g.addColorStop(1, 'rgba(150,90,50,0.3)');
   c.fillStyle = g; c.fillRect(0, 0, v.w, v.h);
-  c.globalCompositeOperation = 'lighter';
+  c.globalCompositeOperation = 'source-over';
   for (let i = 0; i < itemCount; i++) {
     const it = items[i];
     if (it.kind !== 3 || !PROPS[it.key]?.light) continue;
     const sx = (it.x - left) * v.zoom, sy = (it.y - top - spr(it.key).h * 0.55) * v.zoom, r = 90 * v.zoom;
     const lg = c.createRadialGradient(sx, sy, 0, sx, sy, r);
-    lg.addColorStop(0, `rgba(255,170,80,${0.2 + Math.sin(clock * 3 + it.x) * 0.03})`); lg.addColorStop(1, 'rgba(255,170,80,0)');
+    lg.addColorStop(0, `rgba(255,214,120,${0.3 + Math.sin(clock * 3 + it.x) * 0.04})`); lg.addColorStop(1, 'rgba(255,214,120,0)');
     c.fillStyle = lg; c.fillRect(sx - r, sy - r, r * 2, r * 2);
   }
   c.globalCompositeOperation = 'source-over';

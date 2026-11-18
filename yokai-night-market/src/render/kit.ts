@@ -2,7 +2,8 @@
 // "paper sticker" style: flat fills, one dark outline, round joins.
 export type C = CanvasRenderingContext2D;
 export const TAU = Math.PI * 2;
-export const INK = '#2b2333';
+export const INK = '#5a3a2e';
+const LINE = 0.72; // outlines are kept thin so shapes read as cut paper
 export const RES = 3; // sprite supersampling
 
 export interface Sprite { c: HTMLCanvasElement; w: number; h: number; ox: number; oy: number; flash?: HTMLCanvasElement; url?: string }
@@ -12,11 +13,23 @@ export function sprite(w: number, h: number, draw: (c: C) => void, pad = 4): Spr
   const cv = document.createElement('canvas');
   const W = w + pad * 2, H = h + pad * 2;
   cv.width = Math.ceil(W * RES); cv.height = Math.ceil(H * RES);
-  const c = cv.getContext('2d')!;
+  const art = document.createElement('canvas');
+  art.width = cv.width; art.height = cv.height;
+  const c = art.getContext('2d')!;
   c.scale(RES, RES);
   c.translate(W / 2, H - pad);
   c.lineJoin = 'round'; c.lineCap = 'round';
   draw(c);
+  // a soft offset silhouette under the art, like one sheet of paper lying on another
+  const sil = document.createElement('canvas');
+  sil.width = cv.width; sil.height = cv.height;
+  const sc = sil.getContext('2d')!;
+  sc.drawImage(art, 0, 0);
+  sc.globalCompositeOperation = 'source-in';
+  sc.fillStyle = '#6a4632'; sc.fillRect(0, 0, sil.width, sil.height);
+  const out = cv.getContext('2d')!;
+  out.globalAlpha = 0.3; out.drawImage(sil, 0.7 * RES, 1.5 * RES);
+  out.globalAlpha = 1; out.drawImage(art, 0, 0);
   return { c: cv, w: W, h: H, ox: W / 2, oy: H - pad };
 }
 
@@ -27,7 +40,7 @@ export function flashOf(s: Sprite): HTMLCanvasElement {
     const c = cv.getContext('2d')!;
     c.drawImage(s.c, 0, 0);
     c.globalCompositeOperation = 'source-atop';
-    c.fillStyle = '#fff6e8';
+    c.fillStyle = '#ffffff';
     c.fillRect(0, 0, cv.width, cv.height);
     s.flash = cv;
   }
@@ -41,7 +54,7 @@ export function urlOf(s: Sprite): string {
 
 export function fs(c: C, fill: string | null, lw = 2): void {
   if (fill) { c.fillStyle = fill; c.fill(); }
-  if (lw > 0) { c.lineWidth = lw; c.strokeStyle = INK; c.stroke(); }
+  if (lw > 0) { c.lineWidth = lw * LINE; c.strokeStyle = INK; c.stroke(); }
 }
 
 export function ell(c: C, x: number, y: number, rx: number, ry: number, fill: string | null, lw = 2, rot = 0): void {
