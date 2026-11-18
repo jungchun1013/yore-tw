@@ -51,10 +51,12 @@ export class Doll {
       const s = b.spr, lift = 0.5 + b.def.z * 0.16;
       const ex = spread * b.def.z * 2.2 * k, ey = -spread * b.def.z * 1.2 * k;
       // the shadow falls in a fixed screen direction, further for parts that sit higher
-      // two passes, near and far, read as a soft shadow rather than a hard offset copy
-      for (const [f, a] of [[0.55, 0.12], [1, 0.08]]) {
-        c.setTransform(b.m.a, b.m.b, b.m.c, b.m.d, b.m.e + ex + lift * 0.7 * k * f, b.m.f + ey + lift * 1.5 * k * f);
-        c.globalAlpha = a;
+      // the part floats on a foam pad: a soft shadow (a ring of faint copies) falls down-right,
+      // further for parts mounted higher in the stack
+      for (let i = 0; i < 6; i++) {
+        const a = (i / 6) * Math.PI * 2, r = lift * 0.6 * k;
+        c.setTransform(b.m.a, b.m.b, b.m.c, b.m.d, b.m.e + ex + lift * 0.8 * k + Math.cos(a) * r, b.m.f + ey + lift * 1.5 * k + Math.sin(a) * r);
+        c.globalAlpha = 0.04;
         c.drawImage(b.shade, -s.ox, -s.oy, s.w, s.h);
       }
       c.globalAlpha = 1;

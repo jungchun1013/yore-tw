@@ -1,10 +1,13 @@
-// ?doll : a review page for the jointed paper dolls, large, in several poses, plus an exploded view.
+// ?doll : review page for the paper-doll art. A small paper-theatre scene, an exploded view of
+// how the pieces stack, and the dolls at the size they would have in play.
 import { Doll } from './doll';
-import { CHOCHIN, MIKO } from './dolls';
-import { groundTile } from './sprites';
+import { CHOCHIN, HILLS, HOUSE, MIKO, TREE } from './dolls';
+import { paperFill } from './kit';
 
 export function dollPreview(canvas: HTMLCanvasElement): void {
-  const big = { miko: new Doll(MIKO, 7), chochin: new Doll(CHOCHIN, 7) };
+  const d = {
+    miko: new Doll(MIKO, 6), chochin: new Doll(CHOCHIN, 6), tree: new Doll(TREE, 4), house: new Doll(HOUSE, 4), hills: new Doll(HILLS, 2),
+  };
   const c = canvas.getContext('2d')!;
   const frozen = new URLSearchParams(location.search).get('t');
   const label = (text: string, x: number, y: number): void => {
@@ -15,22 +18,25 @@ export function dollPreview(canvas: HTMLCanvasElement): void {
     const dpr = Math.min(window.devicePixelRatio || 1, 2), w = window.innerWidth, h = window.innerHeight;
     if (canvas.width !== Math.round(w * dpr)) { canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr); }
     c.setTransform(dpr, 0, 0, dpr, 0, 0);
-    const tile = groundTile('stone');
-    for (let x = 0; x < w; x += 256) for (let y = 0; y < h; y += 256) c.drawImage(tile, x, y, 256, 256);
 
-    const S = 3.9, y1 = 320;
-    big.miko.draw(c, 130, y1, S, 1, t, false); label('站立', 130, y1 + 30);
-    for (let i = 0; i < 3; i++) big.miko.draw(c, 370 + i * 200, y1, S, 1, t + i * 0.11, true);
-    label('走路（三個相位）', 570, y1 + 30);
-    big.miko.draw(c, 1000, y1, S, -1, t, true); label('轉向', 1000, y1 + 30);
+    // paper theatre: sky, hills, a strip of ground, scenery and the dolls in front
+    paperFill(c, 0, 0, w, 470, '#efe0c2');
+    d.hills.draw(c, w / 2, 400, 2.2, 1, t, false);
+    paperFill(c, 0, 400, w, 70, '#cdbb8e');
+    d.tree.draw(c, 120, 440, 3.2, 1, t, false);
+    d.house.draw(c, 400, 440, 3.3, 1, t, false);
+    d.tree.draw(c, 640, 436, 2.5, -1, t + 1, false);
+    d.miko.draw(c, 820, 450, 3.4, 1, t, true);
+    d.chochin.draw(c, 990, 452, 3, 1, t, true);
+    d.tree.draw(c, 1180, 440, 3, 1, t + 2, false);
 
-    const y2 = 660;
-    big.miko.draw(c, 110, y2, S, 1, 0.6, false, 1.8); label('零件分解：每片都是獨立的紙', 230, y2 + 30);
-    big.chochin.draw(c, 560, y2, S, 1, t, true); big.chochin.draw(c, 740, y2, S, 1, t + 0.3, true); label('提燈妖：一圈圈紙環疊起來', 650, y2 + 30);
-    big.chochin.draw(c, 900, y2, S, 1, 0.3, true, 2); label('分解', 960, y2 + 30);
-    for (let i = 0; i < 4; i++) big.miko.draw(c, 1080 + i * 44, y2 - 100, 1.25, i % 2 ? -1 : 1, t + i * 0.2, true);
-    for (let i = 0; i < 4; i++) big.chochin.draw(c, 1080 + i * 44, y2 - 30, 1.25, 1, t + i * 0.2, true);
-    label('遊戲中的實際大小', 1146, y2 + 30);
+    paperFill(c, 0, 470, w, h - 470, '#f1e4c8');
+    const y2 = 735;
+    d.miko.draw(c, 120, y2, 3.2, 1, 0.6, false, 2.2); label('零件分解', 190, y2 + 18);
+    d.house.draw(c, 470, y2, 2.4, 1, 0.6, false, 2.4); label('房子也是一層層紙', 480, y2 + 18);
+    for (let i = 0; i < 5; i++) d.miko.draw(c, 820 + i * 44, y2 - 70, 1.25, i % 2 ? -1 : 1, t + i * 0.2, true);
+    for (let i = 0; i < 5; i++) d.chochin.draw(c, 820 + i * 44, y2 - 6, 1.25, 1, t + i * 0.2, true);
+    label('遊戲中的實際大小', 908, y2 + 18);
     if (frozen === null) requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
