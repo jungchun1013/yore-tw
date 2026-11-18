@@ -1,3 +1,4 @@
+import { FOOD } from '../data/foods';
 // One 15-minute run: creation, the fixed-step update, level-up choices and chests.
 import { HERO, META, PASSIVE, PASSIVES, addStats, baseStats } from '../data/passives';
 import { RUN_SECONDS, STAGES } from '../data/stages';
@@ -10,7 +11,7 @@ import { addFx, buildGrid, mulberry32, type Run } from './world';
 export const SLOTS = 5;
 export const STEP = 1 / 60;
 
-export interface RunOptions { stage: number; hero: HeroId; meta: Record<string, number>; seed: number; viewW?: number; viewH?: number }
+export interface RunOptions { stage: number; hero: HeroId; meta: Record<string, number>; seed: number; viewW?: number; viewH?: number; foods?: string[] }
 
 export function xpNeed(level: number): number {
   return Math.floor(5 + level * 4.5 + level * level * 0.42);
@@ -24,6 +25,7 @@ export function recompute(run: Run): void {
     if (lv > 0) { const { reroll: _r, ...per } = m.per; addStats(s, per, lv); }
   }
   for (const p of run.passives) addStats(s, PASSIVE[p.id].per, p.level);
+  for (const f of run.foods) if (FOOD[f]) addStats(s, FOOD[f].per);
   s.cooldown = Math.max(0.45, s.cooldown);
   run.stats = s;
   const max = Math.round(100 * s.maxHp);
@@ -37,7 +39,7 @@ export function createRun(o: RunOptions): Run {
   const run: Run = {
     rng: mulberry32(o.seed),
     stage: STAGES[o.stage], stageIndex: o.stage,
-    hero, meta: o.meta,
+    hero, meta: o.meta, foods: o.foods ?? [],
     t: 0,
     player: { x: 0, y: 0, hp: 100, maxHp: 100, inv: 0, face: 1, ax: 1, ay: 0, moving: false, level: 1, xp: 0, xpNext: xpNeed(1), hurt: 9 },
     stats: baseStats(),

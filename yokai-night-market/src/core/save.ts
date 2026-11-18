@@ -14,12 +14,13 @@ export interface Save {
   sound: boolean;
   music: boolean;
   runs: number;
+  pack: string[];   // snacks bought for the next run
 }
 
 const KEY = 'yokai-night-market-paper.save.v1';
 
 export function freshSave(): Save {
-  return { v: 1, coins: 0, meta: {}, cleared: [], bossDown: [], best: [], seen: [], hero: 'miko', lang: null, sound: true, music: true, runs: 0 };
+  return { v: 1, coins: 0, meta: {}, cleared: [], bossDown: [], best: [], seen: [], hero: 'miko', lang: null, sound: true, music: true, runs: 0, pack: [] };
 }
 
 export function loadSave(): Save {

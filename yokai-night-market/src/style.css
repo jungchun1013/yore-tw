@@ -239,3 +239,9 @@ button.choice:hover { background: #fff; box-shadow: 0 0 0 3px var(--gold); }
 .map-info-name { font: 900 20px var(--serif); }
 .map-info .stage-blurb { min-height: 0; text-align: left; }
 @media (max-width: 720px) { .map-plate { font-size: 13px; } }
+
+.map-decor.back { z-index: 1; filter: saturate(0.85) brightness(0.98); }
+.map-node { z-index: 2; }
+.map-pack { display: flex; align-items: center; gap: 4px; margin-top: 6px; font-weight: 700; font-size: 15px; }
+.map-pack.muted { color: var(--muted); font-weight: 500; }
+.ema.food .food-ic { flex: none; }

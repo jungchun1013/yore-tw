@@ -17,6 +17,7 @@ export interface Run {
   stage: StageDef; stageIndex: number;
   hero: HeroDef;
   meta: Record<string, number>;
+  foods: string[];
   t: number;
   player: Player;
   stats: Stats;

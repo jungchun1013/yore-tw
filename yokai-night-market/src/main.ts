@@ -6,15 +6,16 @@ import { initInput, readInput, resetInput, usedTouch } from './core/input';
 import { type Save, clearedCount, freshSave, loadSave, writeSave } from './core/save';
 import { HEROES, META, metaCost } from './data/passives';
 import { STAGES } from './data/stages';
+import { FOOD } from './data/foods';
 import { botDecide, botInput } from './game/bot';
 import { STEP, choose, closeChest, createRun, reroll, step } from './game/run';
 import type { HeroId } from './game/types';
 import type { Run } from './game/world';
 import { type View, render } from './render/scene';
 import { hudBanner, hudHint, hudVisible, initHud, resetHud, updateHud } from './ui/hud';
-import { type Actions, bossName, clearOverlay, initScreens, showChest, showCodex, showLevelUp, showPause, showResult, showShrine, showStages, showTitle } from './ui/screens';
+import { type Actions, bossName, clearOverlay, initScreens, showChest, showCodex, showLevelUp, showPause, showResult, showShrine, showStages, showStall, showTitle } from './ui/screens';
 
-type Screen = 'title' | 'stages' | 'shrine' | 'codex' | 'run';
+type Screen = 'title' | 'stages' | 'shrine' | 'stall' | 'codex' | 'run';
 
 const app = document.getElementById('app')!;
 const canvas = document.createElement('canvas'); canvas.id = 'game';
@@ -61,6 +62,14 @@ const actions: Actions = {
   toTitle() { leaveRun(); screen = 'title'; showTitle(save, actions); },
   toStages() { screen = 'stages'; showStages(save, actions, lastStage); },
   toShrine() { screen = 'shrine'; showShrine(save, actions); },
+  toStall() { screen = 'stall'; showStall(save, actions); },
+  buyFood(id) {
+    const f = FOOD[id];
+    if (!f || save.pack.includes(id) || save.coins < f.price) return;
+    save.coins -= f.price; save.pack.push(id); persist();
+    sfx('coin');
+    showStall(save, actions);
+  },
   toCodex() { screen = 'codex'; showCodex(save, actions); },
   startRun(stage, hero) { startRun(stage, hero); },
   buyMeta(id) {
@@ -92,7 +101,8 @@ function startRun(stage: number, hero: HeroId): void {
   unlockAudio();
   lastStage = stage;
   save.hero = hero; save.runs++; persist();
-  run = createRun({ stage, hero, meta: save.meta, seed: (Date.now() ^ (Math.random() * 1e9)) | 0, viewW: view.w / view.zoom, viewH: view.h / view.zoom });
+  const foods = save.pack.slice(); save.pack = []; persist();
+  run = createRun({ stage, hero, meta: save.meta, foods, seed: (Date.now() ^ (Math.random() * 1e9)) | 0, viewW: view.w / view.zoom, viewH: view.h / view.zoom });
   screen = 'run'; paused = false; ended = false; shownChoices = shownChest = null; acc = 0;
   resetInput(); resetHud(); clearOverlay(); hudVisible(true);
   field.classList.add('on');

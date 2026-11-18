@@ -52,7 +52,7 @@ const TAINAN: [string, number][] = [
   ['danzai', 24], ['milkfish', 24], ['wagui', 17], ['pengbing', 24], ['dango', 24],
   // monsters and trees requested 2026-11-18; used once Codex's pictures are cut into public/art/tainan
   ['kuroneko', 34], ['hebi', 26], ['fengshi', 52], ['bixi', 46], ['lurou', 24],
-  ['banyan', 170], ['flameTree', 160],
+  ['banyan', 170], ['flameTree', 160], ['literature', 120],
 ];
 
 export async function loadTainanArt(): Promise<void> {
@@ -73,15 +73,12 @@ export async function loadTainanArt(): Promise<void> {
     atlas.set(key, { c: cv, w, h: height, ox: w / 2, oy: height - 1 });
     PENDING_ART.delete(key);
   }));
-  refreshFoods();
+
   const failed = results.filter((r) => r.status === 'rejected').length;
   if (failed) console.warn(`${failed} Tainan sprites did not load; their drawn versions are used instead`);
 }
 
 // Heal pickups show one of these. Coffin toast is left out: it is a postwar dish and the game is set around 1930.
-const ALL_FOODS = ['danzai', 'milkfish', 'wagui', 'pengbing', 'dango', 'lurou'];
-export const FOODS: string[] = ['heal'];
-export function refreshFoods(): void { FOODS.length = 0; for (const f of ALL_FOODS) if (atlas.has(f)) FOODS.push(f); if (!FOODS.length) FOODS.push('heal'); }
 
 export function hasArt(key: string): boolean { return atlas.has(key); }
 
@@ -91,7 +88,7 @@ export function atlasSprite(key: string): Sprite | undefined {
   const aliases: Record<string, string> = {
     phoenix: 'maple', andon: 'stoneLantern',
     // Tainan set: yokai, stage props and two passive icons
-    lanterns: 'lantern', swordlion: 'swordLionWall', redgate: 'confucius', i_heal: 'danzai', heal: 'danzai',
+    lanterns: 'lantern', swordlion: 'swordLionWall', redgate: 'confucius',
   };
   return atlas.get(aliases[key] ?? key);
 }

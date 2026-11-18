@@ -4,6 +4,8 @@ import { type Save, clearedCount } from '../core/save';
 import { CODEX, ENEMY } from '../data/enemies';
 import { HEROES, META, PASSIVE, metaCost } from '../data/passives';
 import { STAGES } from '../data/stages';
+import { FOODS_FOR_SALE } from '../data/foods';
+import { hasArt } from '../render/paperAtlas';
 import { WEAPON, WEAPONS } from '../data/weapons';
 import type { Choice, HeroId, PassiveId, WeaponId } from '../game/types';
 import type { Run } from '../game/world';
@@ -11,7 +13,8 @@ import { urlOf } from '../render/kit';
 import { spr } from '../render/sprites';
 
 export interface Actions {
-  toTitle(): void; toStages(): void; toShrine(): void; toCodex(): void;
+  toTitle(): void; toStages(): void; toShrine(): void; toStall(): void; toCodex(): void;
+  buyFood(id: string): void;
   startRun(stage: number, hero: HeroId): void;
   buyMeta(id: string): void;
   pick(index: number): void; reroll(): void; closeChest(): void;
@@ -64,6 +67,7 @@ export function showTitle(save: Save, a: Actions): void {
     h('div', 'menu',
       btn(t('start'), 'primary big', a.toStages, 'start'),
       btn(t('shrine'), 'big', a.toShrine, 'shrine'),
+      btn(t('stall'), 'big', a.toStall, 'stall'),
       btn(t('codex'), 'big', a.toCodex, 'codex'),
     ),
     h('div', 'purse', icon('i_coin', 'ic sm'), h('span', '', String(save.coins))),
@@ -71,19 +75,18 @@ export function showTitle(save: Save, a: Actions): void {
   );
 }
 
-// The landmarks drawn for each place on the map, left to right along the road (sprite keys).
-const LANDMARKS: { keys: string[]; x: number }[] = [
-  { keys: ['torii', 'machiya'], x: 220 },
-  { keys: ['hayashi', 'noodleStall'], x: 580 },
-  { keys: ['woodHouse'], x: 930 },
-  { keys: ['brickHouse'], x: 1260 },
-  { keys: ['confucius', 'chihkan'], x: 1620 },
-  { keys: ['shennong', 'swordLionWall'], x: 2000 },
+// The town map. Each stop shows one building, all the same height, spaced for a phone screen;
+// other buildings stand smaller in a back row between the stops. Keys without art are skipped.
+const STOP_GAP = 168, STOP0 = 120, BUILD_H = 104, BACK_H = 74;
+const STOPS = ['torii', 'hayashi', 'woodHouse', 'brickHouse', 'confucius', 'shennong'];
+const BACK_ROW: [string, number][] = [
+  ['machiya', 0.5], ['noodleStall', 1.5], ['literature', 2.5], ['chihkan', 3.6], ['swordLionWall', 4.5], ['censer', 5.45],
 ];
-const MAP_W = 2300, MAP_H = 360, ROAD_Y = 292;
+const stopX = (i: number): number => STOP0 + i * STOP_GAP;
+const MAP_W = stopX(5) + 260, MAP_H = 236, ROAD_Y = 200;
 const DECOR: [string, number, number][] = [
-  ['maple', 70, 300], ['stoneLantern', 395, 300], ['lantern', 770, 250], ['sakura', 1095, 298], ['maple', 1440, 302],
-  ['lantern', 1800, 250], ['stoneLantern', 1830, 300], ['tileFlower', 2180, 302],
+  ['sakura', 30, ROAD_Y + 8], ['lantern', stopX(1) - 70, ROAD_Y - 30], ['stoneLantern', stopX(2) - 64, ROAD_Y + 6], ['maple', stopX(3) + 70, ROAD_Y + 4],
+  ['lantern', stopX(4) - 70, ROAD_Y - 30], ['tileFlower', stopX(5) + 80, ROAD_Y + 8],
 ];
 
 function sprImg(key: string, height: number, cls: string): HTMLImageElement {
@@ -112,27 +115,33 @@ export function showStages(save: Save, a: Actions, picked: number): void {
     for (let x = 0; x <= MAP_W; x += step) d += ` Q${x + step / 2} ${base - amp * (0.6 + 0.4 * Math.sin(x * 0.01 + seed))} ${x + step} ${base}`;
     return d + ` L${MAP_W} ${MAP_H} Z`;
   };
-  const road = LANDMARKS.map((l, i) => `${i ? 'L' : 'M'}${l.x} ${ROAD_Y + (i % 2 ? 8 : -4)}`).join(' ');
+  const road = STOPS.map((_, i) => `${i ? 'L' : 'M'}${stopX(i)} ${ROAD_Y}`).join(' ');
   svg.innerHTML = `
-    <path d="${hills(170, 70, 260, 0)}" fill="#dfd0ad"/>
-    <path d="${hills(210, 46, 190, 2)}" fill="#c9cf9f"/>
-    <path d="M1980 ${MAP_H} L1980 250 Q2140 232 ${MAP_W} 244 L${MAP_W} ${MAP_H} Z" fill="#8fb4b8"/>
-    <path d="M2010 268 Q2050 258 2090 268 T2170 268 T2250 268" fill="none" stroke="#e9f1ec" stroke-width="5" stroke-linecap="round"/>
-    <rect x="0" y="${ROAD_Y - 18}" width="1990" height="${MAP_H - ROAD_Y + 18}" fill="#ead9b6"/>
+    <path d="${hills(84, 50, 220, 0)}" fill="#dfd0ad"/>
+    <path d="${hills(120, 36, 170, 2)}" fill="#c9cf9f"/>
+    <path d="M${MAP_W - 200} ${MAP_H} L${MAP_W - 200} 170 Q${MAP_W - 90} 158 ${MAP_W} 164 L${MAP_W} ${MAP_H} Z" fill="#8fb4b8"/>
+    <path d="M${MAP_W - 170} 192 q30 -10 60 0 t60 0 t60 0" fill="none" stroke="#e9f1ec" stroke-width="5" stroke-linecap="round"/>
+    <rect x="0" y="${ROAD_Y - 16}" width="${MAP_W - 190}" height="${MAP_H - ROAD_Y + 16}" fill="#ead9b6"/>
     <path d="${road}" fill="none" stroke="#c6a77a" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
     <path d="${road}" fill="none" stroke="#f6ead0" stroke-width="3" stroke-dasharray="2 14" stroke-linecap="round"/>`;
   strip.append(svg);
+  for (const [key, at] of BACK_ROW) {
+    if (!hasArt(key)) continue;
+    const d = sprImg(key, key === 'censer' ? 34 : key === 'swordLionWall' ? 46 : BACK_H, 'map-decor back');
+    d.style.left = `${STOP0 + at * STOP_GAP}px`; d.style.top = `${ROAD_Y - 34}px`;
+    strip.append(d);
+  }
   for (const [key, x, y] of DECOR) {
-    const d = sprImg(key, key === 'tileFlower' ? 26 : key === 'lantern' ? 46 : key === 'stoneLantern' ? 64 : 120, 'map-decor');
+    if (!hasArt(key)) continue;
+    const d = sprImg(key, key === 'tileFlower' ? 24 : key === 'lantern' ? 40 : key === 'stoneLantern' ? 54 : 96, 'map-decor');
     d.style.left = `${x}px`; d.style.top = `${y}px`;
     strip.append(d);
   }
 
-  const walker = sprImg('miko', 62, 'map-walker');
+  const walker = sprImg('miko', 52, 'map-walker');
   const nodes = STAGES.map((st, i) => {
-    const open = stageOpen(i), L = LANDMARKS[i];
-    const pics = h('div', 'map-pics');
-    L.keys.forEach((k, j) => pics.append(sprImg(k, j === 0 ? 150 : 96, `map-pic${j ? ' side' : ''}`)));
+    const open = stageOpen(i);
+    const pics = h('div', 'map-pics', sprImg(STOPS[i], BUILD_H, 'map-pic'));
     const node = h('button', `map-node${open ? '' : ' locked'}`,
       pics,
       h('div', 'map-plate', h('span', 'map-no', NUM[getLang()][i]), h('span', '', tl(st.name))),
@@ -144,7 +153,7 @@ export function showStages(save: Save, a: Actions, picked: number): void {
     ) as HTMLButtonElement;
     node.type = 'button'; node.dataset.id = `stage-${i}`;
     node.disabled = !open;
-    node.style.left = `${L.x}px`; node.style.top = `${ROAD_Y + (i % 2 ? 8 : -4)}px`;
+    node.style.left = `${stopX(i)}px`; node.style.top = `${ROAD_Y}px`;
     node.addEventListener('click', () => { sel = i; mark(true); });
     strip.append(node);
     return node;
@@ -181,15 +190,17 @@ export function showStages(save: Save, a: Actions, picked: number): void {
   function mark(scroll: boolean): void {
     nodes.forEach((c, i) => c.classList.toggle('on', i === sel));
     heroes.forEach((c, i) => c.classList.toggle('on', HEROES[i].id === hero));
-    const L = LANDMARKS[sel];
-    walker.style.left = `${L.x - 70}px`; walker.style.top = `${ROAD_Y + (sel % 2 ? 8 : -4)}px`;
+    walker.style.left = `${stopX(sel) - 58}px`; walker.style.top = `${ROAD_Y + 4}px`;
     const st = STAGES[sel], best = save.best[sel];
     info.replaceChildren(
       h('div', 'map-info-name', `${NUM[getLang()][sel]}　${tl(st.name)}`),
       h('p', 'stage-blurb', tl(st.blurb)),
       h('div', 'tags', best && !save.cleared[sel] && h('span', 'tag', t('best', { t: clock(best.time) }))),
+      save.pack.length
+        ? h('div', 'map-pack', t('packLine'), ...save.pack.filter(hasArt).map((f) => sprImg(f, 26, 'pack-ic')))
+        : h('div', 'map-pack muted', t('packNone')),
     );
-    if (scroll) map.scrollTo({ left: L.x - map.clientWidth / 2, behavior: 'smooth' });
+    if (scroll) map.scrollTo({ left: stopX(sel) - map.clientWidth / 2, behavior: 'smooth' });
   }
   mark(false);
   show('stages map',
@@ -199,7 +210,27 @@ export function showStages(save: Save, a: Actions, picked: number): void {
     h('h3', '', t('pickHero')),
     h('div', 'hero-row', ...heroes),
   );
-  requestAnimationFrame(() => { map.scrollLeft = LANDMARKS[sel].x - map.clientWidth / 2; });
+  requestAnimationFrame(() => { map.scrollLeft = stopX(sel) - map.clientWidth / 2; });
+}
+
+export function showStall(save: Save, a: Actions): void {
+  const cards = FOODS_FOR_SALE.filter((f) => hasArt(f.id)).map((f) => {
+    const packed = save.pack.includes(f.id);
+    const card = h('button', `ema food${packed ? ' full' : ''}`,
+      sprImg(f.id, 46, 'food-ic'),
+      h('div', 'ema-text', h('div', 'ema-name', tl(f.name)), h('div', 'ema-desc', tl(f.desc))),
+      packed ? h('div', 'price', t('packed')) : h('div', 'price', icon('i_coin', 'ic sm'), h('span', '', String(f.price))),
+    ) as HTMLButtonElement;
+    card.type = 'button'; card.dataset.id = `food-${f.id}`;
+    card.disabled = packed || save.coins < f.price;
+    card.addEventListener('click', () => a.buyFood(f.id));
+    return card;
+  });
+  show('shrine',
+    h('div', 'head', btn(t('back'), 'ghost', a.toTitle, 'back'), h('h2', '', t('stall')), h('div', 'purse', icon('i_coin', 'ic sm'), h('span', '', String(save.coins)))),
+    h('p', 'sub', t('stallSub')),
+    h('div', 'ema-grid', ...cards),
+  );
 }
 
 export function showShrine(save: Save, a: Actions): void {
