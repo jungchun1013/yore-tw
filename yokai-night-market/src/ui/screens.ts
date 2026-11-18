@@ -71,33 +71,98 @@ export function showTitle(save: Save, a: Actions): void {
   );
 }
 
+// The landmarks drawn for each place on the map, left to right along the road (sprite keys).
+const LANDMARKS: { keys: string[]; x: number }[] = [
+  { keys: ['torii', 'machiya'], x: 220 },
+  { keys: ['hayashi', 'noodleStall'], x: 580 },
+  { keys: ['woodHouse'], x: 930 },
+  { keys: ['brickHouse'], x: 1260 },
+  { keys: ['confucius', 'chihkan'], x: 1620 },
+  { keys: ['shennong', 'swordLionWall'], x: 2000 },
+];
+const MAP_W = 2300, MAP_H = 360, ROAD_Y = 292;
+const DECOR: [string, number, number][] = [
+  ['maple', 70, 300], ['stoneLantern', 395, 300], ['lantern', 770, 250], ['sakura', 1095, 298], ['maple', 1440, 302],
+  ['lantern', 1800, 250], ['stoneLantern', 1830, 300], ['tileFlower', 2180, 302],
+];
+
+function sprImg(key: string, height: number, cls: string): HTMLImageElement {
+  const s = spr(key);
+  const img = icon(key, cls);
+  img.style.height = `${height}px`;
+  img.style.width = `${(height * s.w) / s.h}px`;
+  return img;
+}
+
+// Scrolling paper map of the town: pick a place by its buildings, then who goes.
 export function showStages(save: Save, a: Actions, picked: number): void {
   const cleared = clearedCount(save);
   const stageOpen = (i: number): boolean => i === 0 || !!save.cleared[i - 1];
   let sel = stageOpen(picked) ? picked : 0;
   let hero: HeroId = HEROES.some((x) => x.id === save.hero && cleared >= x.unlockStage) ? save.hero : 'miko';
 
-  const cards = STAGES.map((s, i) => {
-    const open = stageOpen(i);
-    const boss = icon(s.boss, `boss-ic${save.bossDown[i] ? '' : ' shade'}`);
-    const best = save.best[i];
-    const card = h('button', `stage${open ? '' : ' locked'}`,
-      h('div', 'stage-no', NUM[getLang()][i]),
-      boss,
-      h('div', 'stage-name', tl(s.name)),
-      h('div', 'stage-blurb', open ? tl(s.blurb) : t('lockStage')),
-      h('div', 'tags',
+  const strip = h('div', 'map-strip');
+  strip.style.width = `${MAP_W}px`; strip.style.height = `${MAP_H}px`;
+  // paper layers: far hills, near hills, the road, and the sea past Anping
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const svg = document.createElementNS(svgNS, 'svg');
+  svg.setAttribute('viewBox', `0 0 ${MAP_W} ${MAP_H}`); svg.setAttribute('class', 'map-layers');
+  const hills = (base: number, amp: number, step: number, seed: number): string => {
+    let d = `M0 ${MAP_H} L0 ${base}`;
+    for (let x = 0; x <= MAP_W; x += step) d += ` Q${x + step / 2} ${base - amp * (0.6 + 0.4 * Math.sin(x * 0.01 + seed))} ${x + step} ${base}`;
+    return d + ` L${MAP_W} ${MAP_H} Z`;
+  };
+  const road = LANDMARKS.map((l, i) => `${i ? 'L' : 'M'}${l.x} ${ROAD_Y + (i % 2 ? 8 : -4)}`).join(' ');
+  svg.innerHTML = `
+    <path d="${hills(170, 70, 260, 0)}" fill="#dfd0ad"/>
+    <path d="${hills(210, 46, 190, 2)}" fill="#c9cf9f"/>
+    <path d="M1980 ${MAP_H} L1980 250 Q2140 232 ${MAP_W} 244 L${MAP_W} ${MAP_H} Z" fill="#8fb4b8"/>
+    <path d="M2010 268 Q2050 258 2090 268 T2170 268 T2250 268" fill="none" stroke="#e9f1ec" stroke-width="5" stroke-linecap="round"/>
+    <rect x="0" y="${ROAD_Y - 18}" width="1990" height="${MAP_H - ROAD_Y + 18}" fill="#ead9b6"/>
+    <path d="${road}" fill="none" stroke="#c6a77a" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="${road}" fill="none" stroke="#f6ead0" stroke-width="3" stroke-dasharray="2 14" stroke-linecap="round"/>`;
+  strip.append(svg);
+  for (const [key, x, y] of DECOR) {
+    const d = sprImg(key, key === 'tileFlower' ? 26 : key === 'lantern' ? 46 : key === 'stoneLantern' ? 64 : 120, 'map-decor');
+    d.style.left = `${x}px`; d.style.top = `${y}px`;
+    strip.append(d);
+  }
+
+  const walker = sprImg('miko', 62, 'map-walker');
+  const nodes = STAGES.map((st, i) => {
+    const open = stageOpen(i), L = LANDMARKS[i];
+    const pics = h('div', 'map-pics');
+    L.keys.forEach((k, j) => pics.append(sprImg(k, j === 0 ? 150 : 96, `map-pic${j ? ' side' : ''}`)));
+    const node = h('button', `map-node${open ? '' : ' locked'}`,
+      pics,
+      h('div', 'map-plate', h('span', 'map-no', NUM[getLang()][i]), h('span', '', tl(st.name))),
+      h('div', 'map-tags',
         save.cleared[i] && h('span', 'tag ok', t('cleared')),
         save.bossDown[i] && h('span', 'tag gold', t('bossDown')),
-        best && !save.cleared[i] && h('span', 'tag', t('best', { t: clock(best.time) })),
         !open && h('span', 'tag', t('locked')),
       ),
     ) as HTMLButtonElement;
-    card.type = 'button'; card.dataset.id = `stage-${i}`;
-    card.disabled = !open;
-    card.addEventListener('click', () => { sel = i; mark(); });
-    return card;
+    node.type = 'button'; node.dataset.id = `stage-${i}`;
+    node.disabled = !open;
+    node.style.left = `${L.x}px`; node.style.top = `${ROAD_Y + (i % 2 ? 8 : -4)}px`;
+    node.addEventListener('click', () => { sel = i; mark(true); });
+    strip.append(node);
+    return node;
   });
+  strip.append(walker);
+
+  const map = h('div', 'scroll-map', strip);
+  map.addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { map.scrollLeft += e.deltaY; e.preventDefault(); }
+  }, { passive: false });
+  // drag to scroll with a mouse; touch scrolls natively
+  let dragX = -1, startLeft = 0, moved = false;
+  map.addEventListener('pointerdown', (e) => { if (e.pointerType === 'mouse') { dragX = e.clientX; startLeft = map.scrollLeft; moved = false; } });
+  window.addEventListener('pointermove', (e) => { if (dragX >= 0) { const d = e.clientX - dragX; if (Math.abs(d) > 4) moved = true; map.scrollLeft = startLeft - d; } });
+  window.addEventListener('pointerup', () => { dragX = -1; });
+  map.addEventListener('click', (e) => { if (moved) { e.stopPropagation(); e.preventDefault(); moved = false; } }, true);
+
+  const info = h('div', 'map-info');
   const heroes = HEROES.map((x) => {
     const open = cleared >= x.unlockStage;
     const card = h('button', `hero${open ? '' : ' locked'}`,
@@ -110,21 +175,31 @@ export function showStages(save: Save, a: Actions, picked: number): void {
     ) as HTMLButtonElement;
     card.type = 'button'; card.dataset.id = `hero-${x.id}`;
     card.disabled = !open;
-    card.addEventListener('click', () => { hero = x.id; mark(); });
+    card.addEventListener('click', () => { hero = x.id; mark(false); });
     return card;
   });
-  function mark(): void {
-    cards.forEach((c, i) => c.classList.toggle('on', i === sel));
+  function mark(scroll: boolean): void {
+    nodes.forEach((c, i) => c.classList.toggle('on', i === sel));
     heroes.forEach((c, i) => c.classList.toggle('on', HEROES[i].id === hero));
+    const L = LANDMARKS[sel];
+    walker.style.left = `${L.x - 70}px`; walker.style.top = `${ROAD_Y + (sel % 2 ? 8 : -4)}px`;
+    const st = STAGES[sel], best = save.best[sel];
+    info.replaceChildren(
+      h('div', 'map-info-name', `${NUM[getLang()][sel]}　${tl(st.name)}`),
+      h('p', 'stage-blurb', tl(st.blurb)),
+      h('div', 'tags', best && !save.cleared[sel] && h('span', 'tag', t('best', { t: clock(best.time) }))),
+    );
+    if (scroll) map.scrollTo({ left: L.x - map.clientWidth / 2, behavior: 'smooth' });
   }
-  mark();
-  show('stages',
+  mark(false);
+  show('stages map',
     h('div', 'head', btn(t('back'), 'ghost', a.toTitle, 'back'), h('h2', '', t('chapter')), btn(t('go'), 'primary', () => a.startRun(sel, hero), 'go')),
-    h('h3', '', t('pickStage')),
-    h('div', 'stage-grid', ...cards),
+    map,
+    info,
     h('h3', '', t('pickHero')),
     h('div', 'hero-row', ...heroes),
   );
+  requestAnimationFrame(() => { map.scrollLeft = LANDMARKS[sel].x - map.clientWidth / 2; });
 }
 
 export function showShrine(save: Save, a: Actions): void {

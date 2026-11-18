@@ -216,6 +216,7 @@ async function boot(): Promise<void> {
 if (paperMode || params.has('atelier')) {
   try { await loadPaperAtlas(); } catch (error) { console.error('Paper artwork failed to load', error); }
   try { await loadTainanArt(); } catch (error) { console.error('Tainan artwork failed to load', error); }
+  await import('./render/puppet').then((m) => m.loadPuppets({ miko: 'miko' }));
 }
 if (params.has('atelier')) {
   field.style.display = 'none';
@@ -223,7 +224,7 @@ if (params.has('atelier')) {
 } else if (params.has('puppet')) {
   // review page for a detachable puppet; the game itself does not start
   field.style.display = 'none';
-  await import('./render/puppetPreview').then((m) => m.puppetPreview(canvas, params.get('puppet') || 'test-miko'));
+  await import('./render/puppetPreview').then((m) => m.puppetPreview(canvas, params.get('puppet') || 'miko'));
 } else {
   showTitle(save, actions);
   requestAnimationFrame(frame);

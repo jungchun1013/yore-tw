@@ -216,3 +216,26 @@ button.choice:hover { background: #fff; box-shadow: 0 0 0 3px var(--gold); }
  .atelier-ui header { top:23px; align-items:flex-start; }.atelier-ui h1 { font-size:28px; }.atelier-ui h1 span { display:block; margin:6px 0; font-size:10px; }.atelier-ui header a { font-size:11px; white-space:nowrap; }
  .atelier-ui footer { bottom:22px; flex-direction:column; align-items:flex-start; }.atelier-caption p { font-size:20px; }.atelier-controls { text-align:left; }.atelier-controls button { padding:8px 12px; }.atelier-ui small { font-size:8px; letter-spacing:.12em; }
 }
+
+/* scrolling town map on the stage screen */
+.stages.map .sheet { width: min(100%, 1100px); }
+.scroll-map { flex: none; width: 100%; overflow-x: auto; overflow-y: hidden; border-radius: 12px; background: #f1e6cf; cursor: grab; scrollbar-width: thin; -webkit-overflow-scrolling: touch; box-shadow: inset 0 0 0 1px #d8c4a5; }
+.map-strip { position: relative; }
+.map-layers { position: absolute; inset: 0; width: 100%; height: 100%; }
+.map-decor, .map-walker { position: absolute; transform: translate(-50%, -100%); pointer-events: none; }
+.map-walker { z-index: 3; transition: left 0.5s ease, top 0.5s ease; filter: drop-shadow(0 3px 2px rgba(80, 50, 30, 0.3)); }
+.map-node { position: absolute; transform: translate(-50%, -100%); background: none; border: 0; padding: 0; cursor: pointer; display: flex; flex-direction: column; align-items: center; z-index: 2; font: inherit; color: inherit; }
+.map-node.locked { cursor: default; }
+.map-node.locked .map-pics { filter: grayscale(1) opacity(0.5); }
+.map-pics { display: flex; align-items: flex-end; gap: 4px; filter: drop-shadow(0 4px 3px rgba(80, 50, 30, 0.25)); transition: transform 0.2s; }
+.map-node:not(.locked):hover .map-pics, .map-node.on .map-pics { transform: translateY(-6px); }
+.map-plate { margin-top: 2px; display: flex; gap: 6px; align-items: center; background: #fbf3e2; border: 1px solid #c9ad84; border-radius: 6px; padding: 2px 10px; font: 800 15px var(--serif); white-space: nowrap; }
+.map-node.on .map-plate { background: var(--red); color: #fff6e8; border-color: var(--red-dk); }
+.map-no { color: var(--red); }
+.map-node.on .map-no { color: #fff6e8; }
+.map-tags { position: absolute; top: -22px; display: flex; gap: 4px; }
+.map-tags .tag { margin: 0; }
+.map-info { width: 100%; text-align: left; padding: 4px 4px 0; }
+.map-info-name { font: 900 20px var(--serif); }
+.map-info .stage-blurb { min-height: 0; text-align: left; }
+@media (max-width: 720px) { .map-plate { font-size: 13px; } }

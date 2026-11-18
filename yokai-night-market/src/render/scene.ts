@@ -5,6 +5,7 @@ import { PROPS } from './items';
 import { type Sprite, INK, TAU, flashOf, hash } from './kit';
 import { TILE, groundTile, spr } from './sprites';
 import { FOODS } from './paperAtlas';
+import { PUPPETS } from './puppet';
 
 type Ctx = CanvasRenderingContext2D;
 export interface View { w: number; h: number; zoom: number; dpr: number }
@@ -75,11 +76,19 @@ function drawEnemy(c: Ctx, run: Run, e: Enemy): void {
 
 function drawPlayer(c: Ctx, run: Run): void {
   const p = run.player;
+  if (p.inv > 0 && p.hurt > 0.12 && Math.floor(run.t * 20) % 2 === 0) c.globalAlpha = 0.45;
+  const puppet = PUPPETS.get(run.hero.id);
+  if (puppet) {
+    // the jointed paper puppet: parts turn on their pins; a hit tints it red for a moment
+    if (p.hurt < 0.12) c.filter = 'sepia(1) saturate(4) hue-rotate(-30deg)';
+    puppet.draw(c, p.x, p.y, 1, p.face, run.t, p.moving ? 'walk' : 'idle');
+    c.filter = 'none';
+  } else {
   const frame = p.moving ? 1 + (Math.floor(run.t * 9) % 2) : 0;
   const s = spr(`hero:${run.hero.id}:${frame}`);
-  if (p.inv > 0 && p.hurt > 0.12 && Math.floor(run.t * 20) % 2 === 0) c.globalAlpha = 0.45;
   const bob = p.moving ? Math.abs(Math.sin(run.t * 14)) * 1.6 : Math.sin(run.t * 3) * 0.5;
   put(c, s, p.x, p.y - bob, p.face, 1, 1, p.hurt < 0.12 ? flashOf(s) : s.c, p.moving ? Math.sin(run.t * 14) * 0.07 : 0);
+  }
   c.globalAlpha = 1;
   if (p.hp < p.maxHp) {
     const w = 30, y = p.y + 7;

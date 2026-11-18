@@ -26,7 +26,7 @@ test('title leads to stage select with only the first stage open', async ({ page
   const errors = await open(page);
   await expect(page.locator('.logo h1')).toHaveText('百鬼夜市');
   await page.click('[data-id=start]');
-  await expect(page.locator('.stage')).toHaveCount(6);
+  await expect(page.locator('.map-node')).toHaveCount(6);
   await expect(page.locator('[data-id=stage-0]')).toBeEnabled();
   for (let i = 1; i < 6; i++) await expect(page.locator(`[data-id=stage-${i}]`)).toBeDisabled();
   await expect(page.locator('[data-id=hero-miko]')).toBeEnabled();
