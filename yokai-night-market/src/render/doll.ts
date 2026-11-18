@@ -51,9 +51,12 @@ export class Doll {
       const s = b.spr, lift = 0.5 + b.def.z * 0.16;
       const ex = spread * b.def.z * 2.2 * k, ey = -spread * b.def.z * 1.2 * k;
       // the shadow falls in a fixed screen direction, further for parts that sit higher
-      c.setTransform(b.m.a, b.m.b, b.m.c, b.m.d, b.m.e + ex + lift * 0.7 * k, b.m.f + ey + lift * 1.5 * k);
-      c.globalAlpha = 0.22;
-      c.drawImage(b.shade, -s.ox, -s.oy, s.w, s.h);
+      // two passes, near and far, read as a soft shadow rather than a hard offset copy
+      for (const [f, a] of [[0.55, 0.12], [1, 0.08]]) {
+        c.setTransform(b.m.a, b.m.b, b.m.c, b.m.d, b.m.e + ex + lift * 0.7 * k * f, b.m.f + ey + lift * 1.5 * k * f);
+        c.globalAlpha = a;
+        c.drawImage(b.shade, -s.ox, -s.oy, s.w, s.h);
+      }
       c.globalAlpha = 1;
       c.setTransform(b.m.a, b.m.b, b.m.c, b.m.d, b.m.e + ex, b.m.f + ey);
       c.drawImage(s.c, -s.ox, -s.oy, s.w, s.h);

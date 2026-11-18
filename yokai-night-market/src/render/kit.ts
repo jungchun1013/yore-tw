@@ -15,27 +15,71 @@ export const RES = 3;   // sprite supersampling
 
 export interface Sprite { c: HTMLCanvasElement; w: number; h: number; ox: number; oy: number; flash?: HTMLCanvasElement; url?: string }
 
-interface Stack { top: C; out: C; sil: C; res: number; rim: number }
+interface Stack { top: C; out: C; sil: C; tmp: C | null; res: number }
 let stack: Stack | null = null;
+
+// Paper grain shared by every card part: short fibres and a fine tooth, tiled.
+let grain: CanvasPattern | null = null;
+function grainPattern(c: C): CanvasPattern {
+  if (!grain) {
+    const g = layer(160, 160);
+    let seed = 7;
+    const rnd = (): number => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
+    for (let i = 0; i < 1400; i++) {
+      g.fillStyle = rnd() < 0.5 ? 'rgba(255,255,255,0.06)' : 'rgba(70,40,20,0.035)';
+      g.fillRect(rnd() * 160, rnd() * 160, 1 + rnd() * 1.5, 1 + rnd() * 1.5);
+    }
+    g.lineCap = 'round';
+    for (let i = 0; i < 140; i++) {
+      const x = rnd() * 160, y = rnd() * 160, a = rnd() * TAU, l = 4 + rnd() * 12;
+      g.beginPath(); g.moveTo(x, y); g.quadraticCurveTo(x + Math.cos(a + 0.6) * l * 0.5, y + Math.sin(a + 0.6) * l * 0.5, x + Math.cos(a) * l, y + Math.sin(a) * l);
+      g.strokeStyle = rnd() < 0.6 ? 'rgba(255,250,235,0.14)' : 'rgba(90,55,30,0.05)'; g.lineWidth = 0.6 + rnd() * 0.8; g.stroke();
+    }
+    grain = c.createPattern(g.canvas, 'repeat')!;
+  }
+  return grain;
+}
+
+// Gives the sheet on `top` the look of thick card: grain inside, a lit upper edge and a shaded
+// lower edge where the cut shows its thickness. Works on the sheet before it is pressed.
+function finish(st: Stack): void {
+  const cv = st.top.canvas, R = st.res, t = st.tmp!;
+  const top = st.top;
+  top.save(); top.setTransform(1, 0, 0, 1, 0, 0);
+  top.globalCompositeOperation = 'source-atop';
+  top.fillStyle = grainPattern(top); top.fillRect(0, 0, cv.width, cv.height);
+  for (const [dx, dy, col, a] of [[-0.9, -0.9, '#3a2014', 0.22], [0.8, 0.8, '#fff6e0', 0.35]] as const) {
+    // the band of the shape left over after removing a shifted copy of itself is one cut edge
+    t.globalCompositeOperation = 'source-over';
+    t.clearRect(0, 0, cv.width, cv.height);
+    t.drawImage(cv, 0, 0);
+    t.globalCompositeOperation = 'source-in';
+    t.fillStyle = col; t.fillRect(0, 0, cv.width, cv.height);
+    t.globalCompositeOperation = 'destination-out';
+    t.drawImage(cv, dx * R, dy * R);
+    top.globalAlpha = a;
+    top.drawImage(t.canvas, 0, 0);
+  }
+  top.restore();
+}
 
 // Presses the sheet being drawn onto the stack, with its shadows, and starts a fresh one.
 function press(st: Stack): void {
-  const cv = st.top.canvas, sil = st.sil;
+  const cv = st.top.canvas, sil = st.sil, R = st.res;
+  if (st.tmp) finish(st);
   sil.globalCompositeOperation = 'source-over';
   sil.clearRect(0, 0, cv.width, cv.height);
   sil.drawImage(cv, 0, 0);
   sil.globalCompositeOperation = 'source-in';
   sil.fillStyle = SHADE; sil.fillRect(0, 0, cv.width, cv.height);
-  const R = st.res;
-  st.out.globalAlpha = 0.13; st.out.drawImage(sil.canvas, 0.9 * R, 1.9 * R);
-  st.out.globalAlpha = 0.3; st.out.drawImage(sil.canvas, 0.35 * R, 0.75 * R);
-  st.out.globalAlpha = 1;
-  if (st.rim > 0) {
-    // the white core of the card shows as a thin rim around every cut piece
-    sil.fillStyle = '#fffaf0'; sil.fillRect(0, 0, cv.width, cv.height);
-    const d = st.rim * R;
-    for (let i = 0; i < 12; i++) st.out.drawImage(sil.canvas, Math.cos((i / 12) * TAU) * d, Math.sin((i / 12) * TAU) * d);
+  if (st.tmp) {
+    // card parts: a soft, warm drop shadow made of a few offset passes
+    for (let i = 1; i <= 4; i++) { st.out.globalAlpha = 0.07; st.out.drawImage(sil.canvas, 0.35 * i * R, 0.6 * i * R); }
+  } else {
+    st.out.globalAlpha = 0.13; st.out.drawImage(sil.canvas, 0.9 * R, 1.9 * R);
+    st.out.globalAlpha = 0.3; st.out.drawImage(sil.canvas, 0.35 * R, 0.75 * R);
   }
+  st.out.globalAlpha = 1;
   st.out.drawImage(cv, 0, 0);
   st.top.save(); st.top.setTransform(1, 0, 0, 1, 0, 0); st.top.clearRect(0, 0, cv.width, cv.height); st.top.restore();
 }
@@ -61,7 +105,7 @@ export function sprite(w: number, h: number, draw: (c: C) => void, pad = 5): Spr
   top.translate(W / 2, H - pad);
   top.lineJoin = 'round'; top.lineCap = 'round';
   const prev = stack;
-  stack = { top, out, sil, res: RES, rim: 0 };
+  stack = { top, out, sil, tmp: null, res: RES };
   draw(top);
   press(stack);
   stack = prev;
@@ -69,7 +113,7 @@ export function sprite(w: number, h: number, draw: (c: C) => void, pad = 5): Spr
 }
 
 // One jointed part of a paper doll: drawn around its pivot (the origin), inside the given box.
-export function piece(x0: number, y0: number, x1: number, y1: number, draw: (c: C) => void, res = RES, rim = 0.5): Sprite {
+export function piece(x0: number, y0: number, x1: number, y1: number, draw: (c: C) => void, res = RES): Sprite {
   const pad = 4, W = x1 - x0 + pad * 2, H = y1 - y0 + pad * 2;
   const pw = Math.ceil(W * res), ph = Math.ceil(H * res);
   const out = layer(pw, ph), top = layer(pw, ph), sil = layer(pw, ph);
@@ -77,7 +121,7 @@ export function piece(x0: number, y0: number, x1: number, y1: number, draw: (c: 
   top.translate(pad - x0, pad - y0);
   top.lineJoin = 'round'; top.lineCap = 'round';
   const prev = stack;
-  stack = { top, out, sil, res, rim };
+  stack = { top, out, sil, tmp: layer(pw, ph), res };
   draw(top);
   press(stack);
   stack = prev;

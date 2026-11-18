@@ -25,9 +25,9 @@ export function dollPreview(canvas: HTMLCanvasElement): void {
     big.miko.draw(c, 1000, y1, S, -1, t, true); label('轉向', 1000, y1 + 30);
 
     const y2 = 660;
-    big.miko.draw(c, 130, y2, S, 1, 0.6, false, 1); label('零件分解：每片都是獨立的紙', 230, y2 + 30);
+    big.miko.draw(c, 110, y2, S, 1, 0.6, false, 1.8); label('零件分解：每片都是獨立的紙', 230, y2 + 30);
     big.chochin.draw(c, 560, y2, S, 1, t, true); big.chochin.draw(c, 740, y2, S, 1, t + 0.3, true); label('提燈妖：一圈圈紙環疊起來', 650, y2 + 30);
-    big.chochin.draw(c, 900, y2, S, 1, 0.3, true, 1); label('分解', 960, y2 + 30);
+    big.chochin.draw(c, 900, y2, S, 1, 0.3, true, 2); label('分解', 960, y2 + 30);
     for (let i = 0; i < 4; i++) big.miko.draw(c, 1080 + i * 44, y2 - 100, 1.25, i % 2 ? -1 : 1, t + i * 0.2, true);
     for (let i = 0; i < 4; i++) big.chochin.draw(c, 1080 + i * 44, y2 - 30, 1.25, 1, t + i * 0.2, true);
     label('遊戲中的實際大小', 1146, y2 + 30);
