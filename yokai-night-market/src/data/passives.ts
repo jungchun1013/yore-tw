@@ -25,6 +25,15 @@ export const HEROES: HeroDef[] = [
     unlockStage: 0,
   },
   {
+    id: 'sayo',
+    name: { zh: '小夜', en: 'Sayo' },
+    title: { zh: '見習巫女・小滿的同期', en: "Shrine Apprentice, Xiaoman's classmate" },
+    desc: { zh: '帶著狐火上路。持續時間 +15%。', en: 'Starts with Foxfire. Duration +15%.' },
+    weapon: 'foxfire',
+    bonus: { duration: 0.15 },
+    unlockStage: 0,
+  },
+  {
     id: 'deng',
     name: { zh: '阿燈', en: 'A-Deng' },
     title: { zh: '五條港囝仔', en: 'Five Channels Kid' },

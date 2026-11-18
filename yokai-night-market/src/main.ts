@@ -226,7 +226,7 @@ async function boot(): Promise<void> {
 if (paperMode || params.has('atelier')) {
   try { await loadPaperAtlas(); } catch (error) { console.error('Paper artwork failed to load', error); }
   try { await loadTainanArt(); } catch (error) { console.error('Tainan artwork failed to load', error); }
-  await import('./render/puppet').then((m) => m.loadPuppets({ miko: 'miko' }));
+  await import('./render/puppet').then((m) => m.loadPuppets({ miko: 'miko', sayo: 'sayo' }));
 }
 if (params.has('atelier')) {
   field.style.display = 'none';

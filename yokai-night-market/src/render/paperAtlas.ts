@@ -48,7 +48,7 @@ const TAINAN: [string, number][] = [
   // approved 2026-11-18: Codex redraw v3 buildings, and the ink-print sheet (buildings, decor, the two characters, food)
   ['chihkan', 150], ['shennong', 130], ['hayashi', 170], ['confucius', 120], ['machiya', 130], ['noodleStall', 84],
   ['brickHouse', 120], ['woodHouse', 100], ['swordLionWall', 46], ['lantern', 40], ['tileFlower', 22], ['censer', 30],
-  ['miko', 50], ['fox', 52],
+  ['miko', 50], ['sayo', 50], ['fox', 52],
   ['danzai', 24], ['milkfish', 24], ['wagui', 17], ['pengbing', 24], ['dango', 24],
   // monsters and trees requested 2026-11-18; used once Codex's pictures are cut into public/art/tainan
   ['kuroneko', 34], ['hebi', 26], ['fengshi', 52], ['bixi', 46], ['lurou', 24],
@@ -84,6 +84,7 @@ export function hasArt(key: string): boolean { return atlas.has(key); }
 
 export function atlasSprite(key: string): Sprite | undefined {
   if (key.startsWith('hero:miko:')) key = 'miko';
+  else if (key.startsWith('hero:sayo:')) key = 'sayo';
   // Preserve enemies' identity and building functions. Other assets retain the procedural renderer.
   const aliases: Record<string, string> = {
     phoenix: 'maple', andon: 'stoneLantern',
