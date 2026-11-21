@@ -45,6 +45,8 @@ export async function loadPuppets(): Promise<void> {
 }
 
 export class Puppet {
+  // after an edit to z values
+  resort(): void { this.order = this.parts.slice().sort((x, y) => x.def.z - y.def.z); }
   clipLength(name: string): number { return this.rig.clips?.[name]?.length ?? 1; }
   clipNames(): string[] { return Object.keys(this.rig.clips ?? {}); }
   private parts: Loaded[] = [];

@@ -16,6 +16,35 @@ const MIN_VIEW_W = 260;
 
 export const street: StreetData = JSON.parse(JSON.stringify(raw)) as StreetData;
 
+// The editor (?editor) keeps its work in this browser; the game shows it until it is exported
+// into src/data/street.json or reverted.
+const LOCAL = 'tainan-gazetteer.street.edit';
+try { const own = localStorage.getItem(LOCAL); if (own) Object.assign(street, JSON.parse(own) as StreetData); } catch { /* no storage */ }
+export function saveStreetLocal(): void { try { localStorage.setItem(LOCAL, JSON.stringify(street)); } catch { /* no storage */ } }
+export function revertStreet(): void { try { localStorage.removeItem(LOCAL); } catch { /* no storage */ } Object.assign(street, JSON.parse(JSON.stringify(raw)) as StreetData); }
+export function hasLocalStreet(): boolean { try { return !!localStorage.getItem(LOCAL); } catch { return false; } }
+
+const laneY = (it: StreetItem): number => (it.lane === 'build' ? BUILD_Y : it.lane === 'decor' ? BUILD_Y + 8 : FRONT_Y + 14);
+const laneScale = (it: StreetItem): number => (it.scale ?? 1) * (it.lane === 'front' ? 1.2 : 1);
+// bounds of an item in street coordinates: [left, top, right, bottom]
+export function itemBox(it: StreetItem): [number, number, number, number] {
+  const k = laneScale(it), y = laneY(it);
+  if (hasArt(it.key)) { const s = spr(it.key); return [it.x - (s.w / 2) * k, y - s.h * k, it.x + (s.w / 2) * k, y]; }
+  const h = (ASSET[it.key]?.height ?? 100) * k;
+  return [it.x - h * 0.43, y - h, it.x + h * 0.43, y];
+}
+// topmost item under a street point, front lane first
+export function itemAtPoint(x: number, y: number): number {
+  for (const lane of ['front', 'decor', 'build'] as Lane[]) {
+    for (let i = street.items.length - 1; i >= 0; i--) {
+      const it = street.items[i]; if (it.lane !== lane) continue;
+      const [x0, y0, x1, y1] = itemBox(it);
+      if (x >= x0 && x <= x1 && y >= y0 && y <= y1) return i;
+    }
+  }
+  return -1;
+}
+
 interface Actor { id: string; x: number; y: number; face: number; tx: number; ty: number; clip: string; clipT: number; wait: number; bubble: number; player: boolean }
 const actors: Actor[] = [];
 let camX = 0, camFree = false;
@@ -141,7 +170,7 @@ function drawActor(c: CanvasRenderingContext2D, a: Actor): void {
 
 // Extra things drawn in the walking area by other systems (placed furniture), sorted with the actors.
 export interface StreetExtra { y: number; draw: (c: CanvasRenderingContext2D) => void }
-export interface DrawOptions { dim?: number; bottom?: number; fadeFront?: boolean; extras?: StreetExtra[]; underlay?: (c: CanvasRenderingContext2D) => void }
+export interface DrawOptions { select?: number; dim?: number; bottom?: number; fadeFront?: boolean; extras?: StreetExtra[]; underlay?: (c: CanvasRenderingContext2D) => void }
 
 export function drawStreet(c: CanvasRenderingContext2D, v: StreetView, opt: DrawOptions = {}): void {
   layout(v, opt.bottom ?? 0);
@@ -170,6 +199,11 @@ export function drawStreet(c: CanvasRenderingContext2D, v: StreetView, opt: Draw
   for (const e of list) e.draw(c);
   const px = actors[0]?.x ?? -999;
   for (const it of street.items) if (it.lane === 'front' && vis(it)) drawItem(c, { ...it, scale: (it.scale ?? 1) * 1.2 }, FRONT_Y + 14, opt.fadeFront ? 0.12 : Math.abs(it.x - px) < 90 ? 0.3 : 0.9);
+
+  if (opt.select !== undefined && street.items[opt.select]) {
+    const [x0, y0, x1, y1] = itemBox(street.items[opt.select]);
+    c.setLineDash([5, 4]); c.lineWidth = 1.5; c.strokeStyle = '#d8503a'; c.strokeRect(x0, y0, x1 - x0, y1 - y0); c.setLineDash([]);
+  }
 
   if (opt.dim) { c.setTransform(v.dpr, 0, 0, v.dpr, 0, 0); c.fillStyle = `rgba(74,47,40,${opt.dim})`; c.fillRect(0, 0, v.w, v.h); }
 }

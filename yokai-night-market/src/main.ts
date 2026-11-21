@@ -282,6 +282,11 @@ if (paperMode || params.has('atelier')) {
 if (params.has('atelier')) {
   field.style.display = 'none';
   await import('./render/atelier').then(m => m.atelier(canvas));
+} else if (params.has('editor')) {
+  // layout tools; the game itself does not start
+  field.style.display = 'none';
+  const which = params.get('editor');
+  await import('./render/editor').then((m) => (which ? m.puppetEditor(canvas, which) : m.streetEditor(canvas)));
 } else if (params.has('puppet')) {
   // review page for a detachable puppet; the game itself does not start
   field.style.display = 'none';
