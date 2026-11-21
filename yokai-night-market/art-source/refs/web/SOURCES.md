@@ -1,0 +1,35 @@
+# 參考照片來源（Wikimedia Commons，僅作外形參考，不描圖）
+
+- `butokuden/butokuden-1.jpg` — File:台南武德殿 Tainan Wude Hall - panoramio.jpg — https://commons.wikimedia.org/wiki/File:%E5%8F%B0%E5%8D%97%E6%AD%A6%E5%BE%B7%E6%AE%BF_Tainan_Wude_Hall_-_panoramio.jpg
+- `butokuden/butokuden-2.jpg` — File:新化武德殿 Xinhua Wude Hall - panoramio (1).jpg — https://commons.wikimedia.org/wiki/File:%E6%96%B0%E5%8C%96%E6%AD%A6%E5%BE%B7%E6%AE%BF_Xinhua_Wude_Hall_-_panoramio_(1).jpg
+- `butokuden/butokuden-3.jpg` — File:新化武德殿 Xinhua Wude Hall - panoramio.jpg — https://commons.wikimedia.org/wiki/File:%E6%96%B0%E5%8C%96%E6%AD%A6%E5%BE%B7%E6%AE%BF_Xinhua_Wude_Hall_-_panoramio.jpg
+- `butokuden/butokuden-4.jpg` — File:Xinhua Wude Hall 新化武德殿 - panoramio.jpg — https://commons.wikimedia.org/wiki/File:Xinhua_Wude_Hall_%E6%96%B0%E5%8C%96%E6%AD%A6%E5%BE%B7%E6%AE%BF_-_panoramio.jpg
+- `police/police-1.jpg` — File:原臺南警察署.jpg — https://commons.wikimedia.org/wiki/File:%E5%8E%9F%E8%87%BA%E5%8D%97%E8%AD%A6%E5%AF%9F%E7%BD%B2.jpg
+- `police/police-2.jpg` — File:修復後的原臺南警察署.jpg — https://commons.wikimedia.org/wiki/File:%E4%BF%AE%E5%BE%A9%E5%BE%8C%E7%9A%84%E5%8E%9F%E8%87%BA%E5%8D%97%E8%AD%A6%E5%AF%9F%E7%BD%B2.jpg
+- `police/police-3.jpg` — File:整修中的原臺南警察署.jpg — https://commons.wikimedia.org/wiki/File:%E6%95%B4%E4%BF%AE%E4%B8%AD%E7%9A%84%E5%8E%9F%E8%87%BA%E5%8D%97%E8%AD%A6%E5%AF%9F%E7%BD%B2.jpg
+- `police/police-4.jpg` — File:臺南美術館一館(原臺南州警察署) 內部庭園 綠意盎然.jpg — https://commons.wikimedia.org/wiki/File:%E8%87%BA%E5%8D%97%E7%BE%8E%E8%A1%93%E9%A4%A8%E4%B8%80%E9%A4%A8(%E5%8E%9F%E8%87%BA%E5%8D%97%E5%B7%9E%E8%AD%A6%E5%AF%9F%E7%BD%B2)_%E5%85%A7%E9%83%A8%E5%BA%AD%E5%9C%92_%E7%B6%A0%E6%84%8F%E7%9B%8E%E7%84%B6.jpg
+- `weather/weather-1.jpg` — File:Tainan Taiwan Former-Meteorological-Station-02.jpg — https://commons.wikimedia.org/wiki/File:Tainan_Taiwan_Former-Meteorological-Station-02.jpg
+- `weather/weather-2.jpg` — File:原臺南測候所2.jpg — https://commons.wikimedia.org/wiki/File:%E5%8E%9F%E8%87%BA%E5%8D%97%E6%B8%AC%E5%80%99%E6%89%802.jpg
+- `weather/weather-3.jpg` — File:原臺南測候所外觀.jpg — https://commons.wikimedia.org/wiki/File:%E5%8E%9F%E8%87%BA%E5%8D%97%E6%B8%AC%E5%80%99%E6%89%80%E5%A4%96%E8%A7%80.jpg
+- `weather/weather-4.jpg` — File:原臺南測候所1.jpg — https://commons.wikimedia.org/wiki/File:%E5%8E%9F%E8%87%BA%E5%8D%97%E6%B8%AC%E5%80%99%E6%89%801.jpg
+- `firehall/firehall-1.jpg` — File:原臺南合同廳舍.JPG — https://commons.wikimedia.org/wiki/File:%E5%8E%9F%E8%87%BA%E5%8D%97%E5%90%88%E5%90%8C%E5%BB%B3%E8%88%8D.JPG
+- `firehall/firehall-2.jpg` — File:原臺南合同廳舍yearmoon.jpg — https://commons.wikimedia.org/wiki/File:%E5%8E%9F%E8%87%BA%E5%8D%97%E5%90%88%E5%90%8C%E5%BB%B3%E8%88%8Dyearmoon.jpg
+- `firehall/firehall-3.jpg` — File:原臺南合同廳舍1.jpg — https://commons.wikimedia.org/wiki/File:%E5%8E%9F%E8%87%BA%E5%8D%97%E5%90%88%E5%90%8C%E5%BB%B3%E8%88%8D1.jpg
+- `firehall/firehall-4.jpg` — File:整修中的原臺南合同廳舍.jpg — https://commons.wikimedia.org/wiki/File:%E6%95%B4%E4%BF%AE%E4%B8%AD%E7%9A%84%E5%8E%9F%E8%87%BA%E5%8D%97%E5%90%88%E5%90%8C%E5%BB%B3%E8%88%8D.jpg
+- `bank/bank-1.jpg` — File:原日本勸業銀行臺南支店.JPG — https://commons.wikimedia.org/wiki/File:%E5%8E%9F%E6%97%A5%E6%9C%AC%E5%8B%B8%E6%A5%AD%E9%8A%80%E8%A1%8C%E8%87%BA%E5%8D%97%E6%94%AF%E5%BA%97.JPG
+- `bank/bank-2.jpg` — File:2021年原日本勸業銀行臺南支店.jpg — https://commons.wikimedia.org/wiki/File:2021%E5%B9%B4%E5%8E%9F%E6%97%A5%E6%9C%AC%E5%8B%B8%E6%A5%AD%E9%8A%80%E8%A1%8C%E8%87%BA%E5%8D%97%E6%94%AF%E5%BA%97.jpg
+- `bank/bank-3.jpg` — File:原日本勸業銀行臺南支店轉角處.JPG — https://commons.wikimedia.org/wiki/File:%E5%8E%9F%E6%97%A5%E6%9C%AC%E5%8B%B8%E6%A5%AD%E9%8A%80%E8%A1%8C%E8%87%BA%E5%8D%97%E6%94%AF%E5%BA%97%E8%BD%89%E8%A7%92%E8%99%95.JPG
+- `bank/bank-4.jpg` — File:原日本勸業銀行臺南支店西面.JPG — https://commons.wikimedia.org/wiki/File:%E5%8E%9F%E6%97%A5%E6%9C%AC%E5%8B%B8%E6%A5%AD%E9%8A%80%E8%A1%8C%E8%87%BA%E5%8D%97%E6%94%AF%E5%BA%97%E8%A5%BF%E9%9D%A2.JPG
+- `confucius/confucius-1.jpg` — File:臺南孔子廟-3.jpg — https://commons.wikimedia.org/wiki/File:%E8%87%BA%E5%8D%97%E5%AD%94%E5%AD%90%E5%BB%9F-3.jpg
+- `hayashi/hayashi-1.jpg` — File:林百貨 (2013).JPG — https://commons.wikimedia.org/wiki/File:%E6%9E%97%E7%99%BE%E8%B2%A8_(2013).JPG
+- `hayashi/hayashi-2.jpg` — File:Hayashi Department Store in Tainan, Taiwan (林百貨）.jpg — https://commons.wikimedia.org/wiki/File:Hayashi_Department_Store_in_Tainan,_Taiwan_(%E6%9E%97%E7%99%BE%E8%B2%A8%EF%BC%89.jpg
+- `hayashi/hayashi-3.jpg` — File:Hayashi Department Store - 林百貨 (2026) - IMG 09.jpg — https://commons.wikimedia.org/wiki/File:Hayashi_Department_Store_-_%E6%9E%97%E7%99%BE%E8%B2%A8_(2026)_-_IMG_09.jpg
+- `hayashi/hayashi-4.jpg` — File:Hayashi Department Store - 林百貨 (2026) - IMG 20.jpg — https://commons.wikimedia.org/wiki/File:Hayashi_Department_Store_-_%E6%9E%97%E7%99%BE%E8%B2%A8_(2026)_-_IMG_20.jpg
+- `butokuden/butokuden-2.jpg` — File:Tainan Taiwan Martial-Art-Hall Butokuden-01.jpg — https://commons.wikimedia.org/wiki/File:Tainan_Taiwan_Martial-Art-Hall_Butokuden-01.jpg
+- `butokuden/butokuden-3.jpg` — File:Tainan Taiwan Martial-Art-Hall Butokuden-02.jpg — https://commons.wikimedia.org/wiki/File:Tainan_Taiwan_Martial-Art-Hall_Butokuden-02.jpg
+- `butokuden/butokuden-4.jpg` — File:臺南武德殿.JPG — https://commons.wikimedia.org/wiki/File:%E8%87%BA%E5%8D%97%E6%AD%A6%E5%BE%B7%E6%AE%BF.JPG
+- `confucius/confucius-2.jpg` — File:台南孔廟「全臺首學」.jpg — https://commons.wikimedia.org/wiki/File:%E5%8F%B0%E5%8D%97%E5%AD%94%E5%BB%9F%E3%80%8C%E5%85%A8%E8%87%BA%E9%A6%96%E5%AD%B8%E3%80%8D.jpg
+- `confucius/confucius-3.jpg` — File:台南孔廟入口牌匾「全臺首學」.jpg — https://commons.wikimedia.org/wiki/File:%E5%8F%B0%E5%8D%97%E5%AD%94%E5%BB%9F%E5%85%A5%E5%8F%A3%E7%89%8C%E5%8C%BE%E3%80%8C%E5%85%A8%E8%87%BA%E9%A6%96%E5%AD%B8%E3%80%8D.jpg
+- `confucius/confucius-4.jpg` — File:Confucius Temple Tainan - Quan Tai Shou Xue Gate 臺南孔廟全臺首學 (2026) - IMG 01.jpg — https://commons.wikimedia.org/wiki/File:Confucius_Temple_Tainan_-_Quan_Tai_Shou_Xue_Gate_%E8%87%BA%E5%8D%97%E5%AD%94%E5%BB%9F%E5%85%A8%E8%87%BA%E9%A6%96%E5%AD%B8_(2026)_-_IMG_01.jpg
+- `police/police-3.jpg` — File:臺南市美術館1館建築.jpg — https://commons.wikimedia.org/wiki/File:%E8%87%BA%E5%8D%97%E5%B8%82%E7%BE%8E%E8%A1%93%E9%A4%A81%E9%A4%A8%E5%BB%BA%E7%AF%89.jpg
+- `police/police-4.jpg` — File:臺南市美術館1館 外觀.jpg — https://commons.wikimedia.org/wiki/File:%E8%87%BA%E5%8D%97%E5%B8%82%E7%BE%8E%E8%A1%93%E9%A4%A81%E9%A4%A8_%E5%A4%96%E8%A7%80.jpg
