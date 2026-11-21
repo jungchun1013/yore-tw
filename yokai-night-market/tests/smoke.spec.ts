@@ -24,7 +24,7 @@ async function open(page: Page): Promise<string[]> {
 
 test('title leads to stage select with only the first stage open', async ({ page }) => {
   const errors = await open(page);
-  await expect(page.locator('.logo h1')).toHaveText('百鬼夜市');
+  await expect(page.locator('.logo h1')).toHaveText('府城夜巡地圖');
   await page.click('[data-id=start]');
   await expect(page.locator('.map-node')).toHaveCount(6);
   await expect(page.locator('[data-id=stage-0]')).toBeEnabled();
