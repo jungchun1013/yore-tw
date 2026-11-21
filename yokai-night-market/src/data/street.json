@@ -1,159 +1,150 @@
 {
   "width": 2140,
-  "note": "The main street, left to right: the roundabout by the literature museum, down Nanmen Road to the Confucius Temple. The Pan Gong stone arch stands across the road from the temple (lane near) and is the gate to the flower lane (src/data/lane.json). lane: build = far side of the road, decor = in front of the buildings, near = near side of the road, front = between camera and walkers, fauna = animals on the road. Edited with ?editor.",
+  "note": "The main street, left to right: the Pan Gong stone arch standing across the road (the gate to the flower lane, src/data/lane.json), the Confucius Temple, then up Nanmen Road to the roundabout by the literature museum. lane: build = far side of the road, decor = in front of the buildings, across = spanning the road side-on, near = near side of the road, front = between camera and walkers, fauna = animals on the road. start = where the heroine stands at first. Edited with ?editor.",
   "items": [
     {
       "key": "woodFence",
-      "x": 258,
+      "x": 1882,
       "lane": "decor"
     },
     {
       "key": "ixoraHedge",
-      "x": 462,
+      "x": 1678,
       "lane": "decor"
     },
     {
       "key": "greenHedge",
-      "x": 842,
+      "x": 1298,
       "lane": "decor"
     },
     {
       "key": "brickLowWall",
-      "x": 1082,
+      "x": 1058,
       "lane": "decor"
     },
     {
       "key": "ixoraHedge",
-      "x": 1275,
+      "x": 865,
       "lane": "decor"
     },
     {
       "key": "woodFence",
-      "x": 1512,
+      "x": 628,
       "lane": "decor"
     },
     {
       "key": "brickLowWall",
-      "x": 1708,
+      "x": 432,
       "lane": "decor"
     },
     {
       "key": "ixoraHedge",
-      "x": 1948,
-      "lane": "decor"
-    },
-    {
-      "key": "greenHedge",
-      "x": 2050,
+      "x": 192,
       "lane": "decor"
     },
     {
       "key": "sakura",
-      "x": 60,
+      "x": 2080,
       "lane": "decor"
     },
     {
       "key": "weather",
-      "x": 170,
+      "x": 1970,
       "lane": "build"
     },
     {
       "key": "police",
-      "x": 350,
+      "x": 1790,
       "lane": "build"
     },
     {
       "key": "stoneLantern",
-      "x": 455,
+      "x": 1685,
       "lane": "decor"
     },
     {
       "key": "literature",
-      "x": 650,
+      "x": 1490,
       "lane": "build"
     },
     {
       "key": "maple",
-      "x": 860,
+      "x": 1280,
       "lane": "decor"
     },
     {
       "key": "firehall",
-      "x": 990,
+      "x": 1150,
       "lane": "build"
     },
     {
       "key": "bank",
-      "x": 1170,
+      "x": 970,
       "lane": "build"
     },
     {
       "key": "lantern",
-      "x": 1270,
+      "x": 870,
       "lane": "decor"
     },
     {
       "key": "hayashi",
-      "x": 1380,
+      "x": 760,
       "lane": "build"
     },
     {
       "key": "sakura",
-      "x": 1515,
+      "x": 625,
       "lane": "decor"
     },
     {
       "key": "butokuden",
-      "x": 1640,
+      "x": 500,
       "lane": "build"
     },
     {
       "key": "confucius",
-      "x": 1830,
+      "x": 310,
       "lane": "build"
     },
     {
       "key": "stoneLantern",
-      "x": 1945,
+      "x": 195,
       "lane": "decor"
     },
     {
       "key": "panggong",
-      "x": 1830,
-      "lane": "near",
+      "x": 70,
+      "lane": "across",
       "action": "gate:lane"
     },
     {
       "key": "maple",
-      "x": 420,
+      "x": 1720,
       "lane": "front"
     },
     {
       "key": "sakura",
-      "x": 1730,
+      "x": 410,
       "lane": "front"
     },
     {
       "key": "malayanNightHeron",
-      "x": 830,
-      "lane": "fauna"
-    },
-    {
-      "key": "spottedDove",
       "x": 1310,
       "lane": "fauna"
     },
     {
       "key": "spottedDove",
-      "x": 1345,
+      "x": 830,
+      "lane": "fauna"
+    },
+    {
+      "key": "spottedDove",
+      "x": 795,
       "lane": "fauna",
       "y": 346,
       "flip": true
-    },
-    {
-      "key": "sakura",
-      "x": 2060,
-      "lane": "decor"
     }
-  ]
+  ],
+  "start": 1490
 }

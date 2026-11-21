@@ -1,77 +1,78 @@
 {
   "width": 1040,
-  "note": "The flower lane (Fuzhong Street) behind the Pan Gong stone arch. The arch is the way back to the main street. Edited with ?editor&scene=lane.",
+  "note": "The flower lane (Fuzhong Street). The Pan Gong stone arch at the right end leads back to the main street; the lane runs to the left. Edited with ?editor&scene=lane.",
   "items": [
     {
       "key": "panggong",
-      "x": 110,
-      "lane": "near",
-      "action": "gate:street"
+      "x": 975,
+      "lane": "across",
+      "action": "gate:street",
+      "flip": true
     },
     {
       "key": "bambooFence",
-      "x": 208,
+      "x": 832,
       "lane": "decor"
     },
     {
       "key": "potRow",
-      "x": 372,
+      "x": 668,
       "lane": "decor"
     },
     {
       "key": "bambooFence",
-      "x": 516,
+      "x": 524,
       "lane": "decor"
     },
     {
       "key": "potRow",
-      "x": 686,
+      "x": 354,
       "lane": "decor"
     },
     {
       "key": "ixoraHedge",
-      "x": 862,
+      "x": 178,
       "lane": "decor"
     },
     {
       "key": "woodFence",
-      "x": 1005,
+      "x": 35,
       "lane": "decor"
     },
     {
       "key": "lantern",
-      "x": 215,
+      "x": 825,
       "lane": "decor"
     },
     {
       "key": "noodleStall",
-      "x": 300,
+      "x": 740,
       "lane": "build",
       "action": "stall"
     },
     {
       "key": "machiya",
-      "x": 440,
+      "x": 600,
       "lane": "build"
     },
     {
       "key": "stall",
-      "x": 590,
+      "x": 450,
       "lane": "build"
     },
     {
       "key": "lantern",
-      "x": 685,
+      "x": 355,
       "lane": "decor"
     },
     {
       "key": "shennong",
-      "x": 780,
+      "x": 260,
       "lane": "build"
     },
     {
       "key": "woodHouse",
-      "x": 940,
+      "x": 100,
       "lane": "build"
     },
     {
@@ -81,9 +82,10 @@
     },
     {
       "key": "malayanNightHeron",
-      "x": 370,
+      "x": 670,
       "lane": "fauna",
       "y": 350
     }
-  ]
+  ],
+  "start": 900
 }

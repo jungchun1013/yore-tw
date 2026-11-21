@@ -7,9 +7,9 @@ import { hasArt } from './paperAtlas';
 import { PUPPETS } from './puppet';
 import { spr } from './sprites';
 
-export type Lane = 'build' | 'decor' | 'near' | 'front' | 'fauna';
+export type Lane = 'build' | 'decor' | 'across' | 'near' | 'front' | 'fauna';
 export interface StreetItem { key: string; x: number; lane: Lane; y?: number; scale?: number; flip?: boolean; action?: string }
-export interface StreetData { width: number; items: StreetItem[] }
+export interface StreetData { width: number; start?: number; items: StreetItem[] }
 
 // logical layout, top to bottom (the street is H tall and scaled to the screen)
 export const H = 420, BUILD_Y = 268, WALK_Y0 = 282, WALK_Y1 = 322, FLOOR_Y0 = 330, FLOOR_Y1 = 398, FRONT_Y = 432;
@@ -17,6 +17,8 @@ const MIN_VIEW_W = 260;
 
 export const FAUNA_Y = WALK_Y1 + 12;
 export const NEAR_Y = FLOOR_Y0 + 16;
+// a gate across the road is seen side-on: its far foot by the buildings, its near foot on the floor
+const ACROSS_FAR = WALK_Y0 + 2, ACROSS_NEAR = WALK_Y1 + 10, ACROSS_SQUASH = 0.62;
 // Scenes are data: the main street and the places reached from it. `street` always holds the
 // scene being shown; an item with action 'gate:<scene>' leads to another one.
 const SCENES: Record<string, StreetData> = { street: rawStreet as unknown as StreetData, lane: rawLane as unknown as StreetData };
@@ -32,25 +34,26 @@ function loadScene(name: string): void {
   sceneName = SCENES[name] ? name : 'street';
   let data = JSON.parse(JSON.stringify(SCENES[sceneName])) as StreetData;
   try { const own = localStorage.getItem(localKey()); if (own) data = JSON.parse(own) as StreetData; } catch { /* no storage */ }
-  street.width = data.width; street.items = data.items;
+  street.width = data.width; street.start = data.start; street.items = data.items;
 }
 loadScene('street');
 export function saveStreetLocal(): void { try { localStorage.setItem(localKey(), JSON.stringify(street)); } catch { /* no storage */ } }
 export function revertStreet(): void { try { localStorage.removeItem(localKey()); } catch { /* no storage */ } loadScene(sceneName); }
 export function hasLocalStreet(): boolean { try { return !!localStorage.getItem(localKey()); } catch { return false; } }
 
-const laneY = (it: StreetItem): number => (it.lane === 'build' ? BUILD_Y : it.lane === 'decor' ? BUILD_Y + 8 : it.lane === 'fauna' ? it.y ?? FAUNA_Y : it.lane === 'near' ? it.y ?? NEAR_Y : FRONT_Y + 14);
+const laneY = (it: StreetItem): number => (it.lane === 'build' ? BUILD_Y : it.lane === 'decor' ? BUILD_Y + 8 : it.lane === 'fauna' ? it.y ?? FAUNA_Y : it.lane === 'near' ? it.y ?? NEAR_Y : it.lane === 'across' ? ACROSS_NEAR : FRONT_Y + 14);
 const laneScale = (it: StreetItem): number => (it.scale ?? 1) * (it.lane === 'front' ? 1.2 : 1);
 // bounds of an item in street coordinates: [left, top, right, bottom]
 export function itemBox(it: StreetItem): [number, number, number, number] {
   const k = laneScale(it), y = laneY(it);
+  if (it.lane === 'across') { const h = (hasArt(it.key) ? spr(it.key).h : ASSET[it.key]?.height ?? 100) * k; return [it.x - 44, ACROSS_FAR - h + 14, it.x + 44, ACROSS_NEAR]; }
   if (hasArt(it.key)) { const s = spr(it.key); return [it.x - (s.w / 2) * k, y - s.h * k, it.x + (s.w / 2) * k, y]; }
   const h = (ASSET[it.key]?.height ?? 100) * k;
   return [it.x - h * 0.43, y - h, it.x + h * 0.43, y];
 }
 // topmost item under a street point, front lane first
 export function itemAtPoint(x: number, y: number): number {
-  for (const lane of ['front', 'near', 'fauna', 'decor', 'build'] as Lane[]) {
+  for (const lane of ['front', 'near', 'across', 'fauna', 'decor', 'build'] as Lane[]) {
     for (let i = street.items.length - 1; i >= 0; i--) {
       const it = street.items[i]; if (it.lane !== lane) continue;
       const [x0, y0, x1, y1] = itemBox(it);
@@ -78,7 +81,7 @@ export function enterScene(name: string): void {
   const px = street.items.find((it) => it.action === `gate:${from}`)?.x ?? 100;
   actors.forEach((a, i) => {
     a.x = a.tx = i === 0 ? px : spreadX(i);
-    a.y = a.ty = i === 0 ? WALK_Y1 - 4 : (WALK_Y0 + WALK_Y1) / 2 + (i % 2 ? 10 : -6);
+    a.y = a.ty = i === 0 ? (WALK_Y0 + WALK_Y1) / 2 : (WALK_Y0 + WALK_Y1) / 2 + (i % 2 ? 10 : -6);
     a.clip = 'idle'; a.clipT = 0; a.next = ''; a.bubble = 0; a.wait = 1 + i;
   });
   camX = px; camFree = false;
@@ -98,7 +101,7 @@ export function setupStreet(hero: string): void {
   actors.length = 0;
   const ids = [hero, ...[...PUPPETS.keys()].filter((k) => k !== hero)];
   ids.forEach((id, i) => {
-    const x = i === 0 ? Math.min(560, street.width / 2) : spreadX(i);
+    const x = i === 0 ? street.start ?? Math.min(560, street.width / 2) : spreadX(i);
     actors.push({ id, x, y: (WALK_Y0 + WALK_Y1) / 2 + (i % 2 ? 10 : -6), face: 1, tx: x, ty: 0, clip: 'idle', clipT: 0, wait: 1 + i, bubble: 0, player: i === 0, next: '' });
   });
   for (const a of actors) a.ty = a.y;
@@ -160,10 +163,10 @@ export function tapStreet(sx: number, sy: number): string | null {
     }
   }
   for (const it of street.items) {
-    if (it.lane === 'near') {
-      // a gate on the near side: walk up to it; the prompt appears on arrival
+    if (it.lane === 'near' || it.lane === 'across') {
+      // a gate: walk up to it; the prompt appears on arrival
       const [x0, y0, x1, y1] = itemBox(it);
-      if (x >= x0 && x <= x1 && y >= y0 && y <= y1) { const p = actors[0]; p.tx = it.x; p.ty = WALK_Y1 - 4; camFree = false; return null; }
+      if (x >= x0 && x <= x1 && y >= y0 && y <= y1) { const p = actors[0]; p.tx = it.x; p.ty = it.lane === 'across' ? (WALK_Y0 + WALK_Y1) / 2 : WALK_Y1 - 4; camFree = false; return null; }
       continue;
     }
     if (!it.action || it.lane === 'front' || it.lane === 'fauna') continue;
@@ -207,6 +210,21 @@ function drawItem(c: CanvasRenderingContext2D, it: StreetItem, y: number, alpha 
     c.restore();
   }
   c.globalAlpha = 1;
+}
+
+// One half of a gate that spans the road, in oblique side view: the picture is squashed along
+// the road and sheared so its far foot stands by the buildings and its near foot on the floor.
+// The far half is drawn behind the walkers and the near half in front, so they pass through it.
+function drawAcross(c: CanvasRenderingContext2D, it: StreetItem, nearHalf: boolean): void {
+  if (!hasArt(it.key)) { if (nearHalf) drawItem(c, it, ACROSS_NEAR); return; }
+  const s = spr(it.key), k = it.scale ?? 1, dir = it.flip ? -1 : 1;
+  c.save();
+  c.translate(it.x, (ACROSS_FAR + ACROSS_NEAR) / 2);
+  c.transform(ACROSS_SQUASH * k * dir, ((ACROSS_NEAR - ACROSS_FAR) / s.w), 0, k, 0, 0);
+  const cw = s.c.width, ch = s.c.height;
+  if (nearHalf) c.drawImage(s.c, cw / 2, 0, cw / 2, ch, 0, -s.h, s.w / 2, s.h);
+  else c.drawImage(s.c, 0, 0, cw / 2, ch, -s.w / 2, -s.h, s.w / 2, s.h);
+  c.restore();
 }
 
 function drawActor(c: CanvasRenderingContext2D, a: Actor): void {
@@ -265,6 +283,9 @@ export function drawStreet(c: CanvasRenderingContext2D, v: StreetView, opt: Draw
     // see-through while the player stands behind it
     const [x0, , x1] = itemBox(it), p = actors[0], behind = !!p && p.x > x0 && p.x < x1 && p.y < WALK_Y1 - 10;
     list.push({ y: laneY(it), draw: (cc) => drawItem(cc, it, laneY(it), behind ? 0.5 : 1) });
+  }
+  for (const it of street.items) if (it.lane === 'across' && vis(it)) {
+    list.push({ y: ACROSS_FAR, draw: (cc) => drawAcross(cc, it, false) }, { y: ACROSS_NEAR, draw: (cc) => drawAcross(cc, it, true) });
   }
   list.sort((p, q) => p.y - q.y);
   for (const e of list) e.draw(c);
