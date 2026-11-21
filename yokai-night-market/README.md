@@ -89,3 +89,12 @@ Clears out of 5 runs with 小滿 (2026-11-18):
 ## Save
 
 `localStorage` key `yokai-night-market.save.v1`: coins, ema levels, cleared stages, best times, yokai seen, settings.
+
+## Fonts
+
+Chinese text uses two SIL OFL fonts, cut down to the characters the game uses (about 350 KB together); the licence is in `src/assets/fonts/OFL.txt`.
+
+- 源樣明體 GenRyuMin TW Bold (ButTaiwan): titles, place and character names.
+- jf open 粉圓 (justfont): interface and text.
+
+After adding Chinese text, run `python3 -I art-source/fonts/subset_fonts.py <GenRyuMin2TW-B.otf> <jf-openhuninn-2.1.ttf>` so new characters are included.

@@ -1,3 +1,5 @@
+@font-face { font-family: 'GenRyuMin TW'; src: url('./assets/fonts/genryumin-b.woff2') format('woff2'); font-weight: 400 900; font-display: swap; }
+@font-face { font-family: 'jf open huninn'; src: url('./assets/fonts/huninn.woff2') format('woff2'); font-weight: 400 900; font-display: swap; }
 :root {
   --ink: #4a2f28;
   --paper: #f6ecd2;
@@ -8,8 +10,9 @@
   --gold: #e0a93a;
   --blue: #3f7f86;
   --muted: #8a6f5c;
-  --serif: 'Noto Serif TC', 'Songti TC', 'Hiragino Mincho ProN', 'Yu Mincho', 'PMingLiU', Georgia, serif;
-  --sans: ui-rounded, 'Hiragino Maru Gothic ProN', 'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei', system-ui, sans-serif;
+  /* GenRyuMin TW (titles, names) and jf open huninn (interface), both SIL OFL, subset to the game's text: src/assets/fonts */
+  --serif: 'GenRyuMin TW', 'Noto Serif TC', 'Songti TC', 'PMingLiU', Georgia, serif;
+  --sans: 'jf open huninn', ui-rounded, 'PingFang TC', 'Noto Sans TC', 'Microsoft JhengHei', system-ui, sans-serif;
 }
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--night); overflow: hidden; overscroll-behavior: none; }

@@ -283,7 +283,7 @@ export function render(c: Ctx, run: Run, v: View, clock: number): void {
     if (f.kind !== 'num') continue;
     const t = f.t / f.life;
     c.globalAlpha = t > 0.7 ? (1 - t) / 0.3 : 1;
-    c.font = f.crit ? '800 17px ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif' : '700 13px ui-rounded, "Arial Rounded MT Bold", system-ui, sans-serif';
+    c.font = f.crit ? '800 17px "jf open huninn", ui-rounded, system-ui, sans-serif' : '700 13px "jf open huninn", ui-rounded, system-ui, sans-serif';
     const y = f.y - 8 - t * 20, text = String(f.v);
     c.lineWidth = 3; c.strokeStyle = INK; c.strokeText(text, f.x, y);
     c.fillStyle = f.crit ? '#f7c948' : '#fff6e8'; c.fillText(text, f.x, y);
