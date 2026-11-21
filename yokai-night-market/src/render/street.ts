@@ -9,7 +9,9 @@ import { spr } from './sprites';
 
 export type Lane = 'back' | 'build' | 'decor' | 'across' | 'near' | 'front' | 'fauna';
 export interface StreetItem { key: string; x: number; lane: Lane; y?: number; scale?: number; flip?: boolean; action?: string }
-export interface StreetData { width: number; start?: number; items: StreetItem[] }
+// a path of stones laid on the ground: centred on x, w cells wide, from the buildings rows deep
+export interface StreetPath { x: number; w: number; rows: number }
+export interface StreetData { width: number; start?: number; paths?: StreetPath[]; items: StreetItem[] }
 
 // logical layout, top to bottom (the street is H tall and scaled to the screen)
 // buildings stand along the top; below them a walk, then the yard, which takes most of the screen
@@ -39,7 +41,7 @@ function loadScene(name: string): void {
   sceneName = SCENES[name] ? name : 'street';
   let data = JSON.parse(JSON.stringify(SCENES[sceneName])) as StreetData;
   try { const own = localStorage.getItem(localKey()); if (own) data = JSON.parse(own) as StreetData; } catch { /* no storage */ }
-  street.width = data.width; street.start = data.start; street.items = data.items;
+  street.width = data.width; street.start = data.start; street.paths = data.paths; street.items = data.items;
 }
 loadScene('street');
 export function saveStreetLocal(): void { try { localStorage.setItem(localKey(), JSON.stringify(street)); } catch { /* no storage */ } }
@@ -92,12 +94,13 @@ export function enterScene(name: string): void {
   camX = px; camFree = false;
 }
 // The gate the player is standing at, with the screen point above it for the prompt.
-export function nearGate(): { to: string; sx: number; sy: number } | null {
+export function nearGate(): { to: string; sx: number; sy: number; below: boolean } | null {
   const p = actors[0]; if (!p) return null;
   for (const it of street.items) {
     if (!it.action?.startsWith('gate:') || Math.abs(p.x - it.x) > 44) continue;
-    const [, top] = itemBox(it);
-    return { to: it.action.slice(5), sx: (it.x - (camX - viewW / 2)) * scale, sy: offY + top * scale };
+    // a signpost on the near side shows its prompt under its foot, clear of the heroine's head
+    const [, top, , foot] = itemBox(it), below = it.lane === 'near';
+    return { to: it.action.slice(5), sx: (it.x - (camX - viewW / 2)) * scale, sy: offY + (below ? foot + 8 : top) * scale, below };
   }
   return null;
 }
@@ -171,7 +174,7 @@ export function tapStreet(sx: number, sy: number): string | null {
     if (it.lane === 'near' || it.lane === 'across') {
       // a gate: walk up to it; the prompt appears on arrival
       const [x0, y0, x1, y1] = itemBox(it);
-      if (x >= x0 && x <= x1 && y >= y0 && y <= y1) { const p = actors[0]; p.tx = it.x; p.ty = it.lane === 'across' ? (WALK_Y0 + WALK_Y1) / 2 : WALK_Y1 - 4; camFree = false; return null; }
+      if (x >= x0 && x <= x1 && y >= y0 && y <= y1) { const p = actors[0]; p.tx = it.lane === 'near' ? it.x + 26 : it.x; p.ty = it.lane === 'across' ? (WALK_Y0 + WALK_Y1) / 2 : it.lane === 'near' ? laneY(it) + 12 : WALK_Y1 - 4; camFree = false; return null; }
       continue;
     }
     if (!it.action || it.lane === 'front' || it.lane === 'fauna' || it.lane === 'back') continue;
@@ -218,6 +221,16 @@ function drawGround(c: CanvasRenderingContext2D, left: number): void {
     const hb = 1 + (hash(gx >> 1, 9) % 3);
     c.fillRect(x, FLOOR_Y0 + (rows - hb) * CH, CW + 0.5, H);                               // front edge
     for (let gy = 2; gy < rows - 4; gy++) if (hash(gx >> 1, gy >> 1) % 17 === 0) c.fillRect(x, FLOOR_Y0 + gy * CH, CW + 0.5, CH + 0.5);
+  }
+  // stone paths: one flat paper stone per cell, slightly inset so the joints show
+  for (const p of street.paths ?? []) {
+    const g0 = Math.round(p.x / CW - p.w / 2);
+    for (let gx = g0; gx < g0 + p.w; gx++) for (let gy = -3; gy < p.rows; gy++) {
+      const x = gx * CW, y = FLOOR_Y0 + gy * CH, tone = hash(gx, gy) % 3;
+      c.fillStyle = '#e6dcc6'; c.fillRect(x, y, CW, CH);
+      c.fillStyle = ['#cfc6b2', '#d6cdb9', '#c8bfab'][tone];
+      c.fillRect(x + 1.5, y + 1.5, CW - 3, CH - 3);
+    }
   }
   const g = paperGrain(c);
   if (g) { c.fillStyle = g; c.fillRect(left, top, viewW, H - top); }
@@ -341,7 +354,7 @@ export function callActor(id: string, x: number, clip: string): void {
   if (Math.abs(a.x - x) < 3) { a.clip = clip; a.clipT = 0; a.next = ''; }
   camFree = false;
 }
-export function walkPlayer(x: number): void { const p = actors[0]; if (p) { p.x = p.tx = x; camFree = false; } }
+export function walkPlayer(x: number, y?: number): void { const p = actors[0]; if (p) { p.x = p.tx = x; if (y !== undefined) p.y = p.ty = y; camFree = false; } }
 export const actorIds = (): string[] => actors.map((q) => q.id);
 export const stallX = (): number => street.items.find((it) => it.action === 'stall')?.x ?? 0;
 export function lookAt(x: number): void { camFree = true; camX = x; }

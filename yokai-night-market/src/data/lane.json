@@ -1,13 +1,13 @@
 {
-  "width": 731,
-  "note": "The flower lane (Fuzhong Street). The Pan Gong stone arch at the right end leads back to the main street; the lane runs to the left. Edited with ?editor&scene=lane.",
+  "width": 900,
+  "note": "The flower lane (Fuzhong Street). The Pan Gong stone arch stands at its entrance at the right end and leads back to the main street; the lane runs to the left. Edited with ?editor&scene=lane.",
   "items": [
     {
-      "key": "panggongSide",
-      "x": 666,
-      "lane": "across",
-      "action": "gate:street",
-      "flip": true
+      "key": "panggong",
+      "x": 800,
+      "lane": "build",
+      "scale": 1.2,
+      "action": "gate:street"
     },
     {
       "key": "bambooFence",
@@ -82,5 +82,5 @@
       "y": 380
     }
   ],
-  "start": 690
+  "start": 800
 }

@@ -53,6 +53,7 @@ export const ASSETS: Asset[] = [
   a('plumeria', 'tree', 86, 'placeholder', { name: '雞蛋花' }),
   a('norfolkPine', 'tree', 190, 'placeholder', { name: '南洋杉' }),
   a('rainTree', 'tree', 150, 'placeholder', { name: '雨豆樹' }),
+  a('signLane', 'decor', 46, 'pending', { name: '告示牌：前往花巷' }),
   a('panggong', 'building', 110, 'placeholder', { tags: ['landmark'], name: '泮宮石坊（Codex 實景稿，待核可）' }),
   a('butokuden', 'building', 120, 'placeholder', { tags: ['landmark'], name: '武德殿（Codex 紙雕稿，待核可）' }),
   a('weather', 'building', 130, 'pending', { tags: ['landmark'], name: '臺南測候所' }),

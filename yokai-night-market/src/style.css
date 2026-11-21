@@ -297,3 +297,5 @@ button.choice:hover { background: #fff; box-shadow: 0 0 0 3px var(--gold); }
 .street-side { position: absolute; right: calc(10px + env(safe-area-inset-right)); bottom: calc(12px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 10px; }
 .street-row { position: absolute; left: calc(10px + env(safe-area-inset-left)); right: calc(84px + env(safe-area-inset-right)); bottom: calc(12px + env(safe-area-inset-bottom)); display: none; justify-content: flex-end; gap: 10px; }
 .street-row.open { display: flex; }
+.gate.below { transform: translate(-50%, 0); }
+.gate.below:active { transform: translate(-50%, 3px); }

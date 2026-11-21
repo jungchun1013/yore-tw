@@ -10,7 +10,7 @@ const T = {
   title: { zh: '府城夜巡地圖', en: 'Tainan Gazetteer' },
   tagline: { zh: '昭和初年的臺南。撐過十五分鐘，等天亮。', en: 'Tainan, early Showa. Last fifteen minutes and wait for dawn.' },
   start: { zh: '出發', en: 'Set Out' },
-  enterLane: { zh: '進入花巷', en: 'Enter the lane' },
+  enterLane: { zh: '前往花巷', en: 'To the flower lane' },
   backStreet: { zh: '回大街', en: 'Back to the street' },
   menu: { zh: '選單', en: 'Menu' },
   tapStart: { zh: '點一下開始', en: 'Tap to start' },

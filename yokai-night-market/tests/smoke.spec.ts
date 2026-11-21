@@ -182,9 +182,9 @@ test('treating someone at the stall sends them over to eat and counts once', asy
 
 test('the stone arch leads into the flower lane and back', async ({ page }) => {
   const errors = await open(page);
-  type Hook = { __ynm: { walkTo(x: number): void; scene: string } };
+  type Hook = { __ynm: { walkTo(x: number): void; gateX(): number; scene: string } };
   await expect(page.locator('[data-id=gate]')).toBeHidden();
-  await page.evaluate(() => (window as unknown as Hook).__ynm.walkTo(70));
+  await page.evaluate(() => { const y = (window as unknown as Hook).__ynm; y.walkTo(y.gateX()); });
   await page.click('[data-id=gate]');
   expect(await page.evaluate(() => (window as unknown as Hook).__ynm.scene)).toBe('lane');
   await page.click('[data-id=gate]');

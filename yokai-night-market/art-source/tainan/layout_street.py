@@ -9,7 +9,7 @@ def width(key):
     f = f'public/art/tainan/{key}.png'
     if os.path.exists(f): w, h = Image.open(f).size; return w / h * height(key)
     return height(key) * 0.86
-items = []; x = 196.0
+items = []; x = 70.0
 def put(key, lane='build', gap=0, **kw):
     global x
     x += gap; w = width(key); cx = round(x + w / 2); x += w
@@ -17,13 +17,15 @@ def put(key, lane='build', gap=0, **kw):
 def at(key, cx, lane='decor', **kw): items.append({'key': key, 'x': round(cx), 'lane': lane, **kw})
 
 # the gate to the flower lane spans the road at the left end
-at('panggongSide', 96, 'across', action='gate:lane')
 # the Confucius Temple: gate, then its red wall running right to the literature museum
 g, gw = put('confucius')
 w1, ww = put('confuciusWall', gap=-6)
 w2, _ = put('confuciusWall', gap=-2)
 at('banyan', g + 20, 'back'); at('norfolkPine', w1 - 20, 'back'); at('rainTree', w2 + 10, 'back')
 at('plumeria', g + gw / 2 + 26, 'decor')
+# a stone path from the temple gate into the yard, and a signpost to the flower lane beside it
+paths = [{'x': g, 'w': 3, 'rows': 5}]
+at('signLane', g - 60, 'near', action='gate:lane')
 at('stoneLantern', w1 + 40, 'decor')
 # the literature museum unfolded: side wing, front with its corner towers, side wing
 sl, slw = put('literatureSide', gap=0)
@@ -50,8 +52,8 @@ end = round(x + 110)
 at('malayanNightHeron', lit - 60, 'fauna', y=380)
 at('spottedDove', b + 20, 'fauna', y=356); at('spottedDove', b + 52, 'fauna', y=372, flip=True)
 at('malayanNightHeron', p, 'fauna', y=400)
-d = {'width': end, 'start': start,
-     'note': "The main street, left to right: the Pan Gong stone arch across the road (gate to the flower lane, src/data/lane.json), the Confucius Temple gate and its red wall, the literature museum, then the Wude Hall and on to the roundabout buildings. lane: back = behind the buildings (trees over the wall), build = the buildings, decor = in front of them, across = spanning the road, near = near side, front = between camera and walkers, fauna = animals. start = where the heroine first stands. Written by layout_street.py, then edited with ?editor.",
+d = {'width': end, 'start': start, 'paths': paths,
+     'note': "The main street, left to right: the Confucius Temple gate with a stone path in front and a signpost to the flower lane (src/data/lane.json), its red wall, the literature museum, then the Wude Hall and on to the roundabout buildings. lane: back = behind the buildings (trees over the wall), build = the buildings, decor = in front of them, across = spanning the road, near = near side, front = between camera and walkers, fauna = animals. start = where the heroine first stands. Written by layout_street.py, then edited with ?editor.",
      'items': items}
 open('src/data/street.json', 'w').write(json.dumps(d, ensure_ascii=False, indent=2) + '\n')
 print(end, [(i['key'], i['x']) for i in items if i['lane'] == 'build'])

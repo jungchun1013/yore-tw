@@ -12,7 +12,7 @@ import { STEP, choose, closeChest, createRun, reroll, step } from './game/run';
 import type { HeroId } from './game/types';
 import type { Run } from './game/world';
 import { type View, render } from './render/scene';
-import { walkPlayer, actorIds, callActor, currentScene, drawStreet, enterScene, nearGate, lookAt, panStreet, setupStreet, stallX, tapStreet, toStreet, updateStreet } from './render/street';
+import { street, walkPlayer, actorIds, callActor, currentScene, drawStreet, enterScene, nearGate, lookAt, panStreet, setupStreet, stallX, tapStreet, toStreet, updateStreet } from './render/street';
 import { type Placed, canPlace, cellAt, drawGrid, furnitureKeys, itemAt, placedExtras } from './render/place';
 import { hudBanner, hudHint, hudVisible, initHud, resetHud, updateHud } from './ui/hud';
 import { type Actions, bossName, clearOverlay, initScreens, showChest, showCodex, showLevelUp, showPause, showResult, showSettings, showShrine, showSplash, showStages, showStall, buildStreetBar, buildTray } from './ui/screens';
@@ -268,7 +268,8 @@ function frame(now: number): void {
   gate.classList.toggle('on', !!g);
   if (g) {
     if (gate.dataset.to !== g.to) { gate.dataset.to = g.to; gate.textContent = t(g.to === 'lane' ? 'enterLane' : 'backStreet'); }
-    gate.style.left = `${Math.max(76, Math.min(view.w - 76, g.sx))}px`; gate.style.top = `${Math.max(60, g.sy - 10)}px`;
+    gate.style.left = `${Math.max(76, Math.min(view.w - 76, g.sx))}px`; gate.style.top = `${g.below ? g.sy : Math.max(60, g.sy - 10)}px`;
+    gate.classList.toggle('below', g.below);
   }
   bar.classList.toggle('on', screen === 'street' && !placing);
   tray.classList.toggle('on', screen === 'street' && placing);
@@ -325,8 +326,9 @@ if (debug) {
     bot(on: boolean) { botPlays = on; },
     street() { actions.toStreet(); },
     stall() { actions.toStall(); },
+    gateX() { return street.items.find((it) => it.action?.startsWith('gate:'))?.x ?? 0; },
     get scene() { return currentScene(); },
-    walkTo(x: number) { walkPlayer(x); },
+    walkTo(x: number, y?: number) { walkPlayer(x, y); },
     // a screen point in the middle of the placement floor, for tests
     floorPoint() { const x = view.w * 0.4; let y = 0; while (y < view.h && cellAt(...toStreet(x, y))[1] < 3) y += 3; return [x, y + 2]; },
     fast(seconds: number) {
