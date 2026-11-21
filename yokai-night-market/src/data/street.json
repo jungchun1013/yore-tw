@@ -1,5 +1,5 @@
 {
-  "width": 2860,
+  "width": 2990,
   "note": "The street, left to right: the roundabout by the literature museum, down Nanmen Road to the Confucius Temple, through the Pan Gong stone arch into the flower lane (Fuzhong Street). lane: build = buildings on the far side of the road, decor = in front of the buildings, front = between the camera and the walkers. Edited with ?editor.",
   "items": [
     {
@@ -24,93 +24,93 @@
     },
     {
       "key": "literature",
-      "x": 580,
+      "x": 650,
       "lane": "build"
     },
     {
       "key": "maple",
-      "x": 730,
+      "x": 860,
       "lane": "decor"
     },
     {
       "key": "firehall",
-      "x": 860,
+      "x": 990,
       "lane": "build"
     },
     {
       "key": "bank",
-      "x": 1040,
+      "x": 1170,
       "lane": "build"
     },
     {
       "key": "lantern",
-      "x": 1140,
+      "x": 1270,
       "lane": "decor"
     },
     {
       "key": "hayashi",
-      "x": 1250,
+      "x": 1380,
       "lane": "build"
     },
     {
       "key": "sakura",
-      "x": 1385,
+      "x": 1515,
       "lane": "decor"
     },
     {
       "key": "butokuden",
-      "x": 1510,
+      "x": 1640,
       "lane": "build"
     },
     {
       "key": "confucius",
-      "x": 1700,
+      "x": 1830,
       "lane": "build"
     },
     {
       "key": "stoneLantern",
-      "x": 1815,
+      "x": 1945,
       "lane": "decor"
     },
     {
       "key": "panggong",
-      "x": 1930,
+      "x": 2060,
       "lane": "build"
     },
     {
       "key": "lantern",
-      "x": 2020,
+      "x": 2150,
       "lane": "decor"
     },
     {
       "key": "noodleStall",
-      "x": 2110,
+      "x": 2240,
       "lane": "build",
       "action": "stall"
     },
     {
       "key": "machiya",
-      "x": 2250,
+      "x": 2380,
       "lane": "build"
     },
     {
       "key": "stall",
-      "x": 2400,
+      "x": 2530,
       "lane": "build"
     },
     {
       "key": "lantern",
-      "x": 2495,
+      "x": 2625,
       "lane": "decor"
     },
     {
       "key": "shennong",
-      "x": 2590,
+      "x": 2720,
       "lane": "build"
     },
     {
       "key": "woodHouse",
-      "x": 2750,
+      "x": 2880,
       "lane": "build"
     },
     {
@@ -120,34 +120,34 @@
     },
     {
       "key": "sakura",
-      "x": 1600,
+      "x": 1730,
       "lane": "front"
     },
     {
       "key": "maple",
-      "x": 2330,
+      "x": 2460,
       "lane": "front"
     },
     {
       "key": "malayanNightHeron",
-      "x": 700,
+      "x": 830,
       "lane": "fauna"
     },
     {
       "key": "spottedDove",
-      "x": 1180,
+      "x": 1310,
       "lane": "fauna"
     },
     {
       "key": "spottedDove",
-      "x": 1215,
+      "x": 1345,
       "lane": "fauna",
       "y": 346,
       "flip": true
     },
     {
       "key": "malayanNightHeron",
-      "x": 2180,
+      "x": 2310,
       "lane": "fauna",
       "y": 350
     }
