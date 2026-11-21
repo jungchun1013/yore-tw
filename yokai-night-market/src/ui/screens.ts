@@ -73,7 +73,7 @@ export function showSplash(a: Actions): void {
 
 export function showSettings(save: Save, a: Actions): void {
   show('pause',
-    h('div', 'head', btn(t('back'), 'ghost', a.toStreet, 'back'), h('h2', '', t('settings')), h('span', 'spacer')),
+    h('div', 'head', roundBtn('back', 'back', t('back'), a.toStreet), h('h2', '', t('settings')), h('span', 'spacer')),
     settingsRow(save, a, true),
   );
 }
@@ -83,14 +83,24 @@ const ICONS: Record<string, string> = {
   furniture: '<path d="M6 4v9h9M6 13v7M15 13v7M6 9h9V4"/><path d="M19 20v-9h-3"/>',
   codex: '<path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/>',
   shrine: '<path d="M4 9l8-5 8 5v10H4zM9 3l3-1 3 1M8 12h8M8 15h5"/>',
+  back: '<path d="M14.5 5l-7 7 7 7"/>',
+  flip: '<path d="M12 4v16M8 8l-4 4 4 4M16 8l4 4-4 4"/>',
+  done: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
   settings: '<path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/>',
 };
-function iconBtn(id: string, icon: string, label: string, on: () => void, cls = ''): HTMLElement {
-  const b = h('button', `street-btn ${cls}`) as HTMLButtonElement;
-  b.type = 'button'; b.dataset.id = id;
-  b.innerHTML = `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[icon]}</svg>`;
-  b.append(h('span', '', label));
+const svg = (icon: string, size: number): string => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[icon]}</svg>`;
+// A round paper disc with only an icon; the name is kept for screen readers and hover.
+function roundBtn(id: string, icon: string, label: string, on: () => void, cls = ''): HTMLButtonElement {
+  const b = h('button', `disc ${cls}`) as HTMLButtonElement;
+  b.type = 'button'; b.dataset.id = id; b.title = label; b.setAttribute('aria-label', label);
+  b.innerHTML = svg(icon, 24);
   b.addEventListener('click', on);
+  return b;
+}
+// Street icons: discs, the codex a rounded card, the main one a larger seal that keeps its name.
+function iconBtn(id: string, icon: string, label: string, on: () => void, cls = ''): HTMLElement {
+  const b = roundBtn(id, icon, label, on, `street ${cls}`);
+  if (cls.includes('main')) { b.innerHTML = svg(icon, 30); b.append(h('span', '', label)); }
   return b;
 }
 
@@ -104,7 +114,7 @@ export function buildTray(el: HTMLElement, keys: string[], held: string | null, 
   });
   el.replaceChildren(
     h('div', 'tray-items', ...items),
-    h('div', 'tray-side', btn(t('flip'), flip ? 'primary' : '', a.flipFurniture, 'flip'), btn(t('done'), 'primary', a.doneFurniture, 'done')),
+    h('div', 'tray-side', roundBtn('flip', 'flip', t('flip'), a.flipFurniture, flip ? 'on' : ''), roundBtn('done', 'done', t('done'), a.doneFurniture, 'primary')),
   );
 }
 
@@ -115,7 +125,7 @@ export function buildStreetBar(el: HTMLElement, save: Save, a: Actions): void {
     h('div', 'street-col',
       iconBtn('settings', 'settings', t('settings'), a.toSettings),
       iconBtn('shrine', 'shrine', t('shrine'), a.toShrine),
-      iconBtn('codex', 'codex', t('codexShort'), a.toCodex),
+      iconBtn('codex', 'codex', t('codexShort'), a.toCodex, 'card'),
       iconBtn('furniture', 'furniture', t('furniture'), a.toFurniture),
       iconBtn('start', 'rounds', t('rounds'), a.toStages, 'main'),
     ),
@@ -251,7 +261,7 @@ export function showStages(save: Save, a: Actions, picked: number): void {
   }
   mark(false);
   show('stages map',
-    h('div', 'head', btn(t('back'), 'ghost', a.toTitle, 'back'), h('h2', '', t('chapter')), btn(t('go'), 'primary', () => a.startRun(sel, hero), 'go')),
+    h('div', 'head', roundBtn('back', 'back', t('back'), a.toTitle), h('h2', '', t('chapter')), btn(t('go'), 'primary', () => a.startRun(sel, hero), 'go')),
     map,
     info,
     h('h3', '', t('pickHero')),
@@ -285,7 +295,7 @@ export function showStall(save: Save, a: Actions, eaters: string[]): void {
     return card;
   });
   show('shrine',
-    h('div', 'head', btn(t('back'), 'ghost', a.toTitle, 'back'), h('h2', '', t('stall')), h('div', 'purse', icon('i_coin', 'ic sm'), h('span', '', String(save.coins)))),
+    h('div', 'head', roundBtn('back', 'back', t('back'), a.toTitle), h('h2', '', t('stall')), h('div', 'purse', icon('i_coin', 'ic sm'), h('span', '', String(save.coins)))),
     h('p', 'sub', t('stallSub')),
     h('div', 'eaters', ...chips),
     h('div', 'ema-grid', ...cards),
@@ -308,7 +318,7 @@ export function showShrine(save: Save, a: Actions): void {
     return card;
   });
   show('shrine',
-    h('div', 'head', btn(t('back'), 'ghost', a.toTitle, 'back'), h('h2', '', t('shrine')), h('div', 'purse', icon('i_coin', 'ic sm'), h('span', '', String(save.coins)))),
+    h('div', 'head', roundBtn('back', 'back', t('back'), a.toTitle), h('h2', '', t('shrine')), h('div', 'purse', icon('i_coin', 'ic sm'), h('span', '', String(save.coins)))),
     h('p', 'sub', t('shrineSub')),
     h('div', 'ema-grid', ...cards),
   );
@@ -326,7 +336,7 @@ export function showCodex(save: Save, a: Actions): void {
     return cell;
   });
   show('codex',
-    h('div', 'head', btn(t('back'), 'ghost', a.toTitle, 'back'), h('h2', '', t('codex')), h('span', 'count', `${CODEX.filter((e) => seen.has(e.id)).length} / ${CODEX.length}`)),
+    h('div', 'head', roundBtn('back', 'back', t('back'), a.toTitle), h('h2', '', t('codex')), h('span', 'count', `${CODEX.filter((e) => seen.has(e.id)).length} / ${CODEX.length}`)),
     h('p', 'sub', t('codexSub')),
     detail,
     h('div', 'codex-grid', ...cells),
