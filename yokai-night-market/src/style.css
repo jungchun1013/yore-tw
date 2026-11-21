@@ -299,3 +299,15 @@ button.choice:hover { background: #fff; box-shadow: 0 0 0 3px var(--gold); }
 .street-row.open { display: flex; }
 .gate.below { transform: translate(-50%, 0); }
 .gate.below:active { transform: translate(-50%, 3px); }
+
+/* street icons as paper objects (request 20) */
+.obj { pointer-events: auto; border: 0; background: none; padding: 0; width: 68px; display: flex; flex-direction: column; align-items: center; gap: 0; cursor: pointer; color: var(--ink); font: 700 13px var(--sans); transition: transform 0.08s; }
+.obj-ic { width: 58px; height: 58px; object-fit: contain; filter: drop-shadow(0 3px 2px rgba(74, 47, 40, 0.22)); }
+.obj-name { margin-top: -4px; padding: 1px 8px; border-radius: 999px; background: rgba(251, 243, 226, 0.92); box-shadow: inset 0 0 0 1px #d9c29c; white-space: nowrap; }
+.obj:active, .obj.on { transform: translateY(2px) scale(0.96); }
+.obj.on .obj-ic { filter: drop-shadow(0 1px 1px rgba(74, 47, 40, 0.3)) brightness(0.94); }
+.obj.main { width: 84px; }
+.obj.main .obj-ic { width: 76px; height: 76px; }
+.obj.main .obj-name { background: var(--red); color: #fff6e8; box-shadow: none; }
+.street-row { background: rgba(251, 243, 226, 0.0); }
+@media (min-width: 900px) { .obj { width: 84px; font-size: 14px; } .obj-ic { width: 70px; height: 70px; } .obj.main { width: 100px; } .obj.main .obj-ic { width: 90px; height: 90px; } }

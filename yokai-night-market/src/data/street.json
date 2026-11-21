@@ -1,11 +1,11 @@
 {
-  "width": 2277,
-  "start": 904,
+  "width": 2335,
+  "start": 962,
   "paths": [
     {
       "x": 145,
       "w": 3,
-      "rows": 5
+      "rows": 4
     }
   ],
   "note": "The main street, left to right: the Confucius Temple gate with a stone path in front and a signpost to the flower lane (src/data/lane.json), its red wall, the literature museum, then the Wude Hall and on to the roundabout buildings. lane: back = behind the buildings (trees over the wall), build = the buildings, decor = in front of them, across = spanning the road, near = near side, front = between camera and walkers, fauna = animals. start = where the heroine first stands. Written by layout_street.py, then edited with ?editor.",
@@ -17,12 +17,12 @@
     },
     {
       "key": "confuciusWall",
-      "x": 325,
+      "x": 339,
       "lane": "build"
     },
     {
       "key": "confuciusWall",
-      "x": 544,
+      "x": 587,
       "lane": "build"
     },
     {
@@ -32,12 +32,12 @@
     },
     {
       "key": "norfolkPine",
-      "x": 305,
+      "x": 319,
       "lane": "back"
     },
     {
       "key": "rainTree",
-      "x": 554,
+      "x": 597,
       "lane": "back"
     },
     {
@@ -53,142 +53,142 @@
     },
     {
       "key": "stoneLantern",
-      "x": 365,
+      "x": 379,
       "lane": "decor"
     },
     {
       "key": "literatureSide",
-      "x": 737,
+      "x": 795,
       "lane": "build"
     },
     {
       "key": "literature",
-      "x": 904,
+      "x": 962,
       "lane": "build"
     },
     {
       "key": "literatureSide",
-      "x": 1071,
+      "x": 1129,
       "lane": "build",
       "flip": true
     },
     {
       "key": "royalPalm",
-      "x": 693,
+      "x": 751,
       "lane": "decor"
     },
     {
       "key": "royalPalm",
-      "x": 781,
+      "x": 839,
       "lane": "decor"
     },
     {
       "key": "royalPalm",
-      "x": 1027,
+      "x": 1085,
       "lane": "decor"
     },
     {
       "key": "royalPalm",
-      "x": 1115,
+      "x": 1173,
       "lane": "decor"
     },
     {
       "key": "literatureWall",
-      "x": 737,
+      "x": 795,
       "lane": "decor"
     },
     {
       "key": "literatureWall",
-      "x": 1071,
+      "x": 1129,
       "lane": "decor"
     },
     {
       "key": "flameTree",
-      "x": 1184,
+      "x": 1242,
       "lane": "back"
     },
     {
       "key": "butokuden",
-      "x": 1318,
+      "x": 1376,
       "lane": "build"
     },
     {
       "key": "woodFence",
-      "x": 1447,
+      "x": 1505,
       "lane": "decor"
     },
     {
       "key": "hayashi",
-      "x": 1514,
+      "x": 1572,
       "lane": "build"
     },
     {
       "key": "lantern",
-      "x": 1585,
+      "x": 1643,
       "lane": "decor"
     },
     {
       "key": "bank",
-      "x": 1655,
+      "x": 1713,
       "lane": "build"
     },
     {
       "key": "brickLowWall",
-      "x": 1729,
+      "x": 1787,
       "lane": "decor"
     },
     {
       "key": "firehall",
-      "x": 1811,
+      "x": 1869,
       "lane": "build"
     },
     {
       "key": "greenHedge",
-      "x": 1896,
+      "x": 1954,
       "lane": "decor"
     },
     {
       "key": "police",
-      "x": 1963,
+      "x": 2021,
       "lane": "build"
     },
     {
       "key": "sakura",
-      "x": 2037,
+      "x": 2095,
       "lane": "decor"
     },
     {
       "key": "weather",
-      "x": 2111,
+      "x": 2169,
       "lane": "build"
     },
     {
       "key": "ixoraHedge",
-      "x": 2217,
+      "x": 2275,
       "lane": "decor"
     },
     {
       "key": "malayanNightHeron",
-      "x": 844,
+      "x": 902,
       "lane": "fauna",
       "y": 380
     },
     {
       "key": "spottedDove",
-      "x": 1338,
+      "x": 1396,
       "lane": "fauna",
       "y": 356
     },
     {
       "key": "spottedDove",
-      "x": 1370,
+      "x": 1428,
       "lane": "fauna",
       "y": 372,
       "flip": true
     },
     {
       "key": "malayanNightHeron",
-      "x": 1963,
+      "x": 2021,
       "lane": "fauna",
       "y": 400
     }

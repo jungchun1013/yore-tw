@@ -41,6 +41,9 @@ export const furnitureKeys = (): string[] => withTag('furniture').map((a) => a.k
 export function placedExtras(list: Placed[]): StreetExtra[] {
   return list.filter((p) => hasArt(p.key) && onFloor(p.gx, p.gy)).map((p) => {
     const [w, d] = footprint(p.key), [x0, y0] = cellXY(p.gx, p.gy);
+    if (ASSET[p.key]?.tags?.includes('flat')) {
+      return { y: -1e6, draw: (c: CanvasRenderingContext2D) => { const s = spr(p.key); c.drawImage(s.c, x0, y0, w * CW, d * CH); } };
+    }
     const x = x0 + (w * CW) / 2, y = y0 + d * CH - 3;
     return { y, draw: (c: CanvasRenderingContext2D) => {
       const s = spr(p.key);

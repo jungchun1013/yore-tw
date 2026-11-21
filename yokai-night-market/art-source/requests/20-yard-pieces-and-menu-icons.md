@@ -1,6 +1,7 @@
 # 院子的方格物件與選單圖示
 
-- 需求單：`20-yard-pieces-and-menu-icons`（等 `19` 完成、使用者看過選單規劃後才送）
+- 需求單：`20-yard-pieces-and-menu-icons`（使用者 2026-11-22 確認選單規劃後送出）
+- 另交 `signLane.png`（single），見文末
 - 交付到：`art-inbox/20-yard-pieces-and-menu-icons/`（附 `batch.json`）
 - 檔案：`yard.png`（3x2）、`icons.png`（3x2）
 - 風格與格式：`docs/art/ART-BIBLE.md`；把 `public/art/paper-atlas.png` 當風格輸入圖。
@@ -31,4 +32,4 @@
 ## 另加（使用者 2026-11-22：全臺首學前有石子路，放告示牌顯示前往花巷）
 
 - `signLane.png`（single）：木頭告示牌，一根立柱、一塊橫向木牌，牌上畫一個指向左邊的箭頭和幾朵小花（代表花巷），不寫字。高度約到人物的肩膀。正面、紙雕畫法。
-- `stoneTile.png`（single，一格，寬 24 深 20 的比例）：一塊灰米色的石板，邊緣微微不齊，可以大量拼成石子路。我目前用程式畫的平塗石格暫代。
+- 石子路由 `22-stone-path` 另外畫，這張不用。

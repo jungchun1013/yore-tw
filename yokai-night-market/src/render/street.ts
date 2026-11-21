@@ -15,9 +15,11 @@ export interface StreetData { width: number; start?: number; paths?: StreetPath[
 
 // logical layout, top to bottom (the street is H tall and scaled to the screen)
 // buildings stand along the top; below them a walk, then the yard, which takes most of the screen
-export const H = 500, BUILD_Y = 268, WALK_Y0 = 282, WALK_Y1 = 322, FLOOR_Y0 = 330, FLOOR_Y1 = 490, FRONT_Y = 532;
+export const H = 500, BUILD_Y = 268, WALK_Y0 = 282, WALK_Y1 = 322, FLOOR_Y0 = 330, FLOOR_Y1 = 450, FRONT_Y = 492;
 // empty sky above the tallest tree that the view may cut off to come closer
 const SKY = 70;
+// how close the camera sits (user 2026-11-22: 1.2 times closer)
+const ZOOM = 1.2;
 // the yard's square cells (see place.ts)
 export const CW = 24, CH = 20;
 const MIN_VIEW_W = 220;
@@ -117,9 +119,12 @@ export function setupStreet(hero: string): void {
 }
 
 function layout(v: StreetView, bottom = 0): void {
-  scale = Math.min(v.h / (H - SKY), v.w / MIN_VIEW_W);
+  scale = Math.min(v.h / (H - 40 - SKY), v.w / MIN_VIEW_W) * ZOOM;
   viewW = v.w / scale;
-  offY = Math.min(v.h - H * scale, v.h - bottom - (FLOOR_Y1 + 6) * scale);
+  // keep the yard's lower edge at the bottom of the screen, but never cut into the buildings for
+  // it: on wide screens the top of the view stops just above the tallest building
+  const fit = v.h - bottom - (FLOOR_Y1 + 6) * scale;
+  offY = bottom > 0 ? fit : Math.max(fit, -(BUILD_Y - 150) * scale);
 }
 
 export function updateStreet(dt: number): void {
@@ -211,6 +216,13 @@ function paperGrain(c: CanvasRenderingContext2D): CanvasPattern | null {
   }
   return (grain = c.createPattern(g, 'repeat'));
 }
+// ground tiles (public/art/tiles), each STONE logical px square
+const STONE = 72;
+const TILES: Record<string, HTMLImageElement> = {};
+for (const k of ['stoneFill', 'stoneEdgeL', 'stoneEdgeR', 'stoneEnd']) {
+  if (typeof Image === 'undefined') break;
+  const img = new Image(); img.src = `${import.meta.env.BASE_URL}art/tiles/${k}.png`; TILES[k] = img;
+}
 function drawGround(c: CanvasRenderingContext2D, left: number): void {
   const top = BUILD_Y - 16, rows = Math.floor((FLOOR_Y1 - FLOOR_Y0) / CH);
   c.fillStyle = '#efe5cb'; c.fillRect(left, top, viewW, H - top);
@@ -222,10 +234,26 @@ function drawGround(c: CanvasRenderingContext2D, left: number): void {
     c.fillRect(x, FLOOR_Y0 + (rows - hb) * CH, CW + 0.5, H);                               // front edge
     for (let gy = 2; gy < rows - 4; gy++) if (hash(gx >> 1, gy >> 1) % 17 === 0) c.fillRect(x, FLOOR_Y0 + gy * CH, CW + 0.5, CH + 0.5);
   }
-  // stone paths: one flat paper stone per cell, slightly inset so the joints show
+  // stone paths, laid from Codex's tiles (request 22): a seamless fill, a fringe of smaller stones
+  // on the left and right, and one at the far end; flat stone cells until the tiles load
   for (const p of street.paths ?? []) {
-    const g0 = Math.round(p.x / CW - p.w / 2);
-    for (let gx = g0; gx < g0 + p.w; gx++) for (let gy = -3; gy < p.rows; gy++) {
+    const x0 = Math.round(p.x / CW - p.w / 2) * CW, w = p.w * CW, y0 = FLOOR_Y0 - 3 * CH, y1 = FLOOR_Y0 + p.rows * CH;
+    const fill = TILES.stoneFill, T = STONE;
+    if (fill && fill.complete && fill.naturalWidth) {
+      const pat = c.createPattern(fill, 'repeat');
+      if (pat) {
+        pat.setTransform(new DOMMatrix([T / fill.naturalWidth, 0, 0, T / fill.naturalHeight, x0, y0]));
+        c.fillStyle = pat; c.fillRect(x0, y0, w, y1 - y0);
+      }
+      const tile = (img: HTMLImageElement | undefined, x: number, y: number): void => { if (img && img.complete && img.naturalWidth) c.drawImage(img, x, y, T, T); };
+      // the fringe tiles hold the last whole stones and then thin out, so they sit outside the fill
+      for (let y = y0; y < y1 - T / 2; y += T) { tile(TILES.stoneEdgeL, x0 - T / 2, y); tile(TILES.stoneEdgeR, x0 + w - T / 2, y); }
+      c.save(); c.beginPath(); c.rect(x0, y1 - T, w, T * 2); c.clip();
+      for (let x = x0; x < x0 + w; x += T) tile(TILES.stoneEnd, x, y1 - T / 2);
+      c.restore();
+      continue;
+    }
+    for (let gx = x0 / CW; gx < x0 / CW + p.w; gx++) for (let gy = -3; gy < p.rows; gy++) {
       const x = gx * CW, y = FLOOR_Y0 + gy * CH, tone = hash(gx, gy) % 3;
       c.fillStyle = '#e6dcc6'; c.fillRect(x, y, CW, CH);
       c.fillStyle = ['#cfc6b2', '#d6cdb9', '#c8bfab'][tone];

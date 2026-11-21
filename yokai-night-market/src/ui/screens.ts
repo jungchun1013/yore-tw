@@ -99,12 +99,21 @@ function roundBtn(id: string, icon: string, label: string, on: () => void, cls =
   b.addEventListener('click', on);
   return b;
 }
-// Street icons: discs, the codex a rounded card, the main one a larger seal that keeps its name.
+// Street icons: a paper object with its name under it (request 20). The open menu shows its
+// object pressed in. Line icons stay as the fallback if a picture is missing.
+const ICON_ART: Record<string, string> = { rounds: 'icoRounds', furniture: 'icoArrange', menu: 'icoMenu', close: 'icoMenu', codex: 'icoCodex', shrine: 'icoEma', settings: 'icoSettings' };
 function iconBtn(id: string, icon: string, label: string, on: () => void, cls = ''): HTMLElement {
-  const b = roundBtn(id, icon, label, on, `street ${cls}`);
-  if (cls.includes('main')) { b.innerHTML = svg(icon, 30); b.append(h('span', '', label)); }
+  const art = ICON_ART[icon];
+  if (!art) { const b = roundBtn(id, icon, label, on, `street ${cls}`); return b; }
+  const b = h('button', `obj ${cls}`) as HTMLButtonElement;
+  b.type = 'button'; b.dataset.id = id; b.title = label; b.setAttribute('aria-label', label);
+  const img = document.createElement('img');
+  img.src = `${import.meta.env.BASE_URL}art/tainan/${art}.png`; img.alt = ''; img.className = 'obj-ic'; img.draggable = false;
+  b.append(img, h('span', 'obj-name', label));
+  b.addEventListener('click', on);
   return b;
 }
+
 
 // The tray along the bottom while arranging furniture.
 export function buildTray(el: HTMLElement, keys: string[], held: string | null, flip: boolean, a: Actions): void {

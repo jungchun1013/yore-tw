@@ -24,7 +24,7 @@ w2, _ = put('confuciusWall', gap=-2)
 at('banyan', g + 20, 'back'); at('norfolkPine', w1 - 20, 'back'); at('rainTree', w2 + 10, 'back')
 at('plumeria', g + gw / 2 + 26, 'decor')
 # a stone path from the temple gate into the yard, and a signpost to the flower lane beside it
-paths = [{'x': g, 'w': 3, 'rows': 5}]
+paths = [{'x': g, 'w': 3, 'rows': 4}]
 at('signLane', g - 60, 'near', action='gate:lane')
 at('stoneLantern', w1 + 40, 'decor')
 # the literature museum unfolded: side wing, front with its corner towers, side wing
