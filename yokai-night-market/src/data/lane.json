@@ -1,0 +1,59 @@
+{
+  "width": 1040,
+  "note": "The flower lane (Fuzhong Street) behind the Pan Gong stone arch. The arch is the way back to the main street. Edited with ?editor&scene=lane.",
+  "items": [
+    {
+      "key": "panggong",
+      "x": 110,
+      "lane": "near",
+      "action": "gate:street"
+    },
+    {
+      "key": "lantern",
+      "x": 215,
+      "lane": "decor"
+    },
+    {
+      "key": "noodleStall",
+      "x": 300,
+      "lane": "build",
+      "action": "stall"
+    },
+    {
+      "key": "machiya",
+      "x": 440,
+      "lane": "build"
+    },
+    {
+      "key": "stall",
+      "x": 590,
+      "lane": "build"
+    },
+    {
+      "key": "lantern",
+      "x": 685,
+      "lane": "decor"
+    },
+    {
+      "key": "shennong",
+      "x": 780,
+      "lane": "build"
+    },
+    {
+      "key": "woodHouse",
+      "x": 940,
+      "lane": "build"
+    },
+    {
+      "key": "maple",
+      "x": 520,
+      "lane": "front"
+    },
+    {
+      "key": "malayanNightHeron",
+      "x": 370,
+      "lane": "fauna",
+      "y": 350
+    }
+  ]
+}

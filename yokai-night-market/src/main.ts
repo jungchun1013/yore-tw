@@ -12,7 +12,7 @@ import { STEP, choose, closeChest, createRun, reroll, step } from './game/run';
 import type { HeroId } from './game/types';
 import type { Run } from './game/world';
 import { type View, render } from './render/scene';
-import { actorIds, callActor, drawStreet, lookAt, panStreet, setupStreet, stallX, tapStreet, toStreet, updateStreet } from './render/street';
+import { walkPlayer, actorIds, callActor, currentScene, drawStreet, enterScene, nearGate, lookAt, panStreet, setupStreet, stallX, tapStreet, toStreet, updateStreet } from './render/street';
 import { type Placed, canPlace, cellAt, drawGrid, furnitureKeys, itemAt, placedExtras } from './render/place';
 import { hudBanner, hudHint, hudVisible, initHud, resetHud, updateHud } from './ui/hud';
 import { type Actions, bossName, clearOverlay, initScreens, showChest, showCodex, showLevelUp, showPause, showResult, showSettings, showShrine, showSplash, showStages, showStall, buildStreetBar, buildTray } from './ui/screens';
@@ -26,7 +26,9 @@ const hud = document.createElement('div'); hud.id = 'hud';
 const overlay = document.createElement('div'); overlay.id = 'overlay';
 const bar = document.createElement('div'); bar.id = 'streetbar';
 const tray = document.createElement('div'); tray.id = 'tray';
-app.append(canvas, field, hud, bar, tray, overlay);
+const gate = document.createElement('button'); gate.type = 'button'; gate.className = 'btn primary gate'; gate.dataset.id = 'gate';
+gate.addEventListener('click', () => { if (gate.dataset.to) { enterScene(gate.dataset.to); sfx('coin'); } });
+app.append(canvas, field, hud, bar, gate, tray, overlay);
 const ctx = canvas.getContext('2d')!;
 
 let save: Save = loadSave();
@@ -42,6 +44,8 @@ let acc = 0, last = performance.now();
 let lastStage = 0;
 let botPlays = false;
 let streetHero = '';
+// furniture belongs to the scene it was set down in
+const placedList = (): Placed[] => (currentScene() === 'street' ? save.placed : (save.placedIn[currentScene()] ??= []));
 let placing = false, heldKey: string | null = null, heldFlip = false, ghost: Placed | null = null;
 
 // street: a tap walks there or uses what was tapped; a drag pans the view
@@ -63,11 +67,11 @@ window.addEventListener('pointerup', (e) => {
   if (placing) {
     // a tap picks up what stands on that cell, or sets the held piece down
     const [x, y] = toStreet(e.clientX, e.clientY), [gx, gy] = cellAt(x, y);
-    const at = itemAt(save.placed, gx, gy);
-    if (at >= 0) { const [old] = save.placed.splice(at, 1); heldKey = old.key; heldFlip = !!old.flip; ghost = { ...old }; }
+    const at = itemAt(placedList(), gx, gy);
+    if (at >= 0) { const [old] = placedList().splice(at, 1); heldKey = old.key; heldFlip = !!old.flip; ghost = { ...old }; }
     else if (heldKey) {
       const p: Placed = { key: heldKey, gx, gy, flip: heldFlip };
-      if (canPlace(save.placed, p)) { save.placed.push(p); ghost = null; sfx('coin'); } else ghost = p;
+      if (canPlace(placedList(), p)) { placedList().push(p); ghost = null; sfx('coin'); } else ghost = p;
     }
     persist();
     buildTray(tray, furnitureKeys(), heldKey, heldFlip, actions);
@@ -252,13 +256,20 @@ function frame(now: number): void {
     updateStreet(dt);
     drawStreet(ctx, view, {
       dim: screen === 'splash' ? 0.42 : 0,
-      extras: placedExtras(save.placed),
+      extras: placedExtras(placedList()),
       bottom: placing ? tray.offsetHeight : 0,
       fadeFront: placing,
-      underlay: placing ? (c) => drawGrid(c, toStreet(0, 0)[0], toStreet(view.w, 0)[0], save.placed, ghost) : undefined,
+      underlay: placing ? (c) => drawGrid(c, toStreet(0, 0)[0], toStreet(view.w, 0)[0], placedList(), ghost) : undefined,
     });
   }
   if (screen !== 'street') placing = false;
+  // standing at a gate: offer the way through, pinned above it
+  const g = screen === 'street' && !placing ? nearGate() : null;
+  gate.classList.toggle('on', !!g);
+  if (g) {
+    if (gate.dataset.to !== g.to) { gate.dataset.to = g.to; gate.textContent = t(g.to === 'lane' ? 'enterLane' : 'backStreet'); }
+    gate.style.left = `${Math.max(76, Math.min(view.w - 76, g.sx))}px`; gate.style.top = `${Math.max(60, g.sy - 10)}px`;
+  }
   bar.classList.toggle('on', screen === 'street' && !placing);
   tray.classList.toggle('on', screen === 'street' && placing);
   requestAnimationFrame(frame);
@@ -291,7 +302,7 @@ if (params.has('atelier')) {
   // layout tools; the game itself does not start
   field.style.display = 'none';
   const which = params.get('editor');
-  await import('./render/editor').then((m) => (which ? m.puppetEditor(canvas, which) : m.streetEditor(canvas)));
+  await import('./render/editor').then((m) => (which ? m.puppetEditor(canvas, which) : m.streetEditor(canvas, params.get('scene') ?? 'street')));
 } else if (params.has('puppet')) {
   // review page for a detachable puppet; the game itself does not start
   field.style.display = 'none';
@@ -314,6 +325,8 @@ if (debug) {
     bot(on: boolean) { botPlays = on; },
     street() { actions.toStreet(); },
     stall() { actions.toStall(); },
+    get scene() { return currentScene(); },
+    walkTo(x: number) { walkPlayer(x); },
     // a screen point in the middle of the placement floor, for tests
     floorPoint() { const x = view.w * 0.4; let y = view.h - 1; while (y > 0 && cellAt(...toStreet(x, y))[0] + cellAt(...toStreet(x, y))[1] > 2) y -= 4; return [x, y]; },
     fast(seconds: number) {

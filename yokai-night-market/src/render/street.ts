@@ -1,12 +1,13 @@
 // The street: the scene the player lives in between night rounds. Everything on it comes from
 // data (src/data/street.json and the asset manifest); this file only lays it out and draws it.
-import raw from '../data/street.json';
+import rawStreet from '../data/street.json';
+import rawLane from '../data/lane.json';
 import { ASSET } from '../data/manifest';
 import { hasArt } from './paperAtlas';
 import { PUPPETS } from './puppet';
 import { spr } from './sprites';
 
-export type Lane = 'build' | 'decor' | 'front' | 'fauna';
+export type Lane = 'build' | 'decor' | 'near' | 'front' | 'fauna';
 export interface StreetItem { key: string; x: number; lane: Lane; y?: number; scale?: number; flip?: boolean; action?: string }
 export interface StreetData { width: number; items: StreetItem[] }
 
@@ -15,17 +16,30 @@ export const H = 420, BUILD_Y = 268, WALK_Y0 = 282, WALK_Y1 = 322, FLOOR_Y0 = 33
 const MIN_VIEW_W = 260;
 
 export const FAUNA_Y = WALK_Y1 + 12;
-export const street: StreetData = JSON.parse(JSON.stringify(raw)) as StreetData;
+export const NEAR_Y = FLOOR_Y0 + 16;
+// Scenes are data: the main street and the places reached from it. `street` always holds the
+// scene being shown; an item with action 'gate:<scene>' leads to another one.
+const SCENES: Record<string, StreetData> = { street: rawStreet as unknown as StreetData, lane: rawLane as unknown as StreetData };
+export const street: StreetData = { width: 0, items: [] };
+let sceneName = 'street';
+export const currentScene = (): string => sceneName;
 
 // The editor (?editor) keeps its work in this browser; the game shows it until it is exported
-// into src/data/street.json or reverted.
+// into the scene's json or reverted.
 const LOCAL = 'tainan-gazetteer.street.edit';
-try { const own = localStorage.getItem(LOCAL); if (own) Object.assign(street, JSON.parse(own) as StreetData); } catch { /* no storage */ }
-export function saveStreetLocal(): void { try { localStorage.setItem(LOCAL, JSON.stringify(street)); } catch { /* no storage */ } }
-export function revertStreet(): void { try { localStorage.removeItem(LOCAL); } catch { /* no storage */ } Object.assign(street, JSON.parse(JSON.stringify(raw)) as StreetData); }
-export function hasLocalStreet(): boolean { try { return !!localStorage.getItem(LOCAL); } catch { return false; } }
+const localKey = (): string => (sceneName === 'street' ? LOCAL : `${LOCAL}.${sceneName}`);
+function loadScene(name: string): void {
+  sceneName = SCENES[name] ? name : 'street';
+  let data = JSON.parse(JSON.stringify(SCENES[sceneName])) as StreetData;
+  try { const own = localStorage.getItem(localKey()); if (own) data = JSON.parse(own) as StreetData; } catch { /* no storage */ }
+  street.width = data.width; street.items = data.items;
+}
+loadScene('street');
+export function saveStreetLocal(): void { try { localStorage.setItem(localKey(), JSON.stringify(street)); } catch { /* no storage */ } }
+export function revertStreet(): void { try { localStorage.removeItem(localKey()); } catch { /* no storage */ } loadScene(sceneName); }
+export function hasLocalStreet(): boolean { try { return !!localStorage.getItem(localKey()); } catch { return false; } }
 
-const laneY = (it: StreetItem): number => (it.lane === 'build' ? BUILD_Y : it.lane === 'decor' ? BUILD_Y + 8 : it.lane === 'fauna' ? it.y ?? FAUNA_Y : FRONT_Y + 14);
+const laneY = (it: StreetItem): number => (it.lane === 'build' ? BUILD_Y : it.lane === 'decor' ? BUILD_Y + 8 : it.lane === 'fauna' ? it.y ?? FAUNA_Y : it.lane === 'near' ? it.y ?? NEAR_Y : FRONT_Y + 14);
 const laneScale = (it: StreetItem): number => (it.scale ?? 1) * (it.lane === 'front' ? 1.2 : 1);
 // bounds of an item in street coordinates: [left, top, right, bottom]
 export function itemBox(it: StreetItem): [number, number, number, number] {
@@ -36,7 +50,7 @@ export function itemBox(it: StreetItem): [number, number, number, number] {
 }
 // topmost item under a street point, front lane first
 export function itemAtPoint(x: number, y: number): number {
-  for (const lane of ['front', 'fauna', 'decor', 'build'] as Lane[]) {
+  for (const lane of ['front', 'near', 'fauna', 'decor', 'build'] as Lane[]) {
     for (let i = street.items.length - 1; i >= 0; i--) {
       const it = street.items[i]; if (it.lane !== lane) continue;
       const [x0, y0, x1, y1] = itemBox(it);
@@ -55,11 +69,36 @@ let scale = 1, offY = 0, viewW = MIN_VIEW_W;
 const HOP = 0.45;
 const critters = new Map<StreetItem, { dx: number; hop: number; dir: number }>();
 
+const spreadX = (i: number): number => 90 + ((i * 0.41 * street.width) % Math.max(1, street.width - 180));
+
+// Walks through a gate: shows the other scene with the player standing at its gate back.
+export function enterScene(name: string): void {
+  const from = sceneName;
+  loadScene(name);
+  const px = street.items.find((it) => it.action === `gate:${from}`)?.x ?? 100;
+  actors.forEach((a, i) => {
+    a.x = a.tx = i === 0 ? px : spreadX(i);
+    a.y = a.ty = i === 0 ? WALK_Y1 - 4 : (WALK_Y0 + WALK_Y1) / 2 + (i % 2 ? 10 : -6);
+    a.clip = 'idle'; a.clipT = 0; a.next = ''; a.bubble = 0; a.wait = 1 + i;
+  });
+  camX = px; camFree = false;
+}
+// The gate the player is standing at, with the screen point above it for the prompt.
+export function nearGate(): { to: string; sx: number; sy: number } | null {
+  const p = actors[0]; if (!p) return null;
+  for (const it of street.items) {
+    if (!it.action?.startsWith('gate:') || Math.abs(p.x - it.x) > 44) continue;
+    const [, top] = itemBox(it);
+    return { to: it.action.slice(5), sx: (it.x - (camX - viewW / 2)) * scale, sy: offY + top * scale };
+  }
+  return null;
+}
+
 export function setupStreet(hero: string): void {
   actors.length = 0;
   const ids = [hero, ...[...PUPPETS.keys()].filter((k) => k !== hero)];
   ids.forEach((id, i) => {
-    const x = i === 0 ? 560 : 300 + i * 520;
+    const x = i === 0 ? Math.min(560, street.width / 2) : spreadX(i);
     actors.push({ id, x, y: (WALK_Y0 + WALK_Y1) / 2 + (i % 2 ? 10 : -6), face: 1, tx: x, ty: 0, clip: 'idle', clipT: 0, wait: 1 + i, bubble: 0, player: i === 0, next: '' });
   });
   for (const a of actors) a.ty = a.y;
@@ -121,6 +160,12 @@ export function tapStreet(sx: number, sy: number): string | null {
     }
   }
   for (const it of street.items) {
+    if (it.lane === 'near') {
+      // a gate on the near side: walk up to it; the prompt appears on arrival
+      const [x0, y0, x1, y1] = itemBox(it);
+      if (x >= x0 && x <= x1 && y >= y0 && y <= y1) { const p = actors[0]; p.tx = it.x; p.ty = WALK_Y1 - 4; camFree = false; return null; }
+      continue;
+    }
     if (!it.action || it.lane === 'front' || it.lane === 'fauna') continue;
     const h = (ASSET[it.key]?.height ?? 100) * (it.scale ?? 1), w = h * 0.9;
     if (Math.abs(x - it.x) < w / 2 && y < BUILD_Y + 4 && y > BUILD_Y - h) {
@@ -216,6 +261,11 @@ export function drawStreet(c: CanvasRenderingContext2D, v: StreetView, opt: Draw
       drawItem(cc, { ...it, x: it.x + (m?.dx ?? 0), flip: m ? m.dir < 0 !== !!it.flip : it.flip }, y - up);
     } });
   }
+  for (const it of street.items) if (it.lane === 'near' && vis(it)) {
+    // see-through while the player stands behind it
+    const [x0, , x1] = itemBox(it), p = actors[0], behind = !!p && p.x > x0 && p.x < x1 && p.y < WALK_Y1 - 10;
+    list.push({ y: laneY(it), draw: (cc) => drawItem(cc, it, laneY(it), behind ? 0.5 : 1) });
+  }
   list.sort((p, q) => p.y - q.y);
   for (const e of list) e.draw(c);
   const px = actors[0]?.x ?? -999;
@@ -242,6 +292,7 @@ export function callActor(id: string, x: number, clip: string): void {
   if (Math.abs(a.x - x) < 3) { a.clip = clip; a.clipT = 0; a.next = ''; }
   camFree = false;
 }
+export function walkPlayer(x: number): void { const p = actors[0]; if (p) { p.x = p.tx = x; camFree = false; } }
 export const actorIds = (): string[] => actors.map((q) => q.id);
 export const stallX = (): number => street.items.find((it) => it.action === 'stall')?.x ?? 0;
 export function lookAt(x: number): void { camFree = true; camX = x; }

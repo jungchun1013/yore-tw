@@ -283,3 +283,8 @@ button.choice:hover { background: #fff; box-shadow: 0 0 0 3px var(--gold); }
 .eater.on { border-color: var(--red); box-shadow: 0 0 0 2px var(--red); }
 .eater-ic { height: 34px; width: auto; }
 .eater .bond { min-width: 22px; height: 22px; border-radius: 11px; background: var(--red); color: #fff6e8; font: 800 14px/22px var(--sans); text-align: center; padding: 0 5px; }
+
+/* the way through a gate, shown above it while the player stands there */
+.gate { position: absolute; display: none; transform: translate(-50%, -100%); white-space: nowrap; z-index: 2; }
+.gate.on { display: block; }
+.gate:active { transform: translate(-50%, calc(-100% + 3px)); }

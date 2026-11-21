@@ -176,3 +176,15 @@ test('treating someone at the stall sends them over to eat and counts once', asy
   expect(after).toEqual({ screen: 'street', bond: { sayo: 1 }, pack: 1 });
   expect(errors).toEqual([]);
 });
+
+test('the stone arch leads into the flower lane and back', async ({ page }) => {
+  const errors = await open(page);
+  type Hook = { __ynm: { walkTo(x: number): void; scene: string } };
+  await expect(page.locator('[data-id=gate]')).toBeHidden();
+  await page.evaluate(() => (window as unknown as Hook).__ynm.walkTo(1830));
+  await page.click('[data-id=gate]');
+  expect(await page.evaluate(() => (window as unknown as Hook).__ynm.scene)).toBe('lane');
+  await page.click('[data-id=gate]');
+  expect(await page.evaluate(() => (window as unknown as Hook).__ynm.scene)).toBe('street');
+  expect(errors).toEqual([]);
+});

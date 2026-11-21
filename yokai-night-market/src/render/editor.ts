@@ -4,7 +4,7 @@
 // Work is kept in this browser (and shown in the game) until it is exported and committed.
 import { SPRITE_ASSETS } from '../data/manifest';
 import { Puppet } from './puppet';
-import { type Lane, drawStreet, hasLocalStreet, itemAtPoint, panStreet, revertStreet, saveStreetLocal, setupStreet, street, toStreet, updateStreet } from './street';
+import { type Lane, currentScene, enterScene, drawStreet, hasLocalStreet, itemAtPoint, panStreet, revertStreet, saveStreetLocal, setupStreet, street, toStreet, updateStreet } from './street';
 
 function el<K extends keyof HTMLElementTagNameMap>(tag: K, props: Partial<HTMLElementTagNameMap[K]> = {}, ...kids: (Node | string)[]): HTMLElementTagNameMap[K] {
   const e = Object.assign(document.createElement(tag), props); e.append(...kids); return e;
@@ -17,9 +17,10 @@ const PANEL = 'position:fixed;left:10px;top:10px;z-index:9;width:min(300px,calc(
 const ROW = 'display:flex;gap:6px;align-items:center;flex-wrap:wrap';
 const BTN = 'font:700 14px inherit;padding:5px 10px;border:1.5px solid #4a2f28;border-radius:8px;background:#fffaf0;color:#4a2f28;cursor:pointer';
 
-export function streetEditor(canvas: HTMLCanvasElement): void {
+export function streetEditor(canvas: HTMLCanvasElement, scene = 'street'): void {
   const c = canvas.getContext('2d')!;
   setupStreet('miko');
+  if (scene !== 'street') enterScene(scene);
   let sel = -1, held = false, moved = false, dragItem = false, lastX = 0, grabDx = 0;
   const panel = el('div'); panel.style.cssText = PANEL; document.body.append(panel);
 
@@ -32,12 +33,12 @@ export function streetEditor(canvas: HTMLCanvasElement): void {
     const btn = (label: string, on: () => void): HTMLButtonElement => { const b = el('button', { textContent: label, type: 'button' }); b.style.cssText = BTN; b.onclick = on; return b; };
     const row = (...k: (Node | string)[]): HTMLDivElement => { const r = el('div', {}, ...k); r.style.cssText = ROW; return r; };
     panel.replaceChildren(
-      row(el('b', { textContent: '大街編輯器' }), el('span', { textContent: hasLocalStreet() ? '（有未匯出的修改）' : '' })),
-      row(add, btn('匯出 street.json', () => download('street.json', JSON.stringify(street, null, 2) + '\n')), btn('還原', () => { revertStreet(); sel = -1; refresh(); })),
+      row(el('b', { textContent: currentScene() === 'street' ? '大街編輯器' : `場景編輯器：${currentScene()}` }), el('span', { textContent: hasLocalStreet() ? '（有未匯出的修改）' : '' })),
+      row(add, btn(`匯出 ${currentScene()}.json`, () => download(`${currentScene()}.json`, JSON.stringify(street, null, 2) + '\n')), btn('還原', () => { revertStreet(); sel = -1; refresh(); })),
     );
     if (it) {
       const lane = el('select'); lane.style.cssText = BTN;
-      for (const [v, name] of [['build', '建築'], ['decor', '裝飾'], ['front', '前景'], ['fauna', '動物']] as [Lane, string][]) lane.append(el('option', { value: v, textContent: name, selected: it.lane === v }));
+      for (const [v, name] of [['build', '建築'], ['decor', '裝飾'], ['near', '路的近側'], ['front', '前景'], ['fauna', '動物']] as [Lane, string][]) lane.append(el('option', { value: v, textContent: name, selected: it.lane === v }));
       lane.onchange = () => { it.lane = lane.value as Lane; changed(); };
       panel.append(
         row(el('b', { textContent: SPRITE_ASSETS.find((a) => a.key === it.key)?.name ?? it.key }), el('span', { textContent: `x ${it.x}` })),

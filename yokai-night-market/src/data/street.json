@@ -1,6 +1,6 @@
 {
-  "width": 2990,
-  "note": "The street, left to right: the roundabout by the literature museum, down Nanmen Road to the Confucius Temple, through the Pan Gong stone arch into the flower lane (Fuzhong Street). lane: build = buildings on the far side of the road, decor = in front of the buildings, front = between the camera and the walkers. Edited with ?editor.",
+  "width": 2140,
+  "note": "The main street, left to right: the roundabout by the literature museum, down Nanmen Road to the Confucius Temple. The Pan Gong stone arch stands across the road from the temple (lane near) and is the gate to the flower lane (src/data/lane.json). lane: build = far side of the road, decor = in front of the buildings, near = near side of the road, front = between camera and walkers, fauna = animals on the road. Edited with ?editor.",
   "items": [
     {
       "key": "sakura",
@@ -74,44 +74,9 @@
     },
     {
       "key": "panggong",
-      "x": 2060,
-      "lane": "build"
-    },
-    {
-      "key": "lantern",
-      "x": 2150,
-      "lane": "decor"
-    },
-    {
-      "key": "noodleStall",
-      "x": 2240,
-      "lane": "build",
-      "action": "stall"
-    },
-    {
-      "key": "machiya",
-      "x": 2380,
-      "lane": "build"
-    },
-    {
-      "key": "stall",
-      "x": 2530,
-      "lane": "build"
-    },
-    {
-      "key": "lantern",
-      "x": 2625,
-      "lane": "decor"
-    },
-    {
-      "key": "shennong",
-      "x": 2720,
-      "lane": "build"
-    },
-    {
-      "key": "woodHouse",
-      "x": 2880,
-      "lane": "build"
+      "x": 1830,
+      "lane": "near",
+      "action": "gate:lane"
     },
     {
       "key": "maple",
@@ -121,11 +86,6 @@
     {
       "key": "sakura",
       "x": 1730,
-      "lane": "front"
-    },
-    {
-      "key": "maple",
-      "x": 2460,
       "lane": "front"
     },
     {
@@ -146,10 +106,9 @@
       "flip": true
     },
     {
-      "key": "malayanNightHeron",
-      "x": 2310,
-      "lane": "fauna",
-      "y": 350
+      "key": "sakura",
+      "x": 2060,
+      "lane": "decor"
     }
   ]
 }
