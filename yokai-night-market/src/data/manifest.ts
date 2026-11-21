@@ -47,7 +47,7 @@ export const ASSETS: Asset[] = [
   a('shrine', 'building', 110, 'approved', { source: 'atlas', cell: 4, tags: ['landmark'], name: '小祠' }),
   a('torii', 'building', 108, 'approved', { source: 'atlas', cell: 5, tags: ['landmark'], name: '鳥居' }),
   // requested
-  a('literature', 'building', 104, 'placeholder', { tags: ['landmark'], name: '臺灣文學館（舊臺南州廳；Codex 實景稿，待核可）' }),
+  a('literature', 'building', 124, 'placeholder', { tags: ['landmark'], name: '臺灣文學館（舊臺南州廳；Codex 紙雕試畫，待核可）' }),
   a('panggong', 'building', 110, 'placeholder', { tags: ['landmark'], name: '泮宮石坊（Codex 實景稿，待核可）' }),
   a('butokuden', 'building', 130, 'pending', { tags: ['landmark'], name: '武德殿' }),
   a('weather', 'building', 130, 'pending', { tags: ['landmark'], name: '臺南測候所' }),
