@@ -33,3 +33,13 @@
 - `confucius/confucius-4.jpg` — File:Confucius Temple Tainan - Quan Tai Shou Xue Gate 臺南孔廟全臺首學 (2026) - IMG 01.jpg — https://commons.wikimedia.org/wiki/File:Confucius_Temple_Tainan_-_Quan_Tai_Shou_Xue_Gate_%E8%87%BA%E5%8D%97%E5%AD%94%E5%BB%9F%E5%85%A8%E8%87%BA%E9%A6%96%E5%AD%B8_(2026)_-_IMG_01.jpg
 - `police/police-3.jpg` — File:臺南市美術館1館建築.jpg — https://commons.wikimedia.org/wiki/File:%E8%87%BA%E5%8D%97%E5%B8%82%E7%BE%8E%E8%A1%93%E9%A4%A81%E9%A4%A8%E5%BB%BA%E7%AF%89.jpg
 - `police/police-4.jpg` — File:臺南市美術館1館 外觀.jpg — https://commons.wikimedia.org/wiki/File:%E8%87%BA%E5%8D%97%E5%B8%82%E7%BE%8E%E8%A1%93%E9%A4%A81%E9%A4%A8_%E5%A4%96%E8%A7%80.jpg
+- `confuciusWall/confuciusWall-1.jpg` — File:臺南孔廟明倫堂一隅.jpg — https://commons.wikimedia.org/wiki/File:%E8%87%BA%E5%8D%97%E5%AD%94%E5%BB%9F%E6%98%8E%E5%80%AB%E5%A0%82%E4%B8%80%E9%9A%85.jpg
+- `confuciusWall/confuciusWall-2.jpg` — File:Walls of Tainan Confucius Temple.jpg — https://commons.wikimedia.org/wiki/File:Walls_of_Tainan_Confucius_Temple.jpg
+- `confuciusWall/confuciusWall-3.jpg` — File:Junewei 20130706-3.JPG — https://commons.wikimedia.org/wiki/File:Junewei_20130706-3.JPG
+- `confuciusWall/confuciusWall-4.jpg` — File:臺南孔子廟的古老朱牆在光影交織下呈現出斑斕層次.jpg — https://commons.wikimedia.org/wiki/File:%E8%87%BA%E5%8D%97%E5%AD%94%E5%AD%90%E5%BB%9F%E7%9A%84%E5%8F%A4%E8%80%81%E6%9C%B1%E7%89%86%E5%9C%A8%E5%85%89%E5%BD%B1%E4%BA%A4%E7%B9%94%E4%B8%8B%E5%91%88%E7%8F%BE%E5%87%BA%E6%96%91%E6%96%95%E5%B1%A4%E6%AC%A1.jpg
+- `confuciusTrees/confuciusTrees-1.jpg` — File:臺南孔廟思樂泮水碑.JPG — https://commons.wikimedia.org/wiki/File:%E8%87%BA%E5%8D%97%E5%AD%94%E5%BB%9F%E6%80%9D%E6%A8%82%E6%B3%AE%E6%B0%B4%E7%A2%91.JPG
+- `confuciusTrees/confuciusTrees-2.jpg` — File:A banyan at Tainan Confucius Temple.jpg — https://commons.wikimedia.org/wiki/File:A_banyan_at_Tainan_Confucius_Temple.jpg
+- `confuciusTrees/confuciusTrees-3.jpg` — File:2010-02-19 Great, Old Banyan Tree.jpg — https://commons.wikimedia.org/wiki/File:2010-02-19_Great,_Old_Banyan_Tree.jpg
+- `panggong/panggong-1.jpg` — File:Pàn Gōng Shí Fāng Tainan 泮宮石坊 (2026) - IMG 03.jpg — https://commons.wikimedia.org/wiki/File:P%C3%A0n_G%C5%8Dng_Sh%C3%AD_F%C4%81ng_Tainan_%E6%B3%AE%E5%AE%AE%E7%9F%B3%E5%9D%8A_(2026)_-_IMG_03.jpg
+- `panggong/panggong-2.jpg` — File:Pàn Gōng Shí Fāng Tainan 泮宮石坊 (2026) - IMG 02.jpg — https://commons.wikimedia.org/wiki/File:P%C3%A0n_G%C5%8Dng_Sh%C3%AD_F%C4%81ng_Tainan_%E6%B3%AE%E5%AE%AE%E7%9F%B3%E5%9D%8A_(2026)_-_IMG_02.jpg
+- `panggong/panggong-3.jpg` — File:Pàn Gōng Shí Fāng Tainan 泮宮石坊 (2026) - IMG 01.jpg — https://commons.wikimedia.org/wiki/File:P%C3%A0n_G%C5%8Dng_Sh%C3%AD_F%C4%81ng_Tainan_%E6%B3%AE%E5%AE%AE%E7%9F%B3%E5%9D%8A_(2026)_-_IMG_01.jpg

@@ -17,8 +17,8 @@ const MIN_VIEW_W = 260;
 
 export const FAUNA_Y = WALK_Y1 + 12;
 export const NEAR_Y = FLOOR_Y0 + 16;
-// a gate across the road is seen side-on: its far foot by the buildings, its near foot on the floor
-const ACROSS_FAR = WALK_Y0 + 2, ACROSS_NEAR = WALK_Y1 + 10, ACROSS_SQUASH = 0.62;
+// a gate across the road: its far foot by the buildings, its near foot on the floor
+const ACROSS_FAR = WALK_Y0 + 2, ACROSS_NEAR = WALK_Y1 + 14;
 // Scenes are data: the main street and the places reached from it. `street` always holds the
 // scene being shown; an item with action 'gate:<scene>' leads to another one.
 const SCENES: Record<string, StreetData> = { street: rawStreet as unknown as StreetData, lane: rawLane as unknown as StreetData };
@@ -46,7 +46,7 @@ const laneScale = (it: StreetItem): number => (it.scale ?? 1) * (it.lane === 'fr
 // bounds of an item in street coordinates: [left, top, right, bottom]
 export function itemBox(it: StreetItem): [number, number, number, number] {
   const k = laneScale(it), y = laneY(it);
-  if (it.lane === 'across') { const h = (hasArt(it.key) ? spr(it.key).h : ASSET[it.key]?.height ?? 100) * k; return [it.x - 44, ACROSS_FAR - h + 14, it.x + 44, ACROSS_NEAR]; }
+  if (it.lane === 'across') { const h = (hasArt(it.key) ? spr(it.key).h : ASSET[it.key]?.height ?? 100) * k; return [it.x - 50, ACROSS_NEAR - h, it.x + 50, ACROSS_NEAR]; }
   if (hasArt(it.key)) { const s = spr(it.key); return [it.x - (s.w / 2) * k, y - s.h * k, it.x + (s.w / 2) * k, y]; }
   const h = (ASSET[it.key]?.height ?? 100) * k;
   return [it.x - h * 0.43, y - h, it.x + h * 0.43, y];
@@ -212,18 +212,18 @@ function drawItem(c: CanvasRenderingContext2D, it: StreetItem, y: number, alpha 
   c.globalAlpha = 1;
 }
 
-// One half of a gate that spans the road, in oblique side view: the picture is squashed along
-// the road and sheared so its far foot stands by the buildings and its near foot on the floor.
-// The far half is drawn behind the walkers and the near half in front, so they pass through it.
+// A gate that spans the road. Its picture is drawn at a three-quarter angle, near end at the
+// lower left and far end at the upper right; it is shown as drawn, never transformed. The far
+// (right) half goes behind the walkers and the near (left) half in front, so they pass through.
+// flip mirrors it for a gate at the right end of a scene.
 function drawAcross(c: CanvasRenderingContext2D, it: StreetItem, nearHalf: boolean): void {
   if (!hasArt(it.key)) { if (nearHalf) drawItem(c, it, ACROSS_NEAR); return; }
-  const s = spr(it.key), k = it.scale ?? 1, dir = it.flip ? -1 : 1;
+  const s = spr(it.key), k = it.scale ?? 1;
   c.save();
-  c.translate(it.x, (ACROSS_FAR + ACROSS_NEAR) / 2);
-  c.transform(ACROSS_SQUASH * k * dir, ((ACROSS_NEAR - ACROSS_FAR) / s.w), 0, k, 0, 0);
+  c.translate(it.x, ACROSS_NEAR); c.scale((it.flip ? -1 : 1) * k, k);
   const cw = s.c.width, ch = s.c.height;
-  if (nearHalf) c.drawImage(s.c, cw / 2, 0, cw / 2, ch, 0, -s.h, s.w / 2, s.h);
-  else c.drawImage(s.c, 0, 0, cw / 2, ch, -s.w / 2, -s.h, s.w / 2, s.h);
+  if (nearHalf) c.drawImage(s.c, 0, 0, cw / 2, ch, -s.w / 2, -s.h, s.w / 2, s.h);
+  else c.drawImage(s.c, cw / 2, 0, cw / 2, ch, 0, -s.h, s.w / 2, s.h);
   c.restore();
 }
 

@@ -1,150 +1,150 @@
 {
-  "width": 2140,
+  "width": 1469,
   "note": "The main street, left to right: the Pan Gong stone arch standing across the road (the gate to the flower lane, src/data/lane.json), the Confucius Temple, then up Nanmen Road to the roundabout by the literature museum. lane: build = far side of the road, decor = in front of the buildings, across = spanning the road side-on, near = near side of the road, front = between camera and walkers, fauna = animals on the road. start = where the heroine stands at first. Edited with ?editor.",
   "items": [
     {
       "key": "woodFence",
-      "x": 1882,
+      "x": 1254,
       "lane": "decor"
     },
     {
       "key": "ixoraHedge",
-      "x": 1678,
+      "x": 1116,
       "lane": "decor"
     },
     {
       "key": "greenHedge",
-      "x": 1298,
+      "x": 903,
       "lane": "decor"
     },
     {
       "key": "brickLowWall",
-      "x": 1058,
+      "x": 745,
       "lane": "decor"
     },
     {
       "key": "ixoraHedge",
-      "x": 865,
+      "x": 602,
       "lane": "decor"
     },
     {
       "key": "woodFence",
-      "x": 628,
+      "x": 447,
       "lane": "decor"
     },
     {
       "key": "brickLowWall",
-      "x": 432,
+      "x": 308,
       "lane": "decor"
     },
     {
       "key": "ixoraHedge",
-      "x": 192,
+      "x": 126,
       "lane": "decor"
     },
     {
       "key": "sakura",
-      "x": 2080,
+      "x": 1417,
       "lane": "decor"
     },
     {
       "key": "weather",
-      "x": 1970,
+      "x": 1323,
       "lane": "build"
     },
     {
       "key": "police",
-      "x": 1790,
+      "x": 1181,
       "lane": "build"
     },
     {
       "key": "stoneLantern",
-      "x": 1685,
+      "x": 1120,
       "lane": "decor"
     },
     {
       "key": "literature",
-      "x": 1490,
+      "x": 1008,
       "lane": "build"
     },
     {
       "key": "maple",
-      "x": 1280,
+      "x": 893,
       "lane": "decor"
     },
     {
       "key": "firehall",
-      "x": 1150,
+      "x": 822,
       "lane": "build"
     },
     {
       "key": "bank",
-      "x": 970,
+      "x": 672,
       "lane": "build"
     },
     {
       "key": "lantern",
-      "x": 870,
+      "x": 605,
       "lane": "decor"
     },
     {
       "key": "hayashi",
-      "x": 760,
+      "x": 531,
       "lane": "build"
     },
     {
       "key": "sakura",
-      "x": 625,
+      "x": 445,
       "lane": "decor"
     },
     {
       "key": "butokuden",
-      "x": 500,
+      "x": 366,
       "lane": "build"
     },
     {
       "key": "confucius",
-      "x": 310,
+      "x": 203,
       "lane": "build"
     },
     {
       "key": "stoneLantern",
-      "x": 195,
+      "x": 128,
       "lane": "decor"
     },
     {
-      "key": "panggong",
+      "key": "panggongSide",
       "x": 70,
       "lane": "across",
       "action": "gate:lane"
     },
     {
       "key": "maple",
-      "x": 1720,
+      "x": 1141,
       "lane": "front"
     },
     {
       "key": "sakura",
-      "x": 410,
+      "x": 289,
       "lane": "front"
     },
     {
       "key": "malayanNightHeron",
-      "x": 1310,
+      "x": 910,
       "lane": "fauna"
     },
     {
       "key": "spottedDove",
-      "x": 830,
+      "x": 578,
       "lane": "fauna"
     },
     {
       "key": "spottedDove",
-      "x": 795,
+      "x": 554,
       "lane": "fauna",
       "y": 346,
       "flip": true
     }
   ],
-  "start": 1490
+  "start": 1008
 }

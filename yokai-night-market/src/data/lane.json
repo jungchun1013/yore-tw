@@ -1,91 +1,91 @@
 {
-  "width": 1040,
+  "width": 731,
   "note": "The flower lane (Fuzhong Street). The Pan Gong stone arch at the right end leads back to the main street; the lane runs to the left. Edited with ?editor&scene=lane.",
   "items": [
     {
-      "key": "panggong",
-      "x": 975,
+      "key": "panggongSide",
+      "x": 666,
       "lane": "across",
       "action": "gate:street",
       "flip": true
     },
     {
       "key": "bambooFence",
-      "x": 832,
+      "x": 671,
       "lane": "decor"
     },
     {
       "key": "potRow",
-      "x": 668,
+      "x": 576,
       "lane": "decor"
     },
     {
       "key": "bambooFence",
-      "x": 524,
+      "x": 447,
       "lane": "decor"
     },
     {
       "key": "potRow",
-      "x": 354,
+      "x": 320,
       "lane": "decor"
     },
     {
       "key": "ixoraHedge",
-      "x": 178,
+      "x": 187,
       "lane": "decor"
     },
     {
       "key": "woodFence",
-      "x": 35,
+      "x": 42,
       "lane": "decor"
     },
     {
       "key": "lantern",
-      "x": 825,
+      "x": 669,
       "lane": "decor"
     },
     {
       "key": "noodleStall",
-      "x": 740,
+      "x": 644,
       "lane": "build",
       "action": "stall"
     },
     {
       "key": "machiya",
-      "x": 600,
+      "x": 511,
       "lane": "build"
     },
     {
       "key": "stall",
-      "x": 450,
+      "x": 384,
       "lane": "build"
     },
     {
       "key": "lantern",
-      "x": 355,
+      "x": 321,
       "lane": "decor"
     },
     {
       "key": "shennong",
-      "x": 260,
+      "x": 258,
       "lane": "build"
     },
     {
       "key": "woodHouse",
-      "x": 100,
+      "x": 119,
       "lane": "build"
     },
     {
       "key": "maple",
-      "x": 520,
+      "x": 443,
       "lane": "front"
     },
     {
       "key": "malayanNightHeron",
-      "x": 670,
+      "x": 578,
       "lane": "fauna",
       "y": 350
     }
   ],
-  "start": 900
+  "start": 690
 }
