@@ -12,9 +12,10 @@ import { STEP, choose, closeChest, createRun, reroll, step } from './game/run';
 import type { HeroId } from './game/types';
 import type { Run } from './game/world';
 import { type View, render } from './render/scene';
-import { drawStreet, panStreet, setupStreet, tapStreet, updateStreet } from './render/street';
+import { drawStreet, panStreet, setupStreet, tapStreet, toStreet, updateStreet } from './render/street';
+import { type Placed, canPlace, cellAt, drawGrid, furnitureKeys, itemAt, placedExtras } from './render/place';
 import { hudBanner, hudHint, hudVisible, initHud, resetHud, updateHud } from './ui/hud';
-import { type Actions, bossName, clearOverlay, initScreens, showChest, showCodex, showLevelUp, showPause, showResult, showSettings, showShrine, showSplash, showStages, showStall, buildStreetBar } from './ui/screens';
+import { type Actions, bossName, clearOverlay, initScreens, showChest, showCodex, showLevelUp, showPause, showResult, showSettings, showShrine, showSplash, showStages, showStall, buildStreetBar, buildTray } from './ui/screens';
 
 type Screen = 'splash' | 'street' | 'settings' | 'stages' | 'shrine' | 'stall' | 'codex' | 'run';
 
@@ -24,7 +25,8 @@ const field = document.createElement('div'); field.id = 'field';
 const hud = document.createElement('div'); hud.id = 'hud';
 const overlay = document.createElement('div'); overlay.id = 'overlay';
 const bar = document.createElement('div'); bar.id = 'streetbar';
-app.append(canvas, field, hud, bar, overlay);
+const tray = document.createElement('div'); tray.id = 'tray';
+app.append(canvas, field, hud, bar, tray, overlay);
 const ctx = canvas.getContext('2d')!;
 
 let save: Save = loadSave();
@@ -40,6 +42,7 @@ let acc = 0, last = performance.now();
 let lastStage = 0;
 let botPlays = false;
 let streetHero = '';
+let placing = false, heldKey: string | null = null, heldFlip = false, ghost: Placed | null = null;
 
 // street: a tap walks there or uses what was tapped; a drag pans the view
 let downX = 0, downY = 0, lastX = 0, dragging = false, held = false;
@@ -49,9 +52,27 @@ window.addEventListener('pointermove', (e) => {
   if (!dragging && Math.abs(e.clientX - downX) > 8) dragging = true;
   if (dragging) { panStreet(e.clientX - lastX); lastX = e.clientX; }
 });
+canvas.addEventListener('pointermove', (e) => {
+  if (!placing || !heldKey || held) return;
+  const [x, y] = toStreet(e.clientX, e.clientY), [gx, gy] = cellAt(x, y);
+  ghost = { key: heldKey, gx, gy, flip: heldFlip };
+});
 window.addEventListener('pointerup', (e) => {
   if (!held) return; held = false;
   if (screen !== 'street' || dragging || Math.abs(e.clientY - downY) > 8) return;
+  if (placing) {
+    // a tap picks up what stands on that cell, or sets the held piece down
+    const [x, y] = toStreet(e.clientX, e.clientY), [gx, gy] = cellAt(x, y);
+    const at = itemAt(save.placed, gx, gy);
+    if (at >= 0) { const [old] = save.placed.splice(at, 1); heldKey = old.key; heldFlip = !!old.flip; ghost = { ...old }; }
+    else if (heldKey) {
+      const p: Placed = { key: heldKey, gx, gy, flip: heldFlip };
+      if (canPlace(save.placed, p)) { save.placed.push(p); ghost = null; sfx('coin'); } else ghost = p;
+    }
+    persist();
+    buildTray(tray, furnitureKeys(), heldKey, heldFlip, actions);
+    return;
+  }
   const hit = tapStreet(e.clientX, e.clientY);
   if (hit === 'stall') actions.toStall();
 });
@@ -78,7 +99,10 @@ const actions: Actions = {
     buildStreetBar(bar, save, actions);
   },
   toSettings() { screen = 'settings'; showSettings(save, actions); },
-  toFurniture() { /* placement mode: phase 3 */ },
+  toFurniture() { placing = true; heldKey = null; ghost = null; buildTray(tray, furnitureKeys(), heldKey, heldFlip, actions); },
+  holdFurniture(key) { heldKey = heldKey === key ? null : key; ghost = null; buildTray(tray, furnitureKeys(), heldKey, heldFlip, actions); },
+  flipFurniture() { heldFlip = !heldFlip; if (ghost) ghost.flip = heldFlip; buildTray(tray, furnitureKeys(), heldKey, heldFlip, actions); },
+  doneFurniture() { placing = false; heldKey = null; ghost = null; },
   toStages() { screen = 'stages'; showStages(save, actions, lastStage); },
   toShrine() { screen = 'shrine'; showShrine(save, actions); },
   toStall() { screen = 'stall'; showStall(save, actions); },
@@ -221,9 +245,17 @@ function frame(now: number): void {
     updateHud(run);
   } else {
     updateStreet(dt);
-    drawStreet(ctx, view, { dim: screen === 'splash' ? 0.42 : 0 });
+    drawStreet(ctx, view, {
+      dim: screen === 'splash' ? 0.42 : 0,
+      extras: placedExtras(save.placed),
+      bottom: placing ? tray.offsetHeight : 0,
+      fadeFront: placing,
+      underlay: placing ? (c) => drawGrid(c, toStreet(0, 0)[0], toStreet(view.w, 0)[0], save.placed, ghost) : undefined,
+    });
   }
-  bar.classList.toggle('on', screen === 'street');
+  if (screen !== 'street') placing = false;
+  bar.classList.toggle('on', screen === 'street' && !placing);
+  tray.classList.toggle('on', screen === 'street' && placing);
   requestAnimationFrame(frame);
 }
 
@@ -271,6 +303,8 @@ if (debug) {
     get screen() { return screen; },
     bot(on: boolean) { botPlays = on; },
     street() { actions.toStreet(); },
+    // a screen point in the middle of the placement floor, for tests
+    floorPoint() { const x = view.w * 0.4; let y = view.h - 1; while (y > 0 && cellAt(...toStreet(x, y))[0] + cellAt(...toStreet(x, y))[1] > 2) y -= 4; return [x, y]; },
     fast(seconds: number) {
       if (!run) return;
       const until = run.t + seconds;

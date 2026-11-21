@@ -263,3 +263,13 @@ button.choice:hover { background: #fff; box-shadow: 0 0 0 3px var(--gold); }
 .street-btn.main { width: 78px; height: 78px; background: var(--red); color: #fff6e8; font-size: 16px; }
 .street-btn.main svg { width: 32px; height: 32px; }
 #overlay.splash .sheet { margin: 0 auto auto; }
+
+/* furniture tray */
+#tray { position: absolute; left: 0; right: 0; bottom: 0; display: none; gap: 10px; align-items: center; padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); background: rgba(246, 236, 210, 0.96); border-top: 2px solid var(--ink); }
+#tray.on { display: flex; }
+.tray-items { flex: 1; display: flex; gap: 8px; overflow-x: auto; padding: 2px; }
+.tray-item { flex: none; width: 64px; height: 64px; border-radius: 12px; border: 2px solid #c9ad84; background: #fffaf0; display: flex; align-items: center; justify-content: center; cursor: pointer; padding: 0; }
+.tray-item.on { border-color: var(--red); box-shadow: 0 0 0 2px var(--red); }
+.tray-ic { max-width: 52px; object-fit: contain; }
+.tray-side { display: flex; flex-direction: column; gap: 6px; }
+.tray-side .btn { min-height: 36px; padding: 4px 14px; font-size: 15px; }

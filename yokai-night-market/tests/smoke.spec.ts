@@ -144,3 +144,24 @@ test('English mode shows no Chinese text', async ({ page }) => {
   await expect(page.locator('.choice').first()).toBeVisible();
   expect(await visible()).not.toMatch(cjk);
 });
+
+test('the street leads to a run and back, and placed furniture is kept', async ({ page }) => {
+  const errors = await open(page);
+  // arrange: hold the stone lantern and set it on the floor in front of the road
+  await page.click('[data-id=furniture]');
+  await page.click('[data-id=furn-stoneLantern]');
+  const cell = await page.evaluate(() => (window as unknown as { __ynm: { floorPoint(): [number, number] } }).__ynm.floorPoint());
+  await page.mouse.click(cell[0], cell[1]);
+  await page.click('[data-id=done]');
+  expect(await page.evaluate(() => (window as unknown as { __ynm: { save: { placed: unknown[] } } }).__ynm.save.placed.length)).toBe(1);
+  // night rounds and back to the street
+  await page.click('[data-id=start]');
+  await page.click('[data-id=go]');
+  await page.evaluate(() => { for (let i = 0; i < 15 && !window.__ynm.run!.over; i++) window.__ynm.fast(60); });
+  await page.click('[data-id=title]');
+  await expect(page.locator('[data-id=start]')).toBeVisible();
+  expect(await page.evaluate(() => window.__ynm.screen)).toBe('street');
+  await page.reload();
+  expect(await page.evaluate(() => (window as unknown as { __ynm: { save: { placed: unknown[] } } }).__ynm.save.placed.length)).toBe(1);
+  expect(errors).toEqual([]);
+});

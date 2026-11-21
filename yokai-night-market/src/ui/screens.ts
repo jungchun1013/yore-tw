@@ -13,7 +13,8 @@ import { urlOf } from '../render/kit';
 import { spr } from '../render/sprites';
 
 export interface Actions {
-  toTitle(): void; toStreet(): void; toSettings(): void; toFurniture(): void; toStages(): void; toShrine(): void; toStall(): void; toCodex(): void;
+  toTitle(): void; toStreet(): void; toSettings(): void; toFurniture(): void; toStages(): void;
+  holdFurniture(key: string): void; flipFurniture(): void; doneFurniture(): void; toShrine(): void; toStall(): void; toCodex(): void;
   buyFood(id: string): void;
   startRun(stage: number, hero: HeroId): void;
   buyMeta(id: string): void;
@@ -91,6 +92,20 @@ function iconBtn(id: string, icon: string, label: string, on: () => void, cls = 
   b.append(h('span', '', label));
   b.addEventListener('click', on);
   return b;
+}
+
+// The tray along the bottom while arranging furniture.
+export function buildTray(el: HTMLElement, keys: string[], held: string | null, flip: boolean, a: Actions): void {
+  const items = keys.map((k) => {
+    const b = h('button', `tray-item${k === held ? ' on' : ''}`, sprImg(k, 44, 'tray-ic')) as HTMLButtonElement;
+    b.type = 'button'; b.dataset.id = `furn-${k}`;
+    b.addEventListener('click', () => a.holdFurniture(k));
+    return b;
+  });
+  el.replaceChildren(
+    h('div', 'tray-items', ...items),
+    h('div', 'tray-side', btn(t('flip'), flip ? 'primary' : '', a.flipFurniture, 'flip'), btn(t('done'), 'primary', a.doneFurniture, 'done')),
+  );
 }
 
 // The icon column at the lower right of the street.

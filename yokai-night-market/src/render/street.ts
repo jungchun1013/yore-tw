@@ -33,10 +33,10 @@ export function setupStreet(hero: string): void {
   camX = actors[0].x; camFree = false;
 }
 
-function layout(v: StreetView): void {
+function layout(v: StreetView, bottom = 0): void {
   scale = Math.min(v.h / H, v.w / MIN_VIEW_W);
   viewW = v.w / scale;
-  offY = (v.h - H * scale) * 0.8;
+  offY = Math.min((v.h - H * scale) * 0.8, v.h - bottom - H * scale);
 }
 
 export function updateStreet(dt: number): void {
@@ -141,10 +141,10 @@ function drawActor(c: CanvasRenderingContext2D, a: Actor): void {
 
 // Extra things drawn in the walking area by other systems (placed furniture), sorted with the actors.
 export interface StreetExtra { y: number; draw: (c: CanvasRenderingContext2D) => void }
-export interface DrawOptions { dim?: number; extras?: StreetExtra[]; underlay?: (c: CanvasRenderingContext2D) => void }
+export interface DrawOptions { dim?: number; bottom?: number; fadeFront?: boolean; extras?: StreetExtra[]; underlay?: (c: CanvasRenderingContext2D) => void }
 
 export function drawStreet(c: CanvasRenderingContext2D, v: StreetView, opt: DrawOptions = {}): void {
-  layout(v);
+  layout(v, opt.bottom ?? 0);
   camX = Math.max(viewW / 2, Math.min(street.width - viewW / 2, camX));
   c.setTransform(v.dpr, 0, 0, v.dpr, 0, 0);
   c.fillStyle = '#f3e6c9'; c.fillRect(0, 0, v.w, v.h);
@@ -169,7 +169,7 @@ export function drawStreet(c: CanvasRenderingContext2D, v: StreetView, opt: Draw
   list.sort((p, q) => p.y - q.y);
   for (const e of list) e.draw(c);
   const px = actors[0]?.x ?? -999;
-  for (const it of street.items) if (it.lane === 'front' && vis(it)) drawItem(c, { ...it, scale: (it.scale ?? 1) * 1.2 }, FRONT_Y + 14, Math.abs(it.x - px) < 90 ? 0.3 : 0.9);
+  for (const it of street.items) if (it.lane === 'front' && vis(it)) drawItem(c, { ...it, scale: (it.scale ?? 1) * 1.2 }, FRONT_Y + 14, opt.fadeFront ? 0.12 : Math.abs(it.x - px) < 90 ? 0.3 : 0.9);
 
   if (opt.dim) { c.setTransform(v.dpr, 0, 0, v.dpr, 0, 0); c.fillStyle = `rgba(74,47,40,${opt.dim})`; c.fillRect(0, 0, v.w, v.h); }
 }

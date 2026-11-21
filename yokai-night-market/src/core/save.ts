@@ -15,12 +15,14 @@ export interface Save {
   music: boolean;
   runs: number;
   pack: string[];   // snacks bought for the next run
+  placed: { key: string; gx: number; gy: number; flip?: boolean; surface?: 'floor' | 'wall' }[];   // furniture on the street
+  bond: Record<string, number>;   // times each character was treated at a stall
 }
 
 const KEY = 'yokai-night-market-paper.save.v1';
 
 export function freshSave(): Save {
-  return { v: 1, coins: 0, meta: {}, cleared: [], bossDown: [], best: [], seen: [], hero: 'miko', lang: null, sound: true, music: true, runs: 0, pack: [] };
+  return { v: 1, coins: 0, meta: {}, cleared: [], bossDown: [], best: [], seen: [], hero: 'miko', lang: null, sound: true, music: true, runs: 0, pack: [], placed: [], bond: {} };
 }
 
 export function loadSave(): Save {

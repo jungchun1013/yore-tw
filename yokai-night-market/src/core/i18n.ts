@@ -16,6 +16,7 @@ const T = {
   settings: { zh: '設定', en: 'Settings' },
   codexShort: { zh: '圖鑑', en: 'Codex' },
   done: { zh: '完成', en: 'Done' },
+  flip: { zh: '翻面', en: 'Flip' },
   shrine: { zh: '繪馬', en: 'Ema' },
   stall: { zh: '小吃攤', en: 'Snack Stall' },
   stallSub: { zh: '買一份帶進下一局，吃完就沒了。每樣一份。', en: 'Pack a snack for the next run. Eaten once; one of each.' },
