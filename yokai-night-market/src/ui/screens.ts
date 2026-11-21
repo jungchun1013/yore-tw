@@ -15,7 +15,7 @@ import { spr } from '../render/sprites';
 export interface Actions {
   toTitle(): void; toStreet(): void; toSettings(): void; toFurniture(): void; toStages(): void;
   holdFurniture(key: string): void; flipFurniture(): void; doneFurniture(): void; toShrine(): void; toStall(): void; toCodex(): void;
-  buyFood(id: string): void;
+  buyFood(id: string, eater: string): void;
   startRun(stage: number, hero: HeroId): void;
   buyMeta(id: string): void;
   pick(index: number): void; reroll(): void; closeChest(): void;
@@ -260,7 +260,18 @@ export function showStages(save: Save, a: Actions, picked: number): void {
   requestAnimationFrame(() => { map.scrollLeft = stopX(sel) - map.clientWidth / 2; });
 }
 
-export function showStall(save: Save, a: Actions): void {
+// The snack stall: choose who is treated, then a dish. That character walks over and eats.
+// What a treat is worth (stats, how bond is used) is still to be decided with the user.
+let stallEater = '';
+export function showStall(save: Save, a: Actions, eaters: string[]): void {
+  if (!eaters.includes(stallEater)) stallEater = eaters.includes(save.hero) ? save.hero : eaters[0];
+  const chips = eaters.map((id) => {
+    const hero = HEROES.find((x) => x.id === id);
+    const b = h('button', `eater${id === stallEater ? ' on' : ''}`, icon(`hero:${id}:0`, 'eater-ic'), h('span', '', hero ? tl(hero.name) : id), h('span', 'bond', String(save.bond[id] ?? 0))) as HTMLButtonElement;
+    b.type = 'button'; b.dataset.id = `eater-${id}`;
+    b.addEventListener('click', () => { stallEater = id; showStall(save, a, eaters); });
+    return b;
+  });
   const cards = FOODS_FOR_SALE.filter((f) => hasArt(f.id)).map((f) => {
     const packed = save.pack.includes(f.id);
     const card = h('button', `ema food${packed ? ' full' : ''}`,
@@ -270,12 +281,13 @@ export function showStall(save: Save, a: Actions): void {
     ) as HTMLButtonElement;
     card.type = 'button'; card.dataset.id = `food-${f.id}`;
     card.disabled = packed || save.coins < f.price;
-    card.addEventListener('click', () => a.buyFood(f.id));
+    card.addEventListener('click', () => a.buyFood(f.id, stallEater));
     return card;
   });
   show('shrine',
     h('div', 'head', btn(t('back'), 'ghost', a.toTitle, 'back'), h('h2', '', t('stall')), h('div', 'purse', icon('i_coin', 'ic sm'), h('span', '', String(save.coins)))),
     h('p', 'sub', t('stallSub')),
+    h('div', 'eaters', ...chips),
     h('div', 'ema-grid', ...cards),
   );
 }

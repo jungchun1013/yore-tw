@@ -12,7 +12,7 @@ import { STEP, choose, closeChest, createRun, reroll, step } from './game/run';
 import type { HeroId } from './game/types';
 import type { Run } from './game/world';
 import { type View, render } from './render/scene';
-import { drawStreet, panStreet, setupStreet, tapStreet, toStreet, updateStreet } from './render/street';
+import { actorIds, callActor, drawStreet, lookAt, panStreet, setupStreet, stallX, tapStreet, toStreet, updateStreet } from './render/street';
 import { type Placed, canPlace, cellAt, drawGrid, furnitureKeys, itemAt, placedExtras } from './render/place';
 import { hudBanner, hudHint, hudVisible, initHud, resetHud, updateHud } from './ui/hud';
 import { type Actions, bossName, clearOverlay, initScreens, showChest, showCodex, showLevelUp, showPause, showResult, showSettings, showShrine, showSplash, showStages, showStall, buildStreetBar, buildTray } from './ui/screens';
@@ -105,13 +105,18 @@ const actions: Actions = {
   doneFurniture() { placing = false; heldKey = null; ghost = null; },
   toStages() { screen = 'stages'; showStages(save, actions, lastStage); },
   toShrine() { screen = 'shrine'; showShrine(save, actions); },
-  toStall() { screen = 'stall'; showStall(save, actions); },
-  buyFood(id) {
+  toStall() { screen = 'stall'; showStall(save, actions, actorIds()); },
+  buyFood(id, eater) {
     const f = FOOD[id];
     if (!f || save.pack.includes(id) || save.coins < f.price) return;
-    save.coins -= f.price; save.pack.push(id); persist();
+    save.coins -= f.price; save.pack.push(id);
+    save.bond[eater] = (save.bond[eater] ?? 0) + 1;
+    persist();
     sfx('coin');
-    showStall(save, actions);
+    // back on the street, the one who was treated walks over to the stall and eats
+    actions.toStreet();
+    callActor(eater, stallX() + (eater === save.hero ? -26 : 26), 'eat');
+    lookAt(stallX());
   },
   toCodex() { screen = 'codex'; showCodex(save, actions); },
   startRun(stage, hero) { startRun(stage, hero); },
@@ -308,6 +313,7 @@ if (debug) {
     get screen() { return screen; },
     bot(on: boolean) { botPlays = on; },
     street() { actions.toStreet(); },
+    stall() { actions.toStall(); },
     // a screen point in the middle of the placement floor, for tests
     floorPoint() { const x = view.w * 0.4; let y = view.h - 1; while (y > 0 && cellAt(...toStreet(x, y))[0] + cellAt(...toStreet(x, y))[1] > 2) y -= 4; return [x, y]; },
     fast(seconds: number) {

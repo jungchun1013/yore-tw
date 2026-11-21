@@ -45,7 +45,7 @@ export function itemAtPoint(x: number, y: number): number {
   return -1;
 }
 
-interface Actor { id: string; x: number; y: number; face: number; tx: number; ty: number; clip: string; clipT: number; wait: number; bubble: number; player: boolean }
+interface Actor { id: string; x: number; y: number; face: number; tx: number; ty: number; clip: string; clipT: number; wait: number; bubble: number; player: boolean; next: string }
 const actors: Actor[] = [];
 let camX = 0, camFree = false;
 export interface StreetView { w: number; h: number; dpr: number }
@@ -56,7 +56,7 @@ export function setupStreet(hero: string): void {
   const ids = [hero, ...[...PUPPETS.keys()].filter((k) => k !== hero)];
   ids.forEach((id, i) => {
     const x = i === 0 ? 560 : 300 + i * 520;
-    actors.push({ id, x, y: (WALK_Y0 + WALK_Y1) / 2 + (i % 2 ? 10 : -6), face: 1, tx: x, ty: 0, clip: 'idle', clipT: 0, wait: 1 + i, bubble: 0, player: i === 0 });
+    actors.push({ id, x, y: (WALK_Y0 + WALK_Y1) / 2 + (i % 2 ? 10 : -6), face: 1, tx: x, ty: 0, clip: 'idle', clipT: 0, wait: 1 + i, bubble: 0, player: i === 0, next: '' });
   });
   for (const a of actors) a.ty = a.y;
   camX = actors[0].x; camFree = false;
@@ -74,12 +74,12 @@ export function updateStreet(dt: number): void {
     if (a.bubble > 0) a.bubble -= dt;
     const dx = a.tx - a.x, dy = a.ty - a.y, d = Math.hypot(dx, dy);
     if (d > 2) {
-      const sp = (a.player ? 95 : 42) * dt;
+      const sp = (a.player || a.next ? 95 : 42) * dt;
       a.x += (dx / d) * Math.min(d, sp); a.y += (dy / d) * Math.min(d, sp);
       if (Math.abs(dx) > 1) a.face = dx > 0 ? 1 : -1;
       if (a.clip !== 'walk') { a.clip = 'walk'; a.clipT = 0; }
-    } else if (a.clip === 'walk') { a.clip = 'idle'; a.clipT = 0; }
-    else if (a.clip !== 'idle' && a.clipT > (PUPPETS.get(a.id)?.clipLength(a.clip) ?? 1)) { a.clip = 'idle'; a.clipT = 0; }
+    } else if (a.clip === 'walk') { a.clip = a.next || 'idle'; a.next = ''; a.clipT = 0; }
+    else if (a.clip !== 'idle' && a.clipT > (PUPPETS.get(a.id)?.clipLength(a.clip) ?? 1) * (a.clip === 'eat' ? 3 : 1)) { a.clip = 'idle'; a.clipT = 0; }
     if (!a.player && a.clip === 'idle') {
       a.wait -= dt;
       if (a.wait <= 0) {
@@ -212,7 +212,15 @@ export function drawStreet(c: CanvasRenderingContext2D, v: StreetView, opt: Draw
 export function toStreet(sx: number, sy: number): [number, number] { return [sx / scale + camX - viewW / 2, (sy - offY) / scale]; }
 export function streetScale(): number { return scale; }
 export function playerX(): number { return actors[0]?.x ?? 0; }
+// Sends a character to a spot and has it play a clip on arrival.
 export function callActor(id: string, x: number, clip: string): void {
   const a = actors.find((q) => q.id === id); if (!a) return;
-  a.tx = x; a.ty = WALK_Y0 + 6; a.wait = 6; a.clip = clip; a.clipT = 0;
+  // from far away it comes in from just outside the view instead of crossing the whole street
+  if (Math.abs(a.x - x) > viewW * 0.7) a.x = x + (a.x < x ? -1 : 1) * viewW * 0.7;
+  a.tx = x; a.ty = WALK_Y0 + 4; a.wait = 8; a.next = clip; a.bubble = 0;
+  if (Math.abs(a.x - x) < 3) { a.clip = clip; a.clipT = 0; a.next = ''; }
+  camFree = false;
 }
+export const actorIds = (): string[] => actors.map((q) => q.id);
+export const stallX = (): number => street.items.find((it) => it.action === 'stall')?.x ?? 0;
+export function lookAt(x: number): void { camFree = true; camX = x; }

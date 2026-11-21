@@ -165,3 +165,14 @@ test('the street leads to a run and back, and placed furniture is kept', async (
   expect(await page.evaluate(() => (window as unknown as { __ynm: { save: { placed: unknown[] } } }).__ynm.save.placed.length)).toBe(1);
   expect(errors).toEqual([]);
 });
+
+test('treating someone at the stall sends them over to eat and counts once', async ({ page }) => {
+  const errors = await open(page);
+  type Hook = { __ynm: { give(n: number): void; stall(): void; screen: string; save: { bond: Record<string, number>; pack: string[] } } };
+  await page.evaluate(() => { const y = (window as unknown as Hook).__ynm; y.give(500); y.stall(); });
+  await page.click('[data-id=eater-sayo]');
+  await page.click('[data-id^=food-]:not([disabled])');
+  const after = await page.evaluate(() => { const y = (window as unknown as Hook).__ynm; return { screen: y.screen, bond: y.save.bond, pack: y.save.pack.length }; });
+  expect(after).toEqual({ screen: 'street', bond: { sayo: 1 }, pack: 1 });
+  expect(errors).toEqual([]);
+});

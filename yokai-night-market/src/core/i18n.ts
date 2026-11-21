@@ -19,7 +19,7 @@ const T = {
   flip: { zh: '翻面', en: 'Flip' },
   shrine: { zh: '繪馬', en: 'Ema' },
   stall: { zh: '小吃攤', en: 'Snack Stall' },
-  stallSub: { zh: '買一份帶進下一局，吃完就沒了。每樣一份。', en: 'Pack a snack for the next run. Eaten once; one of each.' },
+  stallSub: { zh: '選一位，請一道。', en: 'Pick someone, pick a dish.' },
   packed: { zh: '已帶上', en: 'Packed' },
   packLine: { zh: '帶著：', en: 'Packed: ' },
   packNone: { zh: '還沒帶小吃，可以到小吃攤買', en: 'No snacks packed. The stall sells some.' },
