@@ -13,7 +13,7 @@
 
 export type AssetKind = 'sprite' | 'puppet' | 'tile' | 'backdrop';
 export type AssetStatus = 'approved' | 'placeholder' | 'pending';
-export type AssetLayer = 'building' | 'decor' | 'tree' | 'character' | 'enemy' | 'food' | 'item';
+export type AssetLayer = 'building' | 'decor' | 'tree' | 'character' | 'enemy' | 'food' | 'item' | 'fauna';
 
 export interface Asset {
   key: string;
@@ -75,6 +75,10 @@ export const ASSETS: Asset[] = [
   { key: 'miko', kind: 'puppet', layer: 'character', height: 50, status: 'placeholder', source: 'puppet', name: '小滿紙偶（由整張圖拆件）' },
   { key: 'sayo', kind: 'puppet', layer: 'character', height: 50, status: 'placeholder', source: 'puppet', name: '小夜紙偶' },
   { key: 'fox', kind: 'puppet', layer: 'character', height: 52, status: 'placeholder', source: 'puppet', name: '狐狸紙偶（由整張圖拆件）' },
+
+  // ---- animals on the street (request 12-fauna) ----
+  a('malayanNightHeron', 'fauna', 34, 'pending', { tags: ['fauna'], name: '黑冠麻鷺' }),
+  a('spottedDove', 'fauna', 18, 'pending', { tags: ['fauna'], name: '珠頸斑鳩' }),
 
   // ---- enemies ----
   a('chochin', 'enemy', 40, 'approved', { source: 'atlas', cell: 2, name: '提燈妖' }),

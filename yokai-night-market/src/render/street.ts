@@ -6,14 +6,15 @@ import { hasArt } from './paperAtlas';
 import { PUPPETS } from './puppet';
 import { spr } from './sprites';
 
-export type Lane = 'build' | 'decor' | 'front';
-export interface StreetItem { key: string; x: number; lane: Lane; scale?: number; flip?: boolean; action?: string }
+export type Lane = 'build' | 'decor' | 'front' | 'fauna';
+export interface StreetItem { key: string; x: number; lane: Lane; y?: number; scale?: number; flip?: boolean; action?: string }
 export interface StreetData { width: number; items: StreetItem[] }
 
 // logical layout, top to bottom (the street is H tall and scaled to the screen)
 export const H = 420, BUILD_Y = 268, WALK_Y0 = 282, WALK_Y1 = 322, FLOOR_Y0 = 330, FLOOR_Y1 = 398, FRONT_Y = 432;
 const MIN_VIEW_W = 260;
 
+export const FAUNA_Y = WALK_Y1 + 12;
 export const street: StreetData = JSON.parse(JSON.stringify(raw)) as StreetData;
 
 // The editor (?editor) keeps its work in this browser; the game shows it until it is exported
@@ -24,7 +25,7 @@ export function saveStreetLocal(): void { try { localStorage.setItem(LOCAL, JSON
 export function revertStreet(): void { try { localStorage.removeItem(LOCAL); } catch { /* no storage */ } Object.assign(street, JSON.parse(JSON.stringify(raw)) as StreetData); }
 export function hasLocalStreet(): boolean { try { return !!localStorage.getItem(LOCAL); } catch { return false; } }
 
-const laneY = (it: StreetItem): number => (it.lane === 'build' ? BUILD_Y : it.lane === 'decor' ? BUILD_Y + 8 : FRONT_Y + 14);
+const laneY = (it: StreetItem): number => (it.lane === 'build' ? BUILD_Y : it.lane === 'decor' ? BUILD_Y + 8 : it.lane === 'fauna' ? it.y ?? FAUNA_Y : FRONT_Y + 14);
 const laneScale = (it: StreetItem): number => (it.scale ?? 1) * (it.lane === 'front' ? 1.2 : 1);
 // bounds of an item in street coordinates: [left, top, right, bottom]
 export function itemBox(it: StreetItem): [number, number, number, number] {
@@ -35,7 +36,7 @@ export function itemBox(it: StreetItem): [number, number, number, number] {
 }
 // topmost item under a street point, front lane first
 export function itemAtPoint(x: number, y: number): number {
-  for (const lane of ['front', 'decor', 'build'] as Lane[]) {
+  for (const lane of ['front', 'fauna', 'decor', 'build'] as Lane[]) {
     for (let i = street.items.length - 1; i >= 0; i--) {
       const it = street.items[i]; if (it.lane !== lane) continue;
       const [x0, y0, x1, y1] = itemBox(it);
@@ -50,6 +51,9 @@ const actors: Actor[] = [];
 let camX = 0, camFree = false;
 export interface StreetView { w: number; h: number; dpr: number }
 let scale = 1, offY = 0, viewW = MIN_VIEW_W;
+
+const HOP = 0.45;
+const critters = new Map<StreetItem, { dx: number; hop: number; dir: number }>();
 
 export function setupStreet(hero: string): void {
   actors.length = 0;
@@ -89,6 +93,15 @@ export function updateStreet(dt: number): void {
       }
     }
   }
+  // animals stand where the data puts them and hop aside when the player walks up
+  for (const it of street.items) {
+    if (it.lane !== 'fauna') continue;
+    let m = critters.get(it);
+    if (!m) critters.set(it, (m = { dx: 0, hop: 0, dir: 1 }));
+    const near = actors[0] ? actors[0].x - (it.x + m.dx) : 999;
+    if (m.hop > 0) { m.hop -= dt; m.dx += m.dir * 70 * dt; }
+    else if (Math.abs(near) < 30 && Math.abs((actors[0]?.y ?? 0) - laneY(it)) < 40) { m.hop = HOP; m.dir = Math.abs(m.dx) > 90 ? -Math.sign(m.dx) : near > 0 ? -1 : 1; }
+  }
   const p = actors[0];
   if (p && !camFree) camX += (p.x - camX) * Math.min(1, dt * 5);
   camX = Math.max(viewW / 2, Math.min(street.width - viewW / 2, camX));
@@ -108,7 +121,7 @@ export function tapStreet(sx: number, sy: number): string | null {
     }
   }
   for (const it of street.items) {
-    if (!it.action || it.lane === 'front') continue;
+    if (!it.action || it.lane === 'front' || it.lane === 'fauna') continue;
     const h = (ASSET[it.key]?.height ?? 100) * (it.scale ?? 1), w = h * 0.9;
     if (Math.abs(x - it.x) < w / 2 && y < BUILD_Y + 4 && y > BUILD_Y - h) {
       const p = actors[0]; p.tx = it.x; p.ty = WALK_Y0 + 4; camFree = false;
@@ -139,13 +152,13 @@ function drawItem(c: CanvasRenderingContext2D, it: StreetItem, y: number, alpha 
     c.restore();
   } else {
     // not drawn yet: a paper card with the working name, so the layout can still be judged
-    const h = (asset?.height ?? 100) * k, w = h * 0.86;
+    const h = Math.max(30, (asset?.height ?? 100) * k), w = h * 0.86, small = w < 60;
     c.save(); c.translate(it.x, y);
     c.fillStyle = '#f6ecd2'; c.strokeStyle = '#b89a78'; c.lineWidth = 1.5; c.setLineDash([6, 4]);
     c.beginPath(); c.roundRect(-w / 2, -h, w, h, 6); c.fill(); c.stroke(); c.setLineDash([]);
-    c.fillStyle = '#8a6f5c'; c.textAlign = 'center'; c.font = '700 12px "jf open huninn", system-ui, sans-serif';
-    const name = (asset?.name ?? it.key).replace(/（.*$/, '');
-    for (let i = 0, n = Math.ceil(name.length / 5); i < n; i++) c.fillText(name.slice(i * 5, i * 5 + 5), 0, -h / 2 + (i - (n - 1) / 2) * 15 + 4);
+    c.fillStyle = '#8a6f5c'; c.textAlign = 'center'; c.font = `700 ${small ? 9 : 12}px "jf open huninn", system-ui, sans-serif`;
+    const name = (asset?.name ?? it.key).replace(/（.*$/, ''), per = small ? 2 : 5, lh = small ? 10 : 15;
+    for (let i = 0, n = Math.ceil(name.length / per); i < n; i++) c.fillText(name.slice(i * per, i * per + per), 0, -h / 2 + (i - (n - 1) / 2) * lh + lh / 3.5);
     c.restore();
   }
   c.globalAlpha = 1;
@@ -195,6 +208,14 @@ export function drawStreet(c: CanvasRenderingContext2D, v: StreetView, opt: Draw
   for (const it of street.items) if (it.lane === 'decor' && vis(it)) drawItem(c, it, BUILD_Y + 8);
   opt.underlay?.(c);
   const list: StreetExtra[] = [...(opt.extras ?? []), ...actors.map((a) => ({ y: a.y, draw: (cc: CanvasRenderingContext2D) => drawActor(cc, a) }))];
+  for (const it of street.items) {
+    if (it.lane !== 'fauna' || !vis(it)) continue;
+    const m = critters.get(it), y = laneY(it), up = m && m.hop > 0 ? Math.sin((1 - m.hop / HOP) * Math.PI) * 9 : 0;
+    list.push({ y, draw: (cc) => {
+      cc.fillStyle = 'rgba(106,70,50,0.18)'; cc.beginPath(); cc.ellipse(it.x + (m?.dx ?? 0), y, (ASSET[it.key]?.height ?? 20) * 0.3, 2.5, 0, 0, Math.PI * 2); cc.fill();
+      drawItem(cc, { ...it, x: it.x + (m?.dx ?? 0), flip: m ? m.dir < 0 !== !!it.flip : it.flip }, y - up);
+    } });
+  }
   list.sort((p, q) => p.y - q.y);
   for (const e of list) e.draw(c);
   const px = actors[0]?.x ?? -999;

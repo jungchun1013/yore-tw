@@ -1,0 +1,98 @@
+{
+ "name": "bird",
+ "about": "Standing bird, side view. Roles: body (root), head, wingL, wingR, tail, legL, legR. A puppet may leave roles out.",
+ "clips": {
+  "idle": {
+   "length": 2.4,
+   "sway": [
+    [
+     "body",
+     "y",
+     1.5,
+     0.42,
+     0
+    ],
+    [
+     "head",
+     "r",
+     0.06,
+     0.42,
+     0.8
+    ],
+    [
+     "tail",
+     "r",
+     0.08,
+     0.42,
+     1.6
+    ]
+   ]
+  },
+  "hop": {
+   "length": 0.45,
+   "sway": [
+    [
+     "body",
+     "y",
+     -8,
+     2.2,
+     0
+    ],
+    [
+     "wingL",
+     "r",
+     0.5,
+     4.4,
+     0
+    ],
+    [
+     "wingR",
+     "r",
+     -0.5,
+     4.4,
+     0
+    ],
+    [
+     "legL",
+     "y",
+     -3,
+     2.2,
+     0
+    ],
+    [
+     "legR",
+     "y",
+     -3,
+     2.2,
+     0
+    ]
+   ]
+  },
+  "peck": {
+   "length": 1.2,
+   "sway": [
+    [
+     "head",
+     "r",
+     0.35,
+     1.7,
+     0
+    ],
+    [
+     "body",
+     "r",
+     0.08,
+     1.7,
+     0
+    ],
+    [
+     "tail",
+     "r",
+     -0.12,
+     1.7,
+     0
+    ]
+   ]
+  }
+ }
+}

@@ -2,30 +2,154 @@
   "width": 2860,
   "note": "The street, left to right: the roundabout by the literature museum, down Nanmen Road to the Confucius Temple, through the Pan Gong stone arch into the flower lane (Fuzhong Street). lane: build = buildings on the far side of the road, decor = in front of the buildings, front = between the camera and the walkers. Edited with ?editor.",
   "items": [
-    { "key": "sakura", "x": 60, "lane": "decor" },
-    { "key": "weather", "x": 170, "lane": "build" },
-    { "key": "police", "x": 350, "lane": "build" },
-    { "key": "stoneLantern", "x": 455, "lane": "decor" },
-    { "key": "literature", "x": 580, "lane": "build" },
-    { "key": "maple", "x": 730, "lane": "decor" },
-    { "key": "firehall", "x": 860, "lane": "build" },
-    { "key": "bank", "x": 1040, "lane": "build" },
-    { "key": "lantern", "x": 1140, "lane": "decor" },
-    { "key": "hayashi", "x": 1250, "lane": "build" },
-    { "key": "sakura", "x": 1385, "lane": "decor" },
-    { "key": "butokuden", "x": 1510, "lane": "build" },
-    { "key": "confucius", "x": 1700, "lane": "build" },
-    { "key": "stoneLantern", "x": 1815, "lane": "decor" },
-    { "key": "panggong", "x": 1930, "lane": "build" },
-    { "key": "lantern", "x": 2020, "lane": "decor" },
-    { "key": "noodleStall", "x": 2110, "lane": "build", "action": "stall" },
-    { "key": "machiya", "x": 2250, "lane": "build" },
-    { "key": "stall", "x": 2400, "lane": "build" },
-    { "key": "lantern", "x": 2495, "lane": "decor" },
-    { "key": "shennong", "x": 2590, "lane": "build" },
-    { "key": "woodHouse", "x": 2750, "lane": "build" },
-    { "key": "maple", "x": 420, "lane": "front" },
-    { "key": "sakura", "x": 1600, "lane": "front" },
-    { "key": "maple", "x": 2330, "lane": "front" }
+    {
+      "key": "sakura",
+      "x": 60,
+      "lane": "decor"
+    },
+    {
+      "key": "weather",
+      "x": 170,
+      "lane": "build"
+    },
+    {
+      "key": "police",
+      "x": 350,
+      "lane": "build"
+    },
+    {
+      "key": "stoneLantern",
+      "x": 455,
+      "lane": "decor"
+    },
+    {
+      "key": "literature",
+      "x": 580,
+      "lane": "build"
+    },
+    {
+      "key": "maple",
+      "x": 730,
+      "lane": "decor"
+    },
+    {
+      "key": "firehall",
+      "x": 860,
+      "lane": "build"
+    },
+    {
+      "key": "bank",
+      "x": 1040,
+      "lane": "build"
+    },
+    {
+      "key": "lantern",
+      "x": 1140,
+      "lane": "decor"
+    },
+    {
+      "key": "hayashi",
+      "x": 1250,
+      "lane": "build"
+    },
+    {
+      "key": "sakura",
+      "x": 1385,
+      "lane": "decor"
+    },
+    {
+      "key": "butokuden",
+      "x": 1510,
+      "lane": "build"
+    },
+    {
+      "key": "confucius",
+      "x": 1700,
+      "lane": "build"
+    },
+    {
+      "key": "stoneLantern",
+      "x": 1815,
+      "lane": "decor"
+    },
+    {
+      "key": "panggong",
+      "x": 1930,
+      "lane": "build"
+    },
+    {
+      "key": "lantern",
+      "x": 2020,
+      "lane": "decor"
+    },
+    {
+      "key": "noodleStall",
+      "x": 2110,
+      "lane": "build",
+      "action": "stall"
+    },
+    {
+      "key": "machiya",
+      "x": 2250,
+      "lane": "build"
+    },
+    {
+      "key": "stall",
+      "x": 2400,
+      "lane": "build"
+    },
+    {
+      "key": "lantern",
+      "x": 2495,
+      "lane": "decor"
+    },
+    {
+      "key": "shennong",
+      "x": 2590,
+      "lane": "build"
+    },
+    {
+      "key": "woodHouse",
+      "x": 2750,
+      "lane": "build"
+    },
+    {
+      "key": "maple",
+      "x": 420,
+      "lane": "front"
+    },
+    {
+      "key": "sakura",
+      "x": 1600,
+      "lane": "front"
+    },
+    {
+      "key": "maple",
+      "x": 2330,
+      "lane": "front"
+    },
+    {
+      "key": "malayanNightHeron",
+      "x": 700,
+      "lane": "fauna"
+    },
+    {
+      "key": "spottedDove",
+      "x": 1180,
+      "lane": "fauna"
+    },
+    {
+      "key": "spottedDove",
+      "x": 1215,
+      "lane": "fauna",
+      "y": 346,
+      "flip": true
+    },
+    {
+      "key": "malayanNightHeron",
+      "x": 2180,
+      "lane": "fauna",
+      "y": 350
+    }
   ]
 }

@@ -23,12 +23,12 @@ export function streetEditor(canvas: HTMLCanvasElement): void {
   let sel = -1, held = false, moved = false, dragItem = false, lastX = 0, grabDx = 0;
   const panel = el('div'); panel.style.cssText = PANEL; document.body.append(panel);
 
-  const keys = SPRITE_ASSETS.filter((a) => ['building', 'decor', 'tree'].includes(a.layer)).map((a) => a.key);
+  const keys = SPRITE_ASSETS.filter((a) => ['building', 'decor', 'tree', 'fauna'].includes(a.layer)).map((a) => a.key);
   function refresh(): void {
     const it = street.items[sel];
     const add = el('select'); add.style.cssText = BTN;
     add.append(el('option', { value: '', textContent: '＋ 加入…' }), ...keys.map((k) => el('option', { value: k, textContent: `${SPRITE_ASSETS.find((a) => a.key === k)?.name ?? k}` })));
-    add.onchange = () => { if (!add.value) return; street.items.push({ key: add.value, x: Math.round(toStreet(window.innerWidth / 2, 0)[0] / 10) * 10, lane: 'build' }); sel = street.items.length - 1; changed(); };
+    add.onchange = () => { if (!add.value) return; street.items.push({ key: add.value, x: Math.round(toStreet(window.innerWidth / 2, 0)[0] / 10) * 10, lane: SPRITE_ASSETS.find((a) => a.key === add.value)?.layer === 'fauna' ? 'fauna' : 'build' }); sel = street.items.length - 1; changed(); };
     const btn = (label: string, on: () => void): HTMLButtonElement => { const b = el('button', { textContent: label, type: 'button' }); b.style.cssText = BTN; b.onclick = on; return b; };
     const row = (...k: (Node | string)[]): HTMLDivElement => { const r = el('div', {}, ...k); r.style.cssText = ROW; return r; };
     panel.replaceChildren(
@@ -37,7 +37,7 @@ export function streetEditor(canvas: HTMLCanvasElement): void {
     );
     if (it) {
       const lane = el('select'); lane.style.cssText = BTN;
-      for (const [v, name] of [['build', '建築'], ['decor', '裝飾'], ['front', '前景']] as [Lane, string][]) lane.append(el('option', { value: v, textContent: name, selected: it.lane === v }));
+      for (const [v, name] of [['build', '建築'], ['decor', '裝飾'], ['front', '前景'], ['fauna', '動物']] as [Lane, string][]) lane.append(el('option', { value: v, textContent: name, selected: it.lane === v }));
       lane.onchange = () => { it.lane = lane.value as Lane; changed(); };
       panel.append(
         row(el('b', { textContent: SPRITE_ASSETS.find((a) => a.key === it.key)?.name ?? it.key }), el('span', { textContent: `x ${it.x}` })),
