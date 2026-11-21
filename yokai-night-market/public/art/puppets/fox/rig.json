@@ -1,284 +1,97 @@
 {
+ "version": 2,
+ "skeleton": "chibi",
  "scale": 0.1629,
  "source": "cut from the approved ink-print sheet by art-source/puppets/split_puppet.py",
  "parts": [
   {
    "id": "legL",
+   "role": "legL",
    "file": "legL.png",
-   "pivot": [
-    80,
-    290
-   ],
+   "pivot": [80, 290],
+   "at": [80, 290],
    "z": 1,
-   "parent": "body",
-   "at": [
-    80,
-    290
-   ]
+   "parent": "body"
   },
   {
    "id": "legR",
+   "role": "legR",
    "file": "legR.png",
-   "pivot": [
-    124,
-    290
-   ],
+   "pivot": [124, 290],
+   "at": [124, 290],
    "z": 1.2,
-   "parent": "body",
-   "at": [
-    124,
-    290
-   ]
+   "parent": "body"
   },
   {
    "id": "flower",
+   "role": "acc3",
    "file": "flower.png",
-   "pivot": [
-    168,
-    80
-   ],
+   "pivot": [168, 80],
+   "at": [168, 80],
    "z": 6,
-   "parent": "head",
-   "at": [
-    168,
-    80
-   ]
+   "parent": "head"
   },
   {
    "id": "earL",
+   "role": "earL",
    "file": "earL.png",
-   "pivot": [
-    62,
-    62
-   ],
+   "pivot": [62, 62],
+   "at": [62, 62],
    "z": 2,
-   "parent": "head",
-   "at": [
-    62,
-    62
-   ]
+   "parent": "head"
   },
   {
    "id": "earR",
+   "role": "earR",
    "file": "earR.png",
-   "pivot": [
-    162,
-    50
-   ],
+   "pivot": [162, 50],
+   "at": [162, 50],
    "z": 2.1,
-   "parent": "head",
-   "at": [
-    162,
-    50
-   ]
+   "parent": "head"
   },
   {
    "id": "tail",
+   "role": "tail",
    "file": "tail.png",
-   "pivot": [
-    156,
-    250
-   ],
+   "pivot": [156, 250],
+   "at": [156, 250],
    "z": 0,
-   "parent": "body",
-   "at": [
-    156,
-    250
-   ]
+   "parent": "body"
   },
   {
    "id": "sleeveL",
+   "role": "sleeveL",
    "file": "sleeveL.png",
-   "pivot": [
-    70,
-    196
-   ],
+   "pivot": [70, 196],
+   "at": [70, 196],
    "z": 4,
-   "parent": "body",
-   "at": [
-    70,
-    196
-   ]
+   "parent": "body"
   },
   {
    "id": "sleeveR",
+   "role": "sleeveR",
    "file": "sleeveR.png",
-   "pivot": [
-    140,
-    194
-   ],
+   "pivot": [140, 194],
+   "at": [140, 194],
    "z": 4.1,
-   "parent": "body",
-   "at": [
-    140,
-    194
-   ]
+   "parent": "body"
   },
   {
    "id": "head",
+   "role": "head",
    "file": "head.png",
-   "pivot": [
-    100,
-    176
-   ],
+   "pivot": [100, 176],
+   "at": [100, 176],
    "z": 5,
-   "parent": "body",
-   "at": [
-    100,
-    176
-   ]
+   "parent": "body"
   },
   {
    "id": "body",
+   "role": "body",
    "file": "body.png",
-   "pivot": [
-    122.5,
-    307
-   ],
-   "z": 3,
-   "at": [
-    0,
-    0
-   ]
+   "pivot": [122.5, 307],
+   "at": [0, 0],
+   "z": 3
   }
- ],
- "motions": {
-  "idle": [
-   [
-    "body",
-    "y",
-    3,
-    0.5,
-    0
-   ],
-   [
-    "head",
-    "r",
-    0.05,
-    0.5,
-    0.5
-   ],
-   [
-    "earL",
-    "r",
-    -0.08,
-    0.7,
-    0
-   ],
-   [
-    "earR",
-    "r",
-    0.08,
-    0.7,
-    0.8
-   ],
-   [
-    "tail",
-    "r",
-    0.14,
-    0.6,
-    0
-   ],
-   [
-    "flower",
-    "r",
-    0.1,
-    0.5,
-    1.4
-   ],
-   [
-    "sleeveL",
-    "r",
-    0.05,
-    0.5,
-    0
-   ],
-   [
-    "sleeveR",
-    "r",
-    -0.05,
-    0.5,
-    0
-   ]
-  ],
-  "walk": [
-   [
-    "body",
-    "y",
-    -7,
-    3.2,
-    0
-   ],
-   [
-    "body",
-    "r",
-    0.04,
-    1.6,
-    1.57
-   ],
-   [
-    "head",
-    "r",
-    0.06,
-    1.6,
-    3.14
-   ],
-   [
-    "sleeveL",
-    "r",
-    0.15,
-    1.6,
-    0
-   ],
-   [
-    "sleeveR",
-    "r",
-    0.15,
-    1.6,
-    0
-   ],
-   [
-    "legL",
-    "y",
-    -9,
-    1.6,
-    0
-   ],
-   [
-    "legR",
-    "y",
-    -9,
-    1.6,
-    3.14
-   ],
-   [
-    "tail",
-    "r",
-    0.22,
-    1.6,
-    1.0
-   ],
-   [
-    "earL",
-    "r",
-    -0.1,
-    1.6,
-    1.2
-   ],
-   [
-    "earR",
-    "r",
-    0.1,
-    1.6,
-    1.4
-   ],
-   [
-    "flower",
-    "r",
-    0.18,
-    1.6,
-    1.6
-   ]
-  ]
- }
+ ]
 }

@@ -1,5 +1,5 @@
 // Spawning, enemy AI, boss moves and enemy bullets.
-import { PENDING_ART } from '../data/art';
+import { PENDING_ART } from '../data/manifest';
 import { ENEMY } from '../data/enemies';
 import { BOSS_AT, ELITE_AT, PARADE_AT, RING_AT } from '../data/stages';
 import type { Enemy, EnemyDef } from './types';

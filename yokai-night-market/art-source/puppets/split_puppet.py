@@ -106,7 +106,9 @@ def extend(rgba, region, target, steps=6):
 outdir = f'public/art/puppets/{name}'
 os.makedirs(outdir, exist_ok=True)
 for f in os.listdir(outdir): os.remove(os.path.join(outdir, f))
-rig = {'scale': round(50 / H, 4), 'source': 'cut from the approved ink-print sheet by art-source/puppets/split_puppet.py', 'parts': [], 'motions': MOTIONS}
+# clips live in the shared skeleton (public/art/puppets/_skeletons/chibi.json); MOTIONS above is kept only as a record
+ROLE = {'bow': 'acc1', 'bowL': 'acc2', 'flower': 'acc3'}
+rig = {'version': 2, 'skeleton': 'chibi', 'scale': round(50 / H, 4), 'source': 'cut from the approved ink-print sheet by art-source/puppets/split_puppet.py', 'parts': []}
 for i, (pid, pts, rule, z, parent, joint) in enumerate(PARTS):
     region = owner == i
     above = np.zeros((H, W), bool)
@@ -116,7 +118,7 @@ for i, (pid, pts, rule, z, parent, joint) in enumerate(PARTS):
     rgba, filled = extend(rgba, region, above & sil)
     rgba[~filled] = 0
     Image.fromarray(rgba.clip(0, 255).astype(np.uint8)).save(f'{outdir}/{pid}.png', optimize=True)
-    entry = {'id': pid, 'file': f'{pid}.png', 'pivot': list(joint), 'z': z}
+    entry = {'id': pid, 'role': ROLE.get(pid, pid), 'file': f'{pid}.png', 'pivot': list(joint), 'z': z}
     if parent: entry['parent'] = parent; entry['at'] = list(joint)
     else: entry['at'] = [0, 0]; entry['pivot'] = [W / 2, H]
     rig['parts'].append(entry)

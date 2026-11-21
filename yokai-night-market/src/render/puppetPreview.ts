@@ -15,8 +15,8 @@ export async function puppetPreview(canvas: HTMLCanvasElement, name: string): Pr
     const n = 12, fw = 160, fh = 200, strip = document.createElement('canvas');
     strip.width = fw * n; strip.height = fh;
     const s = strip.getContext('2d')!;
-    const hz = Math.max(...(p.rig.motions.walk ?? [['', 'r', 0, 1, 0]]).map((m) => m[3]));
-    for (let i = 0; i < n; i++) p.draw(s, fw * i + fw / 2, fh - 12, 3, 1, (i / n) / hz, 'walk');
+    const len = p.clipLength('walk');
+    for (let i = 0; i < n; i++) p.draw(s, fw * i + fw / 2, fh - 12, 3, 1, (i / n) * len, 'walk');
     const a = document.createElement('a'); a.download = `${name}-walk-${n}f.png`; a.href = strip.toDataURL(); a.click();
   };
   document.body.append(btn);

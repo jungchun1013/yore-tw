@@ -1,14 +1,11 @@
-import { PENDING_ART } from '../data/art';
+import { ASSET, PENDING_ART, REPLACES, SPRITE_ASSETS } from '../data/manifest';
 import type { Sprite } from './kit';
 
 /** Runtime atlas extraction preserves generated alpha; gameplay still uses foot anchors. */
 export const paperMode = new URLSearchParams(location.search).get('art') !== 'claude';
 const atlas = new Map<string, Sprite>();
-const entries: [string, number, number][] = [
-  ['miko', 0, 50], ['fox', 1, 64], ['chochin', 2, 40],
-  ['stall', 3, 106], ['shrine', 4, 110], ['torii', 5, 108],
-  ['sakura', 6, 120], ['maple', 7, 120], ['stoneLantern', 8, 65],
-];
+// cells of Codex's first 3x3 sheet, from the manifest: [key, cell, in-game height]
+const entries: [string, number, number][] = SPRITE_ASSETS.filter((x) => x.source === 'atlas').map((x) => [x.key, x.cell ?? 0, x.height]);
 export async function loadPaperAtlas(): Promise<void> {
   const img = new Image(); img.src = `${import.meta.env.BASE_URL}art/paper-atlas.png`;
   await img.decode();
@@ -42,18 +39,8 @@ export async function loadPaperAtlas(): Promise<void> {
     atlas.set(key, { c: out, w, h: height, ox: w / 2, oy: height - 1 });
   }
 }
-// Single sprites cut from Codex's six Tainan concept sheets (public/art/tainan, see sprites.json).
-// [key, in-game height in logical px]. A key that matches an existing sprite key replaces it.
-const TAINAN: [string, number][] = [
-  // approved 2026-11-18: Codex redraw v3 buildings, and the ink-print sheet (buildings, decor, the two characters, food)
-  ['chihkan', 150], ['shennong', 130], ['hayashi', 170], ['confucius', 120], ['machiya', 130], ['noodleStall', 84],
-  ['brickHouse', 120], ['woodHouse', 100], ['swordLionWall', 46], ['lantern', 40], ['tileFlower', 22], ['censer', 30],
-  ['miko', 50], ['sayo', 50], ['fox', 52],
-  ['danzai', 24], ['milkfish', 24], ['wagui', 17], ['pengbing', 24], ['dango', 24],
-  // monsters and trees requested 2026-11-18; used once Codex's pictures are cut into public/art/tainan
-  ['kuroneko', 34], ['hebi', 26], ['fengshi', 52], ['bixi', 46], ['lurou', 24],
-  ['banyan', 170], ['flameTree', 160], ['literature', 120],
-];
+// Single PNGs in public/art/tainan, from the manifest: [key, in-game height].
+const TAINAN: [string, number][] = SPRITE_ASSETS.filter((x) => x.source === 'tainan').map((x) => [x.key, x.height]);
 
 export async function loadTainanArt(): Promise<void> {
   // One failed picture must not cost the others: it is skipped and that key keeps its drawn sprite.
@@ -78,19 +65,11 @@ export async function loadTainanArt(): Promise<void> {
   if (failed) console.warn(`${failed} Tainan sprites did not load; their drawn versions are used instead`);
 }
 
-// Heal pickups show one of these. Coffin toast is left out: it is a postwar dish and the game is set around 1930.
 
 export function hasArt(key: string): boolean { return atlas.has(key); }
 
 export function atlasSprite(key: string): Sprite | undefined {
-  if (key.startsWith('hero:miko:')) key = 'miko';
-  else if (key.startsWith('hero:sayo:')) key = 'sayo';
-  else if (key.startsWith('hero:fox:')) key = 'fox';
-  // Preserve enemies' identity and building functions. Other assets retain the procedural renderer.
-  const aliases: Record<string, string> = {
-    phoenix: 'maple', andon: 'stoneLantern',
-    // Tainan set: yokai, stage props and two passive icons
-    lanterns: 'lantern', swordlion: 'swordLionWall', redgate: 'confucius',
-  };
-  return atlas.get(aliases[key] ?? key);
+  // 'hero:<id>:<frame>' uses the character picture of that id when there is one
+  if (key.startsWith('hero:')) { const id = key.split(':')[1]; if (ASSET[id]) key = id; }
+  return atlas.get(REPLACES[key] ?? key);
 }
