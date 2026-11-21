@@ -62,6 +62,14 @@ export const ASSETS: Asset[] = [
   a('censer', 'decor', 30, 'approved', { tags: ['furniture'], footprint: [1, 1], name: '香爐' }),
   a('stoneLantern', 'decor', 65, 'approved', { source: 'atlas', cell: 8, replaces: ['andon'], tags: ['furniture'], footprint: [1, 1], name: '石燈籠' }),
 
+  // ---- pieces that join buildings (request 14-connectors, Codex from real references; awaiting approval) ----
+  a('woodFence', 'decor', 34, 'placeholder', { tags: ['furniture', 'connector'], footprint: [3, 1], name: '木柵欄' }),
+  a('ixoraHedge', 'decor', 32, 'placeholder', { tags: ['furniture', 'connector'], footprint: [3, 1], name: '矮仙丹樹叢' }),
+  a('brickLowWall', 'decor', 34, 'placeholder', { tags: ['furniture', 'connector'], footprint: [3, 1], name: '紅磚矮牆' }),
+  a('bambooFence', 'decor', 32, 'placeholder', { tags: ['furniture', 'connector'], footprint: [3, 1], name: '竹籬' }),
+  a('potRow', 'decor', 40, 'placeholder', { tags: ['furniture', 'connector'], footprint: [3, 1], name: '一排盆栽' }),
+  a('greenHedge', 'decor', 30, 'placeholder', { tags: ['furniture', 'connector'], footprint: [3, 1], name: '月橘綠籬' }),
+
   // ---- trees ----
   a('sakura', 'tree', 120, 'approved', { source: 'atlas', cell: 6, tags: ['furniture'], footprint: [2, 2], name: '櫻花' }),
   a('maple', 'tree', 120, 'placeholder', { source: 'atlas', cell: 7, replaces: ['phoenix'], tags: ['furniture'], footprint: [2, 2], name: '楓樹（暫代鳳凰木）' }),

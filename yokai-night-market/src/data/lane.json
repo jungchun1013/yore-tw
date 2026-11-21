@@ -9,6 +9,36 @@
       "action": "gate:street"
     },
     {
+      "key": "bambooFence",
+      "x": 208,
+      "lane": "decor"
+    },
+    {
+      "key": "potRow",
+      "x": 372,
+      "lane": "decor"
+    },
+    {
+      "key": "bambooFence",
+      "x": 516,
+      "lane": "decor"
+    },
+    {
+      "key": "potRow",
+      "x": 686,
+      "lane": "decor"
+    },
+    {
+      "key": "ixoraHedge",
+      "x": 862,
+      "lane": "decor"
+    },
+    {
+      "key": "woodFence",
+      "x": 1005,
+      "lane": "decor"
+    },
+    {
       "key": "lantern",
       "x": 215,
       "lane": "decor"

@@ -3,6 +3,51 @@
   "note": "The main street, left to right: the roundabout by the literature museum, down Nanmen Road to the Confucius Temple. The Pan Gong stone arch stands across the road from the temple (lane near) and is the gate to the flower lane (src/data/lane.json). lane: build = far side of the road, decor = in front of the buildings, near = near side of the road, front = between camera and walkers, fauna = animals on the road. Edited with ?editor.",
   "items": [
     {
+      "key": "woodFence",
+      "x": 258,
+      "lane": "decor"
+    },
+    {
+      "key": "ixoraHedge",
+      "x": 462,
+      "lane": "decor"
+    },
+    {
+      "key": "greenHedge",
+      "x": 842,
+      "lane": "decor"
+    },
+    {
+      "key": "brickLowWall",
+      "x": 1082,
+      "lane": "decor"
+    },
+    {
+      "key": "ixoraHedge",
+      "x": 1275,
+      "lane": "decor"
+    },
+    {
+      "key": "woodFence",
+      "x": 1512,
+      "lane": "decor"
+    },
+    {
+      "key": "brickLowWall",
+      "x": 1708,
+      "lane": "decor"
+    },
+    {
+      "key": "ixoraHedge",
+      "x": 1948,
+      "lane": "decor"
+    },
+    {
+      "key": "greenHedge",
+      "x": 2050,
+      "lane": "decor"
+    },
+    {
       "key": "sakura",
       "x": 60,
       "lane": "decor"
