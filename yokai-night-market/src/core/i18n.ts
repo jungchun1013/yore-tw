@@ -7,7 +7,7 @@ export function defaultLang(): Lang { return (navigator.language || 'en').toLowe
 export function tl(o: L): string { return o[lang]; }
 
 const T = {
-  title: { zh: '百鬼夜市', en: 'Yokai Night Market' },
+  title: { zh: '百鬼夜市', en: 'Tainan Gazetteer' },
   tagline: { zh: '昭和初年的臺南。撐過十五分鐘，等天亮。', en: 'Tainan, early Showa. Last fifteen minutes and wait for dawn.' },
   start: { zh: '出發', en: 'Set Out' },
   shrine: { zh: '繪馬', en: 'Ema' },

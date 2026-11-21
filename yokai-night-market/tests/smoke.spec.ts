@@ -117,7 +117,7 @@ test('ema upgrades cost coins and persist', async ({ page }) => {
 test('English mode shows no Chinese text', async ({ page }) => {
   await open(page);
   await page.click('[data-id=lang]');
-  await expect(page.locator('.logo h1')).toHaveText('Yokai Night Market');
+  await expect(page.locator('.logo h1')).toHaveText('Tainan Gazetteer');
   const cjk = /[㐀-鿿]/;
   const visible = async (): Promise<string> => page.evaluate(() => {
     const clone = document.getElementById('app')!.cloneNode(true) as HTMLElement;
