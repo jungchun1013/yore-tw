@@ -17,6 +17,7 @@ test('paper atlas loads, comparison controls work, and both art modes start game
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   for (const art of ['paper', 'claude']) {
     await page.goto(`/?debug&art=${art}`);
+    await page.locator('[data-id=tap]').click();
     await page.locator('[data-id=start]').click();
     await page.locator('[data-id=go]').click();
     await expect(page.locator('.hud-time')).toBeVisible();

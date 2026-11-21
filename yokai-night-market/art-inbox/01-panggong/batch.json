@@ -1,0 +1,14 @@
+{
+  "request": "01-panggong",
+  "files": [
+    {
+      "file": "panggong.png",
+      "keys": [
+        "panggong"
+      ],
+      "layout": "single"
+    }
+  ],
+  "prompt": "Original Taiwanese game art for \"Tainan Gazetteer\" (府城夜巡地圖), set in Tainan around 1930.\nStyle: layered kirie paper cut-outs with fine printed pigment. Thin washi sheets pressed almost\nflush; visible, intentional overlaps between cut shapes; very faint short warm contact shadows\nunder only some edges. Flat matte spot colours with subtle ink-density variation and an\nextremely fine low-contrast stencil grain. Palette: warm cream, vermilion, coral, sage, mustard,\nindigo, wood brown; slightly muted.\nDo NOT use: bevels, foam thickness, 3D extrusion, glow, glossy shading, crumpled or spongy\ntexture, black outline strokes, gradients, photographic depth of field.\nOutput: fully TRANSPARENT background, every object complete and separated by clear transparent\ngutters, no ground, no base, no cast shadow outside the object, no text, no captions, no logos.\nView: front-facing, very slight three-quarter, the same for every object on the sheet.\n\nUse case: stylized-concept\nOne game map building sprite on a single canvas: the Panggong stone paifang opposite the Tainan Confucius Temple at the entrance to Fuzhong Street. Use the attached approved Confucius Temple gate sprite as reference for paper-cut texture, viewing angle and relative height/proportions only. The Panggong gate itself is a warm beige-gray stone gateway with exactly four columns and three fully open passages, the central walk-through passage widest. Include small stone gourd finials at the column tops, understated relief carvings on the lintels, and subtly upturned roof-ridge ends. Leave the plaque blank. Keep the building complete, clear of all canvas edges, and all three passage interiors and the surrounding canvas fully transparent.",
+  "notes": "內建 imagegen 生成，使用核可的孔廟門庭作為質感與比例參考。保留原始 alpha；三個開間中央皆為全透明，外圍有極低 alpha 殘值，待美術驗收。"
+}

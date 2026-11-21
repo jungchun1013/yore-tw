@@ -12,17 +12,19 @@ import { STEP, choose, closeChest, createRun, reroll, step } from './game/run';
 import type { HeroId } from './game/types';
 import type { Run } from './game/world';
 import { type View, render } from './render/scene';
+import { drawStreet, panStreet, setupStreet, tapStreet, updateStreet } from './render/street';
 import { hudBanner, hudHint, hudVisible, initHud, resetHud, updateHud } from './ui/hud';
-import { type Actions, bossName, clearOverlay, initScreens, showChest, showCodex, showLevelUp, showPause, showResult, showShrine, showStages, showStall, showTitle } from './ui/screens';
+import { type Actions, bossName, clearOverlay, initScreens, showChest, showCodex, showLevelUp, showPause, showResult, showSettings, showShrine, showSplash, showStages, showStall, buildStreetBar } from './ui/screens';
 
-type Screen = 'title' | 'stages' | 'shrine' | 'stall' | 'codex' | 'run';
+type Screen = 'splash' | 'street' | 'settings' | 'stages' | 'shrine' | 'stall' | 'codex' | 'run';
 
 const app = document.getElementById('app')!;
 const canvas = document.createElement('canvas'); canvas.id = 'game';
 const field = document.createElement('div'); field.id = 'field';
 const hud = document.createElement('div'); hud.id = 'hud';
 const overlay = document.createElement('div'); overlay.id = 'overlay';
-app.append(canvas, field, hud, overlay);
+const bar = document.createElement('div'); bar.id = 'streetbar';
+app.append(canvas, field, hud, bar, overlay);
 const ctx = canvas.getContext('2d')!;
 
 let save: Save = loadSave();
@@ -30,28 +32,38 @@ setLang(save.lang ?? defaultLang());
 setSound(save.sound); setMusic(save.music);
 
 const view: View = { w: 1, h: 1, zoom: 1, dpr: 1 };
-let screen: Screen = 'title';
+let screen: Screen = 'splash';
 let run: Run | null = null;          // the run being played
-let attract: Run = newAttract();     // a bot-played run behind the menus
 let paused = false, ended = false;
 let shownChoices: unknown = null, shownChest: unknown = null;
 let acc = 0, last = performance.now();
 let lastStage = 0;
 let botPlays = false;
+let streetHero = '';
+
+// street: a tap walks there or uses what was tapped; a drag pans the view
+let downX = 0, downY = 0, lastX = 0, dragging = false, held = false;
+canvas.addEventListener('pointerdown', (e) => { if (screen !== 'street') return; held = true; dragging = false; downX = lastX = e.clientX; downY = e.clientY; });
+window.addEventListener('pointermove', (e) => {
+  if (!held || screen !== 'street') return;
+  if (!dragging && Math.abs(e.clientX - downX) > 8) dragging = true;
+  if (dragging) { panStreet(e.clientX - lastX); lastX = e.clientX; }
+});
+window.addEventListener('pointerup', (e) => {
+  if (!held) return; held = false;
+  if (screen !== 'street' || dragging || Math.abs(e.clientY - downY) > 8) return;
+  const hit = tapStreet(e.clientX, e.clientY);
+  if (hit === 'stall') actions.toStall();
+});
 const params = new URLSearchParams(location.search);
 const debug = import.meta.env.DEV || params.has('debug');
-
-function newAttract(): Run {
-  const open = Math.max(0, Math.min(STAGES.length - 1, clearedCount(save)));
-  return createRun({ stage: Math.floor(Math.random() * (open + 1)), hero: 'miko', meta: { might: 5, hp: 5, armor: 3, regen: 4 }, seed: (Math.random() * 1e9) | 0, viewW: view.w / view.zoom, viewH: view.h / view.zoom });
-}
 
 function resize(): void {
   view.w = window.innerWidth; view.h = window.innerHeight;
   view.dpr = Math.min(window.devicePixelRatio || 1, 2);
   view.zoom = Math.max(0.95, Math.min(2.2, Math.sqrt((view.w * view.h) / 480000)));
   canvas.width = Math.round(view.w * view.dpr); canvas.height = Math.round(view.h * view.dpr);
-  for (const r of [run, attract]) if (r) { r.viewW = view.w / view.zoom; r.viewH = view.h / view.zoom; }
+  if (run) { run.viewW = view.w / view.zoom; run.viewH = view.h / view.zoom; }
 }
 window.addEventListener('resize', resize);
 resize();
@@ -59,7 +71,14 @@ resize();
 function persist(): void { writeSave(save); }
 
 const actions: Actions = {
-  toTitle() { leaveRun(); screen = 'title'; showTitle(save, actions); },
+  toTitle() { actions.toStreet(); },
+  toStreet() {
+    leaveRun(); screen = 'street'; clearOverlay();
+    if (streetHero !== save.hero) { streetHero = save.hero; setupStreet(save.hero); }
+    buildStreetBar(bar, save, actions);
+  },
+  toSettings() { screen = 'settings'; showSettings(save, actions); },
+  toFurniture() { /* placement mode: phase 3 */ },
   toStages() { screen = 'stages'; showStages(save, actions, lastStage); },
   toShrine() { screen = 'shrine'; showShrine(save, actions); },
   toStall() { screen = 'stall'; showStall(save, actions); },
@@ -93,7 +112,9 @@ const actions: Actions = {
 };
 
 function refresh(): void {
-  if (screen === 'title') showTitle(save, actions);
+  if (screen === 'settings') showSettings(save, actions);
+  else if (screen === 'splash') showSplash(actions);
+  if (screen !== 'run') buildStreetBar(bar, save, actions);
   else if (screen === 'run' && run && paused) showPause(run, save, actions);
 }
 
@@ -116,7 +137,6 @@ function leaveRun(): void {
   run = null; paused = false;
   hudVisible(false); field.classList.remove('on');
   resetInput(); stopMusic();
-  attract = newAttract();
 }
 
 // Moves what the run earned into the save. Coins are kept on a loss too.
@@ -200,11 +220,10 @@ function frame(now: number): void {
     render(ctx, run, view, now / 1000);
     updateHud(run);
   } else {
-    for (let i = 0; i < 2; i++) { const [x, y] = botInput(attract); step(attract, x, y); botDecide(attract); }
-    drain(attract, false);
-    if (attract.over) attract = newAttract();
-    render(ctx, attract, view, now / 1000);
+    updateStreet(dt);
+    drawStreet(ctx, view, { dim: screen === 'splash' ? 0.42 : 0 });
   }
+  bar.classList.toggle('on', screen === 'street');
   requestAnimationFrame(frame);
 }
 
@@ -236,7 +255,8 @@ if (params.has('atelier')) {
   field.style.display = 'none';
   await import('./render/puppetPreview').then((m) => m.puppetPreview(canvas, params.get('puppet') || 'miko'));
 } else {
-  showTitle(save, actions);
+  streetHero = save.hero; setupStreet(save.hero);
+  showSplash(actions);
   requestAnimationFrame(frame);
 }
 
@@ -250,6 +270,7 @@ if (debug) {
     get save() { return save; },
     get screen() { return screen; },
     bot(on: boolean) { botPlays = on; },
+    street() { actions.toStreet(); },
     fast(seconds: number) {
       if (!run) return;
       const until = run.t + seconds;

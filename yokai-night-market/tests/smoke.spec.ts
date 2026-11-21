@@ -18,13 +18,15 @@ async function open(page: Page): Promise<string[]> {
   await page.goto('/?debug');
   await page.evaluate(() => localStorage.clear());
   await page.reload();
+  await expect(page.locator('[data-id=tap]')).toBeVisible();
+  await expect(page.locator('.logo h1')).toHaveText('府城夜巡地圖');
+  await page.click('[data-id=tap]');
   await expect(page.locator('[data-id=start]')).toBeVisible();
   return errors;
 }
 
 test('title leads to stage select with only the first stage open', async ({ page }) => {
   const errors = await open(page);
-  await expect(page.locator('.logo h1')).toHaveText('府城夜巡地圖');
   await page.click('[data-id=start]');
   await expect(page.locator('.map-node')).toHaveCount(6);
   await expect(page.locator('[data-id=stage-0]')).toBeEnabled();
@@ -110,14 +112,18 @@ test('ema upgrades cost coins and persist', async ({ page }) => {
   await page.click('[data-id=meta-hp]');
   expect(await page.evaluate(() => window.__ynm.save.coins)).toBe(40);
   await page.reload();
+  await page.click('[data-id=tap]');
   await page.click('[data-id=shrine]');
   await expect(page.locator('[data-id=meta-hp] .pips i.on')).toHaveCount(1);
 });
 
 test('English mode shows no Chinese text', async ({ page }) => {
   await open(page);
+  await page.click('[data-id=settings]');
   await page.click('[data-id=lang]');
+  await page.reload();
   await expect(page.locator('.logo h1')).toHaveText('Tainan Gazetteer');
+  await page.click('[data-id=tap]');
   const cjk = /[㐀-鿿]/;
   const visible = async (): Promise<string> => page.evaluate(() => {
     const clone = document.getElementById('app')!.cloneNode(true) as HTMLElement;

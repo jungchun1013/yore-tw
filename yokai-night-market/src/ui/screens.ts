@@ -13,7 +13,7 @@ import { urlOf } from '../render/kit';
 import { spr } from '../render/sprites';
 
 export interface Actions {
-  toTitle(): void; toStages(): void; toShrine(): void; toStall(): void; toCodex(): void;
+  toTitle(): void; toStreet(): void; toSettings(): void; toFurniture(): void; toStages(): void; toShrine(): void; toStall(): void; toCodex(): void;
   buyFood(id: string): void;
   startRun(stage: number, hero: HeroId): void;
   buyMeta(id: string): void;
@@ -60,18 +60,50 @@ function settingsRow(save: Save, a: Actions, withReset: boolean): HTMLElement {
   );
 }
 
-export function showTitle(save: Save, a: Actions): void {
-  show('title',
-    h('div', 'logo', icon('chochin', 'logo-ic'), h('h1', '', t('title')), icon('chochin', 'logo-ic flip')),
-    h('p', 'tagline', t('tagline')),
-    h('div', 'menu',
-      btn(t('start'), 'primary big', a.toStages, 'start'),
-      btn(t('shrine'), 'big', a.toShrine, 'shrine'),
-      btn(t('stall'), 'big', a.toStall, 'stall'),
-      btn(t('codex'), 'big', a.toCodex, 'codex'),
-    ),
-    h('div', 'purse', icon('i_coin', 'ic sm'), h('span', '', String(save.coins))),
+// Entry page: the street behind, the title, tap anywhere.
+export function showSplash(a: Actions): void {
+  show('title splash',
+    h('div', 'logo', h('h1', '', t('title'))),
+    h('p', 'tagline tap', t('tapStart')),
+  );
+  root.dataset.id = 'tap';
+  root.addEventListener('click', function once() { root.removeEventListener('click', once); delete root.dataset.id; a.toStreet(); });
+}
+
+export function showSettings(save: Save, a: Actions): void {
+  show('pause',
+    h('div', 'head', btn(t('back'), 'ghost', a.toStreet, 'back'), h('h2', '', t('settings')), h('span', 'spacer')),
     settingsRow(save, a, true),
+  );
+}
+
+const ICONS: Record<string, string> = {
+  rounds: '<path d="M15 3a8 8 0 1 0 6 13.2A7 7 0 0 1 15 3z"/><path d="M5 4v2M4 5h2M8 9v2M7 10h2"/>',
+  furniture: '<path d="M6 4v9h9M6 13v7M15 13v7M6 9h9V4"/><path d="M19 20v-9h-3"/>',
+  codex: '<path d="M4 5h6a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4zM20 5h-6a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z"/>',
+  shrine: '<path d="M4 9l8-5 8 5v10H4zM9 3l3-1 3 1M8 12h8M8 15h5"/>',
+  settings: '<path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/>',
+};
+function iconBtn(id: string, icon: string, label: string, on: () => void, cls = ''): HTMLElement {
+  const b = h('button', `street-btn ${cls}`) as HTMLButtonElement;
+  b.type = 'button'; b.dataset.id = id;
+  b.innerHTML = `<svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[icon]}</svg>`;
+  b.append(h('span', '', label));
+  b.addEventListener('click', on);
+  return b;
+}
+
+// The icon column at the lower right of the street.
+export function buildStreetBar(el: HTMLElement, save: Save, a: Actions): void {
+  el.replaceChildren(
+    h('div', 'street-purse', icon('i_coin', 'ic sm'), h('span', '', String(save.coins))),
+    h('div', 'street-col',
+      iconBtn('settings', 'settings', t('settings'), a.toSettings),
+      iconBtn('shrine', 'shrine', t('shrine'), a.toShrine),
+      iconBtn('codex', 'codex', t('codexShort'), a.toCodex),
+      iconBtn('furniture', 'furniture', t('furniture'), a.toFurniture),
+      iconBtn('start', 'rounds', t('rounds'), a.toStages, 'main'),
+    ),
   );
 }
 

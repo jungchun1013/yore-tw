@@ -48,7 +48,7 @@ export const ASSETS: Asset[] = [
   a('torii', 'building', 108, 'approved', { source: 'atlas', cell: 5, tags: ['landmark'], name: '鳥居' }),
   // requested
   a('literature', 'building', 150, 'pending', { tags: ['landmark'], name: '臺灣文學館（舊臺南州廳）' }),
-  a('panggong', 'building', 110, 'pending', { tags: ['landmark'], name: '泮宮石坊' }),
+  a('panggong', 'building', 110, 'placeholder', { tags: ['landmark'], name: '泮宮石坊（Codex 初稿，待核可）' }),
   a('butokuden', 'building', 130, 'pending', { tags: ['landmark'], name: '武德殿' }),
   a('weather', 'building', 130, 'pending', { tags: ['landmark'], name: '臺南測候所' }),
   a('police', 'building', 120, 'pending', { tags: ['landmark'], name: '舊臺南警察署' }),
