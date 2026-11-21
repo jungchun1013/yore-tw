@@ -38,7 +38,7 @@ export function streetEditor(canvas: HTMLCanvasElement, scene = 'street'): void 
     );
     if (it) {
       const lane = el('select'); lane.style.cssText = BTN;
-      for (const [v, name] of [['build', '建築'], ['decor', '裝飾'], ['across', '橫跨道路'], ['near', '路的近側'], ['front', '前景'], ['fauna', '動物']] as [Lane, string][]) lane.append(el('option', { value: v, textContent: name, selected: it.lane === v }));
+      for (const [v, name] of [['back', '建築後方'], ['build', '建築'], ['decor', '裝飾'], ['across', '橫跨道路'], ['near', '路的近側'], ['front', '前景'], ['fauna', '動物']] as [Lane, string][]) lane.append(el('option', { value: v, textContent: name, selected: it.lane === v }));
       lane.onchange = () => { it.lane = lane.value as Lane; changed(); };
       panel.append(
         row(el('b', { textContent: SPRITE_ASSETS.find((a) => a.key === it.key)?.name ?? it.key }), el('span', { textContent: `x ${it.x}` })),

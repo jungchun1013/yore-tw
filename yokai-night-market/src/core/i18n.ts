@@ -12,6 +12,7 @@ const T = {
   start: { zh: '出發', en: 'Set Out' },
   enterLane: { zh: '進入花巷', en: 'Enter the lane' },
   backStreet: { zh: '回大街', en: 'Back to the street' },
+  menu: { zh: '選單', en: 'Menu' },
   tapStart: { zh: '點一下開始', en: 'Tap to start' },
   rounds: { zh: '夜巡', en: 'Rounds' },
   furniture: { zh: '家具', en: 'Furniture' },

@@ -76,15 +76,10 @@
       "lane": "build"
     },
     {
-      "key": "maple",
-      "x": 443,
-      "lane": "front"
-    },
-    {
       "key": "malayanNightHeron",
       "x": 578,
       "lane": "fauna",
-      "y": 350
+      "y": 380
     }
   ],
   "start": 690

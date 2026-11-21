@@ -288,3 +288,12 @@ button.choice:hover { background: #fff; box-shadow: 0 0 0 3px var(--gold); }
 .gate { position: absolute; display: none; transform: translate(-50%, -100%); white-space: nowrap; z-index: 2; }
 .gate.on { display: block; }
 .gate:active { transform: translate(-50%, calc(-100% + 3px)); }
+
+/* street icons sit along the bottom, the main one at the right */
+.street-col { left: calc(10px + env(safe-area-inset-left)); right: calc(10px + env(safe-area-inset-right)); flex-direction: row; align-items: flex-end; justify-content: flex-start; gap: 10px; }
+.street-col .main { margin-left: auto; }
+
+/* street menu: a column at the lower right (rounds, arrange, menu), a row along the bottom when open */
+.street-side { position: absolute; right: calc(10px + env(safe-area-inset-right)); bottom: calc(12px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.street-row { position: absolute; left: calc(10px + env(safe-area-inset-left)); right: calc(84px + env(safe-area-inset-right)); bottom: calc(12px + env(safe-area-inset-bottom)); display: none; justify-content: flex-end; gap: 10px; }
+.street-row.open { display: flex; }

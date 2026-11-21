@@ -21,6 +21,7 @@ async function open(page: Page): Promise<string[]> {
   await expect(page.locator('[data-id=tap]')).toBeVisible();
   await expect(page.locator('.logo h1')).toHaveText('府城夜巡地圖');
   await page.click('[data-id=tap]');
+  await page.click('[data-id=menu]');   // open the bottom row so its icons can be used
   await expect(page.locator('[data-id=start]')).toBeVisible();
   return errors;
 }
@@ -113,6 +114,7 @@ test('ema upgrades cost coins and persist', async ({ page }) => {
   expect(await page.evaluate(() => window.__ynm.save.coins)).toBe(40);
   await page.reload();
   await page.click('[data-id=tap]');
+  await page.click('[data-id=menu]');
   await page.click('[data-id=shrine]');
   await expect(page.locator('[data-id=meta-hp] .pips i.on')).toHaveCount(1);
 });
@@ -124,6 +126,7 @@ test('English mode shows no Chinese text', async ({ page }) => {
   await page.reload();
   await expect(page.locator('.logo h1')).toHaveText('Tainan Gazetteer');
   await page.click('[data-id=tap]');
+  await page.click('[data-id=menu]');
   const cjk = /[㐀-鿿]/;
   const visible = async (): Promise<string> => page.evaluate(() => {
     const clone = document.getElementById('app')!.cloneNode(true) as HTMLElement;

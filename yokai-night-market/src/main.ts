@@ -328,7 +328,7 @@ if (debug) {
     get scene() { return currentScene(); },
     walkTo(x: number) { walkPlayer(x); },
     // a screen point in the middle of the placement floor, for tests
-    floorPoint() { const x = view.w * 0.4; let y = view.h - 1; while (y > 0 && cellAt(...toStreet(x, y))[0] + cellAt(...toStreet(x, y))[1] > 2) y -= 4; return [x, y]; },
+    floorPoint() { const x = view.w * 0.4; let y = 0; while (y < view.h && cellAt(...toStreet(x, y))[1] < 3) y += 3; return [x, y + 2]; },
     fast(seconds: number) {
       if (!run) return;
       const until = run.t + seconds;

@@ -1,0 +1,29 @@
+# 院子的方格物件與選單圖示
+
+- 需求單：`20-yard-pieces-and-menu-icons`（等 `19` 完成、使用者看過選單規劃後才送）
+- 交付到：`art-inbox/20-yard-pieces-and-menu-icons/`（附 `batch.json`）
+- 檔案：`yard.png`（3x2）、`icons.png`（3x2）
+- 風格與格式：`docs/art/ART-BIBLE.md`；把 `public/art/paper-atlas.png` 當風格輸入圖。
+- 整體效果的參考（使用者指定，只看版面與質感，不沿用角色、圖案、文字）：`art-source/refs/yokaiya/yard-1.webp` 到 `yard-5.png`。
+
+## `yard.png` 院子裡一格一格擺的物件（key 左上到右下）
+
+院子是方格（每格寬 24、深 20，略微俯視）。每件都要剛好佔滿整數格，四邊切齊，相鄰擺放時能接起來。視角：正面略俯視，看得到一點頂面。
+
+1. `grassTile` 草地塊：一格，方形的綠色紙片，邊緣微微不齊，上面兩三片小草葉。會大量拼接。
+2. `flowerBed` 花圃：一格，方形草地塊上開滿小花（白與黃，或粉紫），可拼成一大片。
+3. `benchSeat` 長椅：寬兩格、深一格的木長椅。
+4. `fencePiece` 欄杆：寬一格的一段木樁欄杆（木樁加橫桿、透空），左右可接成一排；畫法同已有的 `woodFence`。
+5. `stoneStool` 石凳或小方桌：一格。
+6. `potPlant` 單盆盆栽：一格，陶盆或青花盆加一株植物。
+
+## `icons.png` 選單圖示（key 左上到右下）
+
+用一件實物代表一個選項，剪紙做的小物件，輪廓單純，縮到 48 px 仍認得出來。不要底框、不要文字。
+
+1. `icoRounds` 夜巡：一盞手提的紙燈籠。
+2. `icoArrange` 佈置：一把園藝小鏟加一個小花盆。
+3. `icoMenu` 選單主鈕：一個綁繩的布包袱（打開選單的鈕）。
+4. `icoCodex` 圖鑑：一本線裝書，封面留素面。
+5. `icoEma` 繪馬：一塊五角形木牌加紅繩，牌面留素面。
+6. `icoSettings` 設定：一個算盤，或一把舊鑰匙。

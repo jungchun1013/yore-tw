@@ -7,13 +7,18 @@ import { hasArt } from './paperAtlas';
 import { PUPPETS } from './puppet';
 import { spr } from './sprites';
 
-export type Lane = 'build' | 'decor' | 'across' | 'near' | 'front' | 'fauna';
+export type Lane = 'back' | 'build' | 'decor' | 'across' | 'near' | 'front' | 'fauna';
 export interface StreetItem { key: string; x: number; lane: Lane; y?: number; scale?: number; flip?: boolean; action?: string }
 export interface StreetData { width: number; start?: number; items: StreetItem[] }
 
 // logical layout, top to bottom (the street is H tall and scaled to the screen)
-export const H = 420, BUILD_Y = 268, WALK_Y0 = 282, WALK_Y1 = 322, FLOOR_Y0 = 330, FLOOR_Y1 = 398, FRONT_Y = 432;
-const MIN_VIEW_W = 260;
+// buildings stand along the top; below them a walk, then the yard, which takes most of the screen
+export const H = 500, BUILD_Y = 268, WALK_Y0 = 282, WALK_Y1 = 322, FLOOR_Y0 = 330, FLOOR_Y1 = 490, FRONT_Y = 532;
+// empty sky above the tallest tree that the view may cut off to come closer
+const SKY = 70;
+// the yard's square cells (see place.ts)
+export const CW = 24, CH = 20;
+const MIN_VIEW_W = 220;
 
 export const FAUNA_Y = WALK_Y1 + 12;
 export const NEAR_Y = FLOOR_Y0 + 16;
@@ -41,7 +46,7 @@ export function saveStreetLocal(): void { try { localStorage.setItem(localKey(),
 export function revertStreet(): void { try { localStorage.removeItem(localKey()); } catch { /* no storage */ } loadScene(sceneName); }
 export function hasLocalStreet(): boolean { try { return !!localStorage.getItem(localKey()); } catch { return false; } }
 
-const laneY = (it: StreetItem): number => (it.lane === 'build' ? BUILD_Y : it.lane === 'decor' ? BUILD_Y + 8 : it.lane === 'fauna' ? it.y ?? FAUNA_Y : it.lane === 'near' ? it.y ?? NEAR_Y : it.lane === 'across' ? ACROSS_NEAR : FRONT_Y + 14);
+const laneY = (it: StreetItem): number => (it.lane === 'back' ? BUILD_Y - 6 : it.lane === 'build' ? BUILD_Y : it.lane === 'decor' ? BUILD_Y + 8 : it.lane === 'fauna' ? it.y ?? FAUNA_Y : it.lane === 'near' ? it.y ?? NEAR_Y : it.lane === 'across' ? ACROSS_NEAR : FRONT_Y + 14);
 const laneScale = (it: StreetItem): number => (it.scale ?? 1) * (it.lane === 'front' ? 1.2 : 1);
 // bounds of an item in street coordinates: [left, top, right, bottom]
 export function itemBox(it: StreetItem): [number, number, number, number] {
@@ -53,7 +58,7 @@ export function itemBox(it: StreetItem): [number, number, number, number] {
 }
 // topmost item under a street point, front lane first
 export function itemAtPoint(x: number, y: number): number {
-  for (const lane of ['front', 'near', 'across', 'fauna', 'decor', 'build'] as Lane[]) {
+  for (const lane of ['front', 'near', 'across', 'fauna', 'decor', 'build', 'back'] as Lane[]) {
     for (let i = street.items.length - 1; i >= 0; i--) {
       const it = street.items[i]; if (it.lane !== lane) continue;
       const [x0, y0, x1, y1] = itemBox(it);
@@ -109,9 +114,9 @@ export function setupStreet(hero: string): void {
 }
 
 function layout(v: StreetView, bottom = 0): void {
-  scale = Math.min(v.h / H, v.w / MIN_VIEW_W);
+  scale = Math.min(v.h / (H - SKY), v.w / MIN_VIEW_W);
   viewW = v.w / scale;
-  offY = Math.min((v.h - H * scale) * 0.8, v.h - bottom - H * scale);
+  offY = Math.min(v.h - H * scale, v.h - bottom - (FLOOR_Y1 + 6) * scale);
 }
 
 export function updateStreet(dt: number): void {
@@ -131,7 +136,7 @@ export function updateStreet(dt: number): void {
       if (a.wait <= 0) {
         a.wait = 3 + ((a.x * 7 + a.clipT * 13) % 4);
         a.tx = Math.max(80, Math.min(street.width - 80, a.x + (((a.x * 13 + a.clipT * 31) % 2) < 1 ? -1 : 1) * (80 + ((a.x * 3) % 140))));
-        a.ty = WALK_Y0 + 6 + ((a.tx * 5) % (WALK_Y1 - WALK_Y0 - 12));
+        a.ty = WALK_Y0 + 6 + ((a.tx * 5) % 150);
       }
     }
   }
@@ -169,7 +174,7 @@ export function tapStreet(sx: number, sy: number): string | null {
       if (x >= x0 && x <= x1 && y >= y0 && y <= y1) { const p = actors[0]; p.tx = it.x; p.ty = it.lane === 'across' ? (WALK_Y0 + WALK_Y1) / 2 : WALK_Y1 - 4; camFree = false; return null; }
       continue;
     }
-    if (!it.action || it.lane === 'front' || it.lane === 'fauna') continue;
+    if (!it.action || it.lane === 'front' || it.lane === 'fauna' || it.lane === 'back') continue;
     const h = (ASSET[it.key]?.height ?? 100) * (it.scale ?? 1), w = h * 0.9;
     if (Math.abs(x - it.x) < w / 2 && y < BUILD_Y + 4 && y > BUILD_Y - h) {
       const p = actors[0]; p.tx = it.x; p.ty = WALK_Y0 + 4; camFree = false;
@@ -177,7 +182,7 @@ export function tapStreet(sx: number, sy: number): string | null {
     }
   }
   const p = actors[0];
-  if (p) { p.tx = Math.max(30, Math.min(street.width - 30, x)); p.ty = Math.max(WALK_Y0, Math.min(WALK_Y1, y)); camFree = false; }
+  if (p) { p.tx = Math.max(30, Math.min(street.width - 30, x)); p.ty = Math.max(WALK_Y0, Math.min(FLOOR_Y1 - 6, y)); camFree = false; }
   return null;
 }
 
@@ -188,6 +193,34 @@ function hills(c: CanvasRenderingContext2D, base: number, amp: number, step: num
     c.quadraticCurveTo(x + step / 2, base - amp * (0.6 + 0.4 * Math.sin(wx * 0.011 + seed)), x + step, base);
   }
   c.lineTo(viewW + step, H); c.closePath(); c.fillStyle = col; c.fill();
+}
+
+// plain paper ground with green laid by the buildings, along the front edge and in a few patches
+const hash = (a: number, b: number): number => (Math.imul(a, 73856093) ^ Math.imul(b, 19349663)) >>> 0;
+let grain: CanvasPattern | null = null;
+function paperGrain(c: CanvasRenderingContext2D): CanvasPattern | null {
+  if (grain) return grain;
+  const g = document.createElement('canvas'); g.width = g.height = 96;
+  const x = g.getContext('2d')!;
+  for (let i = 0; i < 560; i++) {
+    x.fillStyle = i % 2 ? 'rgba(120,96,70,0.07)' : 'rgba(255,255,255,0.12)';
+    x.fillRect(Math.random() * 96, Math.random() * 96, 1 + Math.random() * 1.6, 1);
+  }
+  return (grain = c.createPattern(g, 'repeat'));
+}
+function drawGround(c: CanvasRenderingContext2D, left: number): void {
+  const top = BUILD_Y - 16, rows = Math.floor((FLOOR_Y1 - FLOOR_Y0) / CH);
+  c.fillStyle = '#efe5cb'; c.fillRect(left, top, viewW, H - top);
+  c.fillStyle = '#b7c38a';
+  for (let gx = Math.floor(left / CW) - 1; gx * CW < left + viewW; gx++) {
+    const x = gx * CW;
+    c.fillRect(x, top, CW + 0.5, 20 + (hash(gx >> 1, 3) % 3) * 6);                       // by the buildings
+    const hb = 1 + (hash(gx >> 1, 9) % 3);
+    c.fillRect(x, FLOOR_Y0 + (rows - hb) * CH, CW + 0.5, H);                               // front edge
+    for (let gy = 2; gy < rows - 4; gy++) if (hash(gx >> 1, gy >> 1) % 17 === 0) c.fillRect(x, FLOOR_Y0 + gy * CH, CW + 0.5, CH + 0.5);
+  }
+  const g = paperGrain(c);
+  if (g) { c.fillStyle = g; c.fillRect(left, top, viewW, H - top); }
 }
 
 function drawItem(c: CanvasRenderingContext2D, it: StreetItem, y: number, alpha = 1): void {
@@ -253,20 +286,15 @@ export function drawStreet(c: CanvasRenderingContext2D, v: StreetView, opt: Draw
   camX = Math.max(viewW / 2, Math.min(street.width - viewW / 2, camX));
   c.setTransform(v.dpr, 0, 0, v.dpr, 0, 0);
   c.fillStyle = '#f3e6c9'; c.fillRect(0, 0, v.w, v.h);
-  c.fillStyle = '#e4d2aa'; c.fillRect(0, offY + FLOOR_Y0 * scale, v.w, v.h);
+  c.fillStyle = '#efe5cb'; c.fillRect(0, offY + FLOOR_Y0 * scale, v.w, v.h);
   const left = camX - viewW / 2;
   c.setTransform(v.dpr * scale, 0, 0, v.dpr * scale, 0, v.dpr * offY);
   hills(c, 150, 60, 230, 0, '#e2d3ae', left * 0.25);
   hills(c, 196, 40, 180, 2, '#cdd3a4', left * 0.45);
-  c.fillStyle = '#ead9b6'; c.fillRect(0, BUILD_Y - 14, viewW, H);
-  // the road: a paved band with a dotted centre line, then the open floor in front
-  c.fillStyle = '#dcc79c'; c.fillRect(0, WALK_Y0 - 8, viewW, WALK_Y1 - WALK_Y0 + 16);
-  c.fillStyle = '#e4d2aa'; c.fillRect(0, FLOOR_Y0, viewW, H);
-  c.fillStyle = '#f6ead0';
-  for (let x = -((left) % 26); x < viewW; x += 26) c.fillRect(x, (WALK_Y0 + WALK_Y1) / 2 - 1, 12, 2);
-
   c.translate(-left, 0);
+  drawGround(c, left);
   const vis = (it: StreetItem): boolean => it.x > left - 160 && it.x < left + viewW + 160;
+  for (const it of street.items) if (it.lane === 'back' && vis(it)) drawItem(c, it, BUILD_Y - 6);
   for (const it of street.items) if (it.lane === 'build' && vis(it)) drawItem(c, it, BUILD_Y);
   for (const it of street.items) if (it.lane === 'decor' && vis(it)) drawItem(c, it, BUILD_Y + 8);
   opt.underlay?.(c);

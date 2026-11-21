@@ -86,6 +86,8 @@ const ICONS: Record<string, string> = {
   back: '<path d="M14.5 5l-7 7 7 7"/>',
   flip: '<path d="M12 4v16M8 8l-4 4 4 4M16 8l4 4-4 4"/>',
   done: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  menu: '<path d="M5 7h14M5 12h14M5 17h14"/>',
+  close: '<path d="M6 6l12 12M18 6L6 18"/>',
   settings: '<path d="M4 7h9M17 7h3M4 12h3M11 12h9M4 17h11M19 17h1"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="17" r="2"/>',
 };
 const svg = (icon: string, size: number): string => `<svg viewBox="0 0 24 24" width="${size}" height="${size}" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[icon]}</svg>`;
@@ -119,16 +121,26 @@ export function buildTray(el: HTMLElement, keys: string[], held: string | null, 
 }
 
 // The icon column at the lower right of the street.
+// The street menu. Always on screen: the purse, and at the lower right the two things done most
+// (night rounds, arranging the yard) above the menu button. The menu button opens a row along the
+// bottom with the rest (codex, ema, settings); tapping it again closes the row, so the yard stays
+// clear. Icons are line placeholders until the paper icons of request 20 arrive.
+let menuOpen = false;
 export function buildStreetBar(el: HTMLElement, save: Save, a: Actions): void {
+  const row = h('div', `street-row${menuOpen ? ' open' : ''}`,
+    iconBtn('codex', 'codex', t('codexShort'), a.toCodex, 'card'),
+    iconBtn('shrine', 'shrine', t('shrine'), a.toShrine),
+    iconBtn('settings', 'settings', t('settings'), a.toSettings),
+  );
+  const toggle = iconBtn('menu', menuOpen ? 'close' : 'menu', t('menu'), () => { menuOpen = !menuOpen; buildStreetBar(el, save, a); }, menuOpen ? 'on' : '');
   el.replaceChildren(
     h('div', 'street-purse', icon('i_coin', 'ic sm'), h('span', '', String(save.coins))),
-    h('div', 'street-col',
-      iconBtn('settings', 'settings', t('settings'), a.toSettings),
-      iconBtn('shrine', 'shrine', t('shrine'), a.toShrine),
-      iconBtn('codex', 'codex', t('codexShort'), a.toCodex, 'card'),
-      iconBtn('furniture', 'furniture', t('furniture'), a.toFurniture),
+    h('div', 'street-side',
       iconBtn('start', 'rounds', t('rounds'), a.toStages, 'main'),
+      iconBtn('furniture', 'furniture', t('furniture'), a.toFurniture),
+      toggle,
     ),
+    row,
   );
 }
 
