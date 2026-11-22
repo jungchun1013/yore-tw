@@ -135,22 +135,18 @@ export function buildTray(el: HTMLElement, keys: string[], held: string | null, 
 // (night rounds, arranging the yard) above the menu button. The menu button opens a row along the
 // bottom with the rest (codex, ema, settings); tapping it again closes the row, so the yard stays
 // clear. Icons are line placeholders until the paper icons of request 20 arrive.
-let menuOpen = false;
 export function buildStreetBar(el: HTMLElement, save: Save, a: Actions): void {
-  const row = h('div', `street-row${menuOpen ? ' open' : ''}`,
-    iconBtn('codex', 'codex', t('codexShort'), a.toCodex, 'card'),
-    iconBtn('shrine', 'shrine', t('shrine'), a.toShrine),
-    iconBtn('settings', 'settings', t('settings'), a.toSettings),
-  );
-  const toggle = iconBtn('menu', menuOpen ? 'close' : 'menu', t('menu'), () => { menuOpen = !menuOpen; buildStreetBar(el, save, a); }, menuOpen ? 'on' : '');
+  // the menu sits on an ochre paper strip along the bottom; every option is its paper object in a
+  // white disc with a shadow under it, night rounds the largest at the right
   el.replaceChildren(
     h('div', 'street-purse', icon('i_coin', 'ic sm'), h('span', '', String(save.coins))),
-    h('div', 'street-side',
-      iconBtn('start', 'rounds', t('rounds'), a.toStages, 'main'),
+    h('div', 'street-strip',
+      iconBtn('codex', 'codex', t('codexShort'), a.toCodex),
+      iconBtn('shrine', 'shrine', t('shrine'), a.toShrine),
       iconBtn('furniture', 'furniture', t('furniture'), a.toFurniture),
-      toggle,
+      iconBtn('settings', 'settings', t('settings'), a.toSettings),
+      iconBtn('start', 'rounds', t('rounds'), a.toStages, 'main'),
     ),
-    row,
   );
 }
 

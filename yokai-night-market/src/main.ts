@@ -12,7 +12,7 @@ import { STEP, choose, closeChest, createRun, reroll, step } from './game/run';
 import type { HeroId } from './game/types';
 import type { Run } from './game/world';
 import { type View, render } from './render/scene';
-import { street, walkPlayer, actorIds, callActor, currentScene, drawStreet, enterScene, nearGate, lookAt, panStreet, setupStreet, stallX, tapStreet, toStreet, updateStreet } from './render/street';
+import { FLOOR_Y0, street, walkPlayer, actorIds, callActor, currentScene, drawStreet, enterScene, nearGate, lookAt, panStreet, setupStreet, stallX, tapStreet, toStreet, updateStreet } from './render/street';
 import { type Placed, canPlace, cellAt, drawGrid, furnitureKeys, itemAt, placedExtras } from './render/place';
 import { hudBanner, hudHint, hudVisible, initHud, resetHud, updateHud } from './ui/hud';
 import { type Actions, bossName, clearOverlay, initScreens, showChest, showCodex, showLevelUp, showPause, showResult, showSettings, showShrine, showSplash, showStages, showStall, buildStreetBar, buildTray } from './ui/screens';
@@ -257,7 +257,7 @@ function frame(now: number): void {
     drawStreet(ctx, view, {
       dim: screen === 'splash' ? 0.42 : 0,
       extras: placedExtras(placedList()),
-      bottom: placing ? tray.offsetHeight : 0,
+      bottom: placing ? tray.offsetHeight : (bar.querySelector('.street-strip') as HTMLElement | null)?.offsetHeight ?? 0,
       fadeFront: placing,
       underlay: placing ? (c) => drawGrid(c, toStreet(0, 0)[0], toStreet(view.w, 0)[0], placedList(), ghost) : undefined,
     });
@@ -330,7 +330,7 @@ if (debug) {
     get scene() { return currentScene(); },
     walkTo(x: number, y?: number) { walkPlayer(x, y); },
     // a screen point in the middle of the placement floor, for tests
-    floorPoint() { const x = view.w * 0.4; let y = 0; while (y < view.h && cellAt(...toStreet(x, y))[1] < 3) y += 3; return [x, y + 2]; },
+    floorPoint() { const x = view.w * 0.4; let y = 0; while (y < view.h && toStreet(x, y)[1] < FLOOR_Y0 + 40) y += 3; return [x, y]; },
     fast(seconds: number) {
       if (!run) return;
       const until = run.t + seconds;

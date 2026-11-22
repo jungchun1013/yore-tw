@@ -22,6 +22,8 @@ const SKY = 70;
 const ZOOM = 1.2;
 // the yard's square cells (see place.ts)
 export const CW = 24, CH = 20;
+// the yard's 45-degree diamond cells: half width and half height (see place.ts)
+export const DW = 16, DH = 8;
 const MIN_VIEW_W = 220;
 
 export const FAUNA_Y = WALK_Y1 + 12;
@@ -118,13 +120,13 @@ export function setupStreet(hero: string): void {
   camX = actors[0].x; camFree = false;
 }
 
-function layout(v: StreetView, bottom = 0): void {
+function layout(v: StreetView, bottom = 0, keepTop = true): void {
   scale = Math.min(v.h / (H - 40 - SKY), v.w / MIN_VIEW_W) * ZOOM;
   viewW = v.w / scale;
   // keep the yard's lower edge at the bottom of the screen, but never cut into the buildings for
   // it: on wide screens the top of the view stops just above the tallest building
   const fit = v.h - bottom - (FLOOR_Y1 + 6) * scale;
-  offY = bottom > 0 ? fit : Math.max(fit, -(BUILD_Y - 150) * scale);
+  offY = keepTop ? Math.max(fit, -(BUILD_Y - 150) * scale) : fit;
 }
 
 export function updateStreet(dt: number): void {
@@ -240,7 +242,6 @@ function skyFibres(c: CanvasRenderingContext2D): CanvasPattern | null {
 const hash = (a: number, b: number): number => (Math.imul(a, 73856093) ^ Math.imul(b, 19349663)) >>> 0;
 // ground tiles (public/art/tiles), each STONE logical px square
 const GROUND_TILE = 128;
-const STONE = 132;   // about one stone per cell (user 2026-11-22)
 const TILES: Record<string, HTMLImageElement> = {};
 const STEPS = ['stone1', 'stone2', 'stone3', 'stone4', 'stone5', 'stone6', 'stone7', 'stone8'];
 for (const k of ['stoneFill', 'stoneEdgeL', 'stoneEdgeR', 'stoneEnd', 'groundSand', 'groundGrass', ...STEPS]) {
@@ -268,8 +269,60 @@ function grain(c: CanvasRenderingContext2D, kind: 'fine' | 'floor'): CanvasPatte
   return pat;
 }
 
+// Stone paths (user 2026-11-23): Codex's single stepping stones (request 25), all about the same
+// size, laid evenly in staggered rows like brick bond, the outer ones a little smaller, with a
+// clear gap so none overlap. Each picture's own stone is measured once so they can be matched.
+type Pt = [number, number];
+const stoneBox = new Map<HTMLImageElement, [number, number, number, number]>();
+function boxOf(img: HTMLImageElement): [number, number, number, number] {
+  let b = stoneBox.get(img);
+  if (b) return b;
+  const cv = document.createElement('canvas'); cv.width = img.naturalWidth; cv.height = img.naturalHeight;
+  const g = cv.getContext('2d')!; g.drawImage(img, 0, 0);
+  const d = g.getImageData(0, 0, cv.width, cv.height).data;
+  let x0 = cv.width, y0 = cv.height, x1 = 0, y1 = 0;
+  for (let y = 0; y < cv.height; y++) for (let x = 0; x < cv.width; x++) if (d[(y * cv.width + x) * 4 + 3] > 120) { x0 = Math.min(x0, x); x1 = Math.max(x1, x); y0 = Math.min(y0, y); y1 = Math.max(y1, y); }
+  b = [x0, y0, x1 - x0 + 1, y1 - y0 + 1];
+  stoneBox.set(img, b);
+  return b;
+}
+function drawPaving(c: CanvasRenderingContext2D, p: StreetPath): void {
+  const stones = STEPS.map((k) => TILES[k]).filter((img) => img && img.complete && img.naturalWidth);
+  if (stones.length < STEPS.length) return;
+  const W = Math.max(60, p.w * CW * 1.15), y0 = BUILD_Y + 6, y1 = FLOOR_Y0 + p.rows * CH;
+  // stones the size of the first layout, rows staggered by a random amount, each stone a little
+  // different in size and place; outer stones smaller, a few missing, a few small strays outside
+  const SX = 22, SY = 14.5, cols = Math.max(2, Math.round(W / SX)), rows = Math.floor((y1 - y0) / SY);
+  const lay = (img: HTMLImageElement, cx: number, cy: number, tw: number, flip: boolean): void => {
+    const [bx, by, bw, bh] = boxOf(img), sc = Math.min(tw / bw, (SY * 0.95) / bh), dw = bw * sc, dh = bh * sc;
+    c.save(); c.translate(cx, cy); if (flip) c.scale(-1, 1); c.drawImage(img, bx, by, bw, bh, -dw / 2, -dh / 2, dw, dh); c.restore();
+  };
+  for (let r = 0; r < rows; r++) {
+    const hr = mix(r, 77), shift = ((hr % 100) / 100) * SX * 0.5, n = cols - (hr % 3 === 0 ? 1 : 0), last = r === rows - 1;
+    const span = (n - 1) * SX + shift;
+    for (let k = 0; k < n; k++) {
+      const h = mix(r * 31 + k, 1234), edge = k === 0 || k === n - 1;
+      if ((last || r === 0) && edge && h % 2) continue;        // the ends fray
+      if (edge && h % 7 === 0) continue;
+      const tw = SX * (edge ? 0.74 + ((h >>> 3) % 10) / 100 : 0.9 + ((h >>> 3) % 8) / 100);
+      const cx = p.x - span / 2 + shift + k * SX + ((h >>> 8) % 5 - 2) * 0.7;
+      const cy = y0 + r * SY + SY / 2 + ((h >>> 11) % 5 - 2) * 0.6;
+      lay(stones[(h >>> 14) % stones.length], cx, cy, tw, ((h >>> 17) & 1) === 1);
+    }
+    const hs = mix(r, 909);
+    if (hs % 4 === 0) lay(stones[3], p.x + ((hs >>> 4) & 1 ? 1 : -1) * (span / 2 + SX * 0.75), y0 + r * SY + SY / 2, SX * 0.45, false);
+  }
+}
+
+// a well-mixed hash for patterns over small integers (the plain one repeats along rows)
+function mix(a: number, b: number): number {
+  let h = Math.imul(a ^ 0x9e3779b9, 0x85ebca6b) ^ Math.imul(b + 0x632be5ab, 0xc2b2ae35);
+  h ^= h >>> 15; h = Math.imul(h, 0x2c1b3c6d); h ^= h >>> 12; h = Math.imul(h, 0x297a2d39); h ^= h >>> 15;
+  return h >>> 0;
+}
+
 function drawGround(c: CanvasRenderingContext2D, left: number): void {
-  const top = BUILD_Y - 16, rows = Math.floor((FLOOR_Y1 - FLOOR_Y0) / CH);
+  const top = BUILD_Y - 16;
   // ground papers (request 35): fine-sand paper for the floor, kozo paper for grass; one tile is
   // GROUND_TILE units wide. Flat colours stand in until they load.
   const paper = (key: string, fallback: string): string | CanvasPattern => {
@@ -282,57 +335,44 @@ function drawGround(c: CanvasRenderingContext2D, left: number): void {
   };
   c.fillStyle = paper('groundSand', '#efe5cb'); c.fillRect(left, top, viewW, H - top);
   c.fillStyle = paper('groundGrass', '#b7c38a');
-  for (let gx = Math.floor(left / CW) - 1; gx * CW < left + viewW; gx++) {
-    const x = gx * CW;
-    c.fillRect(x, top, CW + 0.5, 20 + (hash(gx >> 1, 3) % 3) * 6);                       // by the buildings
-    const hb = 1 + (hash(gx >> 1, 9) % 3);
-    c.fillRect(x, FLOOR_Y0 + (rows - hb) * CH, CW + 0.5, H);                               // front edge
-    for (let gy = 2; gy < rows - 4; gy++) if (hash(gx >> 1, gy >> 1) % 17 === 0) c.fillRect(x, FLOOR_Y0 + gy * CH, CW + 0.5, CH + 0.5);
+  // grass (user 2026-11-23: edges a little random, not straight sharp lines, not a carpet): the same
+  // diamond cells, but every lattice corner is nudged and every edge bends through two jittered
+  // points. Corners and bends are hashed from their position, so neighbouring grass cells share
+  // them exactly (no gaps) while the outer edge wanders.
+  const key = (x: number, y: number): number => Math.round(x * 2) * 7919 + Math.round(y * 2);
+  const corner = (x: number, y: number): Pt => { const h = mix(Math.round(x * 2), Math.round(y * 2)); return [x + ((h % 100) / 100 - 0.5) * DW * 0.7, y + (((h >> 8) % 100) / 100 - 0.5) * DH * 0.7]; };
+  const edge = (A: Pt, B: Pt, ka: number, kb: number, out: Pt[]): void => {
+    // walk from the smaller key so both cells bend the shared edge the same way
+    const flip = ka > kb, P = flip ? B : A, Q = flip ? A : B, h = mix(Math.min(ka, kb), Math.max(ka, kb));
+    const nx = -(Q[1] - P[1]), ny = Q[0] - P[0], len = Math.hypot(nx, ny) || 1;
+    const pts: Pt[] = [1 / 3, 2 / 3].map((t, i) => { const off = ((((h >> (i * 9)) % 100) / 100) - 0.5) * 3.2; return [P[0] + (Q[0] - P[0]) * t + nx / len * off, P[1] + (Q[1] - P[1]) * t + ny / len * off]; });
+    if (flip) pts.reverse();
+    out.push(...pts, B);
+  };
+  const blob = (x: number, y: number): void => {
+    const L: Pt[] = [[x, y - DH], [x + DW, y], [x, y + DH], [x - DW, y]];
+    const C = L.map(([px, py]) => corner(px, py)), K = L.map(([px, py]) => key(px, py)), out: Pt[] = [C[0]];
+    for (let i = 0; i < 4; i++) edge(C[i], C[(i + 1) % 4], K[i], K[(i + 1) % 4], out);
+    c.beginPath(); out.forEach(([px, py], i) => (i ? c.lineTo(px, py) : c.moveTo(px, py))); c.closePath(); c.fill();
+  };
+  // the band by the buildings, its lower edge wandering
+  c.beginPath(); c.moveTo(left - 2, top);
+  for (let x = Math.floor(left / 6) * 6 - 6; x <= left + viewW + 6; x += 6) c.lineTo(x, top + 14 + ((mix(Math.round(x), 41) % 100) / 100) * 5);
+  c.lineTo(left + viewW + 6, top); c.closePath(); c.fill();
+  const vMax = Math.ceil((FLOOR_Y1 - FLOOR_Y0) / DH);
+  for (let v = 0; v <= vMax + 2; v++) for (let u = Math.floor(left / DW) - 2; u <= Math.ceil((left + viewW) / DW) + 2; u++) {
+    if ((u + v) % 2) continue;
+    const fromFront = vMax - v, bu = Math.floor(u / 7), bv = Math.floor(v / 5);
+    // a patch: some 7x5 blocks hold a small diamond cluster around their own centre
+    const pm = mix(bu, bv), pu = bu * 7 + 3, pv = bv * 5 + 2;
+    const patch = pm % 4 === 0 && Math.abs(u - pu) + Math.abs(v - pv) <= 2 + (pm >> 4) % 2;
+    const grass = fromFront < 1 + (mix(u >> 1, 9) % 4) || (patch && fromFront > 3 && v > 1);
+    if (grass) blob(u * DW, FLOOR_Y0 + (v + 1) * DH);
   }
+  c.fillRect(left, FLOOR_Y1, viewW, H - FLOOR_Y1);
   const fg = grain(c, 'floor');
   if (fg) { c.fillStyle = fg; c.fillRect(left, top, viewW, H - top); }
-  // stone paths, laid from Codex's tiles (request 22): a seamless fill, a fringe of smaller stones
-  // on the left and right, and one at the far end; flat stone cells until the tiles load
-  for (const p of street.paths ?? []) {
-    const x0 = Math.round(p.x / CW - p.w / 2) * CW, w = p.w * CW, y0 = FLOOR_Y0 - 3 * CH, y1 = FLOOR_Y0 + p.rows * CH;
-    // stepping stones (request 25): one stone per cell, chosen and nudged by the cell's hash; the
-    // outer columns and the far end get smaller stones and gaps, so the path frays naturally
-    const steps = STEPS.map((k) => TILES[k]).filter((img) => img && img.complete && img.naturalWidth);
-    if (steps.length === STEPS.length) {
-      const g0 = Math.round(p.x / CW - p.w / 2);
-      for (let gy = -3; gy < p.rows + 1; gy++) for (let gx = g0 - 1; gx <= g0 + p.w; gx++) {
-        const h = hash(gx * 7 + 3, gy * 13 + 5), outer = gx < g0 || gx >= g0 + p.w, last = gy >= p.rows;
-        if ((outer || last) && h % 3 !== 0) continue;                 // frayed edge: about a third of the outer cells
-        const pick = outer || last ? [3, 6, 4][h % 3] : h % 8;         // stones 4, 7 (and 5) are the small ones
-        const img = steps[pick], k = 1.85;
-        const x = gx * CW + CW / 2 + ((h >> 3) % 5) - 2, y = FLOOR_Y0 + gy * CH + CH / 2 + ((h >> 6) % 5) - 2;
-        c.drawImage(img, x - (CW * k) / 2, y - (CH * k) / 2, CW * k, CH * k);
-      }
-      continue;
-    }
-    const fill = TILES.stoneFill, T = STONE;
-    if (fill && fill.complete && fill.naturalWidth) {
-      const pat = c.createPattern(fill, 'repeat');
-      if (pat) {
-        pat.setTransform(new DOMMatrix([T / fill.naturalWidth, 0, 0, T / fill.naturalHeight, x0, y0]));
-        c.fillStyle = pat; c.fillRect(x0, y0, w, y1 - y0);
-      }
-      const tile = (img: HTMLImageElement | undefined, x: number, y: number): void => { if (img && img.complete && img.naturalWidth) c.drawImage(img, x, y, T, T); };
-      // the fringe tiles only show outside the fill, where their stones thin out, so no tile edge
-      // ever lies across the path
-      const clip = (x: number, y: number, w2: number, h2: number, draw: () => void): void => { c.save(); c.beginPath(); c.rect(x, y, w2, h2); c.clip(); draw(); c.restore(); };
-      clip(x0 - T, y0, T, y1 - y0, () => { for (let y = y0; y < y1; y += T) tile(TILES.stoneEdgeL, x0 - T / 2, y); });
-      clip(x0 + w, y0, T, y1 - y0, () => { for (let y = y0; y < y1; y += T) tile(TILES.stoneEdgeR, x0 + w - T / 2, y); });
-      clip(x0, y1, w, T, () => { for (let x = x0; x < x0 + w; x += T) tile(TILES.stoneEnd, x, y1 - T / 2); });
-      continue;
-    }
-    for (let gx = x0 / CW; gx < x0 / CW + p.w; gx++) for (let gy = -3; gy < p.rows; gy++) {
-      const x = gx * CW, y = FLOOR_Y0 + gy * CH, tone = hash(gx, gy) % 3;
-      c.fillStyle = '#e6dcc6'; c.fillRect(x, y, CW, CH);
-      c.fillStyle = ['#cfc6b2', '#d6cdb9', '#c8bfab'][tone];
-      c.fillRect(x + 1.5, y + 1.5, CW - 3, CH - 3);
-    }
-  }
+  for (const p of street.paths ?? []) drawPaving(c, p);
 }
 
 function drawItem(c: CanvasRenderingContext2D, it0: StreetItem, y: number, alpha = 1): void {
@@ -395,12 +435,12 @@ export interface StreetExtra { y: number; draw: (c: CanvasRenderingContext2D) =>
 export interface DrawOptions { select?: number; dim?: number; bottom?: number; fadeFront?: boolean; extras?: StreetExtra[]; underlay?: (c: CanvasRenderingContext2D) => void }
 
 export function drawStreet(c: CanvasRenderingContext2D, v: StreetView, opt: DrawOptions = {}): void {
-  layout(v, opt.bottom ?? 0);
+  layout(v, opt.bottom ?? 0, !opt.fadeFront);
   camX = Math.max(viewW / 2, Math.min(street.width - viewW / 2, camX));
   c.setTransform(v.dpr, 0, 0, v.dpr, 0, 0);
   // sky: the demo's cream, slightly deeper at the top, with faint washi fibres
   const sky = c.createLinearGradient(0, offY + (BUILD_Y - 260) * scale, 0, offY + BUILD_Y * scale);
-  sky.addColorStop(0, '#eee3cb'); sky.addColorStop(1, '#f7f0e1');
+  sky.addColorStop(0, '#d5e4e4'); sky.addColorStop(1, '#e7f1f1');   // the demo's lightness, pale celadon hue
   c.fillStyle = sky; c.fillRect(0, 0, v.w, v.h);
   c.fillStyle = '#e8d8b6'; c.fillRect(0, offY + FLOOR_Y0 * scale, v.w, v.h);
   const left = camX - viewW / 2;
