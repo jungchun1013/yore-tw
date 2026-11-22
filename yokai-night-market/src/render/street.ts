@@ -224,6 +224,35 @@ for (const k of ['stoneFill', 'stoneEdgeL', 'stoneEdgeR', 'stoneEnd', ...STEPS])
   if (typeof Image === 'undefined') break;
   const img = new Image(); img.src = `${import.meta.env.BASE_URL}art/tiles/${k}.png`; TILES[k] = img;
 }
+// Photocopy noise over the whole scene (art bible 4b): scattered toner specks, a few dropped-out
+// light flecks and a faint uneven mottle, fixed to the world so it reads as printed on the paper.
+let copyNoise: CanvasPattern | null = null;
+function photocopy(c: CanvasRenderingContext2D): CanvasPattern | null {
+  if (copyNoise) return copyNoise;
+  const S = 192, g = document.createElement('canvas'); g.width = g.height = S;
+  const x = g.getContext('2d')!;
+  let r = 1234567;
+  const rnd = (): number => ((r = (Math.imul(r, 1103515245) + 12345) >>> 0) / 4294967296);
+  for (let i = 0; i < 26; i++) {               // soft mottle: large faint blotches
+    const cx = rnd() * S, cy = rnd() * S, rad = 14 + rnd() * 30;
+    const grd = x.createRadialGradient(cx, cy, 0, cx, cy, rad);
+    grd.addColorStop(0, `rgba(70,50,35,${0.025 + rnd() * 0.03})`); grd.addColorStop(1, 'rgba(70,50,35,0)');
+    x.fillStyle = grd;
+    // draw it again across each edge so the tile wraps without a seam
+    for (const ox of [-S, 0, S]) for (const oy of [-S, 0, S]) { x.save(); x.translate(ox, oy); x.fillRect(cx - rad, cy - rad, rad * 2, rad * 2); x.restore(); }
+  }
+  for (let i = 0; i < 420; i++) {              // toner specks, mostly tiny, a few clumped
+    const px = rnd() * S, py = rnd() * S, k = rnd();
+    x.fillStyle = `rgba(55,38,28,${0.16 + rnd() * 0.3})`;
+    x.fillRect(px, py, k < 0.85 ? 0.7 : 1.4, k < 0.85 ? 0.7 : 1.1);
+  }
+  for (let i = 0; i < 70; i++) {               // dropped-out flecks where the toner missed
+    x.fillStyle = `rgba(255,250,238,${0.35 + rnd() * 0.3})`;
+    x.fillRect(rnd() * S, rnd() * S, 0.8 + rnd(), 0.8);
+  }
+  return (copyNoise = c.createPattern(g, 'repeat'));
+}
+
 function drawGround(c: CanvasRenderingContext2D, left: number): void {
   const top = BUILD_Y - 16, rows = Math.floor((FLOOR_Y1 - FLOOR_Y0) / CH);
   c.fillStyle = '#efe5cb'; c.fillRect(left, top, viewW, H - top);
@@ -384,6 +413,8 @@ export function drawStreet(c: CanvasRenderingContext2D, v: StreetView, opt: Draw
     c.setLineDash([5, 4]); c.lineWidth = 1.5; c.strokeStyle = '#d8503a'; c.strokeRect(x0, y0, x1 - x0, y1 - y0); c.setLineDash([]);
   }
 
+  const noise = photocopy(c);
+  if (noise) { c.save(); c.setTransform(v.dpr * scale, 0, 0, v.dpr * scale, v.dpr * (-left * scale), v.dpr * offY); c.fillStyle = noise; c.fillRect(left, 0, viewW, H); c.restore(); }
   if (opt.dim) { c.setTransform(v.dpr, 0, 0, v.dpr, 0, 0); c.fillStyle = `rgba(74,47,40,${opt.dim})`; c.fillRect(0, 0, v.w, v.h); }
 }
 
