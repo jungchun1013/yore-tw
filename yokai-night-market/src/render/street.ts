@@ -208,10 +208,16 @@ function ridge(c: CanvasRenderingContext2D, base: number, amp: number, span: num
     c.lineTo(wx - shift, dip); c.lineTo(px - shift, peak);
   }
   c.lineTo(shift + viewW + span - shift, H); c.closePath();
-  const g = c.createLinearGradient(0, base - amp, 0, BUILD_Y);
-  g.addColorStop(0, col); g.addColorStop(1, foot);
+  // like the temple silhouettes in the user's reference: the crest is solid, the lower half melts
+  // into white mist, so each range stands out against the mist at the foot of the one behind it
+  const g = c.createLinearGradient(0, base - amp, 0, base - amp * 0.08);
+  g.addColorStop(0, col); g.addColorStop(0.35, col); g.addColorStop(0.75, foot); g.addColorStop(1, MIST);
   c.fillStyle = g; c.fill();
+  const m = c.createLinearGradient(0, base - amp * 0.3, 0, base);
+  m.addColorStop(0, 'rgba(240,246,244,0)'); m.addColorStop(1, 'rgba(240,246,244,0.95)');
+  c.fillStyle = m; c.fillRect(-10, base - amp * 0.3, viewW + 20, H - base + amp * 0.3);
 }
+const MIST = '#eef4f2';
 
 // faint washi fibres for the sky, as in the demo
 let fibres: CanvasPattern | null = null;
@@ -446,8 +452,9 @@ export function drawStreet(c: CanvasRenderingContext2D, v: StreetView, opt: Draw
   { const sx = viewW * 0.68 - (left * 0.05) % 80, sy = 150, sr = 22, sg = c.createLinearGradient(0, sy - sr, 0, sy + sr);
     sg.addColorStop(0, '#e3b863'); sg.addColorStop(1, '#ecca85'); c.fillStyle = sg; c.beginPath(); c.arc(sx, sy, sr, 0, Math.PI * 2); c.fill(); }
   // two sage ranges in the demo's shapes and colours, each fading into haze at its foot
-  ridge(c, 246, 92, 170, 11, '#c9d1b8', '#efeadb', left * 0.2);
-  ridge(c, 264, 66, 130, 23, '#bcc8a6', '#e9e6d0', left * 0.4);
+  // two sage ranges in the demo's shapes and colours, layered in mist: the far one paler
+  ridge(c, 236, 92, 170, 11, '#ccd5c0', '#e3eadf', left * 0.2);
+  ridge(c, 262, 70, 130, 23, '#b6c3a2', '#dbe3d2', left * 0.4);
   c.translate(-left, 0);
   drawGround(c, left);
   const vis = (it: StreetItem): boolean => it.x > left - 160 && it.x < left + viewW + 160;
