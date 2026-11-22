@@ -194,17 +194,46 @@ export function tapStreet(sx: number, sy: number): string | null {
   return null;
 }
 
-function hills(c: CanvasRenderingContext2D, base: number, amp: number, step: number, seed: number, col: string, shift: number): void {
-  c.beginPath(); c.moveTo(-step, H);
-  for (let x = -step - (shift % step); x <= viewW + step; x += step) {
-    const wx = x + shift;
-    c.quadraticCurveTo(x + step / 2, base - amp * (0.6 + 0.4 * Math.sin(wx * 0.011 + seed)), x + step, base);
+// A range of mountains like the paper street demo: straight folded slopes between peaks, one flat
+// colour from the demo palette, given only a vertical gradient that pales into haze at the foot.
+function ridge(c: CanvasRenderingContext2D, base: number, amp: number, span: number, seed: number, col: string, foot: string, shift: number): void {
+  const x0 = Math.floor((shift - span) / span) * span;
+  c.beginPath(); c.moveTo(x0 - shift, H);
+  for (let wx = x0; wx <= shift + viewW + span; wx += span) {
+    const h = hash(Math.round(wx / span), seed);
+    const peak = base - amp * (0.55 + (h % 100) / 220), dip = base - amp * (0.12 + ((h >> 8) % 100) / 500);
+    const px = wx + span * (0.35 + ((h >> 4) % 30) / 100);
+    c.lineTo(wx - shift, dip); c.lineTo(px - shift, peak);
   }
-  c.lineTo(viewW + step, H); c.closePath();
-  // aerial perspective: the ridge in its colour, fading into the warm haze toward the ground
+  c.lineTo(shift + viewW + span - shift, H); c.closePath();
   const g = c.createLinearGradient(0, base - amp, 0, BUILD_Y);
-  g.addColorStop(0, col); g.addColorStop(1, HAZE);
+  g.addColorStop(0, col); g.addColorStop(1, foot);
   c.fillStyle = g; c.fill();
+}
+
+// faint washi fibres for the sky, as in the demo
+let fibres: CanvasPattern | null = null;
+function skyFibres(c: CanvasRenderingContext2D): CanvasPattern | null {
+  if (fibres) return fibres;
+  const S = 512, g = document.createElement('canvas'); g.width = g.height = S;
+  const x = g.getContext('2d')!;
+  let r = 424242;
+  const rnd = (): number => ((r = (Math.imul(r, 1103515245) + 12345) >>> 0) / 4294967296);
+  x.lineWidth = 1.2; x.lineCap = 'round';
+  for (let i = 0; i < 60; i++) {
+    const sx = rnd() * S, sy = rnd() * S, len = 40 + rnd() * 110, a = rnd() * Math.PI * 2;
+    x.strokeStyle = `rgba(170,150,120,${0.06 + rnd() * 0.06})`;
+    for (const ox of [-S, 0, S]) for (const oy of [-S, 0, S]) {
+      x.beginPath(); x.moveTo(sx + ox, sy + oy);
+      x.bezierCurveTo(sx + ox + Math.cos(a) * len * 0.4 + (rnd() - 0.5) * 40, sy + oy + Math.sin(a) * len * 0.4 + (rnd() - 0.5) * 40,
+        sx + ox + Math.cos(a + 0.6) * len * 0.8, sy + oy + Math.sin(a + 0.6) * len * 0.8,
+        sx + ox + Math.cos(a + 0.3) * len, sy + oy + Math.sin(a + 0.3) * len);
+      x.stroke();
+    }
+  }
+  fibres = c.createPattern(g, 'repeat');
+  fibres?.setTransform(new DOMMatrix([0.5, 0, 0, 0.5, 0, 0]));
+  return fibres;
 }
 
 // plain paper ground with green laid by the buildings, along the front edge and in a few patches
@@ -220,7 +249,6 @@ for (const k of ['stoneFill', 'stoneEdgeL', 'stoneEdgeR', 'stoneEnd', 'groundSan
 }
 // Print grain (art bible 4b): an even, very faint stencil grain, fine over everything and a
 // little coarser on the floor. Dots sit on a jittered grid so the density is uniform: no blotches.
-const HAZE = '#f6efdf';
 const grains = new Map<string, CanvasPattern | null>();
 function grain(c: CanvasRenderingContext2D, kind: 'fine' | 'floor'): CanvasPattern | null {
   if (grains.has(kind)) return grains.get(kind)!;
@@ -370,17 +398,21 @@ export function drawStreet(c: CanvasRenderingContext2D, v: StreetView, opt: Draw
   layout(v, opt.bottom ?? 0);
   camX = Math.max(viewW / 2, Math.min(street.width - viewW / 2, camX));
   c.setTransform(v.dpr, 0, 0, v.dpr, 0, 0);
-  // sky: a warm wash that grows paler toward the horizon
+  // sky: the demo's cream, slightly deeper at the top, with faint washi fibres
   const sky = c.createLinearGradient(0, offY + (BUILD_Y - 260) * scale, 0, offY + BUILD_Y * scale);
-  sky.addColorStop(0, '#eadcbd'); sky.addColorStop(1, HAZE);
+  sky.addColorStop(0, '#eee3cb'); sky.addColorStop(1, '#f7f0e1');
   c.fillStyle = sky; c.fillRect(0, 0, v.w, v.h);
-  c.fillStyle = '#efe5cb'; c.fillRect(0, offY + FLOOR_Y0 * scale, v.w, v.h);
+  c.fillStyle = '#e8d8b6'; c.fillRect(0, offY + FLOOR_Y0 * scale, v.w, v.h);
   const left = camX - viewW / 2;
   c.setTransform(v.dpr * scale, 0, 0, v.dpr * scale, 0, v.dpr * offY);
-  // three ranges, farther ones paler and greyer (aerial perspective)
-  hills(c, 128, 54, 260, 4, '#ddd6c6', left * 0.15);
-  hills(c, 160, 58, 230, 0, '#d3d2b6', left * 0.28);
-  hills(c, 200, 40, 180, 2, '#c3cca0', left * 0.45);
+  const fib = skyFibres(c);
+  if (fib) { c.save(); c.translate(-left * 0.1, 0); c.fillStyle = fib; c.fillRect(left * 0.1, -offY / scale, viewW, BUILD_Y + offY / scale); c.restore(); }
+  // the sun: the demo's mustard disc, a little lighter at its lower edge
+  { const sx = viewW * 0.68 - (left * 0.05) % 80, sy = 150, sr = 22, sg = c.createLinearGradient(0, sy - sr, 0, sy + sr);
+    sg.addColorStop(0, '#e3b863'); sg.addColorStop(1, '#ecca85'); c.fillStyle = sg; c.beginPath(); c.arc(sx, sy, sr, 0, Math.PI * 2); c.fill(); }
+  // two sage ranges in the demo's shapes and colours, each fading into haze at its foot
+  ridge(c, 246, 92, 170, 11, '#c9d1b8', '#efeadb', left * 0.2);
+  ridge(c, 264, 66, 130, 23, '#bcc8a6', '#e9e6d0', left * 0.4);
   c.translate(-left, 0);
   drawGround(c, left);
   const vis = (it: StreetItem): boolean => it.x > left - 160 && it.x < left + viewW + 160;
