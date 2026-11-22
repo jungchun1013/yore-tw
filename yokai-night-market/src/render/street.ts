@@ -217,7 +217,7 @@ function paperGrain(c: CanvasRenderingContext2D): CanvasPattern | null {
   return (grain = c.createPattern(g, 'repeat'));
 }
 // ground tiles (public/art/tiles), each STONE logical px square
-const STONE = 72;
+const STONE = 132;   // about one stone per cell (user 2026-11-22)
 const TILES: Record<string, HTMLImageElement> = {};
 for (const k of ['stoneFill', 'stoneEdgeL', 'stoneEdgeR', 'stoneEnd']) {
   if (typeof Image === 'undefined') break;
@@ -246,11 +246,12 @@ function drawGround(c: CanvasRenderingContext2D, left: number): void {
         c.fillStyle = pat; c.fillRect(x0, y0, w, y1 - y0);
       }
       const tile = (img: HTMLImageElement | undefined, x: number, y: number): void => { if (img && img.complete && img.naturalWidth) c.drawImage(img, x, y, T, T); };
-      // the fringe tiles hold the last whole stones and then thin out, so they sit outside the fill
-      for (let y = y0; y < y1 - T / 2; y += T) { tile(TILES.stoneEdgeL, x0 - T / 2, y); tile(TILES.stoneEdgeR, x0 + w - T / 2, y); }
-      c.save(); c.beginPath(); c.rect(x0, y1 - T, w, T * 2); c.clip();
-      for (let x = x0; x < x0 + w; x += T) tile(TILES.stoneEnd, x, y1 - T / 2);
-      c.restore();
+      // the fringe tiles only show outside the fill, where their stones thin out, so no tile edge
+      // ever lies across the path
+      const clip = (x: number, y: number, w2: number, h2: number, draw: () => void): void => { c.save(); c.beginPath(); c.rect(x, y, w2, h2); c.clip(); draw(); c.restore(); };
+      clip(x0 - T, y0, T, y1 - y0, () => { for (let y = y0; y < y1; y += T) tile(TILES.stoneEdgeL, x0 - T / 2, y); });
+      clip(x0 + w, y0, T, y1 - y0, () => { for (let y = y0; y < y1; y += T) tile(TILES.stoneEdgeR, x0 + w - T / 2, y); });
+      clip(x0, y1, w, T, () => { for (let x = x0; x < x0 + w; x += T) tile(TILES.stoneEnd, x, y1 - T / 2); });
       continue;
     }
     for (let gx = x0 / CW; gx < x0 / CW + p.w; gx++) for (let gy = -3; gy < p.rows; gy++) {
