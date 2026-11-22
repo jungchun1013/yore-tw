@@ -56,7 +56,11 @@ function joinExtras(list: Placed[]): StreetExtra[] {
     out.push({ y, draw: (c) => {
       // the rail keeps the post's height and is stretched along the row to reach the next post
       if (linked) { const r = spr(rail); c.drawImage(r.c, x, y - r.h, CW, r.h); }
-      if (hasArt(post)) { const s = spr(post); c.drawImage(s.c, x - s.w / 2, y - s.h, s.w, s.h); }
+      if (hasArt(post)) {
+        // each post a little taller or shorter and slightly off true, so a row is not mechanical
+        const s = spr(post), h = ((p.gx * 73856093) ^ (p.gy * 19349663)) >>> 0, k = 0.9 + (h % 7) * 0.03, tilt = ((h >> 4) % 5 - 2) * 0.018;
+        c.save(); c.translate(x, y); c.rotate(tilt); c.drawImage(s.c, -s.w / 2, -s.h * k, s.w, s.h * k); c.restore();
+      }
     } });
   }
   return out;
