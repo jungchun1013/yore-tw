@@ -269,9 +269,11 @@ function grain(c: CanvasRenderingContext2D, kind: 'fine' | 'floor'): CanvasPatte
   return pat;
 }
 
-// Stone paths (user 2026-11-23): Codex's single stepping stones (request 25), all about the same
-// size, laid evenly in staggered rows like brick bond, the outer ones a little smaller, with a
-// clear gap so none overlap. Each picture's own stone is measured once so they can be matched.
+// Stone paths (user 2026-11-23): Codex's single stepping stones (request 25) laid on the same
+// 45-degree diamond lattice as the yard, the path running down a lattice diagonal from the gate.
+// One stone per diamond cell, never overlapping; each stone is turned to a random angle on the
+// ground (turned flat, then squashed into the view), sizes vary, some cells hold two small stones,
+// the outer cells are smaller and fray. Each picture's own stone is measured once.
 type Pt = [number, number];
 const stoneBox = new Map<HTMLImageElement, [number, number, number, number]>();
 function boxOf(img: HTMLImageElement): [number, number, number, number] {
@@ -289,28 +291,42 @@ function boxOf(img: HTMLImageElement): [number, number, number, number] {
 function drawPaving(c: CanvasRenderingContext2D, p: StreetPath): void {
   const stones = STEPS.map((k) => TILES[k]).filter((img) => img && img.complete && img.naturalWidth);
   if (stones.length < STEPS.length) return;
-  const W = Math.max(60, p.w * CW * 1.15), y0 = BUILD_Y + 6, y1 = FLOOR_Y0 + p.rows * CH;
-  // stones the size of the first layout, rows staggered by a random amount, each stone a little
-  // different in size and place; outer stones smaller, a few missing, a few small strays outside
-  const SX = 22, SY = 14.5, cols = Math.max(2, Math.round(W / SX)), rows = Math.floor((y1 - y0) / SY);
-  const lay = (img: HTMLImageElement, cx: number, cy: number, tw: number, flip: boolean): void => {
-    const [bx, by, bw, bh] = boxOf(img), sc = Math.min(tw / bw, (SY * 0.95) / bh), dw = bw * sc, dh = bh * sc;
-    c.save(); c.translate(cx, cy); if (flip) c.scale(-1, 1); c.drawImage(img, bx, by, bw, bh, -dw / 2, -dh / 2, dw, dh); c.restore();
+  // a stone lying flat: size is its longest side on the ground (in view px across), turned by a
+  // ground angle; the picture is un-squashed, turned, then squashed back to the 2:1 view
+  const lay = (img: HTMLImageElement, cx: number, cy: number, size: number, ang: number, flip: boolean): void => {
+    const [bx, by, bw, bh] = boxOf(img), sc = size / Math.max(bw, bh * 2), dw = bw * sc, dh = bh * 2 * sc;
+    c.save(); c.translate(cx, cy); c.scale(1, 0.5); c.rotate(ang); if (flip) c.scale(-1, 1);
+    c.drawImage(img, bx, by, bw, bh, -dw / 2, -dh / 2, dw, dh); c.restore();
   };
-  for (let r = 0; r < rows; r++) {
-    const hr = mix(r, 77), shift = ((hr % 100) / 100) * SX * 0.5, n = cols - (hr % 3 === 0 ? 1 : 0), last = r === rows - 1;
-    const span = (n - 1) * SX + shift;
-    for (let k = 0; k < n; k++) {
-      const h = mix(r * 31 + k, 1234), edge = k === 0 || k === n - 1;
-      if ((last || r === 0) && edge && h % 2) continue;        // the ends fray
-      if (edge && h % 7 === 0) continue;
-      const tw = SX * (edge ? 0.74 + ((h >>> 3) % 10) / 100 : 0.9 + ((h >>> 3) % 8) / 100);
-      const cx = p.x - span / 2 + shift + k * SX + ((h >>> 8) % 5 - 2) * 0.7;
-      const cy = y0 + r * SY + SY / 2 + ((h >>> 11) % 5 - 2) * 0.6;
-      lay(stones[(h >>> 14) % stones.length], cx, cy, tw, ((h >>> 17) & 1) === 1);
+  // start on the lattice cell under the gate (u across, v down; u + v even), run along +gx
+  const v0 = Math.round((BUILD_Y + 10 - FLOOR_Y0) / DH) - 1, u0 = Math.round(p.x / DW) + ((Math.round(p.x / DW) + v0) & 1);
+  const len = Math.ceil((FLOOR_Y0 + p.rows * CH - (FLOOR_Y0 + (v0 + 1) * DH)) / DH), w = p.w;
+  for (let a = 0; a < len; a++) for (let b = 0; b < w; b++) {
+    const k = b - (w - 1) / 2;                       // across the path, centred on the gate
+    const u = u0 + a - Math.round(k), v = v0 + a + Math.round(k);
+    const cx = u * DW, cy = FLOOR_Y0 + (v + 1) * DH;
+    const h = mix(u * 131 + 7, v * 97 + 3), edge = b === 0 || b === w - 1, end = a === len - 1 || a === 0;
+    if (edge && (h % 5 === 0 || (end && h % 2))) continue;                // the edges fray
+    if (a === len - 1 && !edge && h % 3 === 0) continue;
+    const img = (n: number): HTMLImageElement => stones[(h >>> n) % stones.length];
+    const ang = ((h >>> 4) % 360) * Math.PI / 180, flip = ((h >>> 13) & 1) === 1;
+    const jx = (((h >>> 9) % 7) - 3) * 0.6, jy = (((h >>> 12) % 5) - 2) * 0.4;
+    if (!edge && h % 6 === 1) {                                           // two small stones share a cell
+      const d = (h >>> 20) & 1 ? 1 : -1;
+      lay(img(16), cx - 5.5 * d + jx, cy - 2, 13 + ((h >>> 22) % 3), ang, flip);
+      lay(img(19), cx + 6.5 * d, cy + 2.5 + jy, 11 + ((h >>> 25) % 3), ang + 1.3, !flip);
+      continue;
     }
-    const hs = mix(r, 909);
-    if (hs % 4 === 0) lay(stones[3], p.x + ((hs >>> 4) & 1 ? 1 : -1) * (span / 2 + SX * 0.75), y0 + r * SY + SY / 2, SX * 0.45, false);
+    const size = edge ? 15 + ((h >>> 22) % 4) : 20 + ((h >>> 22) % 5);   // 15-18 at the edges, 20-24 inside
+    lay(img(16), cx + jx, cy + jy, size, ang, flip);
+  }
+  // a few loose pebbles beside the path
+  for (let a = 1; a < len - 1; a += 1) {
+    const hs = mix(a, 909 + p.x);
+    if (hs % 5) continue;
+    const side = (hs >>> 4) & 1 ? 1 : -1, k = side * ((w + 1) / 2 + 0.2);
+    const cx = (u0 + a - k) * DW, cy = FLOOR_Y0 + (v0 + a + k + 1) * DH;
+    lay(stones[(hs >>> 8) % stones.length], cx, cy, 9 + ((hs >>> 12) % 4), (hs >>> 14) % 6, false);
   }
 }
 
