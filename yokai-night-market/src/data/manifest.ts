@@ -50,7 +50,7 @@ export const ASSETS: Asset[] = [
   a('literature', 'building', 124, 'placeholder', { tags: ['landmark'], name: '臺灣文學館（舊臺南州廳；Codex 紙雕試畫，待核可）' }),
   a('panggongSide', 'building', 130, 'placeholder', { tags: ['landmark'], name: '泮宮石坊（斜角）' }),
   a('confuciusWall', 'decor', 54, 'placeholder', { tags: ['connector'], name: '孔廟紅圍牆' }),
-  a('plumeria', 'tree', 90, 'placeholder', { name: '雞蛋花' }),
+  a('plumeria', 'tree', 90, 'approved', { name: '雞蛋花' }),
   a('norfolkPine', 'tree', 175, 'placeholder', { name: '南洋杉' }),
   a('rainTree', 'tree', 140, 'placeholder', { name: '雨豆樹' }),
   a('signLane', 'decor', 46, 'placeholder', { name: '告示牌：前往花巷（待核可）' }),
