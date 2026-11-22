@@ -3,7 +3,7 @@
 // from the top of the yard down, so a bigger gy is nearer the camera and things sort by it. Every
 // placeable piece is designed to fill whole cells (its footprint in the manifest is width x depth
 // in cells). Walls are not handled yet; `surface` in the saved record keeps room for them.
-import { ASSET, withTag } from '../data/manifest';
+import { ASSET, variantAt, withTag } from '../data/manifest';
 import { hasArt } from './paperAtlas';
 import { spr } from './sprites';
 import { CH, CW, FLOOR_Y0, FLOOR_Y1, street, type StreetExtra } from './street';
@@ -75,7 +75,7 @@ export function placedExtras(list: Placed[]): StreetExtra[] {
       // centred on the cell and larger than it; sorted by the cell's front edge so nearer clumps overlap
       const cx = x0 + CW / 2, by = y0 + CH;
       return { y: by - 6, draw: (c: CanvasRenderingContext2D) => {
-        const s = spr(p.key), k = (CW * CLUMP) / s.w;
+        const s = spr(variantAt(p.key, p.gx, p.gy, hasArt)), k = (CW * CLUMP) / s.w;
         c.save(); c.translate(cx, by + CH * 0.15); c.scale((p.flip ? -1 : 1) * k, k); c.drawImage(s.c, -s.w / 2, -s.h, s.w, s.h); c.restore();
       } };
     }
@@ -84,7 +84,7 @@ export function placedExtras(list: Placed[]): StreetExtra[] {
     }
     const x = x0 + (w * CW) / 2, y = y0 + d * CH - 3;
     return { y, draw: (c: CanvasRenderingContext2D) => {
-      const s = spr(p.key);
+      const s = spr(variantAt(p.key, p.gx, p.gy, hasArt));
       // a small contact shadow, never wider than the piece's own cells
       const r = Math.min(s.w * 0.36, w * CW * 0.42);
       c.fillStyle = 'rgba(106,70,50,0.14)'; c.beginPath(); c.ellipse(x, y, r, Math.min(r * 0.28, 5), 0, 0, Math.PI * 2); c.fill();

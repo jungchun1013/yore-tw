@@ -27,6 +27,7 @@ export interface Asset {
   tags?: string[];              // 'furniture' can be placed; 'landmark' stands on the street; 'stall'; 'fauna'
   replaces?: string[];          // older sprite keys this picture is drawn for
   name?: string;                // working label for editors and the backlog, not shown to players
+  variants?: string[];          // other pictures of the same thing (keys); the game picks one by position so repeats vary
 }
 
 const a = (key: string, layer: AssetLayer, height: number, status: AssetStatus, extra: Partial<Asset> = {}): Asset =>
@@ -50,7 +51,8 @@ export const ASSETS: Asset[] = [
   a('literature', 'building', 124, 'placeholder', { tags: ['landmark'], name: '臺灣文學館（舊臺南州廳；Codex 紙雕試畫，待核可）' }),
   a('panggongSide', 'building', 130, 'placeholder', { tags: ['landmark'], name: '泮宮石坊（斜角）' }),
   a('confuciusWall', 'decor', 54, 'placeholder', { tags: ['connector'], name: '孔廟紅圍牆' }),
-  a('plumeria', 'tree', 90, 'approved', { name: '雞蛋花' }),
+  a('plumeria', 'tree', 90, 'approved', { name: '雞蛋花', variants: ['plumeria1'] }),
+  a('plumeria1', 'tree', 90, 'approved', { name: '雞蛋花（變體，29 候選一）' }),
   a('norfolkPine', 'tree', 175, 'placeholder', { name: '南洋杉' }),
   a('rainTree', 'tree', 140, 'placeholder', { name: '雨豆樹' }),
   a('signLane', 'decor', 46, 'placeholder', { name: '告示牌：前往花巷（待核可）' }),
@@ -118,7 +120,9 @@ export const ASSETS: Asset[] = [
   a('sakura', 'tree', 120, 'approved', { source: 'atlas', cell: 6, tags: ['furniture'], footprint: [2, 2], name: '櫻花' }),
   a('maple', 'tree', 120, 'placeholder', { source: 'atlas', cell: 7, replaces: ['phoenix'], tags: ['furniture'], footprint: [2, 2], name: '楓樹（暫代鳳凰木）' }),
   a('banyan', 'tree', 150, 'placeholder', { name: '榕樹（待核可）' }),
-  a('flameTree', 'tree', 130, 'placeholder', { name: '鳳凰木（待核可）' }),
+  a('flameTree', 'tree', 130, 'placeholder', { name: '鳳凰木（30 候選一，待核可）', variants: ['flameTree2', 'flameTree3'] }),
+  a('flameTree2', 'tree', 130, 'placeholder', { name: '鳳凰木（變體）' }),
+  a('flameTree3', 'tree', 130, 'placeholder', { name: '鳳凰木（變體）' }),
   a('royalPalm', 'tree', 150, 'placeholder', { name: '大王椰子（待核可）' }),
   a('literatureSide', 'building', 102, 'placeholder', { name: '文學館側翼（待核可）' }),
   a('literatureWall', 'decor', 30, 'placeholder', { tags: ['connector'], name: '文學館矮圍牆（待核可）' }),
@@ -163,4 +167,11 @@ export const PENDING_ART = new Set<string>(SPRITE_ASSETS.filter((x) => x.status 
 export const REPLACES: Record<string, string> = {};
 for (const x of SPRITE_ASSETS) for (const old of x.replaces ?? []) REPLACES[old] = x.key;
 
+// the picture to draw for `key` at a position: the key itself or one of its variants, fixed per spot
+export function variantAt(key: string, a: number, b: number, has: (k: string) => boolean): string {
+  const all = [key, ...(ASSET[key]?.variants ?? [])].filter(has);
+  if (all.length < 2) return key;
+  const h = (Math.imul(a | 0, 73856093) ^ Math.imul(b | 0, 19349663)) >>> 0;
+  return all[h % all.length];
+}
 export const withTag = (tag: string): Asset[] => SPRITE_ASSETS.filter((x) => x.tags?.includes(tag));

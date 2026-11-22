@@ -2,7 +2,7 @@
 // data (src/data/street.json and the asset manifest); this file only lays it out and draws it.
 import rawStreet from '../data/street.json';
 import rawLane from '../data/lane.json';
-import { ASSET } from '../data/manifest';
+import { ASSET, variantAt } from '../data/manifest';
 import { hasArt } from './paperAtlas';
 import { PUPPETS } from './puppet';
 import { spr } from './sprites';
@@ -281,7 +281,8 @@ function drawGround(c: CanvasRenderingContext2D, left: number): void {
   if (g) { c.fillStyle = g; c.fillRect(left, top, viewW, H - top); }
 }
 
-function drawItem(c: CanvasRenderingContext2D, it: StreetItem, y: number, alpha = 1): void {
+function drawItem(c: CanvasRenderingContext2D, it0: StreetItem, y: number, alpha = 1): void {
+  const it = { ...it0, key: variantAt(it0.key, Math.round(it0.x), 7, hasArt) };
   const asset = ASSET[it.key], k = it.scale ?? 1;
   c.globalAlpha = alpha;
   if (hasArt(it.key)) {
