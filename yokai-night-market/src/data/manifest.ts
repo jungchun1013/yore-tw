@@ -132,7 +132,7 @@ export const ASSETS: Asset[] = [
   a('sakura', 'tree', 120, 'approved', { source: 'atlas', cell: 6, tags: ['furniture'], footprint: [2, 2], name: '櫻花' }),
   a('maple', 'tree', 120, 'placeholder', { source: 'atlas', cell: 7, replaces: ['phoenix'], tags: ['furniture'], footprint: [2, 2], name: '楓樹（暫代鳳凰木）' }),
   a('banyan', 'tree', 150, 'placeholder', { name: '榕樹（待核可）' }),
-  a('flameTree', 'tree', 130, 'placeholder', { name: '鳳凰木（30 候選一，待核可）', variants: ['flameTree2', 'flameTree3'] }),
+  a('flameTree', 'tree', 130, 'approved', { name: '鳳凰木（30 候選一）', variants: ['flameTree2', 'flameTree3'] }),
   a('flameTree2', 'tree', 130, 'placeholder', { name: '鳳凰木（變體）' }),
   a('flameTree3', 'tree', 130, 'placeholder', { name: '鳳凰木（變體）' }),
   a('royalPalm', 'tree', 150, 'placeholder', { name: '大王椰子（待核可）' }),
