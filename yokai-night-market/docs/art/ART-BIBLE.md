@@ -28,7 +28,11 @@
     | 金屬、金框 | 霧面箔紙 | 低調的金屬光 |
     | 水 | 半透明描圖紙 | 透出底下的顏色 |
 
-4b. **影印雜訊顆粒感。** 整個畫面像影印出來的：零星的碳粉小黑點、少數漏印的小白點、輕微不均的深淺（2026-11-22 使用者）。遊戲畫面由程式在最上層蓋一層影印雜訊；單一素材本身也要帶一點這種顆粒，但不要多到髒。
+4b. **細膩、均勻的印刷顆粒，不是髒污。** 參考 `art-source/refs/print-grain-poster.jpg` 下半部（2026-11-22 使用者：「更細膩一點」「現在看起來像有髒污」）。照那張的提示詞（`print-grain-prompt-*.png`）：平塗印色與克制疊印，加**極微弱**的孔版顆粒、複印或掃描噪點、紙纖維與局部印刷錯位，墨色邊緣略不完美；**不做厚重污漬、裂紋或統一做舊**。
+    - **目標的乾淨程度**：`art-source/refs/demo-paper-street.png`（使用者 2026-11-23：「這是之前的 demo，我覺得這樣就很好」）。地板幾乎是平滑的米色、顆粒非常淡；天空是淡淡的和紙纖維；遠山是柔和的平塗綠。顆粒寧可少，看得出是紙就好。
+    - 顆粒要均勻分布（細點、密度一致），不要大塊深淺斑。
+    - 地板顆粒可稍粗，但仍均勻。
+    - 天空與遠山用漸層與空氣霧感：越遠越淡、越灰、越接近地平線越亮；近處才飽和。
 
 ### 真實與美感
 5. **照實景。** 真實存在的建築、地標、動植物、小吃，先搜尋實景照片；外形、材質、顏色以實物為準。使用者給的照片在 `art-source/refs/`，必看。只參考外形，不描圖。不要自己編裝飾（例如替石坊加翹簷、葫蘆）。
@@ -99,8 +103,8 @@ fences, ground tiles, icons and props. Every shape is a piece of cut paper: visi
 slightly soft hand-cut edges, pieces overlapping in shallow layers with small soft contact shadows
 where one sheet sits on another. Colour is printed on the paper: clearly visible risograph /
 stencil print grain and uneven ink density across every flat area, never a clean digital fill.
-Add a light photocopy noise: scattered tiny toner specks, a few dropped-out light flecks,
-slightly uneven tone, as if the artwork were photocopied once.
+Add a very faint, even stencil/risograph grain and slight print misregistration; ink edges a
+little imperfect. No heavy stains, blotches, cracks or overall ageing.
 Weathering is welcome: irregular faded patches, not neat squares.
 Details are built from few, large cut pieces (roof tiles, bricks, window frames, leaves, petals,
 stones, planks), not painted lines and not crowded tiny patterns. Plants are natural and

@@ -200,7 +200,11 @@ function hills(c: CanvasRenderingContext2D, base: number, amp: number, step: num
     const wx = x + shift;
     c.quadraticCurveTo(x + step / 2, base - amp * (0.6 + 0.4 * Math.sin(wx * 0.011 + seed)), x + step, base);
   }
-  c.lineTo(viewW + step, H); c.closePath(); c.fillStyle = col; c.fill();
+  c.lineTo(viewW + step, H); c.closePath();
+  // aerial perspective: the ridge in its colour, fading into the warm haze toward the ground
+  const g = c.createLinearGradient(0, base - amp, 0, BUILD_Y);
+  g.addColorStop(0, col); g.addColorStop(1, HAZE);
+  c.fillStyle = g; c.fill();
 }
 
 // plain paper ground with green laid by the buildings, along the front edge and in a few patches
@@ -214,33 +218,26 @@ for (const k of ['stoneFill', 'stoneEdgeL', 'stoneEdgeR', 'stoneEnd', 'groundSan
   if (typeof Image === 'undefined') break;
   const img = new Image(); img.src = `${import.meta.env.BASE_URL}art/tiles/${k}.png`; TILES[k] = img;
 }
-// Photocopy noise over the whole scene (art bible 4b): scattered toner specks, a few dropped-out
-// light flecks and a faint uneven mottle, fixed to the world so it reads as printed on the paper.
-let copyNoise: CanvasPattern | null = null;
-function photocopy(c: CanvasRenderingContext2D): CanvasPattern | null {
-  if (copyNoise) return copyNoise;
-  const S = 192, g = document.createElement('canvas'); g.width = g.height = S;
+// Print grain (art bible 4b): an even, very faint stencil grain, fine over everything and a
+// little coarser on the floor. Dots sit on a jittered grid so the density is uniform: no blotches.
+const HAZE = '#f6efdf';
+const grains = new Map<string, CanvasPattern | null>();
+function grain(c: CanvasRenderingContext2D, kind: 'fine' | 'floor'): CanvasPattern | null {
+  if (grains.has(kind)) return grains.get(kind)!;
+  const PX = 4, S = 256, g = document.createElement('canvas'); g.width = g.height = S;   // 4 px per unit
   const x = g.getContext('2d')!;
-  let r = 1234567;
+  let r = kind === 'fine' ? 97531 : 24680;
   const rnd = (): number => ((r = (Math.imul(r, 1103515245) + 12345) >>> 0) / 4294967296);
-  for (let i = 0; i < 26; i++) {               // soft mottle: large faint blotches
-    const cx = rnd() * S, cy = rnd() * S, rad = 14 + rnd() * 30;
-    const grd = x.createRadialGradient(cx, cy, 0, cx, cy, rad);
-    grd.addColorStop(0, `rgba(70,50,35,${0.025 + rnd() * 0.03})`); grd.addColorStop(1, 'rgba(70,50,35,0)');
-    x.fillStyle = grd;
-    // draw it again across each edge so the tile wraps without a seam
-    for (const ox of [-S, 0, S]) for (const oy of [-S, 0, S]) { x.save(); x.translate(ox, oy); x.fillRect(cx - rad, cy - rad, rad * 2, rad * 2); x.restore(); }
+  const step = kind === 'fine' ? 7 : 9, dot = kind === 'fine' ? [0.8, 1.3] : [1.2, 2.0], dark = kind === 'fine' ? 0.035 : 0.045;
+  for (let gy = 0; gy < S; gy += step) for (let gx = 0; gx < S; gx += step) {
+    const px = gx + rnd() * step, py = gy + rnd() * step, rad = dot[0] + rnd() * (dot[1] - dot[0]), light = rnd() < 0.3;
+    x.fillStyle = light ? `rgba(255,251,240,${0.1 + rnd() * 0.08})` : `rgba(74,52,36,${dark + rnd() * 0.025})`;
+    for (const ox of [-S, 0, S]) for (const oy of [-S, 0, S]) { x.beginPath(); x.arc(px + ox, py + oy, rad / 2, 0, Math.PI * 2); x.fill(); }
   }
-  for (let i = 0; i < 420; i++) {              // toner specks, mostly tiny, a few clumped
-    const px = rnd() * S, py = rnd() * S, k = rnd();
-    x.fillStyle = `rgba(55,38,28,${0.16 + rnd() * 0.3})`;
-    x.fillRect(px, py, k < 0.85 ? 0.7 : 1.4, k < 0.85 ? 0.7 : 1.1);
-  }
-  for (let i = 0; i < 70; i++) {               // dropped-out flecks where the toner missed
-    x.fillStyle = `rgba(255,250,238,${0.35 + rnd() * 0.3})`;
-    x.fillRect(rnd() * S, rnd() * S, 0.8 + rnd(), 0.8);
-  }
-  return (copyNoise = c.createPattern(g, 'repeat'));
+  const pat = c.createPattern(g, 'repeat');
+  pat?.setTransform(new DOMMatrix([1 / PX, 0, 0, 1 / PX, 0, 0]));
+  grains.set(kind, pat);
+  return pat;
 }
 
 function drawGround(c: CanvasRenderingContext2D, left: number): void {
@@ -264,6 +261,8 @@ function drawGround(c: CanvasRenderingContext2D, left: number): void {
     c.fillRect(x, FLOOR_Y0 + (rows - hb) * CH, CW + 0.5, H);                               // front edge
     for (let gy = 2; gy < rows - 4; gy++) if (hash(gx >> 1, gy >> 1) % 17 === 0) c.fillRect(x, FLOOR_Y0 + gy * CH, CW + 0.5, CH + 0.5);
   }
+  const fg = grain(c, 'floor');
+  if (fg) { c.fillStyle = fg; c.fillRect(left, top, viewW, H - top); }
   // stone paths, laid from Codex's tiles (request 22): a seamless fill, a fringe of smaller stones
   // on the left and right, and one at the far end; flat stone cells until the tiles load
   for (const p of street.paths ?? []) {
@@ -371,12 +370,17 @@ export function drawStreet(c: CanvasRenderingContext2D, v: StreetView, opt: Draw
   layout(v, opt.bottom ?? 0);
   camX = Math.max(viewW / 2, Math.min(street.width - viewW / 2, camX));
   c.setTransform(v.dpr, 0, 0, v.dpr, 0, 0);
-  c.fillStyle = '#f3e6c9'; c.fillRect(0, 0, v.w, v.h);
+  // sky: a warm wash that grows paler toward the horizon
+  const sky = c.createLinearGradient(0, offY + (BUILD_Y - 260) * scale, 0, offY + BUILD_Y * scale);
+  sky.addColorStop(0, '#eadcbd'); sky.addColorStop(1, HAZE);
+  c.fillStyle = sky; c.fillRect(0, 0, v.w, v.h);
   c.fillStyle = '#efe5cb'; c.fillRect(0, offY + FLOOR_Y0 * scale, v.w, v.h);
   const left = camX - viewW / 2;
   c.setTransform(v.dpr * scale, 0, 0, v.dpr * scale, 0, v.dpr * offY);
-  hills(c, 150, 60, 230, 0, '#e2d3ae', left * 0.25);
-  hills(c, 196, 40, 180, 2, '#cdd3a4', left * 0.45);
+  // three ranges, farther ones paler and greyer (aerial perspective)
+  hills(c, 128, 54, 260, 4, '#ddd6c6', left * 0.15);
+  hills(c, 160, 58, 230, 0, '#d3d2b6', left * 0.28);
+  hills(c, 200, 40, 180, 2, '#c3cca0', left * 0.45);
   c.translate(-left, 0);
   drawGround(c, left);
   const vis = (it: StreetItem): boolean => it.x > left - 160 && it.x < left + viewW + 160;
@@ -411,8 +415,8 @@ export function drawStreet(c: CanvasRenderingContext2D, v: StreetView, opt: Draw
     c.setLineDash([5, 4]); c.lineWidth = 1.5; c.strokeStyle = '#d8503a'; c.strokeRect(x0, y0, x1 - x0, y1 - y0); c.setLineDash([]);
   }
 
-  const noise = photocopy(c);
-  if (noise) { c.save(); c.setTransform(v.dpr * scale, 0, 0, v.dpr * scale, v.dpr * (-left * scale), v.dpr * offY); c.fillStyle = noise; c.fillRect(left, 0, viewW, H); c.restore(); }
+  const noise = grain(c, 'fine');
+  if (noise) { c.save(); c.setTransform(v.dpr * scale, 0, 0, v.dpr * scale, v.dpr * (-left * scale), v.dpr * offY); c.fillStyle = noise; c.fillRect(left, -offY / scale, viewW, v.h / scale + 1); c.restore(); }
   if (opt.dim) { c.setTransform(v.dpr, 0, 0, v.dpr, 0, 0); c.fillStyle = `rgba(74,47,40,${opt.dim})`; c.fillRect(0, 0, v.w, v.h); }
 }
 
