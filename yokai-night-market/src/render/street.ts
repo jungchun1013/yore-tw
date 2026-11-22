@@ -205,22 +205,12 @@ function hills(c: CanvasRenderingContext2D, base: number, amp: number, step: num
 
 // plain paper ground with green laid by the buildings, along the front edge and in a few patches
 const hash = (a: number, b: number): number => (Math.imul(a, 73856093) ^ Math.imul(b, 19349663)) >>> 0;
-let grain: CanvasPattern | null = null;
-function paperGrain(c: CanvasRenderingContext2D): CanvasPattern | null {
-  if (grain) return grain;
-  const g = document.createElement('canvas'); g.width = g.height = 96;
-  const x = g.getContext('2d')!;
-  for (let i = 0; i < 560; i++) {
-    x.fillStyle = i % 2 ? 'rgba(120,96,70,0.07)' : 'rgba(255,255,255,0.12)';
-    x.fillRect(Math.random() * 96, Math.random() * 96, 1 + Math.random() * 1.6, 1);
-  }
-  return (grain = c.createPattern(g, 'repeat'));
-}
 // ground tiles (public/art/tiles), each STONE logical px square
+const GROUND_TILE = 128;
 const STONE = 132;   // about one stone per cell (user 2026-11-22)
 const TILES: Record<string, HTMLImageElement> = {};
 const STEPS = ['stone1', 'stone2', 'stone3', 'stone4', 'stone5', 'stone6', 'stone7', 'stone8'];
-for (const k of ['stoneFill', 'stoneEdgeL', 'stoneEdgeR', 'stoneEnd', ...STEPS]) {
+for (const k of ['stoneFill', 'stoneEdgeL', 'stoneEdgeR', 'stoneEnd', 'groundSand', 'groundGrass', ...STEPS]) {
   if (typeof Image === 'undefined') break;
   const img = new Image(); img.src = `${import.meta.env.BASE_URL}art/tiles/${k}.png`; TILES[k] = img;
 }
@@ -255,8 +245,18 @@ function photocopy(c: CanvasRenderingContext2D): CanvasPattern | null {
 
 function drawGround(c: CanvasRenderingContext2D, left: number): void {
   const top = BUILD_Y - 16, rows = Math.floor((FLOOR_Y1 - FLOOR_Y0) / CH);
-  c.fillStyle = '#efe5cb'; c.fillRect(left, top, viewW, H - top);
-  c.fillStyle = '#b7c38a';
+  // ground papers (request 35): fine-sand paper for the floor, kozo paper for grass; one tile is
+  // GROUND_TILE units wide. Flat colours stand in until they load.
+  const paper = (key: string, fallback: string): string | CanvasPattern => {
+    const img = TILES[key];
+    if (!img || !img.complete || !img.naturalWidth) return fallback;
+    const pat = c.createPattern(img, 'repeat');
+    if (!pat) return fallback;
+    pat.setTransform(new DOMMatrix([GROUND_TILE / img.naturalWidth, 0, 0, GROUND_TILE / img.naturalHeight, 0, 0]));
+    return pat;
+  };
+  c.fillStyle = paper('groundSand', '#efe5cb'); c.fillRect(left, top, viewW, H - top);
+  c.fillStyle = paper('groundGrass', '#b7c38a');
   for (let gx = Math.floor(left / CW) - 1; gx * CW < left + viewW; gx++) {
     const x = gx * CW;
     c.fillRect(x, top, CW + 0.5, 20 + (hash(gx >> 1, 3) % 3) * 6);                       // by the buildings
@@ -306,8 +306,6 @@ function drawGround(c: CanvasRenderingContext2D, left: number): void {
       c.fillRect(x + 1.5, y + 1.5, CW - 3, CH - 3);
     }
   }
-  const g = paperGrain(c);
-  if (g) { c.fillStyle = g; c.fillRect(left, top, viewW, H - top); }
 }
 
 function drawItem(c: CanvasRenderingContext2D, it0: StreetItem, y: number, alpha = 1): void {
