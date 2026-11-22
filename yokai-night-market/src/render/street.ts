@@ -219,7 +219,8 @@ function paperGrain(c: CanvasRenderingContext2D): CanvasPattern | null {
 // ground tiles (public/art/tiles), each STONE logical px square
 const STONE = 132;   // about one stone per cell (user 2026-11-22)
 const TILES: Record<string, HTMLImageElement> = {};
-for (const k of ['stoneFill', 'stoneEdgeL', 'stoneEdgeR', 'stoneEnd']) {
+const STEPS = ['stone1', 'stone2', 'stone3', 'stone4', 'stone5', 'stone6', 'stone7', 'stone8'];
+for (const k of ['stoneFill', 'stoneEdgeL', 'stoneEdgeR', 'stoneEnd', ...STEPS]) {
   if (typeof Image === 'undefined') break;
   const img = new Image(); img.src = `${import.meta.env.BASE_URL}art/tiles/${k}.png`; TILES[k] = img;
 }
@@ -238,6 +239,21 @@ function drawGround(c: CanvasRenderingContext2D, left: number): void {
   // on the left and right, and one at the far end; flat stone cells until the tiles load
   for (const p of street.paths ?? []) {
     const x0 = Math.round(p.x / CW - p.w / 2) * CW, w = p.w * CW, y0 = FLOOR_Y0 - 3 * CH, y1 = FLOOR_Y0 + p.rows * CH;
+    // stepping stones (request 25): one stone per cell, chosen and nudged by the cell's hash; the
+    // outer columns and the far end get smaller stones and gaps, so the path frays naturally
+    const steps = STEPS.map((k) => TILES[k]).filter((img) => img && img.complete && img.naturalWidth);
+    if (steps.length === STEPS.length) {
+      const g0 = Math.round(p.x / CW - p.w / 2);
+      for (let gy = -3; gy < p.rows + 1; gy++) for (let gx = g0 - 1; gx <= g0 + p.w; gx++) {
+        const h = hash(gx * 7 + 3, gy * 13 + 5), outer = gx < g0 || gx >= g0 + p.w, last = gy >= p.rows;
+        if ((outer || last) && h % 3 !== 0) continue;                 // frayed edge: about a third of the outer cells
+        const pick = outer || last ? [3, 6, 4][h % 3] : h % 8;         // stones 4, 7 (and 5) are the small ones
+        const img = steps[pick], k = 1.85;
+        const x = gx * CW + CW / 2 + ((h >> 3) % 5) - 2, y = FLOOR_Y0 + gy * CH + CH / 2 + ((h >> 6) % 5) - 2;
+        c.drawImage(img, x - (CW * k) / 2, y - (CH * k) / 2, CW * k, CH * k);
+      }
+      continue;
+    }
     const fill = TILES.stoneFill, T = STONE;
     if (fill && fill.complete && fill.naturalWidth) {
       const pat = c.createPattern(fill, 'repeat');

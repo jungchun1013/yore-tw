@@ -1,0 +1,22 @@
+{
+  "request": "24-stone-autotile",
+  "files": [
+    {
+      "file": "stoneTiles.png",
+      "keys": [
+        "stoneTopLeft",
+        "stoneTop",
+        "stoneTopRight",
+        "stoneLeft",
+        "stoneCenter",
+        "stoneRight",
+        "stoneBottomLeft",
+        "stoneBottom",
+        "stoneBottomRight"
+      ],
+      "layout": "3x3"
+    }
+  ],
+  "prompt": "Original Taiwanese game art for \"Tainan Gazetteer\" (府城夜巡地圖), set in Tainan around 1930.\nStyle: handmade layered paper sculpture (紙雕 / kirie), the same for buildings, trees, plants,\nfences, ground tiles, icons and props. Every shape is a piece of cut paper: visible paper fibres,\nslightly soft hand-cut edges, pieces overlapping in shallow layers with small soft contact shadows\nwhere one sheet sits on another. Colour is printed on the paper: clearly visible risograph /\nstencil print grain and uneven ink density across every flat area, never a clean digital fill.\nWeathering is welcome: irregular faded patches, not neat squares.\nDetails are built from few, large cut pieces (roof tiles, bricks, window frames, leaves, petals,\nstones, planks), not painted lines and not crowded tiny patterns. Plants are natural and\nasymmetric.\nColour: follow the real object, then mute it: pale, slightly greyed, warm. Typical tones: warm\ncream, pale brick red, coral, sage and grey-green, mustard, indigo, wood brown, stone grey.\nNo saturated red-against-green contrast.\nBuildings: strictly frontal elevation, no perspective, three or four flat paper layers.\nDo NOT make: a 3D render or clay/plastic model, smooth bevelled relief, realistic or painterly\nillustration, photo textures, thick foam layers, glow, glossy highlights, black outline strokes,\nsmooth gradients, depth of field.\nOutput: generated natively on a fully TRANSPARENT background (real alpha including enclosed\nholes, no backdrop, no glow, no chroma-key colour, no coloured fringe), every object complete\nand separated by clear transparent gutters, no ground, no base, no cast shadow outside the\nobject, no text, no captions, no logos.\n\nCreate source cutouts for the 24-stone-autotile 3×3 atlas. Image 1 is the texture and palette reference, image 2 the flagstone shape reference. Generate exactly nine large, separately complete, top-down rounded flagstone cut-paper pieces arranged in three evenly spaced rows and columns. Each stone is a gently asymmetric rounded rectangle, proportion roughly 6:5, with slight organic curvature, low printed tan contrast and some grey-green variations. All nine stones have completely clear transparent gutters and ample margins around their silhouettes. Native alpha, no outline, no glow, no shadow outside the stone. Below the nine stones add a separate small strip of light sandy-beige printed paper with a uniform subtle fine paper grain, to be used for the road joints, and two tiny isolated muted sage paper-grass tufts next to this paper sample, outside the nine cells. These sources will be laid out as one stone per 24×20 cell with seamless pale sand joints on connecting sides and transparent round exposed contours on the outer sides. No lettering, guides, ground backdrop, or checkerboard.",
+  "notes": "內建 image_gen 生成原生透明的剪紙石板與草葉，參考 public/art/tiles/stoneFill.png 的紙質與配色、art-source/refs/stonepath-2.jpg 的石板外形。保留剪紙素材的 alpha，與生成的淺米色紙樣組成弧形收邊的圖集。圖集 1080×900 px，每格 360×300 px，keys 按列由左至右。實際拼接中間格 3×3 與完整路徑 5×4，所有指定相鄰邊界的 RGBA 像素一致。"
+}
