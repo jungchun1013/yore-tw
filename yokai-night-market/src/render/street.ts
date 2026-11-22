@@ -249,7 +249,8 @@ const hash = (a: number, b: number): number => (Math.imul(a, 73856093) ^ Math.im
 // ground tiles (public/art/tiles), each STONE logical px square
 const GROUND_TILE = 128;
 const TILES: Record<string, HTMLImageElement> = {};
-const STEPS = ['stone1', 'stone2', 'stone3', 'stone4', 'stone5', 'stone6', 'stone7', 'stone8'];
+// path slabs (request 37): 01-03 long, 04-07 medium, 08-09 squarish, 10-12 rubble
+const STEPS = Array.from({ length: 12 }, (_, i) => `slab${String(i + 1).padStart(2, '0')}`);
 for (const k of ['stoneFill', 'stoneEdgeL', 'stoneEdgeR', 'stoneEnd', 'groundSand', 'groundGrass', ...STEPS]) {
   if (typeof Image === 'undefined') break;
   const img = new Image(); img.src = `${import.meta.env.BASE_URL}art/tiles/${k}.png`; TILES[k] = img;
@@ -275,12 +276,12 @@ function grain(c: CanvasRenderingContext2D, kind: 'fine' | 'floor'): CanvasPatte
   return pat;
 }
 
-// Stone paths (user 2026-11-23): Codex's single stepping stones (request 25) laid one per cell of
-// the yard's 45-degree diamond lattice, so neighbouring rows interlock half a cell apart, in a
-// straight band from the gate across to the near side of the street. Every stone keeps its own
-// upright lighting (never turned or mirrored, so the shadows all fall the same way); the variety
-// comes from the eight shapes, a small spread of size and a nudge in place. Edge stones are
-// smaller and a few are missing so the band frays. Each picture's own stone is measured once.
+// Stone paths (user 2026-11-23, reference art-source/refs/stonepath-band-ref.jpg): a path, not a
+// paved area. One narrow straight band from the gate to the near side of the street, built in
+// courses: a course is one long slab the full width of the path, or a medium slab beside a
+// squarish one, or two mediums, with thin joints between; now and then a bit of rubble sits just
+// outside the edge. Slabs are never turned or mirrored, so their lighting agrees; the variety is
+// in the shapes and sizes. Each picture's own stone is measured once.
 type Pt = [number, number];
 const stoneBox = new Map<HTMLImageElement, [number, number, number, number]>();
 function boxOf(img: HTMLImageElement): [number, number, number, number] {
@@ -295,23 +296,45 @@ function boxOf(img: HTMLImageElement): [number, number, number, number] {
   stoneBox.set(img, b);
   return b;
 }
+// courses as [role, share of the path width]: L long, M medium, S squarish
+const COURSES: [string, number][][] = [
+  [['M', 1]], [['S', 0.56], ['S', 0.41]], [['M', 0.96]], [['L', 1]], [['S', 0.43], ['S', 0.54]], [['M', 0.66], ['R', 0.3]], [['R', 0.28], ['M', 0.68]],
+];
+const ROLE: Record<string, number[]> = { L: [0, 1, 2], M: [3, 4, 5, 6, 7, 8], S: [7, 8, 9, 10, 11, 3], R: [9, 10, 11] };
 function drawPaving(c: CanvasRenderingContext2D, p: StreetPath): void {
-  const stones = STEPS.map((k) => TILES[k]).filter((img) => img && img.complete && img.naturalWidth);
-  if (stones.length < STEPS.length) return;
-  // a stone sits in its diamond (2*DW x 2*DH) with a clear joint all round
-  const lay = (img: HTMLImageElement, cx: number, cy: number, k: number): void => {
-    const [bx, by, bw, bh] = boxOf(img), dw = 2 * DW * 0.64 * k, dh = Math.min(dw / 1.75, 2 * DH * 0.64 * k);
-    c.drawImage(img, bx, by, bw, bh, cx - dw / 2, cy - dh / 2, dw, dh);
+  const slabs = STEPS.map((k) => TILES[k]);
+  if (slabs.some((img) => !img || !img.complete || !img.naturalWidth)) return;
+  const W = p.w * 12, GAP = 1.6, yEnd = FLOOR_Y1 - 4;
+  // a slab drawn dw wide with its top at y; returns its height (its own proportions, kept flat)
+  const lay = (img: HTMLImageElement, x: number, y: number, dw: number): number => {
+    const [bx, by, bw, bh] = boxOf(img), dh = Math.max(3, Math.min(17, dw * bh / bw));
+    c.drawImage(img, bx, by, bw, bh, x, y, dw, dh);
+    return dh;
   };
-  const uc = Math.round(p.x / DW), half = p.w - 1;                    // columns uc-half .. uc+half
-  const vTop = Math.ceil((BUILD_Y + 8 - FLOOR_Y0) / DH) - 1, vEnd = Math.floor((FLOOR_Y1 - 6 - FLOOR_Y0) / DH) - 1;
-  for (let v = vTop; v <= vEnd; v++) for (let u = uc - half; u <= uc + half; u++) {
-    if ((u + v) & 1) continue;                                          // lattice cells only
-    const h = mix(u * 131 + 7, v * 97 + 3), edge = Math.abs(u - uc) >= half, end = v <= vTop + 1 || v >= vEnd - 1;
-    if (edge && (h % 4 === 0 || (end && h % 2))) continue;              // the edges fray
-    const k = (edge ? 0.78 : 0.87) + ((h >>> 5) % 14) / 100;              // a small spread of size
-    const jx = (((h >>> 9) % 5) - 2) * 0.7, jy = (((h >>> 12) % 3) - 1) * 0.35;
-    lay(stones[(h >>> 16) % stones.length], u * DW + jx, FLOOR_Y0 + (v + 1) * DH + jy, k);
+  const height = (img: HTMLImageElement, dw: number): number => { const b = boxOf(img); return Math.max(3, Math.min(17, dw * b[3] / b[2])); };
+  let y = BUILD_Y + 8, prev = -1, n = 0;
+  const used: Record<string, number> = {};
+  while (y < yEnd) {
+    const h = mix(n * 53 + 11, Math.round(p.x) + 5);
+    let ci = h % COURSES.length; if (ci === prev) ci = (ci + 1 + (h >>> 4) % (COURSES.length - 1)) % COURSES.length;
+    prev = ci;
+    const course = COURSES[ci], sway = (((h >>> 8) % 5) - 2) * 0.8;      // the edge is not ruled
+    const pieces = course.map(([role, share], k) => {
+      const pool = ROLE[role]; let pi = (h >>> (12 + k * 5)) % pool.length;
+      if (pool[pi] === used[role]) pi = (pi + 1) % pool.length;           // not the same slab twice running
+      used[role] = pool[pi];
+      return { img: slabs[pool[pi]], dw: W * share };
+    });
+    const hs = pieces.map((q) => height(q.img, q.dw)), ch = Math.max(...hs);
+    const total = pieces.reduce((t, q) => t + q.dw, 0) + GAP * (pieces.length - 1);
+    let x = p.x - total / 2 + sway;
+    pieces.forEach((q, k) => { lay(q.img, x, y + (ch - hs[k]) * ((h >>> (20 + k)) & 1 ? 1 : 0.4), q.dw); x += q.dw + GAP; });
+    // rubble just outside the edge, on one side
+    if ((h >>> 26) % 3 === 0) {
+      const side = (h >>> 28) & 1 ? 1 : -1, rw = 6 + ((h >>> 29) % 3), img = slabs[ROLE.R[(h >>> 22) % 3]];
+      lay(img, side > 0 ? p.x + total / 2 + sway + GAP : p.x - total / 2 + sway - GAP - rw, y + ch * 0.3, rw);
+    }
+    y += ch + GAP; n++;
   }
 }
 
