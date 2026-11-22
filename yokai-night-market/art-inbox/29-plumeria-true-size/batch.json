@@ -1,0 +1,1 @@
+{ "request": "29-plumeria-true-size", "files": [{ "file": "plumeria.png", "keys": ["plumeria"], "layout": "single" }], "notes": "Codex generated four candidates and did not deliver (judged flowers slightly too large, halo between branches). Claude picked candidate-2 (558 px tall, close to the 540 target); the halo is removed when cutting." }
