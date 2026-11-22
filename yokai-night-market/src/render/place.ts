@@ -34,13 +34,47 @@ export function itemAt(list: Placed[], gx: number, gy: number): number {
   return list.findIndex((o) => cells(o).some(([x, y]) => x === gx && y === gy));
 }
 
-export const furnitureKeys = (): string[] => withTag('furniture').map((a) => a.key).filter(hasArt);
+// the picture that stands for a piece in the tray: a joining family shows its post
+export const trayArt = (key: string): string => (ASSET[key]?.tags?.includes('join') ? `${key}Post` : key);
+export const furnitureKeys = (): string[] => withTag('furniture').map((a) => a.key).filter((k) => hasArt(trayArt(k)));
+
+// Pieces that join their neighbours (art bible 12b), like fences in Minecraft: the piece's key is
+// the family; its art is `<key>Post` (drawn in every cell) and `<key>Rail` (one cell wide, drawn
+// from a post to the post in the next cell on the right when that cell holds the same family).
+const isJoin = (key: string): boolean => !!ASSET[key]?.tags?.includes('join');
+// Clumps (art bible 12a) are drawn larger than their cell so neighbours overlap into one mass.
+const CLUMP = 1.3;
+
+function joinExtras(list: Placed[]): StreetExtra[] {
+  const at = new Map(list.map((p) => [`${p.gx},${p.gy}`, p.key]));
+  const out: StreetExtra[] = [];
+  for (const p of list) {
+    if (!isJoin(p.key) || !onFloor(p.gx, p.gy)) continue;
+    const [x0, y0] = cellXY(p.gx, p.gy), x = x0 + CW / 2, y = y0 + CH - 3;
+    const post = `${p.key}Post`, rail = `${p.key}Rail`;
+    const linked = at.get(`${p.gx + 1},${p.gy}`) === p.key && hasArt(rail);
+    out.push({ y, draw: (c) => {
+      // the rail keeps the post's height and is stretched along the row to reach the next post
+      if (linked) { const r = spr(rail); c.drawImage(r.c, x, y - r.h, CW, r.h); }
+      if (hasArt(post)) { const s = spr(post); c.drawImage(s.c, x - s.w / 2, y - s.h, s.w, s.h); }
+    } });
+  }
+  return out;
+}
 
 // Placed things as street extras, so they sort with the walkers. A piece stands on the front
 // edge of its cells, centred across its width.
 export function placedExtras(list: Placed[]): StreetExtra[] {
-  return list.filter((p) => hasArt(p.key) && onFloor(p.gx, p.gy)).map((p) => {
+  return joinExtras(list).concat(list.filter((p) => !isJoin(p.key) && hasArt(p.key) && onFloor(p.gx, p.gy)).map((p) => {
     const [w, d] = footprint(p.key), [x0, y0] = cellXY(p.gx, p.gy);
+    if (ASSET[p.key]?.tags?.includes('clump')) {
+      // centred on the cell and larger than it; sorted by the cell's front edge so nearer clumps overlap
+      const cx = x0 + CW / 2, by = y0 + CH;
+      return { y: by - 6, draw: (c: CanvasRenderingContext2D) => {
+        const s = spr(p.key), k = (CW * CLUMP) / s.w;
+        c.save(); c.translate(cx, by + CH * 0.15); c.scale((p.flip ? -1 : 1) * k, k); c.drawImage(s.c, -s.w / 2, -s.h, s.w, s.h); c.restore();
+      } };
+    }
     if (ASSET[p.key]?.tags?.includes('flat')) {
       return { y: -1e6, draw: (c: CanvasRenderingContext2D) => { const s = spr(p.key); c.drawImage(s.c, x0, y0, w * CW, d * CH); } };
     }
@@ -52,7 +86,7 @@ export function placedExtras(list: Placed[]): StreetExtra[] {
       c.fillStyle = 'rgba(106,70,50,0.14)'; c.beginPath(); c.ellipse(x, y, r, Math.min(r * 0.28, 5), 0, 0, Math.PI * 2); c.fill();
       c.save(); c.translate(x, y); c.scale(p.flip ? -1 : 1, 1); c.drawImage(s.c, -s.ox, -s.oy, s.w, s.h); c.restore();
     } };
-  });
+  }));
 }
 
 // The grid, and the cells the held piece would take, drawn while arranging.

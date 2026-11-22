@@ -1,4 +1,5 @@
 // DOM menus and in-run overlays. main.ts owns the state; these functions only build markup.
+import { trayArt } from '../render/place';
 import { clock, getLang, patchText, t, tl } from '../core/i18n';
 import { type Save, clearedCount } from '../core/save';
 import { CODEX, ENEMY } from '../data/enemies';
@@ -118,7 +119,7 @@ function iconBtn(id: string, icon: string, label: string, on: () => void, cls = 
 // The tray along the bottom while arranging furniture.
 export function buildTray(el: HTMLElement, keys: string[], held: string | null, flip: boolean, a: Actions): void {
   const items = keys.map((k) => {
-    const b = h('button', `tray-item${k === held ? ' on' : ''}`, sprImg(k, 44, 'tray-ic')) as HTMLButtonElement;
+    const b = h('button', `tray-item${k === held ? ' on' : ''}`, sprImg(trayArt(k), 44, 'tray-ic')) as HTMLButtonElement;
     b.type = 'button'; b.dataset.id = `furn-${k}`;
     b.addEventListener('click', () => a.holdFurniture(k));
     return b;
