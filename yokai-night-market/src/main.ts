@@ -257,7 +257,7 @@ function frame(now: number): void {
     drawStreet(ctx, view, {
       dim: screen === 'splash' ? 0.42 : 0,
       extras: placedExtras(placedList()),
-      bottom: placing ? tray.offsetHeight : (bar.querySelector('.street-strip') as HTMLElement | null)?.offsetHeight ?? 0,
+      bottom: placing ? tray.offsetHeight : 0,
       fadeFront: placing,
       underlay: placing ? (c) => drawGrid(c, toStreet(0, 0)[0], toStreet(view.w, 0)[0], placedList(), ghost) : undefined,
     });
