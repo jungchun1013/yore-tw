@@ -47,7 +47,9 @@ export function placedExtras(list: Placed[]): StreetExtra[] {
     const x = x0 + (w * CW) / 2, y = y0 + d * CH - 3;
     return { y, draw: (c: CanvasRenderingContext2D) => {
       const s = spr(p.key);
-      c.fillStyle = 'rgba(106,70,50,0.16)'; c.beginPath(); c.ellipse(x, y, s.w * 0.36, s.w * 0.1, 0, 0, Math.PI * 2); c.fill();
+      // a small contact shadow, never wider than the piece's own cells
+      const r = Math.min(s.w * 0.36, w * CW * 0.42);
+      c.fillStyle = 'rgba(106,70,50,0.14)'; c.beginPath(); c.ellipse(x, y, r, Math.min(r * 0.28, 5), 0, 0, Math.PI * 2); c.fill();
       c.save(); c.translate(x, y); c.scale(p.flip ? -1 : 1, 1); c.drawImage(s.c, -s.ox, -s.oy, s.w, s.h); c.restore();
     } };
   });
