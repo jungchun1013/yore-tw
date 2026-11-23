@@ -467,6 +467,11 @@ function drawGround(c: CanvasRenderingContext2D, left: number): void {
   for (const p of street.paths ?? []) drawPaving(c, p);
 }
 
+// Name boards that carry real lettering: text, and the board inside the picture as fractions of it
+// [left, centre y, width, height]. Pictures are drawn without text (art bible), so it is set here.
+const PLAQUES: Record<string, { text: string; box: [number, number, number, number] }> = {
+  confucius: { text: '全臺首學', box: [0.372, 0.402, 0.256, 0.092] },
+};
 function drawItem(c: CanvasRenderingContext2D, it0: StreetItem, y: number, alpha = 1): void {
   const it = { ...it0, key: variantAt(it0.key, Math.round(it0.x), 7, hasArt) };
   const asset = ASSET[it.key], k = it.scale ?? 1;
@@ -475,6 +480,18 @@ function drawItem(c: CanvasRenderingContext2D, it0: StreetItem, y: number, alpha
     const s = spr(it.key);
     c.save(); c.translate(it.x, y); c.scale((it.flip ? -1 : 1) * k, k);
     c.drawImage(s.c, -s.ox, -s.oy, s.w, s.h);
+    const pq = PLAQUES[it.key];
+    if (pq && !it.flip) {
+      // the board's own lettering, gold on the dark board, in the game's title face; written right
+      // to left as on the real board
+      const [fx, fy, fw, fh] = pq.box, n = pq.text.length, size = fh * s.h * 0.74, step = (fw * s.w) / n;
+      c.font = `900 ${size}px "GenRyuMin TW", serif`; c.textAlign = 'center'; c.textBaseline = 'middle';
+      for (let i = 0; i < n; i++) {
+        const x = -s.ox + (fx + fw / 2) * s.w + ((n - 1) / 2 - i) * step, y2 = -s.oy + fy * s.h;
+        c.fillStyle = 'rgba(40,26,18,0.55)'; c.fillText(pq.text[i], x + size * 0.04, y2 + size * 0.06);
+        c.fillStyle = '#e3bd6a'; c.fillText(pq.text[i], x, y2);
+      }
+    }
     c.restore();
   } else {
     // not drawn yet: a paper card with the working name, so the layout can still be judged
