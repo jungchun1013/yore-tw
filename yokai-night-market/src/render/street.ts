@@ -276,12 +276,13 @@ function grain(c: CanvasRenderingContext2D, kind: 'fine' | 'floor'): CanvasPatte
   return pat;
 }
 
-// Stone paths (user 2026-11-23, reference art-source/refs/stonepath-band-ref.jpg): a path, not a
-// paved area. One narrow straight band from the gate to the near side of the street, built in
-// courses: a course is one long slab the full width of the path, or a medium slab beside a
-// squarish one, or two mediums, with thin joints between; now and then a bit of rubble sits just
-// outside the edge. Slabs are never turned or mirrored, so their lighting agrees; the variety is
-// in the shapes and sizes. Each picture's own stone is measured once.
+// Stone paths (user 2026-11-23, remade from art-source/refs/paved-lane-photo.webp, abstracted):
+// an orderly paved lane. Rectangular flagstones in level courses of one height, the joints of each
+// course half a stone off the one above (running bond), thin joints, and a line of long narrow
+// kerb stones down both sides. The only variety is quiet: tone differs a little from stone to
+// stone and now and then one stone is double length. The stones are cut from the paper of
+// Codex's slabs (request 37); every stone gets the same lit top edge and card-thick lower edge.
+// Built once per path on an offscreen canvas.
 type Pt = [number, number];
 const stoneBox = new Map<HTMLImageElement, [number, number, number, number]>();
 function boxOf(img: HTMLImageElement): [number, number, number, number] {
@@ -296,46 +297,62 @@ function boxOf(img: HTMLImageElement): [number, number, number, number] {
   stoneBox.set(img, b);
   return b;
 }
-// courses as [role, share of the path width]: L long, M medium, S squarish
-const COURSES: [string, number][][] = [
-  [['M', 1]], [['S', 0.56], ['S', 0.41]], [['M', 0.96]], [['L', 1]], [['S', 0.43], ['S', 0.54]], [['M', 0.66], ['R', 0.3]], [['R', 0.28], ['M', 0.68]],
-];
-const ROLE: Record<string, number[]> = { L: [0, 1, 2], M: [3, 4, 5, 6, 7, 8], S: [7, 8, 9, 10, 11, 3], R: [9, 10, 11] };
+const PAPERS = [4, 4, 6, 7, 9, 0, 3];           // slab pictures used as paper: mostly warm grey, some grey-green
+const paving = new Map<string, { img: HTMLCanvasElement; x: number; y: number; w: number; h: number }>();
 function drawPaving(c: CanvasRenderingContext2D, p: StreetPath): void {
-  const slabs = STEPS.map((k) => TILES[k]);
-  if (slabs.some((img) => !img || !img.complete || !img.naturalWidth)) return;
-  const W = p.w * 12, GAP = 1.6, yEnd = FLOOR_Y1 - 4;
-  // a slab drawn dw wide with its top at y; returns its height (its own proportions, kept flat)
-  const lay = (img: HTMLImageElement, x: number, y: number, dw: number): number => {
-    const [bx, by, bw, bh] = boxOf(img), dh = Math.max(3, Math.min(17, dw * bh / bw));
-    c.drawImage(img, bx, by, bw, bh, x, y, dw, dh);
-    return dh;
-  };
-  const height = (img: HTMLImageElement, dw: number): number => { const b = boxOf(img); return Math.max(3, Math.min(17, dw * b[3] / b[2])); };
-  let y = BUILD_Y + 8, prev = -1, n = 0;
-  const used: Record<string, number> = {};
-  while (y < yEnd) {
-    const h = mix(n * 53 + 11, Math.round(p.x) + 5);
-    let ci = h % COURSES.length; if (ci === prev) ci = (ci + 1 + (h >>> 4) % (COURSES.length - 1)) % COURSES.length;
-    prev = ci;
-    const course = COURSES[ci], sway = (((h >>> 8) % 5) - 2) * 0.8;      // the edge is not ruled
-    const pieces = course.map(([role, share], k) => {
-      const pool = ROLE[role]; let pi = (h >>> (12 + k * 5)) % pool.length;
-      if (pool[pi] === used[role]) pi = (pi + 1) % pool.length;           // not the same slab twice running
-      used[role] = pool[pi];
-      return { img: slabs[pool[pi]], dw: W * share };
-    });
-    const hs = pieces.map((q) => height(q.img, q.dw)), ch = Math.max(...hs);
-    const total = pieces.reduce((t, q) => t + q.dw, 0) + GAP * (pieces.length - 1);
-    let x = p.x - total / 2 + sway;
-    pieces.forEach((q, k) => { lay(q.img, x, y + (ch - hs[k]) * ((h >>> (20 + k)) & 1 ? 1 : 0.4), q.dw); x += q.dw + GAP; });
-    // rubble just outside the edge, on one side
-    if ((h >>> 26) % 3 === 0) {
-      const side = (h >>> 28) & 1 ? 1 : -1, rw = 6 + ((h >>> 29) % 3), img = slabs[ROLE.R[(h >>> 22) % 3]];
-      lay(img, side > 0 ? p.x + total / 2 + sway + GAP : p.x - total / 2 + sway - GAP - rw, y + ch * 0.3, rw);
+  const key = `${p.x},${p.w}`;
+  let pv = paving.get(key);
+  if (!pv) {
+    const slabs = STEPS.map((k) => TILES[k]);
+    if (slabs.some((img) => !img || !img.complete || !img.naturalWidth)) return;
+    const PX = 4, J = 0.9, KERB = 4.2, CH_ = 6.6, COLS = Math.max(3, p.w);     // joint, kerb width, course height
+    const SW = 12.5, inner = COLS * SW + (COLS - 1) * J, W = inner + 2 * (KERB + J);
+    const y0 = BUILD_Y + 7, rows = Math.floor((FLOOR_Y1 - 4 - y0 + J) / (CH_ + J)), Hh = rows * (CH_ + J) - J, x0 = p.x - W / 2;
+    const cv = document.createElement('canvas'); cv.width = Math.ceil((W + 2) * PX); cv.height = Math.ceil((Hh + 3) * PX);
+    const g = cv.getContext('2d')!; g.scale(PX, PX); g.translate(1, 1);
+    const stone = (x: number, y: number, w: number, h: number, seed: number, shade: number): void => {
+      const img = slabs[PAPERS[seed % PAPERS.length]], [bx, by, bw, bh] = boxOf(img);
+      const ix = bx + bw * 0.1, iy = by + bh * 0.18, iw = bw * 0.8, ih = bh * 0.6;       // the slab's inside
+      const sw = Math.min(iw, w * 5), sh = Math.min(ih, h * 5);
+      const sx = ix + ((seed >>> 4) % 100) / 100 * (iw - sw), sy = iy + ((seed >>> 11) % 100) / 100 * (ih - sh);
+      const r = 0.9;
+      g.save(); g.beginPath();
+      g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); g.clip();
+      g.drawImage(img, sx, sy, sw, sh, x, y, w, h);
+      g.fillStyle = `rgba(243,228,200,${0.3 + ((seed >>> 18) % 12) / 100})`; g.fillRect(x, y, w, h);   // paler, into the ground
+      if (shade) { g.fillStyle = `rgba(128,108,84,${shade})`; g.fillRect(x, y, w, h); }
+      g.fillStyle = 'rgba(255,252,244,0.4)'; g.fillRect(x, y, w, 0.5);                  // lit top edge
+      g.fillStyle = 'rgba(122,100,78,0.38)'; g.fillRect(x, y + h - 0.8, w, 0.8);         // card thickness below
+      g.restore();
+    };
+    // the flagstones: running bond, now and then a double-length stone
+    for (let r = 0; r < rows; r++) {
+      const y = r * (CH_ + J), odd = r & 1;
+      let x = KERB + J, k = 0;
+      const end = KERB + J + inner;
+      if (odd) { const w = (SW - J) / 2; stone(x, y, w, CH_, mix(r, 5), 0); x += w + J; }
+      while (x < end - 0.5) {
+        const h = mix(r * 37 + k, Math.round(p.x) + 3);
+        let w = SW; if (h % 9 === 0 && x + 2 * SW + J <= end + 0.01) w = 2 * SW + J;
+        if (x + w > end) w = end - x;
+        stone(x, y, w, CH_, h >>> 3, (h >>> 25) % 6 === 0 ? 0.1 : 0);
+        x += w + J; k++;
+      }
     }
-    y += ch + GAP; n++;
+    // kerbs: long narrow stones, a touch darker, down both sides
+    for (const side of [0, 1]) {
+      let y = 0, k = 0;
+      while (y < Hh - 0.5) {
+        const h = mix(k * 19 + side * 7, Math.round(p.x) + 91);
+        let len = 2 * (CH_ + J) + ((h % 3)) * (CH_ + J) - J; if (y + len > Hh || Hh - (y + len) < CH_) len = Hh - y;
+        stone(side ? W - KERB : 0, y, KERB, len, h >>> 2, 0.16);
+        y += len + J; k++;
+      }
+    }
+    pv = { img: cv, x: x0 - 1, y: y0 - 1, w: cv.width / PX, h: cv.height / PX };
+    paving.set(key, pv);
   }
+  c.drawImage(pv.img, pv.x, pv.y, pv.w, pv.h);
 }
 
 // a well-mixed hash for patterns over small integers (the plain one repeats along rows)
