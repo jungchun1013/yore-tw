@@ -15,7 +15,10 @@ export interface StreetData { width: number; start?: number; paths?: StreetPath[
 
 // logical layout, top to bottom (the street is H tall and scaled to the screen)
 // buildings stand along the top; below them a walk, then the yard, which takes most of the screen
-export const H = 500, BUILD_Y = 268, WALK_Y0 = 282, WALK_Y1 = 322, FLOOR_Y0 = 330, FLOOR_Y1 = 450, FRONT_Y = 492;
+// Ground to sky is 5:8 on screen (user 2026-11-23: the golden ratio, as whole numbers), split at the
+// foot of the temple wall (BUILD_Y). The ground is kept shallow so that holds at the usual zoom.
+export const H = 500, BUILD_Y = 268, WALK_Y0 = 278, WALK_Y1 = 304, FLOOR_Y0 = 310, FLOOR_Y1 = 390, FRONT_Y = 430;
+const GROUND_SHARE = 5 / 13;
 // empty sky above the tallest tree that the view may cut off to come closer
 const SKY = 70;
 // how close the camera sits (user 2026-11-22: 1.2 times closer)
@@ -123,10 +126,11 @@ export function setupStreet(hero: string): void {
 function layout(v: StreetView, bottom = 0, keepTop = true): void {
   scale = Math.min(v.h / (H - 40 - SKY), v.w / MIN_VIEW_W) * ZOOM;
   viewW = v.w / scale;
-  // keep the yard's lower edge at the bottom of the screen, but never cut into the buildings for
-  // it: on wide screens the top of the view stops just above the tallest building
-  const fit = v.h - bottom - (FLOOR_Y1 + 6) * scale;
-  offY = keepTop ? Math.max(fit, -(BUILD_Y - 150) * scale) : fit;
+  // the foot of the wall sits 8/13 of the way down, so ground : sky = 5 : 8; if that would push the
+  // yard's lower edge off the screen (a tray open, a short window), show the whole yard instead
+  void keepTop;
+  const golden = (v.h - bottom) * (1 - GROUND_SHARE) - BUILD_Y * scale, fit = v.h - bottom - (FLOOR_Y1 + 4) * scale;
+  offY = Math.min(golden, fit);
 }
 
 export function updateStreet(dt: number): void {
@@ -146,7 +150,7 @@ export function updateStreet(dt: number): void {
       if (a.wait <= 0) {
         a.wait = 3 + ((a.x * 7 + a.clipT * 13) % 4);
         a.tx = Math.max(80, Math.min(street.width - 80, a.x + (((a.x * 13 + a.clipT * 31) % 2) < 1 ? -1 : 1) * (80 + ((a.x * 3) % 140))));
-        a.ty = WALK_Y0 + 6 + ((a.tx * 5) % 150);
+        a.ty = WALK_Y0 + 6 + ((a.tx * 5) % (FLOOR_Y1 - WALK_Y0 - 14));
       }
     }
   }
@@ -276,13 +280,13 @@ function grain(c: CanvasRenderingContext2D, kind: 'fine' | 'floor'): CanvasPatte
   return pat;
 }
 
-// Stone paths (user 2026-11-23, remade from art-source/refs/paved-lane-photo.webp, abstracted):
-// an orderly paved lane. Rectangular flagstones in level courses of one height, the joints of each
-// course half a stone off the one above (running bond), thin joints, and a line of long narrow
-// kerb stones down both sides. The only variety is quiet: tone differs a little from stone to
-// stone and now and then one stone is double length. The stones are cut from the paper of
-// Codex's slabs (request 37); every stone gets the same lit top edge and card-thick lower edge.
-// Built once per path on an offscreen canvas.
+// Stone paths (user 2026-11-23, from the user's photo of a flagstone path): a lane lying on the
+// ground and running away from the camera, drawn in perspective: narrow at the gate, wider toward
+// the camera, the stones growing as they come nearer. Large irregular flagstones (a Voronoi split
+// of jittered points on the ground) fitted together with a clear joint, and a line of long narrow
+// kerb stones down both sides. The stones are worn: corners rounded off, the odd corner chipped
+// away, a little moss where joints meet. Stones are cut from the paper of Codex's slabs (request 37); each
+// shows the same card-thick edge on its near side. Built once per path on an offscreen canvas.
 type Pt = [number, number];
 const stoneBox = new Map<HTMLImageElement, [number, number, number, number]>();
 function boxOf(img: HTMLImageElement): [number, number, number, number] {
@@ -297,6 +301,16 @@ function boxOf(img: HTMLImageElement): [number, number, number, number] {
   stoneBox.set(img, b);
   return b;
 }
+function clipPoly(poly: Pt[], a: number, b: number, c0: number): Pt[] {   // keep a*x + b*y <= c0
+  const out: Pt[] = [];
+  for (let i = 0; i < poly.length; i++) {
+    const P = poly[i], Q = poly[(i + 1) % poly.length];
+    const fp = a * P[0] + b * P[1] - c0, fq = a * Q[0] + b * Q[1] - c0;
+    if (fp <= 0) out.push(P);
+    if ((fp < 0) !== (fq < 0)) { const t = fp / (fp - fq); out.push([P[0] + (Q[0] - P[0]) * t, P[1] + (Q[1] - P[1]) * t]); }
+  }
+  return out;
+}
 const PAPERS = [4, 4, 6, 7, 9, 0, 3];           // slab pictures used as paper: mostly warm grey, some grey-green
 const paving = new Map<string, { img: HTMLCanvasElement; x: number; y: number; w: number; h: number }>();
 function drawPaving(c: CanvasRenderingContext2D, p: StreetPath): void {
@@ -305,51 +319,96 @@ function drawPaving(c: CanvasRenderingContext2D, p: StreetPath): void {
   if (!pv) {
     const slabs = STEPS.map((k) => TILES[k]);
     if (slabs.some((img) => !img || !img.complete || !img.naturalWidth)) return;
-    const PX = 4, J = 0.9, KERB = 4.2, CH_ = 6.6, COLS = Math.max(3, p.w);     // joint, kerb width, course height
-    const SW = 12.5, inner = COLS * SW + (COLS - 1) * J, W = inner + 2 * (KERB + J);
-    const y0 = BUILD_Y + 7, rows = Math.floor((FLOOR_Y1 - 4 - y0 + J) / (CH_ + J)), Hh = rows * (CH_ + J) - J, x0 = p.x - W / 2;
-    const cv = document.createElement('canvas'); cv.width = Math.ceil((W + 2) * PX); cv.height = Math.ceil((Hh + 3) * PX);
-    const g = cv.getContext('2d')!; g.scale(PX, PX); g.translate(1, 1);
-    const stone = (x: number, y: number, w: number, h: number, seed: number, shade: number): void => {
+    // ground units: x across (0 on the centre line), d away from the gate. Screen: the scale grows
+    // linearly down the screen, and equal ground depths take more screen the nearer they are.
+    const PX = 4, W0 = p.w * 14, NEAR = 1.7, TILT = 0.62, GAP = 2.2, KERB = 4.6, S = 15.5;
+    const yA = BUILD_Y + 7, yB = FLOOR_Y1 - 3, L = yB - yA, m = (NEAR - 1) / L, D = Math.log(NEAR) / (TILT * m);
+    const proj = (x: number, d: number): Pt => { const y = (Math.exp(TILT * m * d) - 1) / m; return [x * (1 + m * y), y]; };
+    const gw = W0 / 2 - KERB - GAP * 0.6;                                         // half width of the flagstones
+    const ox = (W0 / 2) * NEAR + 2;
+    const cv = document.createElement('canvas'); cv.width = Math.ceil(ox * 2 * PX); cv.height = Math.ceil((L + 4) * PX);
+    const g = cv.getContext('2d')!; g.scale(PX, PX); g.translate(ox, 1);
+    // worn stones (user: 收潤, wabi-sabi): every corner is rounded off, more on some stones than others
+    const trace = (q: Pt[], dy: number, round = 2): void => {
+      g.beginPath();
+      const n = q.length;
+      for (let k = 0; k < n; k++) {
+        const A = q[(k + n - 1) % n], B = q[k], C = q[(k + 1) % n];
+        const la = Math.hypot(A[0] - B[0], A[1] - B[1]) || 1, lc = Math.hypot(C[0] - B[0], C[1] - B[1]) || 1;
+        const ra = Math.min(round, la * 0.42), rc = Math.min(round, lc * 0.42);
+        const P: Pt = [B[0] + (A[0] - B[0]) * ra / la, B[1] + (A[1] - B[1]) * ra / la], Q: Pt = [B[0] + (C[0] - B[0]) * rc / lc, B[1] + (C[1] - B[1]) * rc / lc];
+        if (k) g.lineTo(P[0], P[1] + dy); else g.moveTo(P[0], P[1] + dy);
+        g.quadraticCurveTo(B[0], B[1] + dy, Q[0], Q[1] + dy);
+      }
+      g.closePath();
+    };
+    const stone = (ground: Pt[], seed: number, shade: number): void => {
+      const q = ground.map(([x, d]) => proj(x, d));
+      const xs = q.map((v) => v[0]), ys = q.map((v) => v[1]), x = Math.min(...xs), y = Math.min(...ys), w = Math.max(...xs) - x, h = Math.max(...ys) - y;
+      const thick = 0.75 * (1 + m * (y + h)), rnd = (1.6 + ((seed >>> 21) % 5) * 0.55) * (1 + m * y);
+      g.lineJoin = 'round';
+      trace(q, thick, rnd); g.fillStyle = '#a8977f'; g.fill();                         // the card's near edge
       const img = slabs[PAPERS[seed % PAPERS.length]], [bx, by, bw, bh] = boxOf(img);
-      const ix = bx + bw * 0.1, iy = by + bh * 0.18, iw = bw * 0.8, ih = bh * 0.6;       // the slab's inside
+      const ix = bx + bw * 0.1, iy = by + bh * 0.18, iw = bw * 0.8, ih = bh * 0.6;
       const sw = Math.min(iw, w * 5), sh = Math.min(ih, h * 5);
       const sx = ix + ((seed >>> 4) % 100) / 100 * (iw - sw), sy = iy + ((seed >>> 11) % 100) / 100 * (ih - sh);
-      const r = 0.9;
-      g.save(); g.beginPath();
-      g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r); g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r); g.closePath(); g.clip();
+      g.save(); trace(q, 0, rnd); g.clip();
       g.drawImage(img, sx, sy, sw, sh, x, y, w, h);
-      g.fillStyle = `rgba(243,228,200,${0.3 + ((seed >>> 18) % 12) / 100})`; g.fillRect(x, y, w, h);   // paler, into the ground
+      g.fillStyle = `rgba(243,228,200,${0.3 + ((seed >>> 18) % 12) / 100})`; g.fillRect(x, y, w, h);
       if (shade) { g.fillStyle = `rgba(128,108,84,${shade})`; g.fillRect(x, y, w, h); }
-      g.fillStyle = 'rgba(255,252,244,0.4)'; g.fillRect(x, y, w, 0.5);                  // lit top edge
-      g.fillStyle = 'rgba(122,100,78,0.38)'; g.fillRect(x, y + h - 0.8, w, 0.8);         // card thickness below
+      trace(q, 0, rnd); g.strokeStyle = 'rgba(255,252,244,0.3)'; g.lineWidth = 0.9; g.stroke();
       g.restore();
     };
-    // the flagstones: running bond, now and then a double-length stone
+    // flagstones: jittered points, three across, split by Voronoi with a joint between
+    const seeds: Pt[] = [], cols = Math.max(2, Math.round((2 * gw) / S)), cw = (2 * gw) / cols, rows = Math.round(D / (S * 0.95)), rh = D / rows;
     for (let r = 0; r < rows; r++) {
-      const y = r * (CH_ + J), odd = r & 1;
-      let x = KERB + J, k = 0;
-      const end = KERB + J + inner;
-      if (odd) { const w = (SW - J) / 2; stone(x, y, w, CH_, mix(r, 5), 0); x += w + J; }
-      while (x < end - 0.5) {
-        const h = mix(r * 37 + k, Math.round(p.x) + 3);
-        let w = SW; if (h % 9 === 0 && x + 2 * SW + J <= end + 0.01) w = 2 * SW + J;
-        if (x + w > end) w = end - x;
-        stone(x, y, w, CH_, h >>> 3, (h >>> 25) % 6 === 0 ? 0.1 : 0);
-        x += w + J; k++;
+      const hr = mix(r, Math.round(p.x) + 17), nc = cols - (hr % 3 === 0 ? 1 : 0), w = (2 * gw) / nc;
+      for (let k = 0; k < nc; k++) {
+        const h = mix(r * 41 + k, Math.round(p.x) + 3);
+        seeds.push([-gw + (k + 0.5) * w + ((h % 100) / 100 - 0.5) * w * 0.5, (r + 0.5) * rh + (((h >>> 8) % 100) / 100 - 0.5) * rh * 0.6]);
       }
     }
-    // kerbs: long narrow stones, a touch darker, down both sides
-    for (const side of [0, 1]) {
-      let y = 0, k = 0;
-      while (y < Hh - 0.5) {
+    void cw;
+    const stones: { poly: Pt[]; hs: number }[] = [];
+    seeds.forEach((sd, si) => {
+      let poly: Pt[] = [[-gw, 0], [gw, 0], [gw, D], [-gw, D]];
+      for (const o of seeds) {
+        if (o === sd || Math.abs(o[1] - sd[1]) > S * 3) continue;
+        const a = o[0] - sd[0], b = o[1] - sd[1], len = Math.hypot(a, b);
+        poly = clipPoly(poly, a, b, (o[0] * o[0] - sd[0] * sd[0] + o[1] * o[1] - sd[1] * sd[1]) / 2 - (GAP / 2) * len);
+        if (poly.length < 3) return;
+      }
+      const hs = mix(si, 4711);
+      // about one stone in four has lost a corner
+      if (hs % 4 === 0 && poly.length >= 4) {
+        const k = (hs >>> 3) % poly.length, B = poly[k], cx = poly.reduce((t, v) => t + v[0], 0) / poly.length, cy = poly.reduce((t, v) => t + v[1], 0) / poly.length;
+        const nx = B[0] - cx, ny = B[1] - cy, len = Math.hypot(nx, ny) || 1, cut = 0.72 + ((hs >>> 8) % 12) / 100;
+        const chipped = clipPoly(poly, nx / len, ny / len, (cx * nx + cy * ny) / len + len * cut);
+        if (chipped.length >= 3) poly = chipped;
+      }
+      stones.push({ poly, hs });
+    });
+    // moss where joints meet, laid first so it shows only in the gaps (a few places, not everywhere)
+    stones.forEach(({ poly, hs }) => {
+      if (hs % 3) return;
+      const v = poly[(hs >>> 5) % poly.length], [mx, my] = proj(v[0], v[1]), r = (1.5 + ((hs >>> 9) % 3) * 0.5) * (1 + m * my);
+      if (Math.abs(v[0]) > gw - 1) return;
+      g.fillStyle = `rgba(150,172,122,${0.5 + ((hs >>> 12) % 3) * 0.12})`;
+      g.beginPath(); g.ellipse(mx, my, r * 1.5, r * 0.8, 0, 0, Math.PI * 2); g.fill();
+    });
+    stones.forEach(({ poly, hs }) => stone(poly, hs, (hs >>> 25) % 5 === 0 ? 0.1 : (hs >>> 27) % 4 === 0 ? 0.05 : 0));
+    // kerbs: long narrow stones down both sides
+    for (const side of [-1, 1]) {
+      let d = 0, k = 0;
+      const xi = side * (gw + GAP * 0.6), xo = side * (W0 / 2);
+      while (d < D - 2) {
         const h = mix(k * 19 + side * 7, Math.round(p.x) + 91);
-        let len = 2 * (CH_ + J) + ((h % 3)) * (CH_ + J) - J; if (y + len > Hh || Hh - (y + len) < CH_) len = Hh - y;
-        stone(side ? W - KERB : 0, y, KERB, len, h >>> 2, 0.16);
-        y += len + J; k++;
+        let len = 20 + (h % 4) * 5; if (D - (d + len) < 12) len = D - d;
+        stone([[xi, d], [xo, d], [xo, d + len - GAP * 0.7], [xi, d + len - GAP * 0.7]], h >>> 2, 0.15);
+        d += len; k++;
       }
     }
-    pv = { img: cv, x: x0 - 1, y: y0 - 1, w: cv.width / PX, h: cv.height / PX };
+    pv = { img: cv, x: p.x - ox, y: yA - 1, w: cv.width / PX, h: cv.height / PX };
     paving.set(key, pv);
   }
   c.drawImage(pv.img, pv.x, pv.y, pv.w, pv.h);
@@ -363,7 +422,7 @@ function mix(a: number, b: number): number {
 }
 
 function drawGround(c: CanvasRenderingContext2D, left: number): void {
-  const top = BUILD_Y - 16;
+  const top = BUILD_Y - 5;
   // ground papers (request 35): fine-sand paper for the floor, kozo paper for grass; one tile is
   // GROUND_TILE units wide. Flat colours stand in until they load.
   const paper = (key: string, fallback: string): string | CanvasPattern => {
@@ -376,39 +435,31 @@ function drawGround(c: CanvasRenderingContext2D, left: number): void {
   };
   c.fillStyle = paper('groundSand', '#efe5cb'); c.fillRect(left, top, viewW, H - top);
   c.fillStyle = paper('groundGrass', '#b7c38a');
-  // grass (user 2026-11-23: edges a little random, not straight sharp lines, not a carpet): the same
-  // diamond cells, but every lattice corner is nudged and every edge bends through two jittered
-  // points. Corners and bends are hashed from their position, so neighbouring grass cells share
-  // them exactly (no gaps) while the outer edge wanders.
-  const key = (x: number, y: number): number => Math.round(x * 2) * 7919 + Math.round(y * 2);
-  const corner = (x: number, y: number): Pt => { const h = mix(Math.round(x * 2), Math.round(y * 2)); return [x + ((h % 100) / 100 - 0.5) * DW * 0.7, y + (((h >> 8) % 100) / 100 - 0.5) * DH * 0.7]; };
-  const edge = (A: Pt, B: Pt, ka: number, kb: number, out: Pt[]): void => {
-    // walk from the smaller key so both cells bend the shared edge the same way
-    const flip = ka > kb, P = flip ? B : A, Q = flip ? A : B, h = mix(Math.min(ka, kb), Math.max(ka, kb));
-    const nx = -(Q[1] - P[1]), ny = Q[0] - P[0], len = Math.hypot(nx, ny) || 1;
-    const pts: Pt[] = [1 / 3, 2 / 3].map((t, i) => { const off = ((((h >> (i * 9)) % 100) / 100) - 0.5) * 3.2; return [P[0] + (Q[0] - P[0]) * t + nx / len * off, P[1] + (Q[1] - P[1]) * t + ny / len * off]; });
-    if (flip) pts.reverse();
-    out.push(...pts, B);
+  // grass (user 2026-11-23: every curve bulges outward; turf laid over the ground; no thin seams):
+  // each patch is one convex rounded diamond (a superellipse, straight-ish sides and soft corners,
+  // 2:1 like the lattice), a little lopsided. The near side of the yard is a row of large mounds
+  // that overlap generously, so no sliver of sand is left between two patches. The middle of the
+  // yard stays bare sand (user: loose patches there were too conspicuous).
+  const turf = (cx: number, cy: number, a: number, b: number, h: number): void => {
+    const e = 1.18 + (h % 16) / 100, lean = (((h >>> 6) % 9) - 4) / 4 * 0.12, wide = 1 + (((h >>> 10) % 9) - 4) / 4 * 0.1;
+    c.beginPath();
+    for (let k = 0; k < 48; k++) {
+      const t = (k / 48) * Math.PI * 2, ct = Math.cos(t), st = Math.sin(t);
+      const x = Math.sign(ct) * Math.pow(Math.abs(ct), e) * a * (ct > 0 ? wide : 2 - wide), y = Math.sign(st) * Math.pow(Math.abs(st), e) * b;
+      const px = cx + x + y * lean * 2, py = cy + y;
+      if (k) c.lineTo(px, py); else c.moveTo(px, py);
+    }
+    c.closePath(); c.fill();
   };
-  const blob = (x: number, y: number): void => {
-    const L: Pt[] = [[x, y - DH], [x + DW, y], [x, y + DH], [x - DW, y]];
-    const C = L.map(([px, py]) => corner(px, py)), K = L.map(([px, py]) => key(px, py)), out: Pt[] = [C[0]];
-    for (let i = 0; i < 4; i++) edge(C[i], C[(i + 1) % 4], K[i], K[(i + 1) % 4], out);
-    c.beginPath(); out.forEach(([px, py], i) => (i ? c.lineTo(px, py) : c.moveTo(px, py))); c.closePath(); c.fill();
-  };
-  // the band by the buildings, its lower edge wandering
+  // the band by the buildings, its lower edge gently wandering
   c.beginPath(); c.moveTo(left - 2, top);
-  for (let x = Math.floor(left / 6) * 6 - 6; x <= left + viewW + 6; x += 6) c.lineTo(x, top + 14 + ((mix(Math.round(x), 41) % 100) / 100) * 5);
+  for (let x = Math.floor(left / 18) * 18 - 18; x <= left + viewW + 18; x += 18) c.lineTo(x, top + 15 + ((mix(Math.round(x), 41) % 100) / 100) * 2.2);
   c.lineTo(left + viewW + 6, top); c.closePath(); c.fill();
-  const vMax = Math.ceil((FLOOR_Y1 - FLOOR_Y0) / DH);
-  for (let v = 0; v <= vMax + 2; v++) for (let u = Math.floor(left / DW) - 2; u <= Math.ceil((left + viewW) / DW) + 2; u++) {
-    if ((u + v) % 2) continue;
-    const fromFront = vMax - v, bu = Math.floor(u / 7), bv = Math.floor(v / 5);
-    // a patch: some 7x5 blocks hold a small diamond cluster around their own centre
-    const pm = mix(bu, bv), pu = bu * 7 + 3, pv = bv * 5 + 2;
-    const patch = pm % 4 === 0 && Math.abs(u - pu) + Math.abs(v - pv) <= 2 + (pm >> 4) % 2;
-    const grass = fromFront < 1 + (mix(u >> 1, 9) % 4) || (patch && fromFront > 3 && v > 1);
-    if (grass) blob(u * DW, FLOOR_Y0 + (v + 1) * DH);
+  // the near side: big mounds every 64 units, each wider than the spacing so neighbours overlap
+  for (let k = Math.floor(left / 64) - 2; k <= Math.ceil((left + viewW) / 64) + 2; k++) {
+    const h = mix(k, 311);
+    if (h % 7 === 0) continue;                                              // a break in the turf now and then
+    turf(k * 64 + ((h >>> 3) % 20) - 10, FLOOR_Y1 + 4, 46 + ((h >>> 8) % 22), 15 + ((h >>> 13) % 9), h >>> 5);
   }
   c.fillRect(left, FLOOR_Y1, viewW, H - FLOOR_Y1);
   const fg = grain(c, 'floor');
@@ -493,8 +544,8 @@ export function drawStreet(c: CanvasRenderingContext2D, v: StreetView, opt: Draw
     sg.addColorStop(0, '#e3b863'); sg.addColorStop(1, '#ecca85'); c.fillStyle = sg; c.beginPath(); c.arc(sx, sy, sr, 0, Math.PI * 2); c.fill(); }
   // two sage ranges in the demo's shapes and colours, each fading into haze at its foot
   // two sage ranges in the demo's shapes and colours, layered in mist: the far one paler
-  ridge(c, 236, 92, 170, 11, '#ccd5c0', '#e3eadf', left * 0.2);
-  ridge(c, 262, 70, 130, 23, '#b6c3a2', '#dbe3d2', left * 0.4);
+  ridge(c, 247, 92, 170, 11, '#ccd5c0', '#e3eadf', left * 0.2);
+  ridge(c, 273, 70, 130, 23, '#b6c3a2', '#dbe3d2', left * 0.4);
   c.translate(-left, 0);
   drawGround(c, left);
   const vis = (it: StreetItem): boolean => it.x > left - 160 && it.x < left + viewW + 160;
